@@ -13,13 +13,12 @@ import android.support.annotation.Nullable;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -29,13 +28,15 @@ import com.android.volley.toolbox.Volley;
 import com.microsoft.speech.tts.Synthesizer;
 import com.microsoft.speech.tts.Voice;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.StringTokenizer;
+import java.util.Map;
 
 public class ProcessTextActivity extends Activity{
     private Synthesizer m_syn;
@@ -63,13 +64,13 @@ public class ProcessTextActivity extends Activity{
 
         mAdapter = new CustomAdapter(this);
 
-
         //------------------------------ Tomado de https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
         String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&titles="+textString;
         final TextView mWikiContent = (TextView) findViewById(R.id.text_wikiContent);
         mWikiContent.setMovementMethod(new ScrollingMovementMethod());
 
         RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(detectLanguage());
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -95,7 +96,6 @@ public class ProcessTextActivity extends Activity{
                             mWikiContent.setText(extract);
                         }
                         String[] separated = extract.split("\n== ");
-                        Log.i(TAG,"--------------OPCION 1---------------");
                         List<String> langs = new ArrayList<>();
                         int i;
                         for (i=0; i<separated.length;i++){
@@ -108,11 +108,11 @@ public class ProcessTextActivity extends Activity{
                             String lang = separated[0].split(" ")[0];
                             mAdapter.addSectionHeaderItem(lang);
                             int j;
-                            Log.i(TAG,"--------------"+lang+"---------------");
+                            //Log.i(TAG,"--------------"+lang+"---------------");
                             for (j=1; j<separated.length;j++){
                                 String[] subheaders = separated[j].split(" ===\n");
-                                Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
-                                Log.i(TAG,subheaders[1]);
+                                //Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
+                                //Log.i(TAG,subheaders[1]);
                                 mAdapter.addSectionSubHeaderItem(subheaders[0]);
                                 String[] subsubheader = subheaders[1].split("\n==== ");
                                 int k;
@@ -185,6 +185,52 @@ public class ProcessTextActivity extends Activity{
             listView.setLayoutParams(params);
             //listView.requestLayout();
         }*/
+
+    }
+
+    private StringRequest detectLanguage(){
+        final JSONArray body = new JSONArray();
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("Text", "Hello world");
+            body.put(obj);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.i(TAG, body.toString());
+
+        String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=de&to=it";
+        return new StringRequest(Request.Method.POST, urlDetectLang, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.i(TAG, "---------->"+response);
+            }
+
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(TAG, "Error: " + error.getMessage());
+            }
+        }){
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                return body.toString().getBytes();
+            }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/json";
+            }
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type","application/json");
+                headers.put("Ocp-Apim-Subscription-Key", getString(R.string.translator_api_key));
+                return headers;
+            }
+        };
+
 
     }
 }
