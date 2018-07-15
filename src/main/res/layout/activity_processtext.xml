@@ -27,21 +27,30 @@
             android:scrollbars="vertical"
             android:maxLines="15"
             android:layout_height="match_parent" />
-
+        <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.1">
         <ListView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/listView_wiki" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/play_button_name"
-            android:id="@+id/button"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
-            android:enabled="true" />
-
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:gravity="center_horizontal">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/play_button_name"
+                android:id="@+id/button"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:enabled="true" />
+            </LinearLayout>
     </LinearLayout>
 
 
