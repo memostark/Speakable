@@ -104,14 +104,21 @@ public class ProcessTextActivity extends Activity{
                         }
 
                         for (i=1;i<langs.size();i++){
-                            separated = langs.get(i).split("===");
+                            separated = langs.get(i).split("\n=== ");
                             String lang = separated[0].split(" ")[0];
                             mAdapter.addSectionHeaderItem(lang);
-                            int j=1;
+                            int j;
                             Log.i(TAG,"--------------"+lang+"---------------");
                             for (j=1; j<separated.length;j++){
-                                Log.i(TAG,j + ".- "+separated[j]);
-                                mAdapter.addItem(separated[j]);
+                                String[] subheaders = separated[j].split(" ===\n");
+                                Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
+                                Log.i(TAG,subheaders[1]);
+                                mAdapter.addSectionSubHeaderItem(subheaders[0]);
+                                String[] subsubheader = subheaders[1].split("\n==== ");
+                                int k;
+                                for(k=0;k<subsubheader.length;k++){
+                                    mAdapter.addItem(subsubheader[k].replace("====\n",""));
+                                }
                             }
 
                         }

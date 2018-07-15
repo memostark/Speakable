@@ -15,9 +15,11 @@ public class CustomAdapter extends BaseAdapter {
 
     private static final int TYPE_ITEM = 0;
     private static final int TYPE_SEPARATOR = 1;
+    private static final int TYPE_SUBHEADER = 2;
 
     private ArrayList<String> mData = new ArrayList<>();
     private TreeSet<Integer> sectionHeader = new TreeSet<>();
+    private TreeSet<Integer> sectionSubHeader = new TreeSet<>();
 
     private LayoutInflater mInflater;
     private int height;
@@ -41,16 +43,27 @@ public class CustomAdapter extends BaseAdapter {
         notifyDataSetChanged();
     }
 
+    public void addSectionSubHeaderItem(final String item) {
+        mData.add(item);
+        sectionSubHeader.add(mData.size() - 1);
+        notifyDataSetChanged();
+    }
+
     public int getHeight() {return  height;}
 
     @Override
     public int getItemViewType(int position) {
-        return sectionHeader.contains(position) ? TYPE_SEPARATOR : TYPE_ITEM;
+        if(sectionHeader.contains(position)){
+            return TYPE_SEPARATOR;
+        }else if(sectionSubHeader.contains(position)){
+            return TYPE_SUBHEADER;
+        }
+        return TYPE_ITEM;
     }
 
     @Override
     public int getViewTypeCount() {
-        return 2;
+        return 3;
     }
 
     @Override
@@ -83,6 +96,10 @@ public class CustomAdapter extends BaseAdapter {
                 case TYPE_SEPARATOR:
                     convertView = mInflater.inflate(R.layout.header_item, null);
                     holder.textView = (TextView) convertView.findViewById(R.id.textSeparator);
+                    break;
+                case TYPE_SUBHEADER:
+                    convertView = mInflater.inflate(R.layout.subheader_item, null);
+                    holder.textView = (TextView) convertView.findViewById(R.id.text_subheader);
                     break;
             }
             convertView.setTag(holder);
