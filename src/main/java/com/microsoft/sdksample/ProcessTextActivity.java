@@ -1,6 +1,7 @@
 /*
     referencias: https://medium.com/google-developers/custom-text-selection-actions-with-action-process-text-191f792d2999
     Actividad flotante: https://stackoverflow.com/questions/33853311/how-to-create-a-floating-touchable-activity-that-still-allows-to-touch-native-co
+                        http://www.androidmethlab.com/2015/09/transparent-floating-window-in-front-of.html
 */
 
 package com.microsoft.sdksample;
@@ -45,12 +46,11 @@ public class ProcessTextActivity extends Activity{
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setWindowParams();
         setContentView(R.layout.activity_processtext);
         Intent intent = getIntent();
         final CharSequence text = intent
                 .getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
-        setWindowParams();
         final String textString=text.toString();
 
         TextView mTextTTS = (TextView) findViewById(R.id.text_tts);
@@ -150,6 +150,7 @@ public class ProcessTextActivity extends Activity{
     }
 
     public void setWindowParams() {
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         WindowManager.LayoutParams wlp = getWindow().getAttributes();
         wlp.dimAmount = 0;
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |

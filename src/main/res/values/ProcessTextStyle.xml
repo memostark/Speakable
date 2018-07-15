@@ -3,5 +3,6 @@
     <style name="ProcessTextStyle" parent="@android:style/Theme.Dialog">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">#000</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 </resources>

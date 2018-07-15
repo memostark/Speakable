@@ -2,11 +2,13 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="500dp"
+    android:layout_height="wrap_content"
     android:theme="@android:style/Theme.Dialog"
     tools:context=".ProcessTextActivity"
     android:id="@+id/testLayout"
     android:visibility="visible"
+    android:layout_marginTop="50dp"
+    android:layout_marginBottom="50dp"
     android:clickable="true"
     android:background="#FFFFFF">
     <LinearLayout
