@@ -1,4 +1,5 @@
 /*
+    Ejemplo tomado: https://github.com/Azure-Samples/Cognitive-Speech-TTS/tree/master/Android
     referencias: https://medium.com/google-developers/custom-text-selection-actions-with-action-process-text-191f792d2999
     Actividad flotante: https://stackoverflow.com/questions/33853311/how-to-create-a-floating-touchable-activity-that-still-allows-to-touch-native-co
                         http://www.androidmethlab.com/2015/09/transparent-floating-window-in-front-of.html
@@ -9,6 +10,7 @@ package com.microsoft.sdksample;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.support.annotation.Nullable;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -23,6 +25,8 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.microsoft.speech.tts.Synthesizer;
@@ -36,13 +40,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ProcessTextActivity extends Activity{
     private Synthesizer m_syn;
+    private TextToSpeech tts;
     private CustomAdapter mAdapter;
 
     private String TAG="ProcessTextActivity";
+
+    private boolean localTTS;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,12 +73,12 @@ public class ProcessTextActivity extends Activity{
         mAdapter = new CustomAdapter(this);
 
         //------------------------------ Tomado de https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
-        String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&titles="+textString;
+        String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&titles=" + textString;
         final TextView mWikiContent = (TextView) findViewById(R.id.text_wikiContent);
         mWikiContent.setMovementMethod(new ScrollingMovementMethod());
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        queue.add(detectLanguage());
+        queue.add(detectLanguage(textString));
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -143,17 +151,26 @@ public class ProcessTextActivity extends Activity{
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
 
-        m_syn.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
-        Voice v = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
-        m_syn.SetVoice(v, null);
-        m_syn.SpeakToAudio(textString);
-
         findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                m_syn.SpeakToAudio(textString);
+                if(localTTS){
+                    tts.speak(textString, TextToSpeech.QUEUE_ADD, null);
+                }else{
+                    m_syn.SpeakToAudio(textString);
+                }
             }
         });
+    }
+
+    @Override
+    protected void onPause() {
+        if(tts != null){
+
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onPause();
     }
 
     public void setWindowParams() {
@@ -188,11 +205,11 @@ public class ProcessTextActivity extends Activity{
 
     }
 
-    private StringRequest detectLanguage(){
+    private JsonRequest detectLanguage(final String selectedText){
         final JSONArray body = new JSONArray();
         try {
             JSONObject obj = new JSONObject();
-            obj.put("Text", "Hello world");
+            obj.put("Text", selectedText);
             body.put(obj);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -200,12 +217,24 @@ public class ProcessTextActivity extends Activity{
         Log.i(TAG, body.toString());
 
         String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=de&to=it";
-        return new StringRequest(Request.Method.POST, urlDetectLang, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                Log.i(TAG, "---------->"+response);
-            }
 
+        return new JsonArrayRequest(Request.Method.POST, urlDetectLang,null, new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response) {
+
+                Log.i(TAG, response.toString());
+                String langCode;
+                try {
+                    JSONObject jsonLang = response.getJSONObject(0).getJSONObject("detectedLanguage");
+                    langCode = jsonLang.getString("language");
+                } catch (JSONException e) {
+                    langCode = "NOLANG";
+                    Log.e(TAG, e.getMessage());
+                    e.printStackTrace();
+                }
+                reproducirVoz(selectedText, langCode);
+                Log.i(TAG,langCode);
+            }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
@@ -213,7 +242,7 @@ public class ProcessTextActivity extends Activity{
             }
         }){
             @Override
-            public byte[] getBody() throws AuthFailureError {
+            public byte[] getBody() {
                 return body.toString().getBytes();
             }
 
@@ -233,5 +262,38 @@ public class ProcessTextActivity extends Activity{
 
 
     }
+
+    private void reproducirVoz(final String selectedText, final String langCode) {
+        if(langCode.equals("he")){
+            m_syn.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
+            Voice v = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
+            m_syn.SetVoice(v, null);
+            m_syn.SpeakToAudio(selectedText);
+            localTTS=false;
+        }else{
+            tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int status) {
+                    if(status == TextToSpeech.SUCCESS){
+                        int result=tts.setLanguage(new Locale(langCode));
+                        if(result==TextToSpeech.LANG_MISSING_DATA ||
+                                result==TextToSpeech.LANG_NOT_SUPPORTED){
+                            Log.e("error", "This Language is not supported");
+                        } else {
+                            localTTS=true;
+                            tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
+                        }
+                    }
+                    else
+                        Log.e("error", "Initilization Failed!");
+
+                    }
+                });
+
+
+        }
+    }
+
+
 }
 
