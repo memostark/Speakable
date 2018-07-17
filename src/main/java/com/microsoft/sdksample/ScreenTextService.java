@@ -14,6 +14,7 @@ import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.view.GestureDetector;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -23,7 +24,7 @@ import android.widget.Toast;
 public class ScreenTextService extends Service {
 
     private WindowManager windowManager;
-    private ImageView bubble;
+    private View service_layout;
     private String TAG = this.getClass().getSimpleName();
     private GestureDetector gestureDetector;
 
@@ -39,10 +40,13 @@ public class ScreenTextService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
+
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
-        bubble = new ImageView(this);
+        final ImageView bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
+        final View snipView = service_layout.findViewById(R.id.snip_view);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
@@ -75,6 +79,7 @@ public class ScreenTextService extends Service {
                             Toast.makeText(ScreenTextService.this.getApplicationContext(),"My Awesome service toast...",Toast.LENGTH_SHORT).show();
                         }
                     });
+                    snipView.setVisibility(View.VISIBLE);
                     return true;
                 } else {
                     // your code for move and drag
@@ -90,7 +95,7 @@ public class ScreenTextService extends Service {
                         case MotionEvent.ACTION_MOVE:
                             params.x = initialX + (int) (event.getRawX() - initialTouchX);
                             params.y = initialY + (int) (event.getRawY() - initialTouchY);
-                            windowManager.updateViewLayout(bubble, params);
+                            windowManager.updateViewLayout(service_layout, params);
                             return true;
                     }
                 }
@@ -99,14 +104,14 @@ public class ScreenTextService extends Service {
             }
         });
 
-        windowManager.addView(bubble, params);
+        windowManager.addView(service_layout, params);
 
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (bubble != null) windowManager.removeView(bubble);
+        if (service_layout != null) windowManager.removeView(service_layout);
     }
 
     private class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
