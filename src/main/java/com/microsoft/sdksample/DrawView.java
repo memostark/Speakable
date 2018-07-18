@@ -30,6 +30,8 @@ public class DrawView extends View {
     Paint paint;
     Canvas canvas;
 
+    private int INITIAL_SIZE = 700;
+
     public DrawView(Context context) {
         super(context);
         paint = new Paint();
@@ -54,15 +56,20 @@ public class DrawView extends View {
         if(points[3]==null) //point4 null when user did not touch and move on screen.
             return;
         int left, top, right, bottom;
-        left = points[0].x;
-        top = points[0].y;
-        right = points[0].x;
-        bottom = points[0].y;
+        int nleft, ntop, nright, nbottom;
+        int wBall = colorballs.get(0).getWidthOfBall();
+        int hBall = colorballs.get(0).getHeightOfBall();
+        left = points[0].x - wBall / 2;
+        top = points[0].y - hBall / 2;
+        right = points[0].x + wBall / 2;
+        bottom = points[0].y + hBall / 2;
         for (int i = 1; i < points.length; i++) {
-            left = left > points[i].x ? points[i].x:left;
-            top = top > points[i].y ? points[i].y:top;
-            right = right < points[i].x ? points[i].x:right;
-            bottom = bottom < points[i].y ? points[i].y:bottom;
+            nleft = points[i].x - wBall / 2; ntop = points[i].y - hBall / 2;
+            nright = points[i].x + wBall / 2; nbottom = points[i].y + hBall / 2;
+            left = left > nleft ? nleft : left;
+            top = top > ntop ? ntop : top;
+            right = right < nright ? nright : right;
+            bottom = bottom < nbottom ? nbottom : bottom;
         }
         paint.setAntiAlias(true);
         paint.setDither(true);
@@ -71,22 +78,14 @@ public class DrawView extends View {
 
         //draw stroke
         paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(Color.parseColor("#AADB1255"));
+        paint.setColor(Color.parseColor("#AA000000"));
         paint.setStrokeWidth(2);
-        canvas.drawRect(
-                left + colorballs.get(0).getWidthOfBall() / 2,
-                top + colorballs.get(0).getWidthOfBall() / 2,
-                right + colorballs.get(2).getWidthOfBall() / 2,
-                bottom + colorballs.get(2).getWidthOfBall() / 2, paint);
+        canvas.drawRect(left, top , right, bottom , paint);
         //fill the rectangle
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.parseColor("#55DB1255"));
         paint.setStrokeWidth(0);
-        canvas.drawRect(
-                left + colorballs.get(0).getWidthOfBall() / 2,
-                top + colorballs.get(0).getWidthOfBall() / 2,
-                right + colorballs.get(2).getWidthOfBall() / 2,
-                bottom + colorballs.get(2).getWidthOfBall() / 2, paint);
+        canvas.drawRect(left, top , right, bottom , paint);
 
         //draw the corners
         BitmapDrawable bitmap = new BitmapDrawable();
@@ -96,7 +95,7 @@ public class DrawView extends View {
         paint.setStrokeWidth(0);
         for (int i =0; i < colorballs.size(); i ++) {
             ColorBall ball = colorballs.get(i);
-            canvas.drawBitmap(ball.getBitmap(), ball.getX(), ball.getY(),
+            canvas.drawBitmap(ball.getBitmap(), ball.getX() - wBall / 2, ball.getY() - hBall / 2,
                     paint);
 
             canvas.drawText("" + (i+1), ball.getX(), ball.getY(), paint);
@@ -122,21 +121,21 @@ public class DrawView extends View {
 
                     points[1] = new Point();
                     points[1].x = X;
-                    points[1].y = Y + 30;
+                    points[1].y = Y + INITIAL_SIZE;
 
                     points[2] = new Point();
-                    points[2].x = X + 30;
-                    points[2].y = Y + 30;
+                    points[2].x = X + INITIAL_SIZE;
+                    points[2].y = Y + INITIAL_SIZE;
 
                     points[3] = new Point();
-                    points[3].x = X +30;
+                    points[3].x = X +INITIAL_SIZE;
                     points[3].y = Y;
 
                     balID = 2;
                     groupId = 1;
                     // declare each ball with the ColorBall class
                     for (Point pt : points) {
-                        colorballs.add(new ColorBall(getContext(), R.drawable.ic_ball, pt));
+                        colorballs.add(new ColorBall(getContext(), R.drawable.ic_squareball, pt));
                     }
                 } else {
                     //resize rectangle
@@ -146,8 +145,8 @@ public class DrawView extends View {
                         ColorBall ball = colorballs.get(i);
                         // check if inside the bounds of the ball (circle)
                         // get the center for the ball
-                        int centerX = ball.getX() + ball.getWidthOfBall();
-                        int centerY = ball.getY() + ball.getHeightOfBall();
+                        int centerX = ball.getX();
+                        int centerY = ball.getY();
                         paint.setColor(Color.CYAN);
                         // calculate the radius from the touch to the center of the
                         // ball

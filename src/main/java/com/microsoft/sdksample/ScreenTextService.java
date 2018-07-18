@@ -57,8 +57,8 @@ public class ScreenTextService extends Service {
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 0;
-        params.y = 100;
+        params.x = -100;
+        params.y = -100;
 
         bubble.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
@@ -79,7 +79,14 @@ public class ScreenTextService extends Service {
                             Toast.makeText(ScreenTextService.this.getApplicationContext(),"My Awesome service toast...",Toast.LENGTH_SHORT).show();
                         }
                     });
-                    snipView.setVisibility(View.VISIBLE);
+                    if(isSnipViewVisible()){
+                        snipView.setVisibility(View.GONE);
+                    }else {
+                        snipView.setVisibility(View.VISIBLE);
+                        params.x =-100;
+                        params.y =-100;
+                        windowManager.updateViewLayout(service_layout, params);
+                    }
                     return true;
                 } else {
                     // your code for move and drag
@@ -106,6 +113,10 @@ public class ScreenTextService extends Service {
 
         windowManager.addView(service_layout, params);
 
+    }
+
+    private boolean isSnipViewVisible(){
+        return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
     }
 
     @Override
