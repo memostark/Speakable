@@ -81,10 +81,15 @@ public class ScreenTextService extends Service {
                     });
                     if(isSnipViewVisible()){
                         snipView.setVisibility(View.GONE);
+                        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+                        windowManager.updateViewLayout(service_layout, params);
                     }else {
                         snipView.setVisibility(View.VISIBLE);
                         params.x =-100;
                         params.y =-100;
+                        params.width = WindowManager.LayoutParams.MATCH_PARENT;
+                        params.height = WindowManager.LayoutParams.MATCH_PARENT;
                         windowManager.updateViewLayout(service_layout, params);
                     }
                     return true;

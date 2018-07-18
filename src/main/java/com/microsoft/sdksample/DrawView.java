@@ -11,6 +11,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -31,6 +32,9 @@ public class DrawView extends View {
     Canvas canvas;
 
     private int INITIAL_SIZE = 700;
+    private String TAG = this.getClass().getSimpleName();
+    private int wParent;
+    private int hParent;
 
     public DrawView(Context context) {
         super(context);
@@ -71,6 +75,7 @@ public class DrawView extends View {
             right = right < nright ? nright : right;
             bottom = bottom < nbottom ? nbottom : bottom;
         }
+        //Log.i(TAG, "L: "+left+" T: "+top+" R: "+right+" B: "+bottom);
         paint.setAntiAlias(true);
         paint.setDither(true);
         paint.setStrokeJoin(Paint.Join.ROUND);
@@ -95,10 +100,10 @@ public class DrawView extends View {
         paint.setStrokeWidth(0);
         for (int i =0; i < colorballs.size(); i ++) {
             ColorBall ball = colorballs.get(i);
-            canvas.drawBitmap(ball.getBitmap(), ball.getX() - wBall / 2, ball.getY() - hBall / 2,
+            canvas.drawBitmap(ball.getBitmap(), points[i].x - wBall / 2, points[i].y - hBall / 2,
                     paint);
 
-            canvas.drawText("" + (i+1), ball.getX(), ball.getY(), paint);
+            canvas.drawText("" + (i+1), points[i].x, points[i].y, paint);
         }
     }
 
@@ -114,6 +119,10 @@ public class DrawView extends View {
             case MotionEvent.ACTION_DOWN: // touch down so check if the finger is on
                 // a ball
                 if (points[0] == null) {
+                    View parent = (View)this.getParent();
+                    wParent = parent.getWidth();
+                    hParent = parent.getHeight();
+                    Log.i(TAG, "H: "+hParent+" W: "+wParent);
                     //initialize rectangle.
                     points[0] = new Point();
                     points[0].x = X;
@@ -175,6 +184,10 @@ public class DrawView extends View {
 
                 if (balID > -1) {
                     // move the balls the same as the finger
+                    X = X < colorballs.get(balID).getWidthOfBall() / 2 ? colorballs.get(balID).getWidthOfBall() / 2 : X;
+                    X = X > wParent - colorballs.get(balID).getWidthOfBall() / 2 ? wParent - colorballs.get(balID).getWidthOfBall() / 2 : X;
+                    Y = Y < colorballs.get(balID).getWidthOfBall() / 2 ? colorballs.get(balID).getWidthOfBall() / 2 : Y;
+                    Y = Y > hParent - colorballs.get(balID).getHeightOfBall() / 2 ? hParent - colorballs.get(balID).getHeightOfBall() / 2 : Y;
                     colorballs.get(balID).setX(X);
                     colorballs.get(balID).setY(Y);
 
