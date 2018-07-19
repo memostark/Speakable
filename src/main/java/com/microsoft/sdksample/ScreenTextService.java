@@ -46,6 +46,7 @@ public class ScreenTextService extends Service {
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         final ImageView bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
+        final ImageView close = (ImageView) service_layout.findViewById(R.id.closeService_image);
         final View snipView = service_layout.findViewById(R.id.snip_view);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
@@ -57,8 +58,8 @@ public class ScreenTextService extends Service {
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.TOP | Gravity.START;
-        params.x = -100;
-        params.y = -100;
+        params.x = 0;
+        params.y = 100;
 
         bubble.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
@@ -81,11 +82,13 @@ public class ScreenTextService extends Service {
                     });
                     if(isSnipViewVisible()){
                         snipView.setVisibility(View.GONE);
+                        close.setVisibility(View.VISIBLE);
                         params.width = WindowManager.LayoutParams.WRAP_CONTENT;
                         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
                         windowManager.updateViewLayout(service_layout, params);
                     }else {
                         snipView.setVisibility(View.VISIBLE);
+                        close.setVisibility(View.GONE);
                         params.x =-100;
                         params.y =-100;
                         params.width = WindowManager.LayoutParams.MATCH_PARENT;
@@ -113,6 +116,13 @@ public class ScreenTextService extends Service {
                 }
 
                 return false;
+            }
+        });
+
+        close.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stopSelf();
             }
         });
 

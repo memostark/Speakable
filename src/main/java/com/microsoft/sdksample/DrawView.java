@@ -144,7 +144,7 @@ public class DrawView extends View {
                     groupId = 1;
                     // declare each ball with the ColorBall class
                     for (Point pt : points) {
-                        colorballs.add(new ColorBall(getContext(), R.drawable.ic_squareball, pt));
+                        colorballs.add(new ColorBall(getContext(), R.drawable.corner, pt));
                     }
                 } else {
                     //resize rectangle

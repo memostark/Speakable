@@ -9,12 +9,23 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         android:id="@+id/snip_view"/>
-    <ImageView
+    <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:contentDescription="Bubble"
-        android:id="@+id/image_bubble"
-        android:src="@mipmap/ic_launcher"
-        android:layout_gravity="center_horizontal"/>
+        android:layout_gravity="center_horizontal">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Bubble"
+            android:id="@+id/image_bubble"
+            android:src="@mipmap/ic_launcher" />
+        <ImageView
+            android:id="@+id/closeService_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_close"
+            android:layout_gravity="end|top"
+            android:scaleType="fitXY"/>
+    </FrameLayout>
 
 </FrameLayout>
