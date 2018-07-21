@@ -6,12 +6,25 @@ package com.microsoft.sdksample;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
+import android.media.Image;
+import android.media.ImageReader;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.Nullable;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -21,12 +34,36 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 public class ScreenTextService extends Service {
 
     private WindowManager windowManager;
+    private MediaProjectionManager mMediaProjectionManager;
     private View service_layout;
-    private String TAG = this.getClass().getSimpleName();
     private GestureDetector gestureDetector;
+
+    public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
+    private String TAG = this.getClass().getSimpleName();
+
+    private int resultCode;
+    private Intent permissionIntent;
+
+    private MediaProjection mediaProjection;
+    private ImageReader mImageReader;
+    private Handler mHandler;
+    private Display mDisplay;
+    private VirtualDisplay mVirtualDisplay;
+    private int mDensity;
+    private int mWidth;
+    private int mHeight;
+
+    private static String STORE_DIRECTORY;
+    private static int IMAGES_PRODUCED;
+    private static final int VIRTUAL_DISPLAY_FLAGS = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
 
 
     @Nullable
@@ -43,10 +80,12 @@ public class ScreenTextService extends Service {
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         final ImageView bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
         final ImageView close = (ImageView) service_layout.findViewById(R.id.closeService_image);
+        final ImageView takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
         final View snipView = service_layout.findViewById(R.id.snip_view);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
@@ -83,11 +122,13 @@ public class ScreenTextService extends Service {
                     if(isSnipViewVisible()){
                         snipView.setVisibility(View.GONE);
                         close.setVisibility(View.VISIBLE);
+                        takeSS.setVisibility(View.GONE);
                         params.width = WindowManager.LayoutParams.WRAP_CONTENT;
                         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
                         windowManager.updateViewLayout(service_layout, params);
                     }else {
                         snipView.setVisibility(View.VISIBLE);
+                        takeSS.setVisibility(View.VISIBLE);
                         close.setVisibility(View.GONE);
                         params.x =-100;
                         params.y =-100;
@@ -126,12 +167,164 @@ public class ScreenTextService extends Service {
             }
         });
 
+        takeSS.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
+
+                if(mediaProjection!=null) {
+                    File externalFilesDir = getExternalFilesDir(null);
+                    if (externalFilesDir != null) {
+                        STORE_DIRECTORY = externalFilesDir.getAbsolutePath() + "/screenshotService/";
+                        File storeDirectory = new File(STORE_DIRECTORY);
+                        if (!storeDirectory.exists()) {
+                            boolean success = storeDirectory.mkdirs();
+                            if (!success) {
+                                Log.e(TAG, "failed to create file storage directory.");
+                                return;
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
+                        return;
+                    }
+
+                    DisplayMetrics metrics = getResources().getDisplayMetrics();
+                    mDensity = metrics.densityDpi;
+                    mDisplay = windowManager.getDefaultDisplay();
+                    createVirtualDisplay();
+
+                    mediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
+                }
+
+            }
+        });
+
         windowManager.addView(service_layout, params);
+
+        new Thread() {
+            @Override
+            public void run() {
+                Looper.prepare();
+                mHandler = new Handler();
+                Looper.loop();
+            }
+        }.start();
 
     }
 
     private boolean isSnipViewVisible(){
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
+    }
+
+    private void createVirtualDisplay(){
+        Point size = new Point();
+        mDisplay.getSize(size);
+        mWidth = size.x;
+        mHeight = size.y;
+
+        mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
+        mVirtualDisplay = mediaProjection.createVirtualDisplay("SCREENCAP", mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, mHandler);
+        mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), mHandler);
+    }
+
+    private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Image image = null;
+            FileOutputStream fos = null;
+            Bitmap bitmap = null;
+
+            try {
+                image = reader.acquireLatestImage();
+                if (image != null) {
+                    String mPath =  STORE_DIRECTORY + "/myscreen_" + IMAGES_PRODUCED + ".png";
+                    Image.Plane[] planes = image.getPlanes();
+                    ByteBuffer buffer = planes[0].getBuffer();
+                    int pixelStride = planes[0].getPixelStride();
+                    int rowStride = planes[0].getRowStride();
+                    int rowPadding = rowStride - pixelStride * mWidth;
+
+                    // create bitmap
+                    bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
+                    bitmap.copyPixelsFromBuffer(buffer);
+
+                    File imageFile = new File(mPath);
+
+                    // write bitmap to a file
+                    fos = new FileOutputStream(imageFile);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+
+                    IMAGES_PRODUCED++;
+                    Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
+                    stopProjection();
+                    openScreenshot(imageFile);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                }
+
+                if (bitmap != null) {
+                    bitmap.recycle();
+                }
+
+                if (image != null) {
+                    image.close();
+                }
+                reader.close();
+            }
+        }
+    }
+
+    private class MediaProjectionStopCallback extends MediaProjection.Callback {
+        @Override
+        public void onStop() {
+            Log.e("ScreenCapture", "stopping projection.");
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mVirtualDisplay != null) mVirtualDisplay.release();
+                    if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
+                    mediaProjection.unregisterCallback(MediaProjectionStopCallback.this);
+                }
+            });
+        }
+    }
+
+    private void stopProjection() {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (mediaProjection != null) {
+                    mediaProjection.stop();
+                }
+            }
+        });
+    }
+
+    private void openScreenshot(File imageFile) {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        Uri uri = Uri.fromFile(imageFile);
+        intent.setDataAndType(uri, "image/*");
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        permissionIntent=intent;
+        resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override

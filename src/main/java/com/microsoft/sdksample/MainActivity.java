@@ -34,7 +34,9 @@
 package com.microsoft.sdksample;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -48,6 +50,7 @@ import com.microsoft.speech.tts.Voice;
 public class MainActivity extends AppCompatActivity {
     // Note: Sign up at http://www.projectoxford.ai for the client credentials.
     private Synthesizer m_syn;
+    private static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,11 +108,28 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.startBubble_btn).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    startService(new Intent(MainActivity.this, ScreenTextService.class));
+                    final MediaProjectionManager manager
+                            = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                    final Intent permissionIntent = manager.createScreenCaptureIntent();
+                    startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
+                    //startService(new Intent(MainActivity.this, ScreenTextService.class));
 
                 }
             });
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
+            if (resultCode == AppCompatActivity.RESULT_OK) {
+                final Intent intent = new Intent(this, ScreenTextService.class);
+                intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode);
+                intent.putExtras(data);
+                startService(intent);
+                this.finish();
+            }
+        }
+    }
 }
