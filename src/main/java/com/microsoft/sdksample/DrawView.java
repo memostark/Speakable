@@ -1,3 +1,7 @@
+/*
+* -------------------------Reference: https://stackoverflow.com/questions/8974088/how-to-create-a-resizable-rectangle-with-user-touch-events-on-android
+* */
+
 package com.microsoft.sdksample;
 
 import java.util.ArrayList;
@@ -9,7 +13,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -24,7 +27,7 @@ public class DrawView extends View {
      * point1 and point 3 are of same group and same as point 2 and point4
      */
     int groupId = -1;
-    private ArrayList<ColorBall> colorballs = new ArrayList<ColorBall>();
+    private ArrayList<ColorBall> colorballs = new ArrayList<>();
     // array that holds the balls
     private int balID = 0;
     // variable to know what ball is being dragged
@@ -35,6 +38,7 @@ public class DrawView extends View {
     private String TAG = this.getClass().getSimpleName();
     private int wParent;
     private int hParent;
+    private int left, top, right, bottom;
 
     public DrawView(Context context) {
         super(context);
@@ -59,7 +63,6 @@ public class DrawView extends View {
     protected void onDraw(Canvas canvas) {
         if(points[3]==null) //point4 null when user did not touch and move on screen.
             return;
-        int left, top, right, bottom;
         int nleft, ntop, nright, nbottom;
         int wBall = colorballs.get(0).getWidthOfBall();
         int hBall = colorballs.get(0).getHeightOfBall();
@@ -93,7 +96,6 @@ public class DrawView extends View {
         canvas.drawRect(left, top , right, bottom , paint);
 
         //draw the corners
-        BitmapDrawable bitmap = new BitmapDrawable();
         // draw the balls on the canvas
         paint.setColor(Color.BLUE);
         paint.setTextSize(18);
@@ -220,6 +222,22 @@ public class DrawView extends View {
 
     }
 
+    public int getPosx(){
+        return left;
+    }
+
+    public int getPosy(){
+        return top;
+    }
+
+    public int getRectHeight(){
+        return bottom-top;
+    }
+
+    public int getRectWidth(){
+        return right-left;
+    }
+
 
     public static class ColorBall {
 
@@ -229,7 +247,7 @@ public class DrawView extends View {
         int id;
         static int count = 0;
 
-        public ColorBall(Context context, int resourceId, Point point) {
+        ColorBall(Context context, int resourceId, Point point) {
             this.id = count++;
             bitmap = BitmapFactory.decodeResource(context.getResources(),
                     resourceId);
@@ -237,35 +255,35 @@ public class DrawView extends View {
             this.point = point;
         }
 
-        public int getWidthOfBall() {
+        int getWidthOfBall() {
             return bitmap.getWidth();
         }
 
-        public int getHeightOfBall() {
+        int getHeightOfBall() {
             return bitmap.getHeight();
         }
 
-        public Bitmap getBitmap() {
+        Bitmap getBitmap() {
             return bitmap;
         }
 
-        public int getX() {
+        int getX() {
             return point.x;
         }
 
-        public int getY() {
+        int getY() {
             return point.y;
         }
 
-        public int getID() {
+        int getID() {
             return id;
         }
 
-        public void setX(int x) {
+        void setX(int x) {
             point.x = x;
         }
 
-        public void setY(int y) {
+        void setY(int y) {
             point.y = y;
         }
     }

@@ -1,5 +1,6 @@
 /*
-        Referencias: http://www.piwai.info/chatheads-basics
+        References: http://www.piwai.info/chatheads-basics (MAIN SOURCE)
+                     https://www.androidhive.info/2016/11/android-floating-widget-like-facebook-chat-head/
  */
 
 package com.microsoft.sdksample;
@@ -60,6 +61,7 @@ public class ScreenTextService extends Service {
     private int mDensity;
     private int mWidth;
     private int mHeight;
+    private DrawView snipView;
 
     private static String STORE_DIRECTORY;
     private static int IMAGES_PRODUCED;
@@ -86,7 +88,7 @@ public class ScreenTextService extends Service {
         final ImageView bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
         final ImageView close = (ImageView) service_layout.findViewById(R.id.closeService_image);
         final ImageView takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
-        final View snipView = service_layout.findViewById(R.id.snip_view);
+        snipView = (DrawView) service_layout.findViewById(R.id.snip_view);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
@@ -125,15 +127,19 @@ public class ScreenTextService extends Service {
                         takeSS.setVisibility(View.GONE);
                         params.width = WindowManager.LayoutParams.WRAP_CONTENT;
                         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+                        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
                         windowManager.updateViewLayout(service_layout, params);
                     }else {
                         snipView.setVisibility(View.VISIBLE);
                         takeSS.setVisibility(View.VISIBLE);
                         close.setVisibility(View.GONE);
-                        params.x =-100;
-                        params.y =-100;
+                        params.x = 0;
+                        params.y =100;
                         params.width = WindowManager.LayoutParams.MATCH_PARENT;
                         params.height = WindowManager.LayoutParams.MATCH_PARENT;
+                        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                                | WindowManager.LayoutParams.FLAG_FULLSCREEN
+                                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
                         windowManager.updateViewLayout(service_layout, params);
                     }
                     return true;
@@ -217,6 +223,8 @@ public class ScreenTextService extends Service {
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
     }
 
+    //----Based on https://github.com/mtsahakis/MediaProjectionDemo/blob/master/src/com/mtsahakis/mediaprojectiondemo/ScreenCaptureImageActivity.java
+
     private void createVirtualDisplay(){
         Point size = new Point();
         mDisplay.getSize(size);
@@ -234,7 +242,7 @@ public class ScreenTextService extends Service {
             Image image = null;
             FileOutputStream fos = null;
             Bitmap bitmap = null;
-
+            Bitmap croppedBitmap = null;
             try {
                 image = reader.acquireLatestImage();
                 if (image != null) {
@@ -244,16 +252,18 @@ public class ScreenTextService extends Service {
                     int pixelStride = planes[0].getPixelStride();
                     int rowStride = planes[0].getRowStride();
                     int rowPadding = rowStride - pixelStride * mWidth;
+                    int statusBarHeight = 0;
 
                     // create bitmap
                     bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
                     bitmap.copyPixelsFromBuffer(buffer);
+                    croppedBitmap = Bitmap.createBitmap(bitmap,snipView.getPosx(),snipView.getPosy() +statusBarHeight,snipView.getRectWidth(),snipView.getRectHeight()+statusBarHeight);
 
                     File imageFile = new File(mPath);
 
                     // write bitmap to a file
                     fos = new FileOutputStream(imageFile);
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                    croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
                     IMAGES_PRODUCED++;
                     Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
@@ -274,6 +284,10 @@ public class ScreenTextService extends Service {
 
                 if (bitmap != null) {
                     bitmap.recycle();
+                }
+
+                if(croppedBitmap != null){
+                    croppedBitmap.recycle();
                 }
 
                 if (image != null) {
