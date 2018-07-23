@@ -25,6 +25,7 @@ import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Gravity;
@@ -34,6 +35,10 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.text.TextBlock;
+import com.google.android.gms.vision.text.TextRecognizer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,6 +51,7 @@ public class ScreenTextService extends Service {
     private MediaProjectionManager mMediaProjectionManager;
     private View service_layout;
     private GestureDetector gestureDetector;
+    private TextRecognizer textRecognizer;
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
     private String TAG = this.getClass().getSimpleName();
@@ -62,6 +68,8 @@ public class ScreenTextService extends Service {
     private int mWidth;
     private int mHeight;
     private DrawView snipView;
+    private ImageView close;
+    private ImageView takeSS;
 
     private static String STORE_DIRECTORY;
     private static int IMAGES_PRODUCED;
@@ -83,11 +91,12 @@ public class ScreenTextService extends Service {
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         final ImageView bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
-        final ImageView close = (ImageView) service_layout.findViewById(R.id.closeService_image);
-        final ImageView takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
+        close = (ImageView) service_layout.findViewById(R.id.closeService_image);
+        takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
         snipView = (DrawView) service_layout.findViewById(R.id.snip_view);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
@@ -125,6 +134,8 @@ public class ScreenTextService extends Service {
                         snipView.setVisibility(View.GONE);
                         close.setVisibility(View.VISIBLE);
                         takeSS.setVisibility(View.GONE);
+                        params.x=0;
+                        params.y=100;
                         params.width = WindowManager.LayoutParams.WRAP_CONTENT;
                         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
                         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
@@ -133,8 +144,8 @@ public class ScreenTextService extends Service {
                         snipView.setVisibility(View.VISIBLE);
                         takeSS.setVisibility(View.VISIBLE);
                         close.setVisibility(View.GONE);
-                        params.x = 0;
-                        params.y =100;
+                        params.x=0;
+                        params.y=100;
                         params.width = WindowManager.LayoutParams.MATCH_PARENT;
                         params.height = WindowManager.LayoutParams.MATCH_PARENT;
                         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -176,6 +187,7 @@ public class ScreenTextService extends Service {
         takeSS.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                removeSnippingView();
                 mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
 
                 if(mediaProjection!=null) {
@@ -199,7 +211,6 @@ public class ScreenTextService extends Service {
                     mDensity = metrics.densityDpi;
                     mDisplay = windowManager.getDefaultDisplay();
                     createVirtualDisplay();
-
                     mediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
                 }
 
@@ -221,6 +232,26 @@ public class ScreenTextService extends Service {
 
     private boolean isSnipViewVisible(){
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
+    }
+
+    private void removeSnippingView() {
+        final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT);
+
+        snipView.setVisibility(View.GONE);
+        close.setVisibility(View.VISIBLE);
+        takeSS.setVisibility(View.GONE);
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.x=0;
+        params.y=100;
+        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        windowManager.updateViewLayout(service_layout, params);
     }
 
     //----Based on https://github.com/mtsahakis/MediaProjectionDemo/blob/master/src/com/mtsahakis/mediaprojectiondemo/ScreenCaptureImageActivity.java
@@ -269,6 +300,22 @@ public class ScreenTextService extends Service {
                     Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
                     stopProjection();
                     openScreenshot(imageFile);
+
+                    Frame imageFrame = new Frame.Builder()
+
+                            .setBitmap(croppedBitmap)                 // your image bitmap
+                            .build();
+
+                    String imageText = "";
+
+
+                    SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
+
+                    for (int i = 0; i < textBlocks.size(); i++) {
+                        TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
+                        imageText = textBlock.getValue();                   // return string
+                        Log.i(TAG, i+".- "+imageText);
+                    }
                 }
 
             } catch (Exception e) {
@@ -336,8 +383,12 @@ public class ScreenTextService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        permissionIntent=intent;
-        resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+        if(intent!=null) {
+            permissionIntent = intent;
+            resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+        }else {
+            stopSelf();
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
