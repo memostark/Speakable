@@ -33,7 +33,9 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.vision.Frame;
@@ -70,6 +72,8 @@ public class ScreenTextService extends Service {
     private DrawView snipView;
     private ImageView close;
     private ImageView takeSS;
+    private LinearLayout container;
+    private WindowManager.LayoutParams params;
 
     private static String STORE_DIRECTORY;
     private static int IMAGES_PRODUCED;
@@ -98,9 +102,10 @@ public class ScreenTextService extends Service {
         close = (ImageView) service_layout.findViewById(R.id.closeService_image);
         takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
         snipView = (DrawView) service_layout.findViewById(R.id.snip_view);
+        container = (LinearLayout) service_layout.findViewById(R.id.icon_container);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
-        final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+        params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_PHONE,
@@ -130,7 +135,10 @@ public class ScreenTextService extends Service {
                             Toast.makeText(ScreenTextService.this.getApplicationContext(),"My Awesome service toast...",Toast.LENGTH_SHORT).show();
                         }
                     });
+                    FrameLayout.LayoutParams rlparams = (FrameLayout.LayoutParams)container.getLayoutParams();
                     if(isSnipViewVisible()){
+                        rlparams.setMargins(0,0,0,0);
+                        container.setLayoutParams(rlparams);
                         snipView.setVisibility(View.GONE);
                         close.setVisibility(View.VISIBLE);
                         takeSS.setVisibility(View.GONE);
@@ -141,6 +149,7 @@ public class ScreenTextService extends Service {
                         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
                         windowManager.updateViewLayout(service_layout, params);
                     }else {
+                        rlparams.setMargins(0,35,0,0);
                         snipView.setVisibility(View.VISIBLE);
                         takeSS.setVisibility(View.VISIBLE);
                         close.setVisibility(View.GONE);
@@ -235,19 +244,16 @@ public class ScreenTextService extends Service {
     }
 
     private void removeSnippingView() {
-        final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
+        FrameLayout.LayoutParams rlparams = (FrameLayout.LayoutParams)container.getLayoutParams();
+        rlparams.setMargins(0,0,0,0);
+        container.setLayoutParams(rlparams);
 
-        snipView.setVisibility(View.GONE);
-        close.setVisibility(View.VISIBLE);
-        takeSS.setVisibility(View.GONE);
         params.gravity = Gravity.TOP | Gravity.START;
         params.x=0;
         params.y=100;
+        snipView.setVisibility(View.GONE);
+        close.setVisibility(View.VISIBLE);
+        takeSS.setVisibility(View.GONE);
         params.width = WindowManager.LayoutParams.WRAP_CONTENT;
         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
@@ -300,7 +306,7 @@ public class ScreenTextService extends Service {
                     Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
                     stopProjection();
                     openScreenshot(imageFile);
-
+                    // https://stackoverflow.com/questions/37287910/how-to-extract-text-from-image-android-app
                     Frame imageFrame = new Frame.Builder()
 
                             .setBitmap(croppedBitmap)                 // your image bitmap

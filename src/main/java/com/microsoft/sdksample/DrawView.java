@@ -39,16 +39,19 @@ public class DrawView extends View {
     private int wParent;
     private int hParent;
     private int left, top, right, bottom;
+    private int[] bitmaps;
 
     public DrawView(Context context) {
         super(context);
         paint = new Paint();
         setFocusable(true); // necessary for getting the touch events
         canvas = new Canvas();
+        setBitmaps(context);
     }
 
     public DrawView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        setBitmaps(context);
     }
 
     public DrawView(Context context, AttributeSet attrs) {
@@ -56,6 +59,40 @@ public class DrawView extends View {
         paint = new Paint();
         setFocusable(true); // necessary for getting the touch events
         canvas = new Canvas();
+
+        setBitmaps(context);
+    }
+
+    private void setBitmaps(Context context){
+        wParent = context.getResources().getDisplayMetrics().widthPixels;
+        hParent = context.getResources().getDisplayMetrics().heightPixels;
+        Log.i(TAG, "H: "+wParent+" W: "+hParent);
+        bitmaps = new int[4];
+        bitmaps[0] = R.drawable.corner_topleft;
+        bitmaps[1] = R.drawable.corner_bottomleft;
+        bitmaps[2] = R.drawable.corner_bottomright;
+        bitmaps[3] = R.drawable.corner_topright;
+        points[0] = new Point();
+        points[0].x = 24;
+        points[0].y = 48;
+
+        points[1] = new Point();
+        points[1].x = 24;
+        points[1].y = hParent-24;
+
+        points[2] = new Point();
+        points[2].x = wParent-24;
+        points[2].y = hParent-24;
+
+        points[3] = new Point();
+        points[3].x = wParent-24;
+        points[3].y = 48;
+        int j = 0;
+        for (Point pt : points) {
+            colorballs.add(new ColorBall(getContext(), bitmaps[j], pt));
+            j++;
+        }
+        //invalidate();
     }
 
     // the method that draws the balls
@@ -105,7 +142,7 @@ public class DrawView extends View {
             canvas.drawBitmap(ball.getBitmap(), points[i].x - wBall / 2, points[i].y - hBall / 2,
                     paint);
 
-            canvas.drawText("" + (i+1), points[i].x, points[i].y, paint);
+            //canvas.drawText("" + (i+1), points[i].x, points[i].y, paint);
         }
     }
 
@@ -121,10 +158,7 @@ public class DrawView extends View {
             case MotionEvent.ACTION_DOWN: // touch down so check if the finger is on
                 // a ball
                 if (points[0] == null) {
-                    View parent = (View)this.getParent();
-                    wParent = parent.getWidth();
-                    hParent = parent.getHeight();
-                    Log.i(TAG, "H: "+hParent+" W: "+wParent);
+
                     //initialize rectangle.
                     points[0] = new Point();
                     points[0].x = X;
@@ -145,8 +179,10 @@ public class DrawView extends View {
                     balID = 2;
                     groupId = 1;
                     // declare each ball with the ColorBall class
+                    int j = 0;
                     for (Point pt : points) {
-                        colorballs.add(new ColorBall(getContext(), R.drawable.corner, pt));
+                        colorballs.add(new ColorBall(getContext(), bitmaps[j], pt));
+                        j++;
                     }
                 } else {
                     //resize rectangle
