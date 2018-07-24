@@ -135,32 +135,11 @@ public class ScreenTextService extends Service {
                             Toast.makeText(ScreenTextService.this.getApplicationContext(),"My Awesome service toast...",Toast.LENGTH_SHORT).show();
                         }
                     });
-                    FrameLayout.LayoutParams rlparams = (FrameLayout.LayoutParams)container.getLayoutParams();
+
                     if(isSnipViewVisible()){
-                        rlparams.setMargins(0,0,0,0);
-                        container.setLayoutParams(rlparams);
-                        snipView.setVisibility(View.GONE);
-                        close.setVisibility(View.VISIBLE);
-                        takeSS.setVisibility(View.GONE);
-                        params.x=0;
-                        params.y=100;
-                        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
-                        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-                        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-                        windowManager.updateViewLayout(service_layout, params);
+                        setSnippingView(false);
                     }else {
-                        rlparams.setMargins(0,35,0,0);
-                        snipView.setVisibility(View.VISIBLE);
-                        takeSS.setVisibility(View.VISIBLE);
-                        close.setVisibility(View.GONE);
-                        params.x=0;
-                        params.y=100;
-                        params.width = WindowManager.LayoutParams.MATCH_PARENT;
-                        params.height = WindowManager.LayoutParams.MATCH_PARENT;
-                        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                                | WindowManager.LayoutParams.FLAG_FULLSCREEN
-                                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-                        windowManager.updateViewLayout(service_layout, params);
+                        setSnippingView(true);
                     }
                     return true;
                 } else {
@@ -196,7 +175,7 @@ public class ScreenTextService extends Service {
         takeSS.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                removeSnippingView();
+                setSnippingView(false);
                 mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
 
                 if(mediaProjection!=null) {
@@ -243,21 +222,36 @@ public class ScreenTextService extends Service {
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
     }
 
-    private void removeSnippingView() {
+    private void setSnippingView(Boolean visible) {
         FrameLayout.LayoutParams rlparams = (FrameLayout.LayoutParams)container.getLayoutParams();
-        rlparams.setMargins(0,0,0,0);
-        container.setLayoutParams(rlparams);
+        if(visible){
+            rlparams.setMargins(0,35,0,0);
+            snipView.setVisibility(View.VISIBLE);
+            takeSS.setVisibility(View.VISIBLE);
+            close.setVisibility(View.GONE);
+            params.x=0;
+            params.y=100;
+            params.width = WindowManager.LayoutParams.MATCH_PARENT;
+            params.height = WindowManager.LayoutParams.MATCH_PARENT;
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_FULLSCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+            windowManager.updateViewLayout(service_layout, params);
+        }else{
+            rlparams.setMargins(0,0,0,0);
+            container.setLayoutParams(rlparams);
 
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x=0;
-        params.y=100;
-        snipView.setVisibility(View.GONE);
-        close.setVisibility(View.VISIBLE);
-        takeSS.setVisibility(View.GONE);
-        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
-        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        windowManager.updateViewLayout(service_layout, params);
+            params.gravity = Gravity.TOP | Gravity.START;
+            params.x=0;
+            params.y=100;
+            snipView.setVisibility(View.GONE);
+            close.setVisibility(View.VISIBLE);
+            takeSS.setVisibility(View.GONE);
+            params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            windowManager.updateViewLayout(service_layout, params);
+        }
     }
 
     //----Based on https://github.com/mtsahakis/MediaProjectionDemo/blob/master/src/com/mtsahakis/mediaprojectiondemo/ScreenCaptureImageActivity.java
