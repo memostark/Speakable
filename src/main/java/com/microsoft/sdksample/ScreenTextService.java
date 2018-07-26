@@ -54,6 +54,7 @@ public class ScreenTextService extends Service {
     private View service_layout;
     private GestureDetector gestureDetector;
     private TextRecognizer textRecognizer;
+    private CustomTTS tts;
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
     private String TAG = this.getClass().getSimpleName();
@@ -96,6 +97,7 @@ public class ScreenTextService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
+        tts = new CustomTTS(ScreenTextService.this);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         final ImageView bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
@@ -168,6 +170,7 @@ public class ScreenTextService extends Service {
         close.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                tts.finishTTS();
                 stopSelf();
             }
         });
@@ -299,7 +302,7 @@ public class ScreenTextService extends Service {
                     IMAGES_PRODUCED++;
                     Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
                     stopProjection();
-                    openScreenshot(imageFile);
+                    //openScreenshot(imageFile);
                     // https://stackoverflow.com/questions/37287910/how-to-extract-text-from-image-android-app
                     Frame imageFrame = new Frame.Builder()
 
@@ -314,6 +317,7 @@ public class ScreenTextService extends Service {
                     for (int i = 0; i < textBlocks.size(); i++) {
                         TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
                         imageText = textBlock.getValue();                   // return string
+                        tts.determineLanguage(imageText);
                         Log.i(TAG, i+".- "+imageText);
                     }
                 }

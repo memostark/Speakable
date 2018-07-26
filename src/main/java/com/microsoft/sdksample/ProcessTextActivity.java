@@ -19,6 +19,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -48,8 +49,8 @@ public class ProcessTextActivity extends Activity{
     private TextToSpeech tts;
     private CustomAdapter mAdapter;
 
-    private String TAG="ProcessTextActivity";
-
+    private String TAG=this.getClass().getSimpleName();
+    static final String STATE_TTS = "ttsObject";
     private boolean localTTS;
 
     @Override
@@ -65,6 +66,19 @@ public class ProcessTextActivity extends Activity{
         TextView mTextTTS = (TextView) findViewById(R.id.text_tts);
         mTextTTS.setText(text);
 
+        if(tts == null) {
+            tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int status) {
+                    if (status == TextToSpeech.SUCCESS) {
+                        Log.i(TAG,"Google TTS ready");
+                    } else
+                        Log.e("error", "Initilization Failed!");
+
+                }
+            });
+        }
+
         if (m_syn == null) {
             // Create Text To Speech Synthesizer.
             m_syn = new Synthesizer(getString(R.string.api_key));
@@ -72,8 +86,11 @@ public class ProcessTextActivity extends Activity{
 
         mAdapter = new CustomAdapter(this);
 
+        String[] splittedText = textString.split(" ");
+        if(splittedText.length > 1) Toast.makeText(this,"Sentence",Toast.LENGTH_SHORT).show();
+
         //------------------------------ Tomado de https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
-        String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&titles=" + textString;
+        String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&redirects=1&titles=" + textString;
         final TextView mWikiContent = (TextView) findViewById(R.id.text_wikiContent);
         mWikiContent.setMovementMethod(new ScrollingMovementMethod());
 
@@ -132,13 +149,6 @@ public class ProcessTextActivity extends Activity{
                         }
 
                         setList();
-                        /*tokens = new StringTokenizer(extract, "===");
-                        i=1;
-                        Log.i(TAG,"--------------OPCION 3---------------");
-                        while (tokens.hasMoreTokens()){
-                            Log.i(TAG,i+".- "+tokens.nextToken().trim());
-                            i++;
-                        }*/
 
 
                     }
@@ -164,13 +174,13 @@ public class ProcessTextActivity extends Activity{
     }
 
     @Override
-    protected void onPause() {
+    protected void onDestroy() {
         if(tts != null){
 
             tts.stop();
             tts.shutdown();
         }
-        super.onPause();
+        super.onDestroy();
     }
 
     public void setWindowParams() {
@@ -222,7 +232,6 @@ public class ProcessTextActivity extends Activity{
             @Override
             public void onResponse(JSONArray response) {
 
-                Log.i(TAG, response.toString());
                 String langCode;
                 try {
                     JSONObject jsonLang = response.getJSONObject(0).getJSONObject("detectedLanguage");
@@ -232,7 +241,7 @@ public class ProcessTextActivity extends Activity{
                     Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
-                reproducirVoz(selectedText, langCode);
+                playVoice(selectedText, langCode);
                 Log.i(TAG,langCode);
             }
         }, new Response.ErrorListener() {
@@ -263,7 +272,7 @@ public class ProcessTextActivity extends Activity{
 
     }
 
-    private void reproducirVoz(final String selectedText, final String langCode) {
+    private void playVoice(final String selectedText, final String langCode) {
         if(langCode.equals("he")){
             m_syn.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
             Voice v = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
@@ -271,26 +280,14 @@ public class ProcessTextActivity extends Activity{
             m_syn.SpeakToAudio(selectedText);
             localTTS=false;
         }else{
-            tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-                @Override
-                public void onInit(int status) {
-                    if(status == TextToSpeech.SUCCESS){
-                        int result=tts.setLanguage(new Locale(langCode));
-                        if(result==TextToSpeech.LANG_MISSING_DATA ||
-                                result==TextToSpeech.LANG_NOT_SUPPORTED){
-                            Log.e("error", "This Language is not supported");
-                        } else {
-                            localTTS=true;
-                            tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
-                        }
-                    }
-                    else
-                        Log.e("error", "Initilization Failed!");
-
-                    }
-                });
-
-
+            int result = tts.setLanguage(new Locale(langCode));
+            if (result == TextToSpeech.LANG_MISSING_DATA ||
+                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("error", "This Language is not supported");
+            } else {
+                localTTS=true;
+                tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
+            }
         }
     }
 
