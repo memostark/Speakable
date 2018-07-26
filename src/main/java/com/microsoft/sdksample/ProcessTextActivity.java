@@ -10,7 +10,6 @@ package com.microsoft.sdksample;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
 import android.support.annotation.Nullable;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -21,37 +20,28 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.microsoft.speech.tts.Synthesizer;
-import com.microsoft.speech.tts.Voice;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+
 
 public class ProcessTextActivity extends Activity{
     private Synthesizer m_syn;
-    private TextToSpeech tts;
+    private CustomTTS tts;
     private CustomAdapter mAdapter;
 
     private String TAG=this.getClass().getSimpleName();
-    static final String STATE_TTS = "ttsObject";
-    private boolean localTTS;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -67,16 +57,7 @@ public class ProcessTextActivity extends Activity{
         mTextTTS.setText(text);
 
         if(tts == null) {
-            tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-                @Override
-                public void onInit(int status) {
-                    if (status == TextToSpeech.SUCCESS) {
-                        Log.i(TAG,"Google TTS ready");
-                    } else
-                        Log.e("error", "Initilization Failed!");
-
-                }
-            });
+            tts = new CustomTTS(ProcessTextActivity.this);
         }
 
         if (m_syn == null) {
@@ -95,7 +76,7 @@ public class ProcessTextActivity extends Activity{
         mWikiContent.setMovementMethod(new ScrollingMovementMethod());
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        queue.add(detectLanguage(textString));
+        tts.determineLanguage(textString);
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -164,22 +145,14 @@ public class ProcessTextActivity extends Activity{
         findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(localTTS){
-                    tts.speak(textString, TextToSpeech.QUEUE_ADD, null);
-                }else{
-                    m_syn.SpeakToAudio(textString);
-                }
+                tts.speak(textString);
             }
         });
     }
 
     @Override
     protected void onDestroy() {
-        if(tts != null){
-
-            tts.stop();
-            tts.shutdown();
-        }
+        if(tts != null) tts.finishTTS();
         super.onDestroy();
     }
 
@@ -215,81 +188,6 @@ public class ProcessTextActivity extends Activity{
 
     }
 
-    private JsonRequest detectLanguage(final String selectedText){
-        final JSONArray body = new JSONArray();
-        try {
-            JSONObject obj = new JSONObject();
-            obj.put("Text", selectedText);
-            body.put(obj);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        Log.i(TAG, body.toString());
-
-        String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=de&to=it";
-
-        return new JsonArrayRequest(Request.Method.POST, urlDetectLang,null, new Response.Listener<JSONArray>() {
-            @Override
-            public void onResponse(JSONArray response) {
-
-                String langCode;
-                try {
-                    JSONObject jsonLang = response.getJSONObject(0).getJSONObject("detectedLanguage");
-                    langCode = jsonLang.getString("language");
-                } catch (JSONException e) {
-                    langCode = "NOLANG";
-                    Log.e(TAG, e.getMessage());
-                    e.printStackTrace();
-                }
-                playVoice(selectedText, langCode);
-                Log.i(TAG,langCode);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, "Error: " + error.getMessage());
-            }
-        }){
-            @Override
-            public byte[] getBody() {
-                return body.toString().getBytes();
-            }
-
-            @Override
-            public String getBodyContentType() {
-                return "application/json";
-            }
-
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type","application/json");
-                headers.put("Ocp-Apim-Subscription-Key", getString(R.string.translator_api_key));
-                return headers;
-            }
-        };
-
-
-    }
-
-    private void playVoice(final String selectedText, final String langCode) {
-        if(langCode.equals("he")){
-            m_syn.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
-            Voice v = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
-            m_syn.SetVoice(v, null);
-            m_syn.SpeakToAudio(selectedText);
-            localTTS=false;
-        }else{
-            int result = tts.setLanguage(new Locale(langCode));
-            if (result == TextToSpeech.LANG_MISSING_DATA ||
-                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e("error", "This Language is not supported");
-            } else {
-                localTTS=true;
-                tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
-            }
-        }
-    }
 
 
 }

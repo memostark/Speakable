@@ -35,6 +35,15 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     public CustomTTS(Context context){
         mContext = context;
         tts = new TextToSpeech(context, this);
+        mSynth = new Synthesizer(mContext.getResources().getString(R.string.api_key));
+    }
+
+    public void speak(String text){
+        if(localTTS){
+            tts.speak(text, TextToSpeech.QUEUE_ADD, null);
+        }else{
+            mSynth.SpeakToAudio(text);
+        }
     }
 
     public void determineLanguage(final String text){

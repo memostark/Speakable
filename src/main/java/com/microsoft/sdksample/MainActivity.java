@@ -38,41 +38,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonRequest;
-import com.android.volley.toolbox.Volley;
-import com.microsoft.speech.tts.Synthesizer;
-import com.microsoft.speech.tts.Voice;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     // Note: Sign up at http://www.projectoxford.ai for the client credentials.
-    private Synthesizer m_syn;
     private static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
     private String TAG=this.getClass().getSimpleName();
 
-    private boolean localTTS;
-    private TextToSpeech tts;
+    private CustomTTS tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,29 +64,10 @@ public class MainActivity extends AppCompatActivity {
                     .show();
         } else {
 
-            if (m_syn == null) {
-                // Create Text To Speech Synthesizer.
-                m_syn = new Synthesizer(getString(R.string.api_key));
-            }
 
             if(tts == null) {
-                tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-                    @Override
-                    public void onInit(int status) {
-                        if (status == TextToSpeech.SUCCESS) {
-                            Log.i(TAG,"Google TTS ready");
-                        } else
-                            Log.e("error", "Initilization Failed!");
-
-                    }
-                });
+                tts = new CustomTTS(MainActivity.this);
             }
-            m_syn.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
-
-            //Voice v = new Voice("en-US", "Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)", Voice.Gender.Female, true);
-            Voice v = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
-            //Voice v = new Voice("zh-CN", "Microsoft Server Speech Text to Speech Voice (zh-CN, HuihuiRUS)", Voice.Gender.Female, true);
-            m_syn.SetVoice(v, null);
 
             // Use a string for speech.
             //m_syn.SpeakToAudio(getString(R.string.tts_text));
@@ -118,27 +76,24 @@ public class MainActivity extends AppCompatActivity {
             //String text = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" xml:lang=\"en-US\"><voice xml:lang=\"en-US\" name=\"Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)\">You can also use SSML markup for text to speech.</voice></speak>";
             //m_syn.SpeakSSMLToAudio(text);
 
-            //EditText editV=(EditText) findViewByID(R.id.tts_ev);
 
             findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    m_syn.stopSound();
+                    // TO DO
                 }
             });
 
-            Button bm = (Button) findViewById(R.id.play_btn);
+            Button playBtn = (Button) findViewById(R.id.play_btn);
 
             //Toast.makeText(MainActivity.this, "Edittext Toast1:" + text, Toast.LENGTH_LONG).show();
 
-            bm.setOnClickListener(new View.OnClickListener() {
+            playBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     EditText mEdit   = (EditText)findViewById(R.id.tts_ev);
                     final String text = mEdit.getText().toString();
-                    Toast.makeText(MainActivity.this, "Edittext Toast2:" + text, Toast.LENGTH_LONG).show();
-                    RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
-                    queue.add(detectLanguage(text));
+                    tts.determineLanguage(text);
                 }
             });
 
@@ -158,89 +113,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if(tts != null){
-
-            tts.stop();
-            tts.shutdown();
-        }
+        if(tts != null) tts.finishTTS();
         super.onDestroy();
 
-    }
-
-    private JsonRequest detectLanguage(final String selectedText){
-        final JSONArray body = new JSONArray();
-        try {
-            JSONObject obj = new JSONObject();
-            obj.put("Text", selectedText);
-            body.put(obj);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        Log.i(TAG, body.toString());
-
-        String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=de&to=it";
-
-        return new JsonArrayRequest(Request.Method.POST, urlDetectLang,null, new Response.Listener<JSONArray>() {
-            @Override
-            public void onResponse(JSONArray response) {
-
-                String langCode;
-                try {
-                    JSONObject jsonLang = response.getJSONObject(0).getJSONObject("detectedLanguage");
-                    langCode = jsonLang.getString("language");
-                } catch (JSONException e) {
-                    langCode = "NOLANG";
-                    Log.e(TAG, e.getMessage());
-                    e.printStackTrace();
-                }
-                playVoice(selectedText, langCode);
-                Log.i(TAG,langCode);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, "Error: " + error.getMessage());
-            }
-        }){
-            @Override
-            public byte[] getBody() {
-                return body.toString().getBytes();
-            }
-
-            @Override
-            public String getBodyContentType() {
-                return "application/json";
-            }
-
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type","application/json");
-                headers.put("Ocp-Apim-Subscription-Key", getString(R.string.translator_api_key));
-                return headers;
-            }
-        };
-
-
-    }
-
-    private void playVoice(final String selectedText, final String langCode) {
-        if(langCode.equals("he")){
-            m_syn.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
-            Voice v = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
-            m_syn.SetVoice(v, null);
-            m_syn.SpeakToAudio(selectedText);
-            localTTS=false;
-        }else{
-            int result = tts.setLanguage(new Locale(langCode));
-            if (result == TextToSpeech.LANG_MISSING_DATA ||
-                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e("error", "This Language is not supported");
-            } else {
-                tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
-                localTTS=true;
-            }
-        }
     }
 
     @Override
