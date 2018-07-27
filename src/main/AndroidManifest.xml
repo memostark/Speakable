@@ -29,6 +29,10 @@
             </intent-filter>
         </activity>
         <service android:name=".ScreenTextService"/>
+        <receiver android:name=".Receiver"
+            android:enabled="true"
+            android:process=":remote"
+            />
     </application>
 
 </manifest>

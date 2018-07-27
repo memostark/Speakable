@@ -191,10 +191,10 @@ public class ProcessTextActivity extends Activity{
     }
 
     private void createNotification(){
-        Intent snoozeIntent = new Intent(this, ScreenTextService.class);
+        Intent intentHide = new Intent(this, Receiver.class);
         PendingIntent snoozePendingIntent =
-                PendingIntent.getBroadcast(this, 0, snoozeIntent, 0);
-
+                PendingIntent.getBroadcast(this, 0, intentHide, 0);
+        PendingIntent pendingIntentHide = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
@@ -204,7 +204,7 @@ public class ProcessTextActivity extends Activity{
                         .bigText("Much longer text that cannot fit one line..."))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setOngoing(true)
-                .addAction(R.drawable.ic_close, getString(R.string.close_notification),snoozePendingIntent);
+                .addAction(R.drawable.ic_close, getString(R.string.close_notification),pendingIntentHide);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 

@@ -399,7 +399,10 @@ public class ScreenTextService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (service_layout != null) windowManager.removeView(service_layout);
+        if (service_layout != null) {
+            if(service_layout.getWindowToken() != null) windowManager.removeView(service_layout);
+        }
+        if(tts!=null) tts.finishTTS();
     }
 
     private class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
