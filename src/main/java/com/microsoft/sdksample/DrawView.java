@@ -21,13 +21,13 @@ import android.view.View;
 
 public class DrawView extends View {
 
-    Point[] points = new Point[4];
+    Point[] points;
 
     /**
      * point1 and point 3 are of same group and same as point 2 and point4
      */
     int groupId = -1;
-    private ArrayList<ColorBall> colorballs = new ArrayList<>();
+    private ArrayList<ColorBall> colorballs;
     // array that holds the balls
     private int balID = 0;
     // variable to know what ball is being dragged
@@ -67,14 +67,20 @@ public class DrawView extends View {
         wParent = context.getResources().getDisplayMetrics().widthPixels;
         hParent = context.getResources().getDisplayMetrics().heightPixels;
         Log.i(TAG, "H: "+wParent+" W: "+hParent);
+
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) result = getResources().getDimensionPixelSize(resourceId);
+
         bitmaps = new int[4];
+        points = new Point[4];
         bitmaps[0] = R.drawable.corner_topleft;
         bitmaps[1] = R.drawable.corner_bottomleft;
         bitmaps[2] = R.drawable.corner_bottomright;
         bitmaps[3] = R.drawable.corner_topright;
         points[0] = new Point();
         points[0].x = 24;
-        points[0].y = 48;
+        points[0].y = result + 24;
 
         points[1] = new Point();
         points[1].x = 24;
@@ -86,10 +92,11 @@ public class DrawView extends View {
 
         points[3] = new Point();
         points[3].x = wParent-24;
-        points[3].y = 48;
+        points[3].y = result+24;
         int j = 0;
+        colorballs = new ArrayList<>();
         for (Point pt : points) {
-            colorballs.add(new ColorBall(getContext(), bitmaps[j], pt));
+            colorballs.add(new ColorBall(getContext(), bitmaps[j], j, pt));
             j++;
         }
         //invalidate();
@@ -181,7 +188,7 @@ public class DrawView extends View {
                     // declare each ball with the ColorBall class
                     int j = 0;
                     for (Point pt : points) {
-                        colorballs.add(new ColorBall(getContext(), bitmaps[j], pt));
+                        colorballs.add(new ColorBall(getContext(), bitmaps[j], j, pt));
                         j++;
                     }
                 } else {
@@ -281,10 +288,10 @@ public class DrawView extends View {
         Context mContext;
         Point point;
         int id;
-        static int count = 0;
 
-        ColorBall(Context context, int resourceId, Point point) {
-            this.id = count++;
+        ColorBall(Context context, int resourceId,
+                  int ID, Point point) {
+            this.id = ID;
             bitmap = BitmapFactory.decodeResource(context.getResources(),
                     resourceId);
             mContext = context;

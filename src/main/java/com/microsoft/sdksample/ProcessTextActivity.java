@@ -170,30 +170,10 @@ public class ProcessTextActivity extends Activity{
     private void setList(){
         ListView listView = (ListView) findViewById(R.id.listView_wiki);
         listView.setAdapter(mAdapter);
-
-        /*int i, height=0;
-        int MAX_HEIGHT = 700;
-        for (i=0;i<mAdapter.getCount();i++) {
-            View item = mAdapter.getView(i, null, listView);
-            item.measure(0, 0);
-            height+=item.getMeasuredHeight();
-            Log.i(TAG, "Height: " + item.getMeasuredHeight());
-
-        }
-        // https://stackoverflow.com/questions/40861136/set-listview-height-programmatically
-        if(height>500){
-            ViewGroup.LayoutParams params = listView.getLayoutParams();
-            params.height=MAX_HEIGHT;
-            listView.setLayoutParams(params);
-            //listView.requestLayout();
-        }*/
-
     }
 
     private void createNotification(){
         Intent intentHide = new Intent(this, Receiver.class);
-        PendingIntent snoozePendingIntent =
-                PendingIntent.getBroadcast(this, 0, intentHide, 0);
         PendingIntent pendingIntentHide = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)

@@ -1,6 +1,8 @@
 /*
         References: http://www.piwai.info/chatheads-basics (MAIN SOURCE)
                      https://www.androidhive.info/2016/11/android-floating-widget-like-facebook-chat-head/
+                     Tip for trying to improve Google TTS initialization time:
+                     https://stackoverflow.com/questions/42417606/bypassing-google-tts-engine-initialization-lag-in-android/42588475
  */
 
 package com.microsoft.sdksample;
@@ -220,6 +222,10 @@ public class ScreenTextService extends Service {
 
     private boolean isSnipViewVisible(){
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
+    }
+
+    public CustomTTS getTTS(){
+        return tts;
     }
 
     private void setSnippingView(Boolean visible) {
