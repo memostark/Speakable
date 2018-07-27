@@ -34,11 +34,14 @@
 package com.microsoft.sdksample;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.NotificationCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -47,6 +50,9 @@ import android.widget.EditText;
 public class MainActivity extends AppCompatActivity {
     // Note: Sign up at http://www.projectoxford.ai for the client credentials.
     private static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
+    static final int notificationId = 10;
+    private static final String CHANNEL_ID = "process_text_channel";
+    static final String NORMAL_SERVICE = "startService";
     private String TAG=this.getClass().getSimpleName();
 
     private CustomTTS tts;
@@ -124,11 +130,35 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
             if (resultCode == AppCompatActivity.RESULT_OK) {
                 final Intent intent = new Intent(this, ScreenTextService.class);
+                intent.setAction(NORMAL_SERVICE);
                 intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode);
                 intent.putExtras(data);
                 startService(intent);
+                createNotification();
                 this.finish();
             }
         }
+    }
+
+    private void createNotification(){
+        Intent snoozeIntent = new Intent(this, ScreenTextService.class);
+        PendingIntent snoozePendingIntent =
+                PendingIntent.getBroadcast(this, 0, snoozeIntent, 0);
+
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("My notification")
+                .setContentText("Much longer text that cannot fit one line...")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("Much longer text that cannot fit one line..."))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setOngoing(true)
+                .addAction(R.drawable.ic_close, getString(R.string.close_notification),snoozePendingIntent);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+// notificationId is a unique int for each notification that you must define
+        notificationManager.notify(notificationId, mBuilder.build());
     }
 }

@@ -17,4 +17,8 @@
     <string name="play_button_name">Play</string>
     <string name="stop_button_name">Stop</string>
     <string name="startBubble_button_name">Start overlay mode</string>
+
+    <string name="no_entry">No entry</string>
+
+    <string name="close_notification">Close</string>
 </resources>

@@ -91,7 +91,6 @@ public class ScreenTextService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -208,8 +207,6 @@ public class ScreenTextService extends Service {
             }
         });
 
-        windowManager.addView(service_layout, params);
-
         new Thread() {
             @Override
             public void run() {
@@ -309,7 +306,7 @@ public class ScreenTextService extends Service {
                             .setBitmap(croppedBitmap)                 // your image bitmap
                             .build();
 
-                    String imageText = "";
+                    String imageText;
 
 
                     SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
@@ -388,8 +385,11 @@ public class ScreenTextService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent!=null) {
-            permissionIntent = intent;
-            resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+            if(intent.getAction()==MainActivity.NORMAL_SERVICE){
+                windowManager.addView(service_layout, params);
+                permissionIntent = intent;
+                resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+            }
         }else {
             stopSelf();
         }

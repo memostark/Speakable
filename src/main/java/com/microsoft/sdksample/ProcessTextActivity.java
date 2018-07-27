@@ -8,9 +8,12 @@
 package com.microsoft.sdksample;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -26,7 +29,6 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.microsoft.speech.tts.Synthesizer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,11 +39,11 @@ import java.util.List;
 
 
 public class ProcessTextActivity extends Activity{
-    private Synthesizer m_syn;
     private CustomTTS tts;
     private CustomAdapter mAdapter;
 
     private String TAG=this.getClass().getSimpleName();
+    static final String LONGPRESS_SERVICE = "startService";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,10 +62,9 @@ public class ProcessTextActivity extends Activity{
             tts = new CustomTTS(ProcessTextActivity.this);
         }
 
-        if (m_syn == null) {
-            // Create Text To Speech Synthesizer.
-            m_syn = new Synthesizer(getString(R.string.api_key));
-        }
+        final Intent intentService = new Intent(this, ScreenTextService.class);
+        intent.setAction(LONGPRESS_SERVICE);
+        startService(intentService);
 
         mAdapter = new CustomAdapter(this);
 
@@ -136,11 +137,12 @@ public class ProcessTextActivity extends Activity{
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                mWikiContent.setText("No entry");
+                mWikiContent.setText(R.string.no_entry);
             }
         });
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
+        createNotification();
 
         findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -186,6 +188,28 @@ public class ProcessTextActivity extends Activity{
             //listView.requestLayout();
         }*/
 
+    }
+
+    private void createNotification(){
+        Intent snoozeIntent = new Intent(this, ScreenTextService.class);
+        PendingIntent snoozePendingIntent =
+                PendingIntent.getBroadcast(this, 0, snoozeIntent, 0);
+
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("My notification")
+                .setContentText("Much longer text that cannot fit one line...")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("Much longer text that cannot fit one line..."))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setOngoing(true)
+                .addAction(R.drawable.ic_close, getString(R.string.close_notification),snoozePendingIntent);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+        // notificationId is a unique int for each notification that you must define
+        notificationManager.notify(MainActivity.notificationId, mBuilder.build());
     }
 
 
