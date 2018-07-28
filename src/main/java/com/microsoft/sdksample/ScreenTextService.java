@@ -7,6 +7,7 @@
 
 package com.microsoft.sdksample;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
@@ -35,6 +36,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -126,20 +128,13 @@ public class ScreenTextService extends Service {
             private int initialY;
             private float initialTouchX;
             private float initialTouchY;
+            private float touchX;
+            private float touchY;
 
             //-------https://stackoverflow.com/questions/19538747/how-to-use-both-ontouch-and-onclick-for-an-imagebutton
             @Override
             public boolean onTouch(View view, MotionEvent event) {
                 if (gestureDetector.onTouchEvent(event)) {
-                    // single tap
-                    Handler handler = new Handler(Looper.getMainLooper());
-                    handler.post(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            Toast.makeText(ScreenTextService.this.getApplicationContext(),"My Awesome service toast...",Toast.LENGTH_SHORT).show();
-                        }
-                    });
 
                     if(isSnipViewVisible()){
                         setSnippingView(false);
@@ -155,18 +150,49 @@ public class ScreenTextService extends Service {
                             initialY = params.y;
                             initialTouchX = event.getRawX();
                             initialTouchY = event.getRawY();
+                            touchX = event.getX();
+                            touchY = event.getY();
+                            Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
                             return true;
                         case MotionEvent.ACTION_UP:
+                            animateToEdge();
                             return true;
                         case MotionEvent.ACTION_MOVE:
                             params.x = initialX + (int) (event.getRawX() - initialTouchX);
                             params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                            Log.i(TAG,"X: "+params.x+" Y: "+ params.y);
                             windowManager.updateViewLayout(service_layout, params);
                             return true;
                     }
                 }
-
                 return false;
+            }
+            //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
+            private void animateToEdge() {
+                DisplayMetrics metrics = getResources().getDisplayMetrics();
+                int currentX = params.x;
+                int bubbleWidth =  bubble.getMeasuredWidth();
+                Log.i(TAG,"Width: "+metrics.widthPixels);
+                ValueAnimator ani;
+                if (currentX > (metrics.widthPixels - bubbleWidth) / 2) {
+                    ani = ValueAnimator.ofInt(currentX, metrics.widthPixels - bubbleWidth);
+                } else {
+                    ani = ValueAnimator.ofInt(currentX, 0);
+
+                }
+                //params.y = Math.min(Math.max(0, initialY),metrics.heightPixels - bubble.getMeasuredHeight());
+
+                ani.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        params.x = (Integer) animation.getAnimatedValue();
+                        windowManager.updateViewLayout(service_layout, params);
+                    }
+                });
+                ani.setDuration(350l);
+                ani.setInterpolator(new AccelerateDecelerateInterpolator());
+                ani.start();
+
             }
         });
 
