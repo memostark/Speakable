@@ -59,10 +59,11 @@ public class ScreenTextService extends Service {
     private CustomTTS tts;
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
+    private static boolean hasPermission;
     private String TAG = this.getClass().getSimpleName();
 
-    private int resultCode;
-    private Intent permissionIntent;
+    private static int resultCode;
+    private static Intent permissionIntent = null;
 
     private MediaProjection mediaProjection;
     private ImageReader mImageReader;
@@ -94,6 +95,7 @@ public class ScreenTextService extends Service {
     public void onCreate() {
         super.onCreate();
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
+        hasPermission=false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
@@ -171,8 +173,8 @@ public class ScreenTextService extends Service {
         close.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                tts.finishTTS();
-                stopSelf();
+                if (service_layout != null)
+                    windowManager.removeView(service_layout);
             }
         });
 
@@ -222,6 +224,12 @@ public class ScreenTextService extends Service {
 
     private boolean isSnipViewVisible(){
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
+    }
+
+    protected static void setScreenshotPermission(final Intent intent, int result) {
+        permissionIntent = intent;
+        resultCode= result;
+        if(permissionIntent!=null) hasPermission=true;
     }
 
     public CustomTTS getTTS(){
@@ -391,10 +399,21 @@ public class ScreenTextService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent!=null) {
-            if(intent.getAction()==MainActivity.NORMAL_SERVICE){
+            String action = intent.getAction();
+            if(action==MainActivity.NORMAL_SERVICE ){
                 windowManager.addView(service_layout, params);
-                permissionIntent = intent;
-                resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+                if(!hasPermission){
+                    permissionIntent = intent;
+                    resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+                }
+                hasPermission=true;
+            }else if(action==MainActivity.NORMAL_NO_PERM_SERVICE) {
+                if(!hasPermission){
+                    final Intent intentGetPermission = new Intent(this, AcquireScreenshotPermission.class);
+                    intentGetPermission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intentGetPermission);
+                }
+                windowManager.addView(service_layout, params);
             }
         }else {
             stopSelf();

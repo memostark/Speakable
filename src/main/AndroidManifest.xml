@@ -28,6 +28,7 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <activity android:name=".AcquireScreenshotPermission"></activity>
         <service android:name=".ScreenTextService"/>
         <receiver android:name=".Receiver"
             android:enabled="true"

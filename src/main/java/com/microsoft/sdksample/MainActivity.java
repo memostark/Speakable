@@ -49,10 +49,11 @@ import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
     // Note: Sign up at http://www.projectoxford.ai for the client credentials.
-    private static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
+    protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
     static final int notificationId = 10;
     private static final String CHANNEL_ID = "process_text_channel";
     static final String NORMAL_SERVICE = "startService";
+    static final String NORMAL_NO_PERM_SERVICE = "getPermissionService";
     private String TAG=this.getClass().getSimpleName();
 
     private CustomTTS tts;
@@ -141,6 +142,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createNotification(){
+        Intent intentNormalStart = new Intent(this, ScreenTextService.class);
+        intentNormalStart.setAction(MainActivity.NORMAL_SERVICE);
+        PendingIntent pendingIntentNormal = PendingIntent.getService(this, 0, intentNormalStart, 0);
+
         Intent intentHide = new Intent(this, Receiver.class);
         PendingIntent pendingIntentHide = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
 
@@ -153,11 +158,12 @@ public class MainActivity extends AppCompatActivity {
                         .bigText("Much longer text that cannot fit one line..."))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setOngoing(true)
+                .setContentIntent(pendingIntentNormal)
                 .addAction(R.drawable.ic_close, getString(R.string.close_notification),pendingIntentHide);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 
-// notificationId is a unique int for each notification that you must define
+        // notificationId is a unique int for each notification that you must define
         notificationManager.notify(notificationId, mBuilder.build());
     }
 }
