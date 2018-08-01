@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
@@ -25,6 +26,8 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Message;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -35,12 +38,15 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
@@ -49,13 +55,20 @@ import com.google.android.gms.vision.text.TextRecognizer;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
 public class ScreenTextService extends Service {
 
+    static final int ANIMATION_NONE = 0;
+    static final int ANIMATION_OPEN = 1;
+    static final int ANIMATION_CLOSE = 2;
+    static final int ANIMATION_FORCE_CLOSE = 3;
+
     private WindowManager windowManager;
     private MediaProjectionManager mMediaProjectionManager;
     private View service_layout;
+    private FrameLayout trash_layout;
     private GestureDetector gestureDetector;
     private TextRecognizer textRecognizer;
     private CustomTTS tts;
@@ -69,8 +82,10 @@ public class ScreenTextService extends Service {
 
     private MediaProjection mediaProjection;
     private ImageReader mImageReader;
+    private AnimationHandler mAnimationHandler;
     private Handler mHandler;
     private Display mDisplay;
+    private static DisplayMetrics mMetrics;
     private VirtualDisplay mVirtualDisplay;
     private int mDensity;
     private int mWidth;
@@ -80,10 +95,13 @@ public class ScreenTextService extends Service {
     private ImageView takeSS;
     private LinearLayout container;
     private WindowManager.LayoutParams params;
+    private WindowManager.LayoutParams mParamsTrash;
 
     private static String STORE_DIRECTORY;
     private static int IMAGES_PRODUCED;
     private static final int VIRTUAL_DISPLAY_FLAGS = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
+
+    private static final int LONG_PRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
 
 
     @Nullable
@@ -97,9 +115,13 @@ public class ScreenTextService extends Service {
     public void onCreate() {
         super.onCreate();
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
+        trash_layout= (FrameLayout) LayoutInflater.from(this).inflate(R.layout.trash_layout, null);
+        trash_layout.setClipChildren(false);
+        mAnimationHandler = new AnimationHandler(trash_layout);
         hasPermission=false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
         tts = new CustomTTS(ScreenTextService.this);
@@ -112,16 +134,53 @@ public class ScreenTextService extends Service {
         container = (LinearLayout) service_layout.findViewById(R.id.icon_container);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
+        final View trashIconContainer = trash_layout.findViewById(R.id.trash_icon_container);
+
         params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.TOP | Gravity.START;
         params.x = 0;
         params.y = 100;
+
+        mParamsTrash = new WindowManager.LayoutParams();
+        mParamsTrash.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        mParamsTrash.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        mParamsTrash.type = WindowManager.LayoutParams.TYPE_PHONE;
+        mParamsTrash.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        mParamsTrash.format = PixelFormat.TRANSLUCENT;
+        // INFO:Windowの原点のみ左下に設定
+        mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
+
+        // Thanks! https://stackoverflow.com/questions/3779173/determining-the-size-of-an-android-view-at-runtime#6569243
+        ViewTreeObserver viewTreeObserver = trash_layout.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    trash_layout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    int heightTrashIcon = trashIconContainer.getMeasuredHeight();
+                    trash_layout.setTranslationY(heightTrashIcon);
+                    mAnimationHandler.mTargetHeight = 48;
+                }
+            });
+        }
+
+        trash_layout.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight,
+                                       int oldBottom) {
+                mAnimationHandler.onUpdateViewPosition();
+
+            }
+        });
+
 
         bubble.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
@@ -146,21 +205,25 @@ public class ScreenTextService extends Service {
                     // your code for move and drag
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
+                            mAnimationHandler.updateTargetPosition(params.x, params.y);
+                            mAnimationHandler.sendAnimationMessageDelayed(ANIMATION_OPEN, LONG_PRESS_TIMEOUT);
                             initialX = params.x;
                             initialY = params.y;
                             initialTouchX = event.getRawX();
                             initialTouchY = event.getRawY();
                             touchX = event.getX();
                             touchY = event.getY();
-                            Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
+                            //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
                             return true;
                         case MotionEvent.ACTION_UP:
+                            mAnimationHandler.removeMessages(ANIMATION_OPEN);
+                            mAnimationHandler.sendAnimationMessage(ANIMATION_CLOSE);
                             animateToEdge();
                             return true;
                         case MotionEvent.ACTION_MOVE:
                             params.x = initialX + (int) (event.getRawX() - initialTouchX);
                             params.y = initialY + (int) (event.getRawY() - initialTouchY);
-                            Log.i(TAG,"X: "+params.x+" Y: "+ params.y);
+                            //Log.i(TAG,"X: "+params.x+" Y: "+ params.y);
                             windowManager.updateViewLayout(service_layout, params);
                             return true;
                     }
@@ -169,18 +232,17 @@ public class ScreenTextService extends Service {
             }
             //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
             private void animateToEdge() {
-                DisplayMetrics metrics = getResources().getDisplayMetrics();
                 int currentX = params.x;
                 int bubbleWidth =  bubble.getMeasuredWidth();
-                Log.i(TAG,"Width: "+metrics.widthPixels);
+                Log.i(TAG,"Width: "+mMetrics.widthPixels);
                 ValueAnimator ani;
-                if (currentX > (metrics.widthPixels - bubbleWidth) / 2) {
-                    ani = ValueAnimator.ofInt(currentX, metrics.widthPixels - bubbleWidth);
+                if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) {
+                    ani = ValueAnimator.ofInt(currentX, mMetrics.widthPixels - bubbleWidth);
                 } else {
-                    ani = ValueAnimator.ofInt(currentX, 0);
+                    ani = ValueAnimator.ofInt(currentX, -bubbleWidth/3);
 
                 }
-                //params.y = Math.min(Math.max(0, initialY),metrics.heightPixels - bubble.getMeasuredHeight());
+                //params.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
 
                 ani.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
@@ -189,7 +251,7 @@ public class ScreenTextService extends Service {
                         windowManager.updateViewLayout(service_layout, params);
                     }
                 });
-                ani.setDuration(350l);
+                ani.setDuration(350L);
                 ani.setInterpolator(new AccelerateDecelerateInterpolator());
                 ani.start();
 
@@ -201,6 +263,8 @@ public class ScreenTextService extends Service {
             public void onClick(View view) {
                 if (service_layout != null)
                     windowManager.removeView(service_layout);
+                if(trash_layout!=null)
+                    windowManager.removeView(trash_layout);
             }
         });
 
@@ -426,19 +490,21 @@ public class ScreenTextService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent!=null) {
             String action = intent.getAction();
-            if(action==MainActivity.NORMAL_SERVICE ){
+            if(MainActivity.NORMAL_SERVICE.equals(action) ){
+                windowManager.addView(trash_layout, mParamsTrash);
                 windowManager.addView(service_layout, params);
                 if(!hasPermission){
                     permissionIntent = intent;
                     resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
                 }
                 hasPermission=true;
-            }else if(action==MainActivity.NORMAL_NO_PERM_SERVICE) {
+            }else if(MainActivity.NORMAL_NO_PERM_SERVICE.equals(action)) {
                 if(!hasPermission){
                     final Intent intentGetPermission = new Intent(this, AcquireScreenshotPermission.class);
                     intentGetPermission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intentGetPermission);
                 }
+                windowManager.addView(trash_layout, mParamsTrash);
                 windowManager.addView(service_layout, params);
             }
         }else {
@@ -453,6 +519,9 @@ public class ScreenTextService extends Service {
         if (service_layout != null) {
             if(service_layout.getWindowToken() != null) windowManager.removeView(service_layout);
         }
+        if (trash_layout != null) {
+            if(trash_layout.getWindowToken() != null) windowManager.removeView(trash_layout);
+        }
         if(tts!=null) tts.finishTTS();
     }
 
@@ -461,6 +530,122 @@ public class ScreenTextService extends Service {
         @Override
         public boolean onSingleTapUp(MotionEvent event) {
             return true;
+        }
+    }
+
+    static class AnimationHandler extends Handler{
+
+        private static final int TYPE_FIRST = 1;
+        private static final int TYPE_UPDATE = 2;
+        private static final float OVERSHOOT_TENSION = 1.0f;
+        private static final long TRASH_OPEN_DURATION_MILLIS = 400L;
+        private static final long TRASH_OPEN_START_DELAY_MILLIS = 200L;
+        private static final long TRASH_CLOSE_DURATION_MILLIS = 200L;
+        private static final long ANIMATION_REFRESH_TIME_MILLIS = 10L;
+
+        private final WeakReference<FrameLayout> mTrashView;
+
+        private int mStartedCode;
+        private long mStartTime;
+        private float mStartTransitionY;
+        private float mTargetPositionX;
+        private float mTargetPositionY;
+        private float mTargetHeight;
+        private float mMoveStickyYRange;
+
+
+        private final Rect mTrashIconLimitPosition;
+        private final OvershootInterpolator mOvershootInterpolator;
+
+
+        AnimationHandler(FrameLayout trashView){
+            mTrashView = new WeakReference<>(trashView);
+            mStartedCode = ANIMATION_NONE;
+            mTrashIconLimitPosition = new Rect();
+            mOvershootInterpolator = new OvershootInterpolator(OVERSHOOT_TENSION);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            final FrameLayout trashView = mTrashView.get();
+
+            if (trashView == null) {
+                removeMessages(ANIMATION_OPEN);
+                removeMessages(ANIMATION_CLOSE);
+                removeMessages(ANIMATION_FORCE_CLOSE);
+                return;
+            }
+
+            final int animationCode = msg.what;
+            final int animationType = msg.arg1;
+            final FrameLayout trash_icon_cont = (FrameLayout) trashView.findViewById(R.id.trash_icon_container);
+
+            if (animationType == TYPE_FIRST) {
+                mStartTime = SystemClock.uptimeMillis();
+                mStartTransitionY = trash_icon_cont.getTranslationY();
+                mStartedCode = animationCode;
+            }
+
+            final float elapsedTime = SystemClock.uptimeMillis() - mStartTime;
+
+            if(animationCode == ANIMATION_OPEN) {
+                if (elapsedTime >= TRASH_OPEN_DURATION_MILLIS) {
+                    final float screenHeight = mMetrics.heightPixels;
+                    final float targetPositionYRate = Math.min(2 * (mTargetPositionY + mTargetHeight) / (screenHeight + mTargetHeight), 1.0f);
+                    final float stickyPositionY = mMoveStickyYRange * targetPositionYRate + mTrashIconLimitPosition.height() - mMoveStickyYRange;
+                    final float translationYTimeRate = Math.min((elapsedTime - TRASH_OPEN_START_DELAY_MILLIS) / TRASH_OPEN_DURATION_MILLIS, 1.0f);
+                    final float positionY = mTrashIconLimitPosition.bottom - stickyPositionY * mOvershootInterpolator.getInterpolation(translationYTimeRate);
+                    Log.d("prueba","Y: "+positionY);
+                    trashView.setTranslationY(positionY);
+
+                }
+
+                sendMessageAtTime(newMessage(animationCode, TYPE_UPDATE), SystemClock.uptimeMillis() + ANIMATION_REFRESH_TIME_MILLIS);
+            } else if (animationCode == ANIMATION_CLOSE) {
+                final float translationYTimeRate = Math.min(elapsedTime / TRASH_CLOSE_DURATION_MILLIS, 1.0f);
+                // アニメーションが最後まで到達していない場合
+                if (translationYTimeRate < 1.0f) {
+                    final float position = mStartTransitionY + mTrashIconLimitPosition.height() * translationYTimeRate;
+                    trashView.setTranslationY(position);
+                    sendMessageAtTime(newMessage(animationCode, TYPE_UPDATE), SystemClock.uptimeMillis() + ANIMATION_REFRESH_TIME_MILLIS);
+                } else {
+                    // 位置を強制的に調整
+                    trashView.setTranslationY(mTrashIconLimitPosition.bottom);
+                    mStartedCode = ANIMATION_NONE;
+                }
+            }
+
+
+        }
+
+        void sendAnimationMessageDelayed(int animation, long delayMillis) {
+            sendMessageAtTime(newMessage(animation, TYPE_FIRST), SystemClock.uptimeMillis() + delayMillis);
+        }
+
+        void sendAnimationMessage(int animation) {
+            sendMessage(newMessage(animation, TYPE_FIRST));
+        }
+
+        private static Message newMessage(int animation, int type) {
+            final Message message = Message.obtain();
+            message.what = animation;
+            message.arg1 = type;
+            return message;
+        }
+
+        void updateTargetPosition(float x, float y) {
+            mTargetPositionX = x;
+            mTargetPositionY = y;
+        }
+
+        void onUpdateViewPosition(){
+            final FrameLayout trashView = mTrashView.get();
+            if (trashView == null) {
+                return;
+            }
+            final float backgroundHeight = trashView.findViewById(R.id.trash_icon_container).getMeasuredHeight();
+            mTrashIconLimitPosition.set(-100, -600, 100, 200);
+            mMoveStickyYRange = backgroundHeight*0.2f;
         }
     }
 }
