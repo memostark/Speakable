@@ -3,19 +3,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <FrameLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|bottom"
-        android:id="@+id/trash_icon_container">
-        <ImageView
+        android:layout_gravity="bottom"
+        android:id="@+id/backgroundView">
+        <FrameLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_trash_action"
-            android:layout_gravity="center"/>
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_trash_fixed"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center_horizontal|bottom"
+            android:id="@+id/trash_icon_container">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_trash_action"
+                android:layout_gravity="center"/>
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_trash_fixed"
+                android:layout_gravity="center"/>
+        </FrameLayout>
     </FrameLayout>
 </FrameLayout>

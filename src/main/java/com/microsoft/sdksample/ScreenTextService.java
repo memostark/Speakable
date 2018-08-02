@@ -16,6 +16,7 @@ import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
@@ -64,6 +65,8 @@ public class ScreenTextService extends Service {
     static final int ANIMATION_OPEN = 1;
     static final int ANIMATION_CLOSE = 2;
     static final int ANIMATION_FORCE_CLOSE = 3;
+
+    private static final int BACKGROUND_HEIGHT = 164;
 
     private WindowManager windowManager;
     private MediaProjectionManager mMediaProjectionManager;
@@ -134,7 +137,16 @@ public class ScreenTextService extends Service {
         container = (LinearLayout) service_layout.findViewById(R.id.icon_container);
         bubble.setImageResource(R.mipmap.ic_launcher);
 
-        final View trashIconContainer = trash_layout.findViewById(R.id.trash_icon_container);
+
+
+        final FrameLayout backgroundView = (FrameLayout) trash_layout.findViewById(R.id.backgroundView);
+        final GradientDrawable gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{0x00000000, 0x50000000});
+        backgroundView.setBackground(gradientDrawable);
+        final FrameLayout.LayoutParams backgroundParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (BACKGROUND_HEIGHT * mMetrics.density));
+        backgroundParams.gravity = Gravity.BOTTOM;
+        trash_layout.updateViewLayout(backgroundView,backgroundParams);
+        final FrameLayout trashIconContainer = (FrameLayout) trash_layout.findViewById(R.id.trash_icon_container);
+        trashIconContainer.setClipChildren(false);
 
         params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -150,13 +162,15 @@ public class ScreenTextService extends Service {
         mParamsTrash = new WindowManager.LayoutParams();
         mParamsTrash.width = ViewGroup.LayoutParams.MATCH_PARENT;
         mParamsTrash.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        mParamsTrash.type = WindowManager.LayoutParams.TYPE_PHONE;
+        mParamsTrash.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
         mParamsTrash.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         mParamsTrash.format = PixelFormat.TRANSLUCENT;
         // INFO:Windowの原点のみ左下に設定
         mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
+        mParamsTrash.x=0;
+        mParamsTrash.y=0;
 
         // Thanks! https://stackoverflow.com/questions/3779173/determining-the-size-of-an-android-view-at-runtime#6569243
         ViewTreeObserver viewTreeObserver = trash_layout.getViewTreeObserver();
@@ -166,7 +180,7 @@ public class ScreenTextService extends Service {
                 public void onGlobalLayout() {
                     trash_layout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     int heightTrashIcon = trashIconContainer.getMeasuredHeight();
-                    trash_layout.setTranslationY(heightTrashIcon);
+                    trashIconContainer.setTranslationY(heightTrashIcon);
                     mAnimationHandler.mTargetHeight = 48;
                 }
             });
@@ -541,6 +555,8 @@ public class ScreenTextService extends Service {
         private static final long TRASH_OPEN_DURATION_MILLIS = 400L;
         private static final long TRASH_OPEN_START_DELAY_MILLIS = 200L;
         private static final long TRASH_CLOSE_DURATION_MILLIS = 200L;
+        private static final int TRASH_MOVE_LIMIT_OFFSET_X = 22;
+        private static final int TRASH_MOVE_LIMIT_TOP_OFFSET = -4;
         private static final long ANIMATION_REFRESH_TIME_MILLIS = 10L;
 
         private final WeakReference<FrameLayout> mTrashView;
@@ -579,6 +595,7 @@ public class ScreenTextService extends Service {
             final int animationCode = msg.what;
             final int animationType = msg.arg1;
             final FrameLayout trash_icon_cont = (FrameLayout) trashView.findViewById(R.id.trash_icon_container);
+            final FrameLayout backgroundView = (FrameLayout) trashView.findViewById(R.id.backgroundView);
 
             if (animationType == TYPE_FIRST) {
                 mStartTime = SystemClock.uptimeMillis();
@@ -589,14 +606,13 @@ public class ScreenTextService extends Service {
             final float elapsedTime = SystemClock.uptimeMillis() - mStartTime;
 
             if(animationCode == ANIMATION_OPEN) {
-                if (elapsedTime >= TRASH_OPEN_DURATION_MILLIS) {
+                if (elapsedTime >= TRASH_OPEN_START_DELAY_MILLIS) {
                     final float screenHeight = mMetrics.heightPixels;
                     final float targetPositionYRate = Math.min(2 * (mTargetPositionY + mTargetHeight) / (screenHeight + mTargetHeight), 1.0f);
                     final float stickyPositionY = mMoveStickyYRange * targetPositionYRate + mTrashIconLimitPosition.height() - mMoveStickyYRange;
                     final float translationYTimeRate = Math.min((elapsedTime - TRASH_OPEN_START_DELAY_MILLIS) / TRASH_OPEN_DURATION_MILLIS, 1.0f);
                     final float positionY = mTrashIconLimitPosition.bottom - stickyPositionY * mOvershootInterpolator.getInterpolation(translationYTimeRate);
-                    Log.d("prueba","Y: "+positionY);
-                    trashView.setTranslationY(positionY);
+                    trash_icon_cont.setTranslationY(positionY);
 
                 }
 
@@ -606,13 +622,16 @@ public class ScreenTextService extends Service {
                 // アニメーションが最後まで到達していない場合
                 if (translationYTimeRate < 1.0f) {
                     final float position = mStartTransitionY + mTrashIconLimitPosition.height() * translationYTimeRate;
-                    trashView.setTranslationY(position);
+                    trash_icon_cont.setTranslationY(position);
                     sendMessageAtTime(newMessage(animationCode, TYPE_UPDATE), SystemClock.uptimeMillis() + ANIMATION_REFRESH_TIME_MILLIS);
                 } else {
                     // 位置を強制的に調整
-                    trashView.setTranslationY(mTrashIconLimitPosition.bottom);
+                    trash_icon_cont.setTranslationY(mTrashIconLimitPosition.bottom);
                     mStartedCode = ANIMATION_NONE;
                 }
+            }  else if (animationCode == ANIMATION_FORCE_CLOSE) {
+                backgroundView.setAlpha(0.0f);
+                trash_icon_cont.setTranslationY(mTrashIconLimitPosition.bottom);
             }
 
 
@@ -643,8 +662,16 @@ public class ScreenTextService extends Service {
             if (trashView == null) {
                 return;
             }
-            final float backgroundHeight = trashView.findViewById(R.id.trash_icon_container).getMeasuredHeight();
-            mTrashIconLimitPosition.set(-100, -600, 100, 200);
+            final float density = mMetrics.density;
+            final float backgroundHeight = trashView.findViewById(R.id.backgroundView).getMeasuredHeight();
+            final float offsetX = TRASH_MOVE_LIMIT_OFFSET_X * density;
+            final int trashIconHeight = trashView.findViewById(R.id.trash_icon_container).getMeasuredHeight();
+            final int left = (int) -offsetX;
+            final int top = (int) (2*(trashIconHeight - backgroundHeight) / 2 - TRASH_MOVE_LIMIT_TOP_OFFSET * density);
+            final int right = (int) offsetX;
+            final int bottom = trashIconHeight;
+            //mTrashIconLimitPosition.set(-100, -600, 100, 200);
+            mTrashIconLimitPosition.set(left,top,right,bottom);
             mMoveStickyYRange = backgroundHeight*0.2f;
         }
     }
