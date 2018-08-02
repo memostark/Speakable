@@ -2,7 +2,7 @@
 * -------------------------Reference: https://stackoverflow.com/questions/8974088/how-to-create-a-resizable-rectangle-with-user-touch-events-on-android
 * */
 
-package com.microsoft.sdksample;
+package com.microsoft.sdksample.CustomViews;
 
 import java.util.ArrayList;
 
@@ -17,6 +17,8 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import com.microsoft.sdksample.R;
 
 
 public class DrawView extends View {
