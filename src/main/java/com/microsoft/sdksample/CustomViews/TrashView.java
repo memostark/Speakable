@@ -47,6 +47,7 @@ public class TrashView extends FrameLayout {
         mWindowManager.getDefaultDisplay().getMetrics(mMetrics);
 
         final FrameLayout backgroundView = (FrameLayout) rootView.findViewById(R.id.backgroundView);
+        backgroundView.setAlpha(0.0f);
         final GradientDrawable gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{0x00000000, 0x50000000});
         backgroundView.setBackground(gradientDrawable);
         final FrameLayout.LayoutParams backgroundParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (BACKGROUND_HEIGHT * mMetrics.density));
@@ -100,6 +101,10 @@ public class TrashView extends FrameLayout {
 
         private static final int TYPE_FIRST = 1;
         private static final int TYPE_UPDATE = 2;
+
+        private static final float MAX_ALPHA = 1.0f;
+        private static final float MIN_ALPHA = 0.0f;
+
         private static final float OVERSHOOT_TENSION = 1.0f;
         private static final long TRASH_OPEN_DURATION_MILLIS = 400L;
         private static final long TRASH_OPEN_START_DELAY_MILLIS = 200L;
@@ -107,9 +112,11 @@ public class TrashView extends FrameLayout {
         private static final int TRASH_MOVE_LIMIT_OFFSET_X = 22;
         private static final int TRASH_MOVE_LIMIT_TOP_OFFSET = -4;
         private static final long ANIMATION_REFRESH_TIME_MILLIS = 10L;
+        private static final long BACKGROUND_DURATION_MILLIS = 200L;
 
         private final WeakReference<TrashView> mTrashView;
 
+        private float mStartAlpha;
         private int mStartedCode;
         private long mStartTime;
         private float mStartTransitionY;
@@ -148,6 +155,7 @@ public class TrashView extends FrameLayout {
 
             if (animationType == TYPE_FIRST) {
                 mStartTime = SystemClock.uptimeMillis();
+                mStartAlpha = backgroundView.getAlpha();
                 mStartTransitionY = trash_icon_cont.getTranslationY();
                 mStartedCode = animationCode;
             }
@@ -155,6 +163,14 @@ public class TrashView extends FrameLayout {
             final float elapsedTime = SystemClock.uptimeMillis() - mStartTime;
 
             if(animationCode == ANIMATION_OPEN) {
+
+                final float currentAlpha = backgroundView.getAlpha();
+                if (currentAlpha < MAX_ALPHA) {
+                    final float alphaTimeRate = Math.min(elapsedTime / BACKGROUND_DURATION_MILLIS, 1.0f);
+                    final float alpha = Math.min(mStartAlpha + alphaTimeRate, MAX_ALPHA);
+                    backgroundView.setAlpha(alpha);
+                }
+
                 if (elapsedTime >= TRASH_OPEN_START_DELAY_MILLIS) {
                     final float screenHeight = trashView.mMetrics.heightPixels;
                     final float targetPositionYRate = Math.min(2 * (mTargetPositionY + mTargetHeight) / (screenHeight + mTargetHeight), 1.0f);
@@ -168,9 +184,13 @@ public class TrashView extends FrameLayout {
 
                 sendMessageAtTime(newMessage(animationCode, TYPE_UPDATE), SystemClock.uptimeMillis() + ANIMATION_REFRESH_TIME_MILLIS);
             } else if (animationCode == ANIMATION_CLOSE) {
+                final float alphaElapseTimeRate = Math.min(elapsedTime / BACKGROUND_DURATION_MILLIS, 1.0f);
+                final float alpha = Math.max(mStartAlpha - alphaElapseTimeRate, MIN_ALPHA);
+                backgroundView.setAlpha(alpha);
+
                 final float translationYTimeRate = Math.min(elapsedTime / TRASH_CLOSE_DURATION_MILLIS, 1.0f);
                 // アニメーションが最後まで到達していない場合
-                if (translationYTimeRate < 1.0f) {
+                if (alphaElapseTimeRate < 1.0f || translationYTimeRate < 1.0f) {
                     final float position = mStartTransitionY + mTrashIconLimitPosition.height() * translationYTimeRate;
                     trash_icon_cont.setTranslationY(position);
                     sendMessageAtTime(newMessage(animationCode, TYPE_UPDATE), SystemClock.uptimeMillis() + ANIMATION_REFRESH_TIME_MILLIS);
