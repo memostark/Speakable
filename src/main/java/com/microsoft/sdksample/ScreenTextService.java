@@ -34,6 +34,7 @@ import android.util.SparseArray;
 import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -84,6 +85,7 @@ public class ScreenTextService extends Service {
     private int mWidth;
     private int mHeight;
     private DrawView snipView;
+    private ImageView bubble;
     private ImageView close;
     private ImageView takeSS;
     private LinearLayout container;
@@ -93,6 +95,14 @@ public class ScreenTextService extends Service {
     private static String STORE_DIRECTORY;
     private static int IMAGES_PRODUCED;
     private static final int VIRTUAL_DISPLAY_FLAGS = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
+
+    private final Rect mFloatingViewRect = new Rect();
+    private final Rect mTrashViewRect = new Rect();
+
+    private int mState;
+    static final int STATE_NORMAL = 0;
+    static final int STATE_INTERSECTING = 1;
+    static final int STATE_FINISHING = 2;
 
 
     @Nullable
@@ -107,7 +117,6 @@ public class ScreenTextService extends Service {
         super.onCreate();
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
         trash_layout= new TrashView(this);
-        trash_layout.setClipChildren(false);
         hasPermission=false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -117,7 +126,7 @@ public class ScreenTextService extends Service {
         tts = new CustomTTS(ScreenTextService.this);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
-        final ImageView bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
+        bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
         close = (ImageView) service_layout.findViewById(R.id.closeService_image);
         takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
         snipView = (DrawView) service_layout.findViewById(R.id.snip_view);
@@ -144,7 +153,7 @@ public class ScreenTextService extends Service {
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         mParamsTrash.format = PixelFormat.TRANSLUCENT;
-        // INFO:Windowの原点のみ左下に設定
+
         mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
         mParamsTrash.x=0;
         mParamsTrash.y=0;
@@ -164,7 +173,7 @@ public class ScreenTextService extends Service {
         }
 
 
-
+        mState = STATE_NORMAL;
         bubble.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
             private int initialY;
@@ -186,6 +195,7 @@ public class ScreenTextService extends Service {
                     return true;
                 } else {
                     // your code for move and drag
+                    final int state = mState;
                     trash_layout.onTouchFloatingView(event, params.x, params.y);
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
@@ -199,8 +209,26 @@ public class ScreenTextService extends Service {
                             return true;
                         case MotionEvent.ACTION_UP:
                             animateToEdge();
+                            if (state == STATE_INTERSECTING) {
+                                trash_layout.setScaleTrashIcon(false);
+                            }
                             return true;
                         case MotionEvent.ACTION_MOVE:
+                            final boolean isIntersecting = isIntersectWithTrash();
+                            final boolean isIntersect = state == STATE_INTERSECTING;
+                            if (isIntersecting) {
+                                mState = STATE_INTERSECTING;
+                                //Log.d("prueba","start to intersect");
+                            }
+                            if(isIntersecting && !isIntersect){
+                                bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                                trash_layout.setScaleTrashIcon(true);
+                                Log.d("prueba","intersecting");
+                            }else if(!isIntersecting && isIntersect){
+                                Log.d("prueba","not intersecting");
+                                mState = STATE_NORMAL;
+                                trash_layout.setScaleTrashIcon(false);
+                            }
                             params.x = initialX + (int) (event.getRawX() - initialTouchX);
                             params.y = initialY + (int) (event.getRawY() - initialTouchY);
                             //Log.i(TAG,"X: "+params.x+" Y: "+ params.y);
@@ -217,7 +245,7 @@ public class ScreenTextService extends Service {
                 Log.i(TAG,"Width: "+mMetrics.widthPixels);
                 ValueAnimator ani;
                 if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) {
-                    ani = ValueAnimator.ofInt(currentX, mMetrics.widthPixels - bubbleWidth);
+                    ani = ValueAnimator.ofInt(currentX, mMetrics.widthPixels - 2*bubbleWidth/3);
                 } else {
                     ani = ValueAnimator.ofInt(currentX, -bubbleWidth/3);
 
@@ -289,6 +317,21 @@ public class ScreenTextService extends Service {
                 Looper.loop();
             }
         }.start();
+
+    }
+
+    private boolean isIntersectWithTrash() {
+        // 無効の場合は重なり判定を行わない
+
+        // INFO:TrashViewとFloatingViewは同じGravityにする必要があります
+        trash_layout.getWindowDrawingRect(mTrashViewRect);
+        getBubbleWindowDrawingRect(mFloatingViewRect);
+
+        return Rect.intersects(mTrashViewRect, mFloatingViewRect);
+    }
+
+    private void getBubbleWindowDrawingRect(Rect outRect) {
+        outRect.set(params.x, params.y, params.x + bubble.getWidth(), params.y + bubble.getHeight());
 
     }
 

@@ -7,21 +7,23 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:id="@+id/backgroundView">
-        <FrameLayout
+    </FrameLayout>
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:id="@+id/trash_icon_container">
+        <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal|bottom"
-            android:id="@+id/trash_icon_container">
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_trash_action"
-                android:layout_gravity="center"/>
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_trash_fixed"
-                android:layout_gravity="center"/>
-        </FrameLayout>
+            android:src="@drawable/ic_trash_action"
+            android:id="@+id/trash_action_icon"
+            android:layout_gravity="center"/>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_trash_fixed"
+            android:id="@+id/trash_fixed_icon"
+            android:layout_gravity="center"/>
     </FrameLayout>
 </FrameLayout>
