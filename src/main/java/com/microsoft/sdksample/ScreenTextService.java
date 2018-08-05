@@ -9,6 +9,8 @@ package com.microsoft.sdksample;
 
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -28,6 +30,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
@@ -99,10 +102,11 @@ public class ScreenTextService extends Service {
     private final Rect mFloatingViewRect = new Rect();
     private final Rect mTrashViewRect = new Rect();
 
-    private int mState;
     static final int STATE_NORMAL = 0;
     static final int STATE_INTERSECTING = 1;
     static final int STATE_FINISHING = 2;
+
+    private boolean isForeground;
 
 
     @Nullable
@@ -115,6 +119,9 @@ public class ScreenTextService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        isForeground=false;
+
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
         trash_layout= new TrashView(this);
         hasPermission=false;
@@ -231,7 +238,6 @@ public class ScreenTextService extends Service {
                                 bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
                                 params.x= (int) trash_layout.getTrashIconCenterX();
                                 params.y = (int) trash_layout.getTrashIconCenterY();
-                                Log.d("prueba","start to intersect" + params.x +", "+params.y);
                             }else{
                                 params.x = initialX + (int) (event.getRawX() - initialTouchX);
                                 params.y = initialY + (int) (event.getRawY() - initialTouchY);
@@ -239,9 +245,7 @@ public class ScreenTextService extends Service {
                             if(isIntersecting && !isIntersect){
                                 bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                                 trash_layout.setScaleTrashIcon(true);
-                                Log.d("prueba","intersecting");
                             }else if(!isIntersecting && isIntersect){
-                                Log.d("prueba","not intersecting");
                                 bubble.mAnimationHandler.setState(STATE_NORMAL);
                                 trash_layout.setScaleTrashIcon(false);
                             }
@@ -520,15 +524,18 @@ public class ScreenTextService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent!=null) {
             String action = intent.getAction();
-            if(MainActivity.NORMAL_SERVICE.equals(action) ){
+            Log.d("prueba","Intent action " + action);
+            if(MainActivity.NORMAL_SERVICE.equals(action) ) {
                 windowManager.addView(trash_layout, mParamsTrash);
                 windowManager.addView(service_layout, params);
-                if(!hasPermission){
+                if (!hasPermission) {
                     permissionIntent = intent;
                     resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
                 }
-                hasPermission=true;
-            }else if(MainActivity.NORMAL_NO_PERM_SERVICE.equals(action)) {
+                hasPermission = true;
+            }else if(ProcessTextActivity.LONGPRESS_SERVICE_NOSHOW.equals(action)){
+                action=ProcessTextActivity.LONGPRESS_SERVICE;
+            }else if(ProcessTextActivity.LONGPRESS_SERVICE.equals(action)) {
                 if(!hasPermission){
                     final Intent intentGetPermission = new Intent(this, AcquireScreenshotPermission.class);
                     intentGetPermission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -537,10 +544,35 @@ public class ScreenTextService extends Service {
                 windowManager.addView(trash_layout, mParamsTrash);
                 windowManager.addView(service_layout, params);
             }
+
+            if(!isForeground) createForeground(action);
         }else {
             stopSelf();
         }
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void createForeground(String action){
+        Intent intentHide = new Intent(this, Receiver.class);
+        PendingIntent pendingIntentHide = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
+
+        Intent intent = new Intent(this, ScreenTextService.class);
+        intent.setAction(action);
+        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
+
+        Notification notification = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("Text to speech")
+                .setContentText("Tap to start")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("Much longer text that cannot fit one line..."))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .addAction(R.drawable.ic_close, getString(R.string.close_notification),pendingIntentHide)
+                .setOngoing(true)
+                .setContentIntent(pendingIntent).build();
+
+        startForeground(1337, notification);
+        isForeground=true;
     }
 
     @Override

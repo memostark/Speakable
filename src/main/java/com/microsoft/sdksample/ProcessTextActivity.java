@@ -43,7 +43,8 @@ public class ProcessTextActivity extends Activity{
     private CustomAdapter mAdapter;
 
     private String TAG=this.getClass().getSimpleName();
-    static final String LONGPRESS_SERVICE = "startService";
+    public static final String LONGPRESS_SERVICE_NOSHOW = "startServiceLong";
+    public static final String LONGPRESS_SERVICE = "showServiceg";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -63,7 +64,7 @@ public class ProcessTextActivity extends Activity{
         }
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
-        intent.setAction(LONGPRESS_SERVICE);
+        intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
         startService(intentService);
 
         mAdapter = new CustomAdapter(this);
@@ -142,7 +143,6 @@ public class ProcessTextActivity extends Activity{
         });
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
-        createNotification();
 
         findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -170,31 +170,6 @@ public class ProcessTextActivity extends Activity{
     private void setList(){
         ListView listView = (ListView) findViewById(R.id.listView_wiki);
         listView.setAdapter(mAdapter);
-    }
-
-    private void createNotification(){
-        Intent intentNormalStart = new Intent(this, ScreenTextService.class);
-        intentNormalStart.setAction(MainActivity.NORMAL_NO_PERM_SERVICE);
-        PendingIntent pendingIntentNormal = PendingIntent.getService(this, 0, intentNormalStart, 0);
-
-        Intent intentHide = new Intent(this, Receiver.class);
-        PendingIntent pendingIntentHide = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
-
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("My notification")
-                .setContentText("Much longer text that cannot fit one line...")
-                .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Much longer text that cannot fit one line..."))
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setOngoing(true)
-                .setContentIntent(pendingIntentNormal)
-                .addAction(R.drawable.ic_close, getString(R.string.close_notification),pendingIntentHide);
-
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-        // notificationId is a unique int for each notification that you must define
-        notificationManager.notify(MainActivity.notificationId, mBuilder.build());
     }
 
 
