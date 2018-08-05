@@ -4,6 +4,8 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -91,7 +93,22 @@ public class TrashView extends FrameLayout {
             Log.d("PRUEBA", "ActionIconW: "+mActionTrashIconBaseWidth+" ActionIconH: "+mActionTrashIconBaseHeight);
         }
 
+        myPaint = new Paint();
+        myPaint.setColor(Color.rgb(0,0,0));
+        myPaint.setStrokeWidth(10);
+        myPaint.setStyle(Paint.Style.STROKE);
+        rec = new Rect();
+
         addView(mRootView);
+    }
+
+    public void setRect(Rect rect){
+        rec=rect;
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        canvas.drawRect(rec, myPaint);
     }
 
     @Override
@@ -146,6 +163,23 @@ public class TrashView extends FrameLayout {
         mExitScaleAnimator = ObjectAnimator.ofPropertyValuesHolder(mActionTrashIconView, PropertyValuesHolder.ofFloat(ImageView.SCALE_X, 1.0f), PropertyValuesHolder.ofFloat(ImageView.SCALE_Y, 1.0f));
         mExitScaleAnimator.setInterpolator(new OvershootInterpolator());
         mExitScaleAnimator.setDuration(TRASH_ICON_SCALE_DURATION_MILLIS);
+    }
+
+    public float getTrashIconCenterX() {
+        final ImageView iconView = mActionTrashIconView;
+        final float iconViewPaddingLeft = iconView.getPaddingLeft();
+        final float iconWidth = iconView.getWidth() - iconViewPaddingLeft - iconView.getPaddingRight();
+        final float x = mTrashIconRootView.getX() + iconViewPaddingLeft;
+        return x;
+    }
+
+    public float getTrashIconCenterY() {
+        final ImageView iconView = mActionTrashIconView;
+        final float iconViewHeight = iconView.getHeight();
+        final float iconViewPaddingBottom = iconView.getPaddingBottom();
+        final float iconHeight = iconViewHeight - iconView.getPaddingTop() - iconViewPaddingBottom;
+        final float y = mTrashIconRootView.getY() + iconViewPaddingBottom;
+        return y;
     }
 
     private void setScaleTrashIconImmediately(boolean isEnter) {

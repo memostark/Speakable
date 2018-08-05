@@ -50,6 +50,7 @@ import android.widget.LinearLayout;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
+import com.microsoft.sdksample.CustomViews.BubbleView;
 import com.microsoft.sdksample.CustomViews.DrawView;
 import com.microsoft.sdksample.CustomViews.TrashView;
 
@@ -85,8 +86,7 @@ public class ScreenTextService extends Service {
     private int mWidth;
     private int mHeight;
     private DrawView snipView;
-    private ImageView bubble;
-    private ImageView close;
+    private BubbleView bubble;
     private ImageView takeSS;
     private LinearLayout container;
     private WindowManager.LayoutParams params;
@@ -126,12 +126,10 @@ public class ScreenTextService extends Service {
         tts = new CustomTTS(ScreenTextService.this);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
-        bubble = (ImageView) service_layout.findViewById(R.id.image_bubble);
-        close = (ImageView) service_layout.findViewById(R.id.closeService_image);
+        bubble = (BubbleView) service_layout.findViewById(R.id.image_bubble);
         takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
         snipView = (DrawView) service_layout.findViewById(R.id.snip_view);
         container = (LinearLayout) service_layout.findViewById(R.id.icon_container);
-        bubble.setImageResource(R.mipmap.ic_launcher);
 
 
         params = new WindowManager.LayoutParams(
@@ -172,8 +170,6 @@ public class ScreenTextService extends Service {
             });
         }
 
-
-        mState = STATE_NORMAL;
         bubble.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
             private int initialY;
@@ -181,6 +177,8 @@ public class ScreenTextService extends Service {
             private float initialTouchY;
             private float touchX;
             private float touchY;
+            int xByTouch;
+            int yByTouch;
 
             //-------https://stackoverflow.com/questions/19538747/how-to-use-both-ontouch-and-onclick-for-an-imagebutton
             @Override
@@ -195,10 +193,12 @@ public class ScreenTextService extends Service {
                     return true;
                 } else {
                     // your code for move and drag
-                    final int state = mState;
+                    final int state = bubble.getState();
                     trash_layout.onTouchFloatingView(event, params.x, params.y);
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
+                            bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
+                            bubble.mAnimationHandler.sendAnimationMessage(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                             initialX = params.x;
                             initialY = params.y;
                             initialTouchX = event.getRawX();
@@ -208,17 +208,33 @@ public class ScreenTextService extends Service {
                             //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
                             return true;
                         case MotionEvent.ACTION_UP:
-                            animateToEdge();
                             if (state == STATE_INTERSECTING) {
+                                bubble.setFinishing();
                                 trash_layout.setScaleTrashIcon(false);
+                                if (service_layout != null)
+                                    windowManager.removeView(service_layout);
+                                if(trash_layout!=null)
+                                    windowManager.removeView(trash_layout);
+                                params.x = 0;
+                                params.y = 100;
+                            }else{
+                                animateToEdge();
                             }
+                            bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                             return true;
                         case MotionEvent.ACTION_MOVE:
+                            xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
+                            yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
                             final boolean isIntersecting = isIntersectWithTrash();
                             final boolean isIntersect = state == STATE_INTERSECTING;
                             if (isIntersecting) {
-                                mState = STATE_INTERSECTING;
-                                //Log.d("prueba","start to intersect");
+                                bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
+                                params.x= (int) trash_layout.getTrashIconCenterX();
+                                params.y = (int) trash_layout.getTrashIconCenterY();
+                                Log.d("prueba","start to intersect" + params.x +", "+params.y);
+                            }else{
+                                params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                                params.y = initialY + (int) (event.getRawY() - initialTouchY);
                             }
                             if(isIntersecting && !isIntersect){
                                 bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
@@ -226,11 +242,14 @@ public class ScreenTextService extends Service {
                                 Log.d("prueba","intersecting");
                             }else if(!isIntersecting && isIntersect){
                                 Log.d("prueba","not intersecting");
-                                mState = STATE_NORMAL;
+                                bubble.mAnimationHandler.setState(STATE_NORMAL);
                                 trash_layout.setScaleTrashIcon(false);
                             }
-                            params.x = initialX + (int) (event.getRawX() - initialTouchX);
-                            params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                            /*Rect rect = new Rect();
+                            getBubbleWindowDrawingRect(rect);
+                            trash_layout.setRect(rect);
+                            trash_layout.invalidate();*/
+
                             //Log.i(TAG,"X: "+params.x+" Y: "+ params.y);
                             windowManager.updateViewLayout(service_layout, params);
                             return true;
@@ -264,15 +283,20 @@ public class ScreenTextService extends Service {
                 ani.start();
 
             }
-        });
 
-        close.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (service_layout != null)
-                    windowManager.removeView(service_layout);
-                if(trash_layout!=null)
-                    windowManager.removeView(trash_layout);
+            private boolean isIntersectWithTrash() {
+                // 無効の場合は重なり判定を行わない
+
+                // INFO:TrashViewとFloatingViewは同じGravityにする必要があります
+                trash_layout.getWindowDrawingRect(mTrashViewRect);
+                getBubbleWindowDrawingRect(mFloatingViewRect);
+
+                return Rect.intersects(mTrashViewRect, mFloatingViewRect);
+            }
+
+            private void getBubbleWindowDrawingRect(Rect outRect) {
+                outRect.set(xByTouch, yByTouch, xByTouch + bubble.getWidth(), yByTouch + bubble.getHeight());
+
             }
         });
 
@@ -320,21 +344,6 @@ public class ScreenTextService extends Service {
 
     }
 
-    private boolean isIntersectWithTrash() {
-        // 無効の場合は重なり判定を行わない
-
-        // INFO:TrashViewとFloatingViewは同じGravityにする必要があります
-        trash_layout.getWindowDrawingRect(mTrashViewRect);
-        getBubbleWindowDrawingRect(mFloatingViewRect);
-
-        return Rect.intersects(mTrashViewRect, mFloatingViewRect);
-    }
-
-    private void getBubbleWindowDrawingRect(Rect outRect) {
-        outRect.set(params.x, params.y, params.x + bubble.getWidth(), params.y + bubble.getHeight());
-
-    }
-
     private boolean isSnipViewVisible(){
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
     }
@@ -355,7 +364,6 @@ public class ScreenTextService extends Service {
             rlparams.setMargins(0,35,0,0);
             snipView.setVisibility(View.VISIBLE);
             takeSS.setVisibility(View.VISIBLE);
-            close.setVisibility(View.GONE);
             params.x=0;
             params.y=100;
             params.width = WindowManager.LayoutParams.MATCH_PARENT;
@@ -372,7 +380,6 @@ public class ScreenTextService extends Service {
             params.x=0;
             params.y=100;
             snipView.setVisibility(View.GONE);
-            close.setVisibility(View.VISIBLE);
             takeSS.setVisibility(View.GONE);
             params.width = WindowManager.LayoutParams.WRAP_CONTENT;
             params.height = WindowManager.LayoutParams.WRAP_CONTENT;

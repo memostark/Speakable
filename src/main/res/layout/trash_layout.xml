@@ -16,8 +16,8 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_trash_action"
             android:id="@+id/trash_action_icon"
+            android:src="@drawable/ic_trash_action"
             android:layout_gravity="center"/>
         <ImageView
             android:layout_width="wrap_content"

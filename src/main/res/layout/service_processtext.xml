@@ -18,19 +18,12 @@
         <FrameLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
-            <ImageView
+            <com.microsoft.sdksample.CustomViews.BubbleView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="Bubble"
                 android:id="@+id/image_bubble"
                 android:src="@mipmap/ic_launcher" />
-            <ImageView
-                android:id="@+id/closeService_image"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_close"
-                android:layout_gravity="end|top"
-                android:scaleType="fitXY"/>
         </FrameLayout>
         <ImageView
             android:id="@+id/takeScreenShot_image"
