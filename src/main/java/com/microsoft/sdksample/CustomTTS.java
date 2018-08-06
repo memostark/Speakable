@@ -26,6 +26,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private Context mContext;
     private TextToSpeech tts;
     private Synthesizer mSynth;
+    private CustomTTSListener mListener;
 
     private Boolean isGoogleTTSready;
     private Boolean localTTS;
@@ -36,6 +37,10 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         mContext = context;
         tts = new TextToSpeech(context, this);
         mSynth = new Synthesizer(mContext.getResources().getString(R.string.api_key));
+    }
+
+    void setListener(CustomTTSListener listener){
+        mListener=listener;
     }
 
     public void speak(String text){
@@ -57,21 +62,26 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         }
         Log.i(TAG, body.toString());
 
-        String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=de&to=it";
+        String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=en";
 
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.POST, urlDetectLang,null, new Response.Listener<JSONArray>() {
             @Override
             public void onResponse(JSONArray response) {
 
-                String langCode;
+                String langCode, translation;
                 try {
-                    JSONObject jsonLang = response.getJSONObject(0).getJSONObject("detectedLanguage");
+                    JSONObject jsonObject = response.getJSONObject(0);
+                    JSONObject jsonLang = jsonObject.getJSONObject("detectedLanguage");
+                    JSONArray jsonTranslation = jsonObject.getJSONArray("translations");
                     langCode = jsonLang.getString("language");
+                    translation = jsonTranslation.getJSONObject(0).getString("text");
                 } catch (JSONException e) {
                     langCode = "NOLANG";
+                    translation = "No translation";
                     Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
+                if(mListener!=null) mListener.onLanguageDetected(translation);
                 playVoice(text, langCode);
                 Log.i(TAG,langCode);
             }

@@ -8,12 +8,9 @@
 package com.microsoft.sdksample;
 
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -38,13 +35,15 @@ import java.util.Iterator;
 import java.util.List;
 
 
-public class ProcessTextActivity extends Activity{
+public class ProcessTextActivity extends Activity implements CustomTTSListener{
     private CustomTTS tts;
     private CustomAdapter mAdapter;
 
     private String TAG=this.getClass().getSimpleName();
     public static final String LONGPRESS_SERVICE_NOSHOW = "startServiceLong";
     public static final String LONGPRESS_SERVICE = "showServiceg";
+
+    private boolean mIsSentence;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,8 +58,10 @@ public class ProcessTextActivity extends Activity{
         TextView mTextTTS = (TextView) findViewById(R.id.text_tts);
         mTextTTS.setText(text);
 
+
         if(tts == null) {
             tts = new CustomTTS(ProcessTextActivity.this);
+            tts.setListener(this);
         }
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
@@ -70,15 +71,30 @@ public class ProcessTextActivity extends Activity{
         mAdapter = new CustomAdapter(this);
 
         String[] splittedText = textString.split(" ");
-        if(splittedText.length > 1) Toast.makeText(this,"Sentence",Toast.LENGTH_SHORT).show();
+        mIsSentence=false;
+        if(splittedText.length > 1) {
+            Toast.makeText(this, "Sentence", Toast.LENGTH_SHORT).show();
+            mIsSentence = true;
+        }else
+            sendWiktionaryRequest(textString);
+        tts.determineLanguage(textString);
 
-        //------------------------------ Tomado de https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
+
+        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                tts.speak(textString);
+            }
+        });
+    }
+
+    private void sendWiktionaryRequest(String textString){
+        //------------------------------ Taken from https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
         String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&redirects=1&titles=" + textString;
-        final TextView mWikiContent = (TextView) findViewById(R.id.text_wikiContent);
+        final TextView mWikiContent = (TextView) findViewById(R.id.text_translation);
         mWikiContent.setMovementMethod(new ScrollingMovementMethod());
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        tts.determineLanguage(textString);
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -144,12 +160,6 @@ public class ProcessTextActivity extends Activity{
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
 
-        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                tts.speak(textString);
-            }
-        });
     }
 
     @Override
@@ -173,6 +183,12 @@ public class ProcessTextActivity extends Activity{
     }
 
 
-
+    @Override
+    public void onLanguageDetected(String translation) {
+        if(mIsSentence){
+            TextView mTextTranslation = (TextView) findViewById(R.id.text_translation);
+            mTextTranslation.setText(translation);
+        }
+    }
 }
 

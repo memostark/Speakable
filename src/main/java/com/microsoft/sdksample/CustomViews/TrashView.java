@@ -1,3 +1,8 @@
+/*
+* Thanks to https://github.com/recruit-lifestyle/FloatingView/blob/master/library/src/main/java/jp/co/recruit_lifestyle/android/floatingview/TrashView.java
+*
+* */
+
 package com.microsoft.sdksample.CustomViews;
 
 import android.animation.ObjectAnimator;
