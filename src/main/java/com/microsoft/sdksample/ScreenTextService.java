@@ -529,8 +529,7 @@ public class ScreenTextService extends Service {
             String action = intent.getAction();
             Log.d("prueba","Intent action " + action);
             if(MainActivity.NORMAL_SERVICE.equals(action) ) {
-                windowManager.addView(trash_layout, mParamsTrash);
-                windowManager.addView(service_layout, params);
+                addViews();
                 if (!hasPermission) {
                     permissionIntent = intent;
                     resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
@@ -544,8 +543,7 @@ public class ScreenTextService extends Service {
                     intentGetPermission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intentGetPermission);
                 }
-                windowManager.addView(trash_layout, mParamsTrash);
-                windowManager.addView(service_layout, params);
+                addViews();
             }
 
             if(!isForeground) createForeground(action);
@@ -576,6 +574,11 @@ public class ScreenTextService extends Service {
 
         startForeground(1337, notification);
         isForeground=true;
+    }
+
+    private void addViews(){
+        if(service_layout.getWindowToken() == null) windowManager.addView(service_layout, params);
+        if(trash_layout.getWindowToken() == null) windowManager.addView(trash_layout, mParamsTrash);
     }
 
     @Override
