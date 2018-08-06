@@ -90,7 +90,6 @@ public class TrashView extends FrameLayout {
         if (drawable != null) {
             mActionTrashIconBaseWidth = drawable.getIntrinsicWidth();
             mActionTrashIconBaseHeight = drawable.getIntrinsicHeight();
-            Log.d("PRUEBA", "ActionIconW: "+mActionTrashIconBaseWidth+" ActionIconH: "+mActionTrashIconBaseHeight);
         }
 
         myPaint = new Paint();
@@ -196,10 +195,10 @@ public class TrashView extends FrameLayout {
         // 領域に入った場合
         if (isEnter) {
             mEnterScaleAnimator.start();
-            Log.d("prueba","mEnterScaleAnimator.start()");
+            //Log.d("prueba","mEnterScaleAnimator.start()");
         } else {
             mExitScaleAnimator.start();
-            Log.d("prueba","mExitScaleAnimator.start()");
+            //Log.d("prueba","mExitScaleAnimator.start()");
         }
     }
 
@@ -224,15 +223,22 @@ public class TrashView extends FrameLayout {
 
         }else if (action == MotionEvent.ACTION_MOVE){
             if (!mAnimationHandler.isAnimationStarted(ANIMATION_OPEN)) {
-                // 長押しのメッセージを削除
                 mAnimationHandler.removeMessages(ANIMATION_OPEN);
-                // オープン
                 mAnimationHandler.sendAnimationMessage(ANIMATION_OPEN);
             }
         }else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL){
             mAnimationHandler.removeMessages(ANIMATION_OPEN);
             mAnimationHandler.sendAnimationMessage(ANIMATION_CLOSE);
         }
+    }
+
+    public void dismiss() {
+
+        mAnimationHandler.removeMessages(ANIMATION_OPEN);
+        mAnimationHandler.removeMessages(ANIMATION_CLOSE);
+        mAnimationHandler.sendAnimationMessage(ANIMATION_FORCE_CLOSE);
+
+        setScaleTrashIconImmediately(false);
     }
 
     static class AnimationHandler extends Handler {

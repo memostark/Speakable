@@ -192,13 +192,14 @@ public class ScreenTextService extends Service {
             public boolean onTouch(View view, MotionEvent event) {
                 if (gestureDetector.onTouchEvent(event)) {
 
+                    trash_layout.dismiss();
                     if(isSnipViewVisible()){
                         setSnippingView(false);
                     }else {
                         setSnippingView(true);
                     }
                     return true;
-                } else {
+                } else if (!isSnipViewVisible()) {
                     // your code for move and drag
                     final int state = bubble.getState();
                     trash_layout.onTouchFloatingView(event, params.x, params.y);
@@ -214,6 +215,7 @@ public class ScreenTextService extends Service {
                             touchY = event.getY();
                             //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
                             return true;
+
                         case MotionEvent.ACTION_UP:
                             if (state == STATE_INTERSECTING) {
                                 bubble.setFinishing();
@@ -229,6 +231,7 @@ public class ScreenTextService extends Service {
                             }
                             bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                             return true;
+
                         case MotionEvent.ACTION_MOVE:
                             xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
                             yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
@@ -259,7 +262,7 @@ public class ScreenTextService extends Service {
                             return true;
                     }
                 }
-                return false;
+                return true;
             }
             //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
             private void animateToEdge() {
@@ -387,7 +390,7 @@ public class ScreenTextService extends Service {
             takeSS.setVisibility(View.GONE);
             params.width = WindowManager.LayoutParams.WRAP_CONTENT;
             params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
             windowManager.updateViewLayout(service_layout, params);
         }
     }
