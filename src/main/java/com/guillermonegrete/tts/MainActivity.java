@@ -31,17 +31,14 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-package com.microsoft.sdksample;
+package com.guillermonegrete.tts;
 
 import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
-import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v4.app.NotificationCompat;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;

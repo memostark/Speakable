@@ -1,4 +1,4 @@
-package com.microsoft.sdksample;
+package com.guillermonegrete.tts;
 
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
@@ -11,8 +11,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
-import com.microsoft.speech.tts.Synthesizer;
-import com.microsoft.speech.tts.Voice;
+import com.guillermonegrete.speech.tts.Synthesizer;
+import com.guillermonegrete.speech.tts.Voice;
 
 import org.json.JSONArray;
 import org.json.JSONException;

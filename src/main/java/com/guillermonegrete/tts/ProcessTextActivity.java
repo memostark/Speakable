@@ -5,7 +5,7 @@
                         http://www.androidmethlab.com/2015/09/transparent-floating-window-in-front-of.html
 */
 
-package com.microsoft.sdksample;
+package com.guillermonegrete.tts;
 
 import android.app.Activity;
 import android.content.Intent;

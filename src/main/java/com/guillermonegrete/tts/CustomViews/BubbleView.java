@@ -1,4 +1,4 @@
-package com.microsoft.sdksample.CustomViews;
+package com.guillermonegrete.tts.CustomViews;
 
 import android.content.Context;
 import android.graphics.PixelFormat;
@@ -8,13 +8,11 @@ import android.os.SystemClock;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
 import java.lang.ref.WeakReference;
-import java.security.PublicKey;
 
 
 public class BubbleView extends ImageView {

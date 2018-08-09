@@ -3,7 +3,7 @@
 *
 * */
 
-package com.microsoft.sdksample.CustomViews;
+package com.guillermonegrete.tts.CustomViews;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
@@ -19,7 +19,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
@@ -29,7 +28,7 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import com.microsoft.sdksample.R;
+import com.guillermonegrete.tts.R;
 
 import java.lang.ref.WeakReference;
 

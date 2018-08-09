@@ -1,7 +1,7 @@
 /*
         Reference: https://stackoverflow.com/questions/33398211/how-do-i-get-a-media-projection-manager-without-disturbing-the-current-foregroun
 */
-package com.microsoft.sdksample;
+package com.guillermonegrete.tts;
 
 import android.app.Activity;
 import android.content.Intent;

@@ -5,7 +5,7 @@
                      https://stackoverflow.com/questions/42417606/bypassing-google-tts-engine-initialization-lag-in-android/42588475
  */
 
-package com.microsoft.sdksample;
+package com.guillermonegrete.tts;
 
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
@@ -18,7 +18,6 @@ import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.drawable.GradientDrawable;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
@@ -41,7 +40,6 @@ import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
@@ -53,9 +51,9 @@ import android.widget.LinearLayout;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
-import com.microsoft.sdksample.CustomViews.BubbleView;
-import com.microsoft.sdksample.CustomViews.DrawView;
-import com.microsoft.sdksample.CustomViews.TrashView;
+import com.guillermonegrete.tts.CustomViews.BubbleView;
+import com.guillermonegrete.tts.CustomViews.DrawView;
+import com.guillermonegrete.tts.CustomViews.TrashView;
 
 import java.io.File;
 import java.io.FileOutputStream;

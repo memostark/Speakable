@@ -1,4 +1,4 @@
-package com.microsoft.sdksample;
+package com.guillermonegrete.tts;
 
 interface CustomTTSListener  {
     void onLanguageDetected(String translation);

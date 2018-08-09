@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.microsoft.sdksample" >
+    package="com.guillermonegrete.tts" >
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
@@ -10,7 +10,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name="com.guillermonegrete.tts.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -19,7 +19,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ProcessTextActivity"
+            android:name="com.guillermonegrete.tts.ProcessTextActivity"
             android:label="@string/process_text_action_name"
             android:theme="@style/ProcessTextStyle">
             <intent-filter>
@@ -28,9 +28,9 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
-        <activity android:name=".AcquireScreenshotPermission"></activity>
-        <service android:name=".ScreenTextService"/>
-        <receiver android:name=".Receiver"
+        <activity android:name="com.guillermonegrete.tts.AcquireScreenshotPermission"></activity>
+        <service android:name="com.guillermonegrete.tts.ScreenTextService"/>
+        <receiver android:name="com.guillermonegrete.tts.Receiver"
             android:enabled="true"
             android:process=":remote"
             />
