@@ -43,6 +43,8 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.NotificationCompat;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -92,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
             });
 
             Button playBtn = (Button) findViewById(R.id.play_btn);
+            final WebView webview = (WebView) findViewById(R.id.webview_wiktionary);
+            webview.setWebViewClient(new HelloWebViewClient());
 
             //Toast.makeText(MainActivity.this, "Edittext Toast1:" + text, Toast.LENGTH_LONG).show();
 
@@ -101,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
                     EditText mEdit   = (EditText)findViewById(R.id.tts_ev);
                     final String text = mEdit.getText().toString();
                     tts.determineLanguage(text);
+                    webview.loadUrl("https://en.m.wiktionary.org/wiki/"+text);
                 }
             });
 
@@ -111,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
                             = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
                     final Intent permissionIntent = manager.createScreenCaptureIntent();
                     startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
-                    //startService(new Intent(MainActivity.this, ScreenTextService.class));
 
                 }
             });
@@ -137,6 +141,14 @@ public class MainActivity extends AppCompatActivity {
                 startService(intent);
                 this.finish();
             }
+        }
+    }
+
+    private class HelloWebViewClient extends WebViewClient {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            view.loadUrl(url);
+            return true;
         }
     }
 
