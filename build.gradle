@@ -34,4 +34,8 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:22.2.1'
     implementation 'com.android.volley:volley:1.1.0'
     implementation 'com.google.android.gms:play-services-vision:15.0.2'
+    implementation 'com.google.firebase:firebase-core:16.0.1'
+    implementation 'com.google.firebase:firebase-ml-vision:16.0.0'
 }
+
+apply plugin: 'com.google.gms.google-services'

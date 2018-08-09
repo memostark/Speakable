@@ -28,6 +28,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.DisplayMetrics;
@@ -48,9 +49,17 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
+import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.cloud.FirebaseVisionCloudDetectorOptions;
+import com.google.firebase.ml.vision.cloud.text.FirebaseVisionCloudText;
+import com.google.firebase.ml.vision.cloud.text.FirebaseVisionCloudTextDetector;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
 import com.guillermonegrete.tts.CustomViews.DrawView;
 import com.guillermonegrete.tts.CustomViews.TrashView;
@@ -59,6 +68,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public class ScreenTextService extends Service {
 
@@ -338,6 +348,12 @@ public class ScreenTextService extends Service {
             }
         });
 
+        FirebaseVisionCloudDetectorOptions options =
+                new FirebaseVisionCloudDetectorOptions.Builder()
+                        .setModelType(FirebaseVisionCloudDetectorOptions.LATEST_MODEL)
+                        .setMaxResults(15)
+                        .build();
+
         new Thread() {
             @Override
             public void run() {
@@ -438,16 +454,49 @@ public class ScreenTextService extends Service {
                     IMAGES_PRODUCED++;
                     Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
                     stopProjection();
+
+                    FirebaseVisionImage imageFB = FirebaseVisionImage.fromBitmap(croppedBitmap);
+                    FirebaseVisionCloudTextDetector detector = FirebaseVision.getInstance()
+                            .getVisionCloudTextDetector();
+                    Task<FirebaseVisionCloudText> result = detector.detectInImage(imageFB)
+                            .addOnSuccessListener(new OnSuccessListener<FirebaseVisionCloudText>() {
+                                @Override
+                                public void onSuccess(FirebaseVisionCloudText firebaseVisionCloudText) {
+                                    String recognizedText = firebaseVisionCloudText.getText();
+                                    tts.determineLanguage(recognizedText);
+                                    Log.i(TAG, "Firebase text: "+recognizedText);
+
+                                    /*for (FirebaseVisionCloudText.Page page: firebaseVisionCloudText.getPages()) {
+                                        List<FirebaseVisionCloudText.DetectedLanguage> languages =
+                                                page.getTextProperty().getDetectedLanguages();
+                                        int height = page.getHeight();
+                                        int width = page.getWidth();
+                                        float confidence = page.getConfidence();
+
+                                        for (FirebaseVisionCloudText.Block block: page.getBlocks()) {
+                                            Rect boundingBox = block.getBoundingBox();
+                                            List<FirebaseVisionCloudText.DetectedLanguage> blockLanguages =
+                                                    block.getTextProperty().getDetectedLanguages();
+                                            float blockConfidence = block.getConfidence();
+                                            // And so on: Paragraph, Word, Symbol
+                                        }
+                                    }*/
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Log.e(TAG,"failed to detect text: "+ e.getMessage());
+                                }
+                            });
                     //openScreenshot(imageFile);
                     // https://stackoverflow.com/questions/37287910/how-to-extract-text-from-image-android-app
-                    Frame imageFrame = new Frame.Builder()
+                    /*Frame imageFrame = new Frame.Builder()
 
                             .setBitmap(croppedBitmap)                 // your image bitmap
                             .build();
 
                     String imageText;
-
-
                     SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
 
                     for (int i = 0; i < textBlocks.size(); i++) {
@@ -455,7 +504,7 @@ public class ScreenTextService extends Service {
                         imageText = textBlock.getValue();                   // return string
                         tts.determineLanguage(imageText);
                         Log.i(TAG, i+".- "+imageText);
-                    }
+                    }*/
                 }
 
             } catch (Exception e) {
