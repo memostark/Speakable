@@ -114,6 +114,8 @@ public class ScreenTextService extends Service {
     static final int STATE_INTERSECTING = 1;
     static final int STATE_FINISHING = 2;
 
+    static final String HE_LANG_CODE = "iw";
+
     private boolean isForeground;
 
 
@@ -455,32 +457,56 @@ public class ScreenTextService extends Service {
                     Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
                     stopProjection();
 
+                    //---------Reference https://firebase.google.com/docs/ml-kit/android/recognize-text?authuser=0
+
                     FirebaseVisionImage imageFB = FirebaseVisionImage.fromBitmap(croppedBitmap);
                     FirebaseVisionCloudTextDetector detector = FirebaseVision.getInstance()
-                            .getVisionCloudTextDetector();
+                                                                             .getVisionCloudTextDetector();
                     Task<FirebaseVisionCloudText> result = detector.detectInImage(imageFB)
                             .addOnSuccessListener(new OnSuccessListener<FirebaseVisionCloudText>() {
                                 @Override
                                 public void onSuccess(FirebaseVisionCloudText firebaseVisionCloudText) {
                                     String recognizedText = firebaseVisionCloudText.getText();
-                                    tts.determineLanguage(recognizedText);
                                     Log.i(TAG, "Firebase text: "+recognizedText);
 
-                                    /*for (FirebaseVisionCloudText.Page page: firebaseVisionCloudText.getPages()) {
+                                    Log.i(TAG, "pages size: " + firebaseVisionCloudText.getPages().size());
+                                    for (FirebaseVisionCloudText.Page page: firebaseVisionCloudText.getPages()) {
                                         List<FirebaseVisionCloudText.DetectedLanguage> languages =
                                                 page.getTextProperty().getDetectedLanguages();
-                                        int height = page.getHeight();
-                                        int width = page.getWidth();
-                                        float confidence = page.getConfidence();
-
+                                        int index=1;
+                                        Log.i(TAG, "blocks size: " + page.getBlocks().size());
                                         for (FirebaseVisionCloudText.Block block: page.getBlocks()) {
-                                            Rect boundingBox = block.getBoundingBox();
-                                            List<FirebaseVisionCloudText.DetectedLanguage> blockLanguages =
-                                                    block.getTextProperty().getDetectedLanguages();
-                                            float blockConfidence = block.getConfidence();
-                                            // And so on: Paragraph, Word, Symbol
+                                            Log.i(TAG, "paragraphs size: " + block.getParagraphs().size());
+                                            for (FirebaseVisionCloudText.Paragraph paragraph: block.getParagraphs()){
+                                                Log.i(TAG, "word size: " + paragraph.getWords().size());
+                                                StringBuilder sentenceString = new StringBuilder();
+                                                String langCode = "";
+                                                for (FirebaseVisionCloudText.DetectedLanguage lang : paragraph.getTextProperty().getDetectedLanguages()){
+                                                    langCode=lang.getLanguageCode();
+                                                    Log.i(TAG, "LANG: " + langCode);
+                                                }
+                                                int size = paragraph.getWords().size();
+                                                if (HE_LANG_CODE.equals(langCode)){
+                                                    for(int i=size-1;i>=0;i--){
+                                                        FirebaseVisionCloudText.Word word = paragraph.getWords().get(i);
+                                                        StringBuilder wordString = new StringBuilder();
+                                                        for (FirebaseVisionCloudText.Symbol symbol: word.getSymbols()) {
+                                                            wordString.append(symbol.getText());
+                                                        }
+                                                        Log.i(TAG, index + ".- " + wordString.toString());
+                                                        index++;
+                                                        String wordWhitespace= " " + wordString.toString();
+                                                        sentenceString.append(wordWhitespace);
+                                                    }
+                                                    Log.i(TAG, index + "sentence:  " + sentenceString.toString());
+                                                    tts.determineLanguage(sentenceString.toString());
+                                                }else{
+                                                    tts.determineLanguage(recognizedText);
+                                                }
+
+                                            }
                                         }
-                                    }*/
+                                    }
                                 }
                             })
                             .addOnFailureListener(new OnFailureListener() {
