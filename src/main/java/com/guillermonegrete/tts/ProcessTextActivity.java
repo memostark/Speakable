@@ -148,16 +148,6 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
                         return extract;
                     }
 
-                    private List<String> getLanguages(String extract){
-                        String[] separated = extract.split("\n== ");
-                        List<String> langs = new ArrayList<>();
-                        for (int i=0; i<separated.length; i++){
-                            langs.add(separated[i]);
-                            //Log.i(TAG,(i+1)+".- "+separated[i]);
-                        }
-                        return langs;
-                    }
-
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
@@ -167,6 +157,17 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
 
+    }
+
+
+    public static List<String> getLanguages(String extract){
+        String[] separated = extract.split("\n== ");
+        List<String> langs = new ArrayList<>();
+        for (int i=0; i<separated.length; i++){
+            langs.add(separated[i]);
+            //Log.i(TAG,(i+1)+".- "+separated[i]);
+        }
+        return langs;
     }
 
     @Override

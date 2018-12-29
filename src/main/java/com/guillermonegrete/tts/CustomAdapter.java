@@ -31,18 +31,18 @@ public class CustomAdapter extends BaseAdapter {
         height=0;
     }
 
-    public void addItem(final String item) {
+    void addItem(final String item) {
         mData.add(item);
         notifyDataSetChanged();
     }
 
-    public void addSectionHeaderItem(final String item) {
+    void addSectionHeaderItem(final String item) {
         mData.add(item);
         sectionHeader.add(mData.size() - 1);
         notifyDataSetChanged();
     }
 
-    public void addSectionSubHeaderItem(final String item) {
+    void addSectionSubHeaderItem(final String item) {
         mData.add(item);
         sectionSubHeader.add(mData.size() - 1);
         notifyDataSetChanged();
