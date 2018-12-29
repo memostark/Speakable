@@ -99,28 +99,22 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
                     public void onResponse(String response) {
                         // Display the first 500 characters of the response string.
                         String extract = extractResponseContent(response);
-                        List<String> langs = getLanguages(extract);
+                        WiktionaryParser wikiParser = new WiktionaryParser(extract);
 
-                        String[] separated;
+                        List<WiktionaryParser.WiktionaryItem> wikiItems = wikiParser.parse();
 
-                        for (int i=1; i<langs.size(); i++){
-                            separated = langs.get(i).split("\n=== ");
-                            String lang = separated[0].split(" ")[0];
-                            mAdapter.addSectionHeaderItem(lang);
-                            int j;
-                            //Log.i(TAG,"--------------"+lang+"---------------");
-                            for (j=1; j<separated.length;j++){
-                                String[] subheaders = separated[j].split(" ===\n");
-                                //Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
-                                //Log.i(TAG,subheaders[1]);
-                                mAdapter.addSectionSubHeaderItem(subheaders[0]);
-                                String[] subsubheader = subheaders[1].split("\n==== ");
-                                int k;
-                                for(k=0;k<subsubheader.length;k++){
-                                    mAdapter.addItem(subsubheader[k].replace("====\n",""));
-                                }
+                        for (WiktionaryParser.WiktionaryItem item: wikiItems) {
+                            switch (item.itemType){
+                                case WiktionaryParser.TYPE_HEADER:
+                                    mAdapter.addSectionHeaderItem(item.itemText);
+                                    break;
+                                case WiktionaryParser.TYPE_SUBHEADER:
+                                    mAdapter.addSectionSubHeaderItem(item.itemText);
+                                    break;
+                                case WiktionaryParser.TYPE_TEXT:
+                                    mAdapter.addItem(item.itemText);
+                                    break;
                             }
-
                         }
 
                         setList();
@@ -157,6 +151,75 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
 
+    }
+
+    public static class WiktionaryParser{
+        String text;
+        final static int TYPE_HEADER = 100;
+        final static int TYPE_SUBHEADER = 101;
+        final static int TYPE_TEXT = 102;
+
+        public WiktionaryParser(String text){
+            this.text = text;
+        }
+
+        public List<WiktionaryItem> parse(){
+            List<String> LanguageSections = getLanguages(text);
+
+            String[] separated;
+            List<WiktionaryItem> items = new ArrayList<>();
+
+            for (int i=1; i<LanguageSections.size(); i++){
+                separated = LanguageSections.get(i).split("\n=== ");
+                String lang = separated[0].split(" ")[0];
+
+                items.add(new WiktionaryItem(lang, TYPE_HEADER));
+
+                int j;
+                //Log.i(TAG,"--------------"+lang+"---------------");
+                for (j=1; j<separated.length;j++){
+                    String[] subheaders = separated[j].split(" ===\n");
+                    //Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
+                    //Log.i(TAG,subheaders[1]);
+                    items.add(new WiktionaryItem(subheaders[0], TYPE_SUBHEADER));
+                    String[] subsubheader = subheaders[1].split("\n==== ");
+                    for(int k=0; k<subsubheader.length; k++){
+                        items.add(new WiktionaryItem(subsubheader[k].replace("====\n",""), TYPE_TEXT));
+                    }
+                }
+            }
+
+            return items;
+        }
+
+        private List<String> getLanguages(String extract){
+            String[] separated = extract.split("\n== ");
+            List<String> langs = new ArrayList<>();
+            for (int i=0; i<separated.length; i++){
+                langs.add(separated[i]);
+                //Log.i(TAG,(i+1)+".- "+separated[i]);
+            }
+            return langs;
+        }
+
+        public static class WiktionaryItem{
+            String itemText;
+            int itemType;
+            public WiktionaryItem(String itemText, int itemType){
+                this.itemText = itemText;
+                this.itemType = itemType;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                WiktionaryItem instance;
+                if(!(o instanceof WiktionaryItem)) return false;
+                else {
+                    instance = (WiktionaryItem) o;
+                    return this.itemType == instance.itemType;
+                }
+            }
+        }
     }
 
 
