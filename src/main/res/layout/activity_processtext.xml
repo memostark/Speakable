@@ -11,48 +11,57 @@
     android:layout_marginBottom="50dp"
     android:clickable="true"
     android:background="#FFFFFF">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
         <TextView
             android:id="@+id/text_tts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#FFFFBB33"
             android:textColor="#000000"
-            android:textSize="20sp"/>
+            android:textSize="20sp" />
+
         <TextView
             android:id="@+id/text_translation"
             android:layout_width="match_parent"
-            android:scrollbars="vertical"
+            android:layout_height="match_parent"
             android:maxLines="15"
-            android:layout_height="match_parent" />
+            android:scrollbars="vertical" />
+
         <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.1">
-        <ListView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/listView_wiki" />
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.1"
+            android:orientation="horizontal">
+
+            <ListView
+                android:id="@+id/listView_wiki"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </LinearLayout>
+
         <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
             <Button
+                android:id="@+id/button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/play_button_name"
-                android:id="@+id/button"
+                android:enabled="true"
                 android:paddingLeft="15dp"
                 android:paddingRight="15dp"
-                android:enabled="true" />
-            </LinearLayout>
+                android:text="@string/play_button_name" />
+        </LinearLayout>
     </LinearLayout>
 
 

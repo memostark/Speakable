@@ -99,7 +99,7 @@ public class ScreenTextService extends Service {
     private DrawView snipView;
     private BubbleView bubble;
     private ImageView takeSS;
-    private LinearLayout container;
+    private LinearLayout icon_container;
     private WindowManager.LayoutParams params;
     private WindowManager.LayoutParams mParamsTrash;
 
@@ -130,11 +130,11 @@ public class ScreenTextService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        isForeground=false;
+        isForeground = false;
 
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
-        trash_layout= new TrashView(this);
-        hasPermission=false;
+        trash_layout = new TrashView(this);
+        hasPermission = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
@@ -146,46 +146,15 @@ public class ScreenTextService extends Service {
         bubble = (BubbleView) service_layout.findViewById(R.id.image_bubble);
         takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
         snipView = (DrawView) service_layout.findViewById(R.id.snip_view);
-        container = (LinearLayout) service_layout.findViewById(R.id.icon_container);
+        icon_container = (LinearLayout) service_layout.findViewById(R.id.icon_container);
 
-
-        params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.TRANSLUCENT);
-
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 0;
-        params.y = 100;
+        params = new WindowManager.LayoutParams();
+        defaultSnippingView();
 
         mParamsTrash = new WindowManager.LayoutParams();
-        mParamsTrash.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        mParamsTrash.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        mParamsTrash.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
-        mParamsTrash.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        mParamsTrash.format = PixelFormat.TRANSLUCENT;
+        defaultTrashViewParams();
 
-        mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
-        mParamsTrash.x=0;
-        mParamsTrash.y=0;
-
-        // Thanks! https://stackoverflow.com/questions/3779173/determining-the-size-of-an-android-view-at-runtime#6569243
-        ViewTreeObserver viewTreeObserver = trash_layout.getViewTreeObserver();
-        if (viewTreeObserver.isAlive()) {
-            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    trash_layout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    final View trashIconContainer =  trash_layout.findViewById(R.id.trash_icon_container);
-                    int heightTrashIcon = trashIconContainer.getMeasuredHeight();
-                    trashIconContainer.setTranslationY(heightTrashIcon);
-                }
-            });
-        }
+        setTrashViewVerticalPosition();
 
         bubble.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
@@ -236,9 +205,8 @@ public class ScreenTextService extends Service {
                                     windowManager.removeView(trash_layout);
                                 params.x = 0;
                                 params.y = 100;
-                            }else{
-                                animateToEdge();
-                            }
+                            }else animateToEdge();
+
                             bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                             return true;
 
@@ -302,9 +270,7 @@ public class ScreenTextService extends Service {
             }
 
             private boolean isIntersectWithTrash() {
-                // 無効の場合は重なり判定を行わない
 
-                // INFO:TrashViewとFloatingViewは同じGravityにする必要があります
                 trash_layout.getWindowDrawingRect(mTrashViewRect);
                 getBubbleWindowDrawingRect(mFloatingViewRect);
 
@@ -323,7 +289,7 @@ public class ScreenTextService extends Service {
                 setSnippingView(false);
                 mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
 
-                if(mediaProjection!=null) {
+                if(mediaProjection != null) {
                     File externalFilesDir = getExternalFilesDir(null);
                     if (externalFilesDir != null) {
                         STORE_DIRECTORY = externalFilesDir.getAbsolutePath() + "/screenshotService/";
@@ -331,12 +297,12 @@ public class ScreenTextService extends Service {
                         if (!storeDirectory.exists()) {
                             boolean success = storeDirectory.mkdirs();
                             if (!success) {
-                                Log.e(TAG, "failed to create file storage directory.");
+                                Log.e(TAG, "Failed to create file storage directory.");
                                 return;
                             }
                         }
                     } else {
-                        Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
+                        Log.e(TAG, "Failed to create file storage directory, getExternalFilesDir is null.");
                         return;
                     }
 
@@ -348,13 +314,15 @@ public class ScreenTextService extends Service {
                 }
 
             }
+
+
         });
 
-        FirebaseVisionCloudDetectorOptions options =
+/*        FirebaseVisionCloudDetectorOptions options =
                 new FirebaseVisionCloudDetectorOptions.Builder()
                         .setModelType(FirebaseVisionCloudDetectorOptions.LATEST_MODEL)
                         .setMaxResults(15)
-                        .build();
+                        .build();*/
 
         new Thread() {
             @Override
@@ -367,6 +335,22 @@ public class ScreenTextService extends Service {
 
     }
 
+    private void setTrashViewVerticalPosition(){
+        // Thanks! https://stackoverflow.com/questions/3779173/determining-the-size-of-an-android-view-at-runtime#6569243
+        ViewTreeObserver viewTreeObserver = trash_layout.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    trash_layout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    final View trashIconContainer =  trash_layout.findViewById(R.id.trash_icon_container);
+                    int heightTrashIcon = trashIconContainer.getMeasuredHeight();
+                    trashIconContainer.setTranslationY(heightTrashIcon);
+                }
+            });
+        }
+    }
+
     private boolean isSnipViewVisible(){
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
     }
@@ -377,12 +361,34 @@ public class ScreenTextService extends Service {
         if(permissionIntent!=null) hasPermission=true;
     }
 
-    public CustomTTS getTTS(){
-        return tts;
+
+    private void defaultSnippingView(){
+        params.x = 0;
+        params.y = 100;
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        params.type = WindowManager.LayoutParams.TYPE_PHONE;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        params.format = PixelFormat.TRANSLUCENT;
+    }
+
+    private void defaultTrashViewParams(){
+        mParamsTrash.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        mParamsTrash.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        mParamsTrash.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
+        mParamsTrash.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        mParamsTrash.format = PixelFormat.TRANSLUCENT;
+
+        mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
+        mParamsTrash.x = 0;
+        mParamsTrash.y = 0;
     }
 
     private void setSnippingView(Boolean visible) {
-        FrameLayout.LayoutParams rlparams = (FrameLayout.LayoutParams)container.getLayoutParams();
+        FrameLayout.LayoutParams rlparams = (FrameLayout.LayoutParams)icon_container.getLayoutParams();
         if(visible){
             rlparams.setMargins(0,35,0,0);
             snipView.setVisibility(View.VISIBLE);
@@ -397,16 +403,11 @@ public class ScreenTextService extends Service {
             windowManager.updateViewLayout(service_layout, params);
         }else{
             rlparams.setMargins(0,0,0,0);
-            container.setLayoutParams(rlparams);
-
-            params.gravity = Gravity.TOP | Gravity.START;
-            params.x=0;
-            params.y=100;
+            icon_container.setLayoutParams(rlparams);
             snipView.setVisibility(View.GONE);
             takeSS.setVisibility(View.GONE);
-            params.width = WindowManager.LayoutParams.WRAP_CONTENT;
-            params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+
+            defaultSnippingView();
             windowManager.updateViewLayout(service_layout, params);
         }
     }
@@ -434,19 +435,14 @@ public class ScreenTextService extends Service {
             try {
                 image = reader.acquireLatestImage();
                 if (image != null) {
-                    String mPath =  STORE_DIRECTORY + "/myscreen_" + IMAGES_PRODUCED + ".png";
                     Image.Plane[] planes = image.getPlanes();
-                    ByteBuffer buffer = planes[0].getBuffer();
-                    int pixelStride = planes[0].getPixelStride();
-                    int rowStride = planes[0].getRowStride();
-                    int rowPadding = rowStride - pixelStride * mWidth;
-                    int statusBarHeight = 0;
 
                     // create bitmap
-                    bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
-                    bitmap.copyPixelsFromBuffer(buffer);
-                    croppedBitmap = Bitmap.createBitmap(bitmap,snipView.getPosx(),snipView.getPosy() +statusBarHeight,snipView.getRectWidth(),snipView.getRectHeight()+statusBarHeight);
+                    bitmap = createBitmapFromImagePlane(planes[0]);
+                    int statusBarHeight = 0;
+                    croppedBitmap = Bitmap.createBitmap(bitmap, snipView.getPosx(),snipView.getPosy() + statusBarHeight, snipView.getRectWidth(),snipView.getRectHeight() + statusBarHeight);
 
+                    String mPath =  STORE_DIRECTORY + "/myscreen_" + IMAGES_PRODUCED + ".png";
                     File imageFile = new File(mPath);
 
                     // write bitmap to a file
@@ -454,83 +450,10 @@ public class ScreenTextService extends Service {
                     croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
                     IMAGES_PRODUCED++;
-                    Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
+                    Log.e(TAG, "Captured image: " + IMAGES_PRODUCED);
                     stopProjection();
-
-                    //---------Reference https://firebase.google.com/docs/ml-kit/android/recognize-text?authuser=0
-
-                    FirebaseVisionImage imageFB = FirebaseVisionImage.fromBitmap(croppedBitmap);
-                    FirebaseVisionCloudTextDetector detector = FirebaseVision.getInstance()
-                                                                             .getVisionCloudTextDetector();
-                    Task<FirebaseVisionCloudText> result = detector.detectInImage(imageFB)
-                            .addOnSuccessListener(new OnSuccessListener<FirebaseVisionCloudText>() {
-                                @Override
-                                public void onSuccess(FirebaseVisionCloudText firebaseVisionCloudText) {
-                                    String recognizedText = firebaseVisionCloudText.getText();
-                                    Log.i(TAG, "Firebase text: "+recognizedText);
-
-                                    Log.i(TAG, "pages size: " + firebaseVisionCloudText.getPages().size());
-                                    for (FirebaseVisionCloudText.Page page: firebaseVisionCloudText.getPages()) {
-                                        List<FirebaseVisionCloudText.DetectedLanguage> languages =
-                                                page.getTextProperty().getDetectedLanguages();
-                                        int index=1;
-                                        Log.i(TAG, "blocks size: " + page.getBlocks().size());
-                                        for (FirebaseVisionCloudText.Block block: page.getBlocks()) {
-                                            Log.i(TAG, "paragraphs size: " + block.getParagraphs().size());
-                                            for (FirebaseVisionCloudText.Paragraph paragraph: block.getParagraphs()){
-                                                Log.i(TAG, "word size: " + paragraph.getWords().size());
-                                                StringBuilder sentenceString = new StringBuilder();
-                                                String langCode = "";
-                                                for (FirebaseVisionCloudText.DetectedLanguage lang : paragraph.getTextProperty().getDetectedLanguages()){
-                                                    langCode=lang.getLanguageCode();
-                                                    Log.i(TAG, "LANG: " + langCode);
-                                                }
-                                                int size = paragraph.getWords().size();
-                                                if (HE_LANG_CODE.equals(langCode)){
-                                                    for(int i=size-1;i>=0;i--){
-                                                        FirebaseVisionCloudText.Word word = paragraph.getWords().get(i);
-                                                        StringBuilder wordString = new StringBuilder();
-                                                        for (FirebaseVisionCloudText.Symbol symbol: word.getSymbols()) {
-                                                            wordString.append(symbol.getText());
-                                                        }
-                                                        Log.i(TAG, index + ".- " + wordString.toString());
-                                                        index++;
-                                                        String wordWhitespace= " " + wordString.toString();
-                                                        sentenceString.append(wordWhitespace);
-                                                    }
-                                                    Log.i(TAG, index + "sentence:  " + sentenceString.toString());
-                                                    tts.determineLanguage(sentenceString.toString());
-                                                }else{
-                                                    tts.determineLanguage(recognizedText);
-                                                }
-
-                                            }
-                                        }
-                                    }
-                                }
-                            })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Log.e(TAG,"failed to detect text: "+ e.getMessage());
-                                }
-                            });
-                    //openScreenshot(imageFile);
-                    // https://stackoverflow.com/questions/37287910/how-to-extract-text-from-image-android-app
-                    /*Frame imageFrame = new Frame.Builder()
-
-                            .setBitmap(croppedBitmap)                 // your image bitmap
-                            .build();
-
-                    String imageText;
-                    SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
-
-                    for (int i = 0; i < textBlocks.size(); i++) {
-                        TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
-                        imageText = textBlock.getValue();                   // return string
-                        tts.determineLanguage(imageText);
-                        Log.i(TAG, i+".- "+imageText);
-                    }*/
+                    doFirebaseOCR(croppedBitmap);
+                    //openScreenshot(imageFile); // Visualize captured image
                 }
 
             } catch (Exception e) {
@@ -544,18 +467,100 @@ public class ScreenTextService extends Service {
                     }
                 }
 
-                if (bitmap != null) {
-                    bitmap.recycle();
-                }
-
-                if(croppedBitmap != null){
-                    croppedBitmap.recycle();
-                }
-
-                if (image != null) {
-                    image.close();
-                }
+                if (bitmap != null) bitmap.recycle();
+                if (croppedBitmap != null) croppedBitmap.recycle();
+                if (image != null) image.close();
                 reader.close();
+            }
+        }
+
+        private Bitmap createBitmapFromImagePlane(Image.Plane plane){
+            ByteBuffer buffer = plane.getBuffer();
+            int pixelStride = plane.getPixelStride();
+            int rowStride = plane.getRowStride();
+            int rowPadding = rowStride - pixelStride * mWidth;
+
+            // create bitmap
+            Bitmap bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
+            bitmap.copyPixelsFromBuffer(buffer);
+            return bitmap;
+        }
+
+        private void doFirebaseOCR(Bitmap bitmap){
+            //---------Reference https://firebase.google.com/docs/ml-kit/android/recognize-text?authuser=0
+            FirebaseVisionImage imageFB = FirebaseVisionImage.fromBitmap(bitmap);
+            FirebaseVisionCloudTextDetector detector = FirebaseVision.getInstance().getVisionCloudTextDetector();
+            Task<FirebaseVisionCloudText> result = detector.detectInImage(imageFB)
+                    .addOnSuccessListener(new OnSuccessListener<FirebaseVisionCloudText>() {
+                        @Override
+                        public void onSuccess(FirebaseVisionCloudText firebaseVisionCloudText) {
+                            String recognizedText = firebaseVisionCloudText.getText();
+                            Log.i(TAG, "Firebase text: "+recognizedText);
+
+                            Log.i(TAG, "pages size: " + firebaseVisionCloudText.getPages().size());
+                            for (FirebaseVisionCloudText.Page page: firebaseVisionCloudText.getPages()) {
+                                List<FirebaseVisionCloudText.DetectedLanguage> languages =
+                                        page.getTextProperty().getDetectedLanguages();
+                                int index=1;
+                                Log.i(TAG, "blocks size: " + page.getBlocks().size());
+                                for (FirebaseVisionCloudText.Block block: page.getBlocks()) {
+                                    Log.i(TAG, "paragraphs size: " + block.getParagraphs().size());
+                                    for (FirebaseVisionCloudText.Paragraph paragraph: block.getParagraphs()){
+                                        Log.i(TAG, "word size: " + paragraph.getWords().size());
+                                        StringBuilder sentenceString = new StringBuilder();
+                                        String langCode = "";
+                                        for (FirebaseVisionCloudText.DetectedLanguage lang : paragraph.getTextProperty().getDetectedLanguages()){
+                                            langCode=lang.getLanguageCode();
+                                            Log.i(TAG, "LANG: " + langCode);
+                                        }
+                                        int size = paragraph.getWords().size();
+                                        if (HE_LANG_CODE.equals(langCode)){
+                                            for(int i=size-1;i>=0;i--){
+                                                FirebaseVisionCloudText.Word word = paragraph.getWords().get(i);
+                                                StringBuilder wordString = new StringBuilder();
+                                                for (FirebaseVisionCloudText.Symbol symbol: word.getSymbols()) {
+                                                    wordString.append(symbol.getText());
+                                                }
+                                                Log.i(TAG, index + ".- " + wordString.toString());
+                                                index++;
+                                                String wordWhitespace= " " + wordString.toString();
+                                                sentenceString.append(wordWhitespace);
+                                            }
+                                            Log.i(TAG, index + "sentence:  " + sentenceString.toString());
+                                            tts.determineLanguage(sentenceString.toString());
+                                        }else{
+                                            tts.determineLanguage(recognizedText);
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.e(TAG,"Failed to detect text: "+ e.getMessage());
+                        }
+                    });
+
+        }
+
+        private void doGoogleVisionOCR(Bitmap bitmap){
+            // https://stackoverflow.com/questions/37287910/how-to-extract-text-from-image-android-app
+            Frame imageFrame = new Frame.Builder()
+
+                    .setBitmap(bitmap)                 // your image bitmap
+                    .build();
+
+            String imageText;
+            SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
+
+            for (int i = 0; i < textBlocks.size(); i++) {
+                TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
+                imageText = textBlock.getValue();                   // return string
+                tts.determineLanguage(imageText);
+                Log.i(TAG, i+".- "+imageText);
             }
         }
     }
@@ -598,7 +603,7 @@ public class ScreenTextService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if(intent!=null) {
+        if(intent != null) {
             String action = intent.getAction();
             Log.d("prueba","Intent action " + action);
             if(MainActivity.NORMAL_SERVICE.equals(action) ) {
@@ -626,6 +631,8 @@ public class ScreenTextService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
+
+
     private void createForeground(String action){
         Intent intentHide = new Intent(this, Receiver.class);
         PendingIntent pendingIntentHide = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
@@ -634,12 +641,13 @@ public class ScreenTextService extends Service {
         intent.setAction(action);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
 
+        String CHANNEL_IMPORTANCE = "service_notification";
         Notification notification = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Text to speech")
                 .setContentText("Tap to start")
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Much longer text that cannot fit one line..."))
+                        .bigText("Tap to start text recognition"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .addAction(R.drawable.ic_close, getString(R.string.close_notification),pendingIntentHide)
                 .setOngoing(true)
@@ -663,11 +671,10 @@ public class ScreenTextService extends Service {
         if (trash_layout != null) {
             if(trash_layout.getWindowToken() != null) windowManager.removeView(trash_layout);
         }
-        if(tts!=null) tts.finishTTS();
+        if(tts != null) tts.finishTTS();
     }
 
     private class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
-
         @Override
         public boolean onSingleTapUp(MotionEvent event) {
             return true;

@@ -51,12 +51,12 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         setWindowParams();
         setContentView(R.layout.activity_processtext);
         Intent intent = getIntent();
-        final CharSequence text = intent
+        final CharSequence selected_text = intent
                 .getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
-        final String textString=text.toString();
+        final String textString = selected_text.toString();
 
         TextView mTextTTS = (TextView) findViewById(R.id.text_tts);
-        mTextTTS.setText(text);
+        mTextTTS.setText(selected_text);
 
 
         if(tts == null) {
@@ -71,12 +71,8 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         mAdapter = new CustomAdapter(this);
 
         String[] splittedText = textString.split(" ");
-        mIsSentence=false;
-        if(splittedText.length > 1) {
-            Toast.makeText(this, "Sentence", Toast.LENGTH_SHORT).show();
-            mIsSentence = true;
-        }else
-            sendWiktionaryRequest(textString);
+        mIsSentence = splittedText.length > 1;
+        if(!mIsSentence) sendWiktionaryRequest(textString);
         tts.determineLanguage(textString);
 
 
@@ -102,32 +98,12 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
                     @Override
                     public void onResponse(String response) {
                         // Display the first 500 characters of the response string.
-                        String extract;
-                        try{
-                            JSONObject reader = new JSONObject(response);
-                            JSONObject pagesJSON = reader.getJSONObject("query").getJSONObject("pages");
-                            Iterator<String> iterator = pagesJSON.keys();
-                            String key="";
-                            while (iterator.hasNext()) {
-                                key = iterator.next();
-                                Log.i("TAG","key:"+key);
-                            }
-                            JSONObject extractJSON = pagesJSON.getJSONObject(key);
-                            extract = extractJSON.getString("extract");
-                        }catch (JSONException e){
-                            Log.e("BingTTS","unexpected JSON exception", e);
-                            extract = "Parse Failed";
-                            mWikiContent.setText(extract);
-                        }
-                        String[] separated = extract.split("\n== ");
-                        List<String> langs = new ArrayList<>();
-                        int i;
-                        for (i=0; i<separated.length;i++){
-                            langs.add(separated[i]);
-                            //Log.i(TAG,(i+1)+".- "+separated[i]);
-                        }
+                        String extract = extractResponseContent(response);
+                        List<String> langs = getLanguages(extract);
 
-                        for (i=1;i<langs.size();i++){
+                        String[] separated;
+
+                        for (int i=1; i<langs.size(); i++){
                             separated = langs.get(i).split("\n=== ");
                             String lang = separated[0].split(" ")[0];
                             mAdapter.addSectionHeaderItem(lang);
@@ -149,8 +125,39 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
 
                         setList();
 
-
                     }
+
+                    private String extractResponseContent(String response){
+                        String extract;
+                        try{
+                            JSONObject reader = new JSONObject(response);
+                            JSONObject pagesJSON = reader.getJSONObject("query").getJSONObject("pages");
+                            Iterator<String> iterator = pagesJSON.keys();
+                            String key="";
+                            while (iterator.hasNext()) {
+                                key = iterator.next();
+                                Log.i("TAG","key:"+key);
+                            }
+                            JSONObject extractJSON = pagesJSON.getJSONObject(key);
+                            extract = extractJSON.getString("extract");
+                        }catch (JSONException e){
+                            Log.e("BingTTS","unexpected JSON exception", e);
+                            extract = "Parse Failed: " + e.getMessage();
+                            mWikiContent.setText(extract);
+                        }
+                        return extract;
+                    }
+
+                    private List<String> getLanguages(String extract){
+                        String[] separated = extract.split("\n== ");
+                        List<String> langs = new ArrayList<>();
+                        for (int i=0; i<separated.length; i++){
+                            langs.add(separated[i]);
+                            //Log.i(TAG,(i+1)+".- "+separated[i]);
+                        }
+                        return langs;
+                    }
+
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {

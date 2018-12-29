@@ -52,15 +52,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     public void determineLanguage(final String text){
-        final JSONArray body = new JSONArray();
-        try {
-            JSONObject obj = new JSONObject();
-            obj.put("Text", text);
-            body.put(obj);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        Log.i(TAG, body.toString());
+        final JSONArray body = createRequestBody(text);
 
         String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=en";
 
@@ -114,22 +106,43 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         queue.add(request);
     }
 
+    private JSONArray createRequestBody(final String text){
+        JSONArray body = new JSONArray();
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("Text", text);
+            body.put(obj);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.i(TAG, body.toString());
+        return body;
+    }
+
     private void playVoice(final String selectedText, final String langCode) {
         if(langCode.equals("he")){
-            mSynth.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
-            Voice v = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
-            mSynth.SetVoice(v, null);
-            mSynth.SpeakToAudio(selectedText);
-            localTTS=false;
+            initializeMSService(selectedText);
         }else{
-            int result = tts.setLanguage(new Locale(langCode));
-            if (result == TextToSpeech.LANG_MISSING_DATA ||
-                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e("error", "This Language is not supported");
-            } else {
-                localTTS=true;
-                tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
-            }
+            initializeGoogleLocalService(selectedText, langCode);
+        }
+    }
+
+    private void initializeMSService(final String selectedText){
+        mSynth.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
+        Voice voice = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
+        mSynth.SetVoice(voice, null);
+        mSynth.SpeakToAudio(selectedText);
+        localTTS = false;
+    }
+
+    private void initializeGoogleLocalService(final String selectedText, final String langCode){
+        int result = tts.setLanguage(new Locale(langCode));
+        if (result == TextToSpeech.LANG_MISSING_DATA ||
+                result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.e("Initialize TTS Error", "This Language is not supported");
+        } else {
+            localTTS = true;
+            tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
         }
     }
 
