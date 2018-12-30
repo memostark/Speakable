@@ -38,6 +38,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -85,6 +87,12 @@ public class MainActivity extends AppCompatActivity {
                 tts = new CustomTTS(MainActivity.this);
             }
 
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            TextToSpeechFragment fragment = new TextToSpeechFragment();
+            fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
+            fragmentTransaction.commit();
+
             // Use a string for speech.
             //m_syn.SpeakToAudio(getString(R.string.tts_text));
 
@@ -93,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
             //m_syn.SpeakSSMLToAudio(text);
 
 
-            findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
+            /*findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     // TO DO
@@ -123,9 +131,8 @@ public class MainActivity extends AppCompatActivity {
                             = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
                     final Intent permissionIntent = manager.createScreenCaptureIntent();
                     startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
-
                 }
-            });
+            });*/
         }
     }
 

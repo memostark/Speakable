@@ -19,49 +19,12 @@
             android:background="?attr/colorPrimary"
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar" />
 
-
-        <LinearLayout
+        <FrameLayout
+            android:id="@+id/main_tts_fragment_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:layout_below="@id/toolbar"
-            android:padding="@dimen/activity_vertical_margin">
-            <TextView
-                android:id="@+id/tts_tv"
-                android:text="@string/tts_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <EditText
-                android:id="@+id/tts_ev"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text"/>
+            android:layout_below="@id/toolbar"/>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/activity_horizontal_margin">
-                <Button
-                    android:id="@+id/play_btn"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/play_button_name" />
-                <Button
-                    android:id="@+id/stop_btn"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/stop_button_name" />
-            </LinearLayout>
-            <Button
-                android:id="@+id/startBubble_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/startBubble_button_name"/>
-            <WebView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/webview_wiktionary"/>
-        </LinearLayout>
     </RelativeLayout>
 
     <android.support.design.widget.NavigationView
