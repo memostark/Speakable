@@ -1,7 +1,6 @@
 import com.guillermonegrete.tts.ProcessTextActivity;
 
 import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 import java.util.Collections;
@@ -35,9 +34,9 @@ public class WiktionaryRequestTest {
         ProcessTextActivity.WiktionaryParser parser = new ProcessTextActivity.WiktionaryParser(input);
         List<ProcessTextActivity.WiktionaryParser.WiktionaryItem> result_items = parser.parse();
 
-        assertEquals(1, getItemTypeOcurrences(result_items, 100));
-        assertEquals(1, getItemTypeOcurrences(result_items, 101));
-        assertEquals(1, getItemTypeOcurrences(result_items, 102));
+        assertEquals(1, getItemTypeOccurrences(result_items, 100));
+        assertEquals(1, getItemTypeOccurrences(result_items, 101));
+        assertEquals(1, getItemTypeOccurrences(result_items, 102));
     }
 
     @Test
@@ -46,12 +45,12 @@ public class WiktionaryRequestTest {
         ProcessTextActivity.WiktionaryParser parser = new ProcessTextActivity.WiktionaryParser(input);
         List<ProcessTextActivity.WiktionaryParser.WiktionaryItem> result_items = parser.parse();
 
-        assertEquals(2, getItemTypeOcurrences(result_items, 100));
-        assertEquals(2, getItemTypeOcurrences(result_items, 101));
-        assertEquals(2, getItemTypeOcurrences(result_items, 102));
+        assertEquals(2, getItemTypeOccurrences(result_items, 100));
+        assertEquals(2, getItemTypeOccurrences(result_items, 101));
+        assertEquals(2, getItemTypeOccurrences(result_items, 102));
     }
 
-    private int getItemTypeOcurrences(List<ProcessTextActivity.WiktionaryParser.WiktionaryItem> items, int type){
+    private int getItemTypeOccurrences(List<ProcessTextActivity.WiktionaryParser.WiktionaryItem> items, int type){
         return Collections.frequency(items, new ProcessTextActivity.WiktionaryParser.WiktionaryItem("test", type));
     }
 }

@@ -21,4 +21,7 @@
     <string name="no_entry">No entry</string>
 
     <string name="close_notification">Close</string>
+
+    <string name="main">Text to speech</string>
+    <string name="saved">Saved words</string>
 </resources>

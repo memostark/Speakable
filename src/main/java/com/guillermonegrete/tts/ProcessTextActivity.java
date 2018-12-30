@@ -31,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -118,7 +119,6 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
                         }
 
                         setList();
-
                     }
 
                     private String extractResponseContent(String response){
@@ -195,10 +195,7 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         private List<String> getLanguages(String extract){
             String[] separated = extract.split("\n== ");
             List<String> langs = new ArrayList<>();
-            for (int i=0; i<separated.length; i++){
-                langs.add(separated[i]);
-                //Log.i(TAG,(i+1)+".- "+separated[i]);
-            }
+            Collections.addAll(langs, separated);
             return langs;
         }
 
@@ -210,6 +207,10 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
                 this.itemType = itemType;
             }
 
+            /*
+            *  Used for Collections.frequency to count how many types are inside List
+            *  Should find a better way to do this
+            * */
             @Override
             public boolean equals(Object o) {
                 WiktionaryItem instance;
