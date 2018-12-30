@@ -17,13 +17,13 @@ public class AcquireScreenshotPermission extends Activity{
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) AcquireScreenshotPermission.this.getSystemService(MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), MainActivity.REQUEST_CODE_SCREEN_CAPTURE);
+        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), TextToSpeechFragment.REQUEST_CODE_SCREEN_CAPTURE);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == MainActivity.REQUEST_CODE_SCREEN_CAPTURE) {
+        if (requestCode == TextToSpeechFragment.REQUEST_CODE_SCREEN_CAPTURE) {
             if (Activity.RESULT_OK == resultCode) {
                 ScreenTextService.setScreenshotPermission((Intent) data.clone(), resultCode);
             }

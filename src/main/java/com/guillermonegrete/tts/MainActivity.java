@@ -55,14 +55,7 @@ import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
     // Note: Sign up at http://www.projectoxford.ai for the client credentials.
-    protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
-    static final int notificationId = 10;
-    private static final String CHANNEL_ID = "process_text_channel";
-    static final String NORMAL_SERVICE = "startService";
-    static final String NORMAL_NO_PERM_SERVICE = "getPermissionService";
-    private String TAG=this.getClass().getSimpleName();
 
-    private CustomTTS tts;
 
     private DrawerLayout mDrawerLayout;
 
@@ -82,11 +75,6 @@ public class MainActivity extends AppCompatActivity {
                     .show();
         } else {
 
-
-            if(tts == null) {
-                tts = new CustomTTS(MainActivity.this);
-            }
-
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             TextToSpeechFragment fragment = new TextToSpeechFragment();
@@ -100,39 +88,6 @@ public class MainActivity extends AppCompatActivity {
             //String text = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" xml:lang=\"en-US\"><voice xml:lang=\"en-US\" name=\"Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)\">You can also use SSML markup for text to speech.</voice></speak>";
             //m_syn.SpeakSSMLToAudio(text);
 
-
-            /*findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    // TO DO
-                }
-            });
-
-            Button playBtn = (Button) findViewById(R.id.play_btn);
-            final WebView webview = (WebView) findViewById(R.id.webview_wiktionary);
-            webview.setWebViewClient(new HelloWebViewClient());
-
-            //Toast.makeText(MainActivity.this, "Edittext Toast1:" + text, Toast.LENGTH_LONG).show();
-
-            playBtn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    EditText mEdit   = (EditText)findViewById(R.id.tts_ev);
-                    final String text = mEdit.getText().toString();
-                    tts.determineLanguage(text);
-                    webview.loadUrl("https://en.m.wiktionary.org/wiki/"+text);
-                }
-            });
-
-            findViewById(R.id.startBubble_btn).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    final MediaProjectionManager manager
-                            = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-                    final Intent permissionIntent = manager.createScreenCaptureIntent();
-                    startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
-                }
-            });*/
         }
     }
 
@@ -162,35 +117,4 @@ public class MainActivity extends AppCompatActivity {
             super.onBackPressed();
         }
     }
-
-    @Override
-    protected void onDestroy() {
-        if(tts != null) tts.finishTTS();
-        super.onDestroy();
-
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
-            if (resultCode == AppCompatActivity.RESULT_OK) {
-                final Intent intent = new Intent(this, ScreenTextService.class);
-                intent.setAction(NORMAL_SERVICE);
-                intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode);
-                intent.putExtras(data);
-                startService(intent);
-                this.finish();
-            }
-        }
-    }
-
-    private class HelloWebViewClient extends WebViewClient {
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            view.loadUrl(url);
-            return true;
-        }
-    }
-
 }

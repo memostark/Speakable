@@ -606,7 +606,7 @@ public class ScreenTextService extends Service {
         if(intent != null) {
             String action = intent.getAction();
             Log.d("prueba","Intent action " + action);
-            if(MainActivity.NORMAL_SERVICE.equals(action) ) {
+            if(TextToSpeechFragment.NORMAL_SERVICE.equals(action) ) {
                 addViews();
                 if (!hasPermission) {
                     permissionIntent = intent;
