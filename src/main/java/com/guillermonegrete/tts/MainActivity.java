@@ -34,10 +34,8 @@
 package com.guillermonegrete.tts;
 
 import android.app.AlertDialog;
-import android.content.Context;
-import android.content.Intent;
-import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -46,11 +44,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
-import android.view.View;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Button;
-import android.widget.EditText;
+import android.widget.Toast;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -67,6 +61,35 @@ public class MainActivity extends AppCompatActivity {
         mDrawerLayout = (DrawerLayout) findViewById(R.id.main_drawer_layout);
         setActionBar();
 
+        NavigationView nav_view = (NavigationView) findViewById(R.id.nav_view);
+        nav_view.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(MenuItem menuItem) {
+                menuItem.setChecked(true);
+                mDrawerLayout.closeDrawers();
+
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                switch (menuItem.getItemId()){
+                    case R.id.nav_item_main:
+
+                        TextToSpeechFragment TTSFragment = new TextToSpeechFragment();
+                        fragmentTransaction.replace(R.id.main_tts_fragment_container, TTSFragment);
+                        fragmentTransaction.commit();
+                        break;
+                    case R.id.nav_item_saved:
+
+                        SavedWordsFragment savedWordsFragment  = new SavedWordsFragment();
+                        fragmentTransaction.replace(R.id.main_tts_fragment_container, savedWordsFragment);
+                        fragmentTransaction.commit();
+                        break;
+                }
+
+                return true;
+            }
+        });
+
         if (getString(R.string.api_key).startsWith("Please")) {
             new AlertDialog.Builder(this)
                     .setTitle(getString(R.string.add_subscription_key_tip_title))
@@ -80,13 +103,6 @@ public class MainActivity extends AppCompatActivity {
             TextToSpeechFragment fragment = new TextToSpeechFragment();
             fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
             fragmentTransaction.commit();
-
-            // Use a string for speech.
-            //m_syn.SpeakToAudio(getString(R.string.tts_text));
-
-            // Use SSML for speech.
-            //String text = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" xml:lang=\"en-US\"><voice xml:lang=\"en-US\" name=\"Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)\">You can also use SSML markup for text to speech.</voice></speak>";
-            //m_syn.SpeakSSMLToAudio(text);
 
         }
     }

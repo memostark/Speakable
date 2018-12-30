@@ -41,7 +41,14 @@ public class TextToSpeechFragment extends Fragment {
                 public void onClick(View view) {
                     // TO DO
                 }
-            });
+        });
+
+        // Use a string for speech.
+        //m_syn.SpeakToAudio(getString(R.string.tts_text));
+
+        // Use SSML for speech.
+        //String text = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" xml:lang=\"en-US\"><voice xml:lang=\"en-US\" name=\"Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)\">You can also use SSML markup for text to speech.</voice></speak>";
+        //m_syn.SpeakSSMLToAudio(text);
 
         Button playBtn = (Button) fragment_layout.findViewById(R.id.play_btn);
         final WebView webview = (WebView) fragment_layout.findViewById(R.id.webview_wiktionary);
