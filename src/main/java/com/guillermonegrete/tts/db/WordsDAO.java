@@ -31,5 +31,5 @@ public interface WordsDAO {
     void deleteAll();
 
     @Query("SELECT * FROM words")
-    LiveData<List<Words>> getAllDirectors();
+    LiveData<List<Words>> getAllWords();
 }
