@@ -24,4 +24,13 @@
 
     <string name="main">Text to speech</string>
     <string name="saved">Saved words</string>
+
+    <string name="dialog_new_word_title">New word</string>
+
+    <string name="word_edit_text">Word</string>
+    <string name="language_edit_text">Language</string>
+    <string name="translation_edit_text">Translation</string>
+
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 </resources>
