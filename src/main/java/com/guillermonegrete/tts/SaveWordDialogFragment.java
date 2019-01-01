@@ -62,6 +62,7 @@ public class SaveWordDialogFragment extends DialogFragment {
         final EditText wordEditText = (EditText) dialogue_layout.findViewById(R.id.new_word_edit);
         final EditText languageEditText = (EditText) dialogue_layout.findViewById(R.id.new_word_language_edit);
         final EditText translationEditText = (EditText) dialogue_layout.findViewById(R.id.new_translation_edit);
+        final EditText notesEditText = (EditText) dialogue_layout.findViewById(R.id.new_notes_edit);
 
         if(wordExtra != null){
             wordEditText.setText(wordExtra);
@@ -85,7 +86,8 @@ public class SaveWordDialogFragment extends DialogFragment {
                         Toast.makeText(getActivity(), "Save word", Toast.LENGTH_SHORT).show();
                         saveWord(wordEditText.getText().toString(),
                                 languageEditText.getText().toString(),
-                                translationEditText.getText().toString());
+                                translationEditText.getText().toString(),
+                                notesEditText.getText().toString());
 
                     }
                 })
@@ -98,13 +100,16 @@ public class SaveWordDialogFragment extends DialogFragment {
         return builder.create();
     }
 
-    private void saveWord(String word, String language, String translation){
+    private void saveWord(String word, String language, String translation, String notes){
         if(TextUtils.isEmpty(word) | TextUtils.isEmpty(language) | TextUtils.isEmpty(translation)){
             return;
         }
 
+        Words word_entry = new Words(word, language, translation);
+        if(!TextUtils.isEmpty(notes)) word_entry.notes = notes;
+
         WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
-        wordsDAO.insert(new Words(word, language, translation));
+        wordsDAO.insert(word_entry);
 
     }
 }

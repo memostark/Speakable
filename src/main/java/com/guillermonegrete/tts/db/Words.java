@@ -21,6 +21,9 @@ public class Words {
     @NonNull
     public String definition;
 
+    @ColumnInfo(name = "notes")
+    public String notes;
+
     public Words(@NonNull String word, @NonNull String lang, @NonNull String definition){
         this.word = word;
         this.lang = lang;

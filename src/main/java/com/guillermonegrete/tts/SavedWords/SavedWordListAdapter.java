@@ -45,7 +45,9 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             holder.wordText.setText(word.word);
             holder.languageText.setText(word.lang);
             holder.translationText.setText(word.definition);
-
+            if (word.notes != null){
+                holder.notesText.setText(word.notes);
+            }
         }
 
 
@@ -64,6 +66,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         private TextView wordText;
         private TextView languageText;
         private TextView translationText;
+        private TextView notesText;
 
         public WordsViewHolder(View itemView){
             super(itemView);
@@ -71,6 +74,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             wordText = (TextView) itemView.findViewById(R.id.saved_word_text);
             languageText = (TextView) itemView.findViewById(R.id.saved_word_lang_text);
             translationText = (TextView) itemView.findViewById(R.id.saved_word_translation_text);
+            notesText = (TextView) itemView.findViewById(R.id.saved_word_notes_text);
         }
     }
 }

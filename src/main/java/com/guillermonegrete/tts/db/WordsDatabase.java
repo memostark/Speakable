@@ -4,12 +4,13 @@ import android.arch.persistence.db.SupportSQLiteDatabase;
 import android.arch.persistence.room.Database;
 import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
+import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-@Database(entities = {Words.class}, version = 1)
+@Database(entities = {Words.class}, version = 2)
 public abstract class WordsDatabase extends RoomDatabase {
     private static WordsDatabase INSTANCE;
     private static final String DB_NAME = "words.db";
@@ -21,6 +22,7 @@ public abstract class WordsDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             WordsDatabase.class, DB_NAME)
                             .allowMainThreadQueries()
+                            .addMigrations(MIGRATION_1_2)
                             .addCallback(new RoomDatabase.Callback(){
                                 @Override
                                 public void onCreate(@NonNull SupportSQLiteDatabase db) {
@@ -35,6 +37,14 @@ public abstract class WordsDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
+
+    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE words "
+                    + " ADD COLUMN notes TEXT");
+        }
+    };
 
     public void clearDb(){
         if (INSTANCE != null){
