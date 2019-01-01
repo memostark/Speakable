@@ -33,6 +33,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private String TAG = this.getClass().getSimpleName();
 
+    public String language;
+
     public CustomTTS(Context context){
         mContext = context;
         tts = new TextToSpeech(context, this);
@@ -73,6 +75,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
                     Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
+                language = langCode;
                 if(mListener!=null) mListener.onLanguageDetected(translation);
                 playVoice(text, langCode);
                 Log.i(TAG,langCode);

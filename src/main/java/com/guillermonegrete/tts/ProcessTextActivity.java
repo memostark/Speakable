@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -25,6 +26,9 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.db.WordsDAO;
+import com.guillermonegrete.tts.db.WordsDatabase;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,25 +43,23 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
     private CustomTTS tts;
     private WiktionaryListAdapter mAdapter;
 
-    private String TAG=this.getClass().getSimpleName();
+    private String TAG = this.getClass().getSimpleName();
     public static final String LONGPRESS_SERVICE_NOSHOW = "startServiceLong";
     public static final String LONGPRESS_SERVICE = "showServiceg";
 
     private boolean mIsSentence;
 
+    private String mTranslation;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setWindowParams();
-        setContentView(R.layout.activity_processtext);
+
         Intent intent = getIntent();
         final CharSequence selected_text = intent
                 .getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
         final String textString = selected_text.toString();
-
-        TextView mTextTTS = (TextView) findViewById(R.id.text_tts);
-        mTextTTS.setText(selected_text);
-
 
         if(tts == null) {
             tts = new CustomTTS(ProcessTextActivity.this);
@@ -72,8 +74,21 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
 
         String[] splittedText = textString.split(" ");
         mIsSentence = splittedText.length > 1;
-        if(!mIsSentence) sendWiktionaryRequest(textString);
+        if(mIsSentence){
+            setSentenceLayout();
+        }else{
+            setWordLayout(textString);
+            sendWiktionaryRequest(textString);
+        }
         tts.determineLanguage(textString);
+        TextView mTextTTS = (TextView) findViewById(R.id.text_tts);
+        mTextTTS.setText(selected_text);
+
+
+    }
+
+    private void setWordLayout(final String textString){
+        setContentView(R.layout.activity_processtext);
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,13 +97,30 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
             }
         });
 
-    }
+        findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                saveWord(textString);
+            }
+        });
 
-    private void setWordLayout(){
 
     }
 
     private void setSentenceLayout(){
+        setContentView(R.layout.activity_process_sentence);
+
+    }
+
+    private void saveWord(String word){
+
+        String language = tts.language;
+        if(TextUtils.isEmpty(word) | TextUtils.isEmpty(language) | TextUtils.isEmpty(mTranslation)){
+            return;
+        }
+
+        WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
+        wordsDAO.insert(new Words(word, language, mTranslation));
 
     }
 
@@ -241,10 +273,6 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         return langs;
     }
 
-    private void saveWord(){
-
-    }
-
     @Override
     protected void onDestroy() {
         if(tts != null) tts.finishTTS();
@@ -268,6 +296,7 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
 
     @Override
     public void onLanguageDetected(String translation) {
+        mTranslation = translation;
         if(mIsSentence){
             TextView mTextTranslation = (TextView) findViewById(R.id.text_translation);
             mTextTranslation.setText(translation);
