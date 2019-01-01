@@ -103,7 +103,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             @Override
             public void onClick(View view) {
                 // saveWord(textString);
-                showSaveDialog();
+                showSaveDialog(textString);
 
             }
         });
@@ -116,9 +116,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
     }
 
-    private void showSaveDialog() {
+    private void showSaveDialog(String word) {
         DialogFragment dialogFragment;
-        dialogFragment = new SaveWordDialogFragment();
+        dialogFragment = SaveWordDialogFragment.newInstance(word, tts.language, mTranslation);
         dialogFragment.show(getSupportFragmentManager(), "New word process");
     }
 

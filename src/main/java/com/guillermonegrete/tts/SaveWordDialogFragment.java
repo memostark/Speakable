@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
@@ -18,11 +19,39 @@ import com.guillermonegrete.tts.db.WordsDatabase;
 
 public class SaveWordDialogFragment extends DialogFragment {
     private Context context;
+    private String wordExtra;
+    private String languageExtra;
+    private String translationExtra;
+
+    private static final String EXTRA_WORD = "word";
+    private static final String EXTRA_LANGUAGE= "language";
+    private static final String EXTRA_TRANSLATION = "translation";
+
+    public static SaveWordDialogFragment newInstance(String word, String language, String translation){
+        SaveWordDialogFragment fragment = new SaveWordDialogFragment();
+
+        Bundle args = new Bundle();
+        args.putString(EXTRA_WORD, word);
+        args.putString(EXTRA_LANGUAGE, language);
+        args.putString(EXTRA_TRANSLATION, translation);
+        fragment.setArguments(args);
+
+        return fragment;
+    }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         this.context = context;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Bundle args = getArguments();
+        wordExtra = args.getString(EXTRA_WORD);
+        languageExtra = args.getString(EXTRA_LANGUAGE);
+        translationExtra = args.getString(EXTRA_TRANSLATION);
     }
 
     @NonNull
@@ -33,6 +62,20 @@ public class SaveWordDialogFragment extends DialogFragment {
         final EditText wordEditText = (EditText) dialogue_layout.findViewById(R.id.new_word_edit);
         final EditText languageEditText = (EditText) dialogue_layout.findViewById(R.id.new_word_language_edit);
         final EditText translationEditText = (EditText) dialogue_layout.findViewById(R.id.new_translation_edit);
+
+        if(wordExtra != null){
+            wordEditText.setText(wordExtra);
+            wordEditText.setSelection(wordExtra.length());
+        }
+
+        if(languageExtra != null){
+            languageEditText.setText(languageExtra);
+            languageEditText.setSelection(languageExtra.length());
+        }
+        if(translationExtra != null){
+            translationEditText.setText(translationExtra);
+            translationEditText.setSelection(translationExtra.length());
+        }
 
         builder.setView(dialogue_layout)
                 .setTitle(getString(R.string.dialog_new_word_title))

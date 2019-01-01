@@ -80,7 +80,7 @@ public class SavedWordsFragment extends Fragment {
 
     private void showSaveDialog() {
         DialogFragment dialogFragment;
-        dialogFragment = new SaveWordDialogFragment();
+        dialogFragment = SaveWordDialogFragment.newInstance(null, null, null);
         dialogFragment.show(getActivity().getSupportFragmentManager(), "New word");
     }
 
