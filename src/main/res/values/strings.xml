@@ -33,4 +33,7 @@
 
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
+
+    <string name="play_tts_icon_description">Play TTS</string>
+    <string name="save_icon_description">Save word</string>
 </resources>

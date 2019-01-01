@@ -10,7 +10,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
-public class CustomAdapter extends BaseAdapter {
+public class WiktionaryListAdapter extends BaseAdapter {
 
     private static final int TYPE_ITEM = 0;
     private static final int TYPE_SEPARATOR = 1;
@@ -25,7 +25,7 @@ public class CustomAdapter extends BaseAdapter {
 
     String TAG = this.getClass().getSimpleName();
 
-    public CustomAdapter(Context context){
+    public WiktionaryListAdapter(Context context){
         mInflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         height=0;

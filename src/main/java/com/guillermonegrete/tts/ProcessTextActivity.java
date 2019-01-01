@@ -18,7 +18,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -38,7 +37,7 @@ import java.util.List;
 
 public class ProcessTextActivity extends Activity implements CustomTTSListener{
     private CustomTTS tts;
-    private CustomAdapter mAdapter;
+    private WiktionaryListAdapter mAdapter;
 
     private String TAG=this.getClass().getSimpleName();
     public static final String LONGPRESS_SERVICE_NOSHOW = "startServiceLong";
@@ -69,26 +68,34 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
         startService(intentService);
 
-        mAdapter = new CustomAdapter(this);
+        mAdapter = new WiktionaryListAdapter(this);
 
         String[] splittedText = textString.split(" ");
         mIsSentence = splittedText.length > 1;
         if(!mIsSentence) sendWiktionaryRequest(textString);
         tts.determineLanguage(textString);
 
-
-        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 tts.speak(textString);
             }
         });
+
+    }
+
+    private void setWordLayout(){
+
+    }
+
+    private void setSentenceLayout(){
+
     }
 
     private void sendWiktionaryRequest(String textString){
         //------------------------------ Taken from https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
         String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&redirects=1&titles=" + textString;
-        final TextView mWikiContent = (TextView) findViewById(R.id.text_translation);
+        final TextView mWikiContent = (TextView) findViewById(R.id.text_error_message);
         mWikiContent.setMovementMethod(new ScrollingMovementMethod());
 
         RequestQueue queue = Volley.newRequestQueue(this);
@@ -232,6 +239,10 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
             //Log.i(TAG,(i+1)+".- "+separated[i]);
         }
         return langs;
+    }
+
+    private void saveWord(){
+
     }
 
     @Override
