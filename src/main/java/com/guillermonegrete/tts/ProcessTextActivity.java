@@ -11,6 +11,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -39,7 +41,7 @@ import java.util.Iterator;
 import java.util.List;
 
 
-public class ProcessTextActivity extends Activity implements CustomTTSListener{
+public class ProcessTextActivity extends FragmentActivity implements CustomTTSListener{
     private CustomTTS tts;
     private WiktionaryListAdapter mAdapter;
 
@@ -100,7 +102,9 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                saveWord(textString);
+                // saveWord(textString);
+                showSaveDialog();
+
             }
         });
 
@@ -112,16 +116,10 @@ public class ProcessTextActivity extends Activity implements CustomTTSListener{
 
     }
 
-    private void saveWord(String word){
-
-        String language = tts.language;
-        if(TextUtils.isEmpty(word) | TextUtils.isEmpty(language) | TextUtils.isEmpty(mTranslation)){
-            return;
-        }
-
-        WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
-        wordsDAO.insert(new Words(word, language, mTranslation));
-
+    private void showSaveDialog() {
+        DialogFragment dialogFragment;
+        dialogFragment = new SaveWordDialogFragment();
+        dialogFragment.show(getSupportFragmentManager(), "New word process");
     }
 
     private void sendWiktionaryRequest(String textString){

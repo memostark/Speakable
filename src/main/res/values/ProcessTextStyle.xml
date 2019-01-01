@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="ProcessTextStyle" parent="@android:style/Theme.Dialog">
+    <style name="ProcessTextStyle" parent="@style/Theme.AppCompat.Dialog">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">#000</item>
         <item name="android:windowBackground">@android:color/transparent</item>

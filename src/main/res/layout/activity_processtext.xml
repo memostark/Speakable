@@ -29,7 +29,7 @@
             <TextView
                 android:id="@+id/text_tts"
                 android:text = "Selected text"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textColor="#000000"
                 android:textSize="20sp"
@@ -40,14 +40,14 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_bookmark_border_black_24dp"
                 android:contentDescription="@string/play_tts_icon_description"
-                android:background="?android:selectableItemBackground"/>
+                android:background="?android:selectableItemBackgroundBorderless"/>
             <ImageButton
                 android:id="@+id/play_tts_icon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_volume_up_black_24dp"
                 android:contentDescription="@string/save_icon_description"
-                android:background="?android:selectableItemBackground"/>
+                android:background="?android:selectableItemBackgroundBorderless"/>
 
         </LinearLayout>
 
