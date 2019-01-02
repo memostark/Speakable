@@ -45,7 +45,8 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             holder.wordText.setText(word.word);
             holder.languageText.setText(word.lang);
             holder.translationText.setText(word.definition);
-            if (word.notes != null){
+            if (word.notes != null) {
+                holder.notesText.setVisibility(View.VISIBLE);
                 holder.notesText.setText(word.notes);
             }
         }

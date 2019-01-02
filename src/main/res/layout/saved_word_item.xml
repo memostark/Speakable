@@ -36,11 +36,11 @@
 
     <TextView
         android:textSize="12sp"
-        android:text="Placeholder notes"
         android:id="@+id/saved_word_notes_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="5dp"
-        android:paddingEnd="5dp"/>
+        android:paddingEnd="5dp"
+        android:visibility="gone"/>
 
 </LinearLayout>
