@@ -11,6 +11,7 @@ import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.guillermonegrete.tts.db.Words;
@@ -83,7 +84,6 @@ public class SaveWordDialogFragment extends DialogFragment {
                 .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(getActivity(), "Save word", Toast.LENGTH_SHORT).show();
                         saveWord(wordEditText.getText().toString(),
                                 languageEditText.getText().toString(),
                                 translationEditText.getText().toString(),
@@ -110,6 +110,9 @@ public class SaveWordDialogFragment extends DialogFragment {
 
         WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
         wordsDAO.insert(word_entry);
+        Toast.makeText(getActivity(), "Word saved", Toast.LENGTH_SHORT).show();
+        ImageButton saveIcon = (ImageButton) getActivity().findViewById(R.id.save_icon);
+        saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
 
     }
 }

@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -91,6 +92,13 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
     private void setWordLayout(final String textString){
         setContentView(R.layout.activity_processtext);
+
+        WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
+        Words foundWords = wordsDAO.findWord(textString);
+        if(foundWords != null) {
+            ImageButton saveIcon = (ImageButton) findViewById(R.id.save_icon);
+            saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+        }
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
             @Override
