@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 26
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         applicationId "com.guillermonegrete.tts"
         minSdkVersion 21
-        targetSdkVersion 22
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
     }
@@ -26,6 +26,9 @@ repositories {
     }
 }
 
+ext {
+    supportLibVersion = '26.1.0'
+}
 
 dependencies {
     releaseImplementation(name: 'speechsdk', ext: 'aar')
@@ -34,9 +37,9 @@ dependencies {
     // Required -- JUnit 4 framework
     testImplementation 'junit:junit:4.12'
 
-    implementation 'com.android.support:appcompat-v7:22.2.1'
-    implementation 'com.android.support:recyclerview-v7:22.2.1'
-    implementation 'com.android.support:design:22.2.1'
+    implementation "com.android.support:appcompat-v7:${supportLibVersion}"
+    implementation "com.android.support:recyclerview-v7:${supportLibVersion}"
+    implementation "com.android.support:design:${supportLibVersion}"
     implementation 'com.android.volley:volley:1.1.0'
     implementation 'com.google.android.gms:play-services-vision:15.0.2'
 
@@ -55,3 +58,4 @@ dependencies {
 }
 
 apply plugin: 'com.google.gms.google-services'
+

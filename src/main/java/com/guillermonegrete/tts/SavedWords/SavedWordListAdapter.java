@@ -51,7 +51,6 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             }
         }
 
-
     }
 
     @Override

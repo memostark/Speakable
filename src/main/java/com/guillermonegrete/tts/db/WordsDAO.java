@@ -27,6 +27,12 @@ public interface WordsDAO {
     @Update(onConflict = OnConflictStrategy.IGNORE)
     void update(Words words);
 
+    @Query("DELETE FROM words where wid = :id")
+    void deleteWordById(int id);
+
+    @Query("DELETE FROM words where word = :word")
+    void deleteWord(String word);
+
     @Query("DELETE FROM words")
     void deleteAll();
 

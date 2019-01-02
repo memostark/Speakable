@@ -6,21 +6,30 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.guillermonegrete.tts.SavedWords.SavedWordListAdapter;
 import com.guillermonegrete.tts.SavedWords.WordsViewModel;
 import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.db.WordsDAO;
+import com.guillermonegrete.tts.db.WordsDatabase;
 
 import java.util.List;
 
@@ -28,6 +37,7 @@ public class SavedWordsFragment extends Fragment {
 
     private SavedWordListAdapter wordListAdapter;
     private WordsViewModel wordsViewModel;
+    private RecyclerView mRecyclerView;
     private Context context;
 
     @Override
@@ -48,10 +58,11 @@ public class SavedWordsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.fragment_saved_words, container, false);
 
-        RecyclerView recyclerView = (RecyclerView) fragment_layout.findViewById(R.id.recyclerview_saved_words);
-        recyclerView.setAdapter(wordListAdapter);
-        recyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL_LIST));
-        recyclerView.setLayoutManager(new LinearLayoutManager(context));
+        mRecyclerView = fragment_layout.findViewById(R.id.recyclerview_saved_words);
+        mRecyclerView.setAdapter(wordListAdapter);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL_LIST));
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(context));
+        setUpItemTouchHelper();
 
         fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,6 +93,79 @@ public class SavedWordsFragment extends Fragment {
         DialogFragment dialogFragment;
         dialogFragment = SaveWordDialogFragment.newInstance(null, null, null);
         dialogFragment.show(getActivity().getSupportFragmentManager(), "New word");
+    }
+
+    private void setUpItemTouchHelper(){
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+
+            Drawable deleteIcon ;
+            Drawable backgroundColor;
+
+            boolean initiated;
+            private int intrinsicWidth;
+            private int intrinsicHeight;
+
+            private void init() {
+                backgroundColor = new ColorDrawable(Color.RED);
+                deleteIcon  = ContextCompat.getDrawable(context, R.drawable.ic_delete_black_24dp);
+                deleteIcon .setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
+                // xMarkMargin = (int) MainActivity.this.getResources().getDimension(R.dimen.ic_clear_margin);
+                intrinsicWidth = deleteIcon.getIntrinsicWidth();
+                intrinsicHeight = deleteIcon.getIntrinsicHeight();
+                initiated = true;
+            }
+
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                TextView saved_word_text = viewHolder.itemView.findViewById(R.id.saved_word_text);
+                String word_text = saved_word_text.getText().toString();
+                Toast.makeText(context, "Swiped word: " + word_text, Toast.LENGTH_SHORT).show();
+
+                WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
+                wordsDAO.deleteWord(word_text);
+
+            }
+
+            @Override
+            public void onChildDraw(Canvas canvas, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+                if (!initiated) {
+                    init();
+                }
+
+                View itemView = viewHolder.itemView;
+                int itemHeight = itemView.getBottom() - itemView.getTop();
+
+                // Draw the red delete background
+                Drawable backgroundColor = new ColorDrawable(Color.RED);
+                backgroundColor.setBounds(
+                        itemView.getRight() + (int)dX,
+                        itemView.getTop(),
+                        itemView.getRight(),
+                        itemView.getBottom()
+                );
+                backgroundColor.draw(canvas);
+
+                // Calculate position of delete icon
+                int iconTop = itemView.getTop() + (itemHeight - intrinsicHeight) / 2;
+                int iconMargin = (itemHeight - intrinsicHeight) / 2;
+                int iconLeft = itemView.getRight() - iconMargin - intrinsicWidth;
+                int iconRight = itemView.getRight() - iconMargin;
+                int iconBottom = iconTop + intrinsicHeight;
+
+                // Draw the delete icon
+                deleteIcon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                deleteIcon.draw(canvas);
+
+                super.onChildDraw(canvas, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            }
+        };
+        ItemTouchHelper mItemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+        mItemTouchHelper.attachToRecyclerView(mRecyclerView);
     }
 
     public class DividerItemDecoration extends RecyclerView.ItemDecoration {
