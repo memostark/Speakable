@@ -7,15 +7,18 @@ import android.support.v7.view.ActionMode;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.db.WordsDAO;
+import com.guillermonegrete.tts.db.WordsDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +30,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     private Context context;
 
     private boolean multiSelect = false;
-    private ArrayList<Integer> selectedItems = new ArrayList<>();
+    private ArrayList<String> selectedItems = new ArrayList<>();
 
     public SavedWordListAdapter(Context context){
         this.layoutInflater = LayoutInflater.from(context);
@@ -62,7 +65,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             }
         }
 
-        holder.update(position);
+        holder.update();
 
     }
 
@@ -75,11 +78,13 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         }
     }
 
+    // Taken from: https://blog.teamtreehouse.com/contextual-action-bars-removing-items-recyclerview
     private ActionMode.Callback actionModeCallback =  new ActionMode.Callback() {
         @Override
         public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
             multiSelect = true;
-            menu.add("Delete");
+            MenuInflater inflater = actionMode.getMenuInflater();
+            inflater.inflate(R.menu.action_mode_menu, menu);
             return true;
         }
 
@@ -90,6 +95,18 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+            switch (menuItem.getItemId()){
+                case (R.id.action_menu_delete):
+                    String to_remove="";
+                    WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
+                    //StringBuilder stringBuilder =
+                    for (String intItem : selectedItems) {
+                        wordsDAO.deleteWord(intItem);
+                        to_remove += ", " + intItem;
+                    }
+                    Toast.makeText(context, "To delete: " + to_remove, Toast.LENGTH_SHORT).show();
+                    break;
+            }
             actionMode.finish();
             return true;
         }
@@ -99,7 +116,6 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             multiSelect = false;
             selectedItems.clear();
             notifyDataSetChanged();
-
         }
     };
 
@@ -120,12 +136,18 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             container = itemView.findViewById(R.id.saved_word_item_container);
         }
 
-        void update(final Integer position){
+        void update(){
+            if (selectedItems.contains(wordText.getText().toString())) {
+                container.setBackgroundColor(Color.LTGRAY);
+            } else {
+                container.setBackgroundColor(Color.WHITE);
+            }
+
             itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View view) {
                     ((AppCompatActivity)view.getContext()).startSupportActionMode(actionModeCallback);
-                    selectItem(position);
+                    selectItem(wordText.getText().toString());
                     return true;
                 }
             });
@@ -133,15 +155,14 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    selectItem(position);
+                    selectItem(wordText.getText().toString());
                 }
             });
         }
 
-        void selectItem(Integer item){
+        void selectItem(String item){
             if (multiSelect) {
                 if (selectedItems.contains(item)) {
-                    // int item_index = selectedItems.indexOf(item);
                     selectedItems.remove(item);
                     container.setBackgroundColor(Color.WHITE);
                 } else {

@@ -16,6 +16,7 @@ import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -57,17 +58,18 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setWindowParams();
-
-        Intent intent = getIntent();
-        final CharSequence selected_text = intent
-                .getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
-        final String textString = selected_text.toString();
 
         if(tts == null) {
             tts = new CustomTTS(ProcessTextActivity.this);
             tts.setListener(this);
         }
+
+        final String textString = getSelectedText();
+        String[] splittedText = textString.split(" ");
+        mIsSentence = splittedText.length > 1;
+
+        setWindowParams();
+
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
@@ -75,8 +77,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
         mAdapter = new WiktionaryListAdapter(this);
 
-        String[] splittedText = textString.split(" ");
-        mIsSentence = splittedText.length > 1;
+
         if(mIsSentence){
             setSentenceLayout();
         }else{
@@ -84,10 +85,17 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             sendWiktionaryRequest(textString);
         }
         tts.determineLanguage(textString);
-        TextView mTextTTS = (TextView) findViewById(R.id.text_tts);
-        mTextTTS.setText(selected_text);
+        TextView mTextTTS = findViewById(R.id.text_tts);
+        mTextTTS.setText(textString);
 
 
+    }
+
+    private String getSelectedText(){
+        Intent intent = getIntent();
+        final CharSequence selected_text = intent
+                .getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
+        return selected_text.toString();
     }
 
     private void setWordLayout(final String textString){
@@ -96,7 +104,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
         Words foundWords = wordsDAO.findWord(textString);
         if(foundWords != null) {
-            ImageButton saveIcon = (ImageButton) findViewById(R.id.save_icon);
+            ImageButton saveIcon = findViewById(R.id.save_icon);
             saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
         }
 
@@ -133,7 +141,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     private void sendWiktionaryRequest(String textString){
         //------------------------------ Taken from https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
         String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&redirects=1&titles=" + textString;
-        final TextView mWikiContent = (TextView) findViewById(R.id.text_error_message);
+        final TextView mWikiContent = findViewById(R.id.text_error_message);
         mWikiContent.setMovementMethod(new ScrollingMovementMethod());
 
         RequestQueue queue = Volley.newRequestQueue(this);
@@ -291,11 +299,15 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         wlp.dimAmount = 0;
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        if(mIsSentence){
+            wlp.gravity = Gravity.BOTTOM;
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        }
         getWindow().setAttributes(wlp);
     }
 
     private void setList(){
-        ListView listView = (ListView) findViewById(R.id.listView_wiki);
+        ListView listView = findViewById(R.id.listView_wiki);
         listView.setAdapter(mAdapter);
     }
 
