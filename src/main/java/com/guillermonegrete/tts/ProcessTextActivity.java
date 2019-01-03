@@ -52,6 +52,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     public static final String LONGPRESS_SERVICE = "showServiceg";
 
     private boolean mIsSentence;
+    private boolean mInsideDatabase;
 
     private String mTranslation;
 
@@ -70,19 +71,17 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
         setWindowParams();
 
-
         final Intent intentService = new Intent(this, ScreenTextService.class);
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
         startService(intentService);
 
         mAdapter = new WiktionaryListAdapter(this);
 
-
         if(mIsSentence){
             setSentenceLayout();
         }else{
             setWordLayout(textString);
-            sendWiktionaryRequest(textString);
+            if(!mInsideDatabase) sendWiktionaryRequest(textString);
         }
         tts.determineLanguage(textString);
         TextView mTextTTS = findViewById(R.id.text_tts);
@@ -103,9 +102,16 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
         WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
         Words foundWords = wordsDAO.findWord(textString);
-        if(foundWords != null) {
+        mInsideDatabase = foundWords != null;
+        if(mInsideDatabase) {
             ImageButton saveIcon = findViewById(R.id.save_icon);
             saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+            TextView saved_definition = findViewById(R.id.text_error_message);
+            saved_definition.setVisibility(View.VISIBLE);
+            saved_definition.setText(foundWords.definition);
+            TextView saved_notes = findViewById(R.id.text_notes);
+            saved_notes.setVisibility(View.VISIBLE);
+            if(foundWords.notes != null) saved_notes.setText(foundWords.notes);
         }
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
