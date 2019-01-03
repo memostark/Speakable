@@ -111,8 +111,8 @@ public class SaveWordDialogFragment extends DialogFragment {
         WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
         wordsDAO.insert(word_entry);
         Toast.makeText(getActivity(), "Word saved", Toast.LENGTH_SHORT).show();
-        ImageButton saveIcon = (ImageButton) getActivity().findViewById(R.id.save_icon);
-        saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+        ImageButton saveIcon = getActivity().findViewById(R.id.save_icon);
+        if(saveIcon != null) saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
 
     }
 }

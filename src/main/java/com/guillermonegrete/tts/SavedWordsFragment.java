@@ -62,6 +62,7 @@ public class SavedWordsFragment extends Fragment {
         mRecyclerView.setAdapter(wordListAdapter);
         mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL_LIST));
         mRecyclerView.setLayoutManager(new LinearLayoutManager(context));
+
         setUpItemTouchHelper();
 
         fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(new View.OnClickListener() {
