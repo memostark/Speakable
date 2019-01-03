@@ -4,7 +4,9 @@
     android:orientation="vertical"
     android:layout_below="@id/toolbar"
     android:padding="@dimen/activity_vertical_margin"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
     <TextView
         android:id="@+id/tts_tv"
         android:text="@string/tts_text"
