@@ -7,13 +7,12 @@
 
 package com.guillermonegrete.tts;
 
-import android.app.Activity;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
-import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -53,6 +52,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
     private boolean mIsSentence;
     private boolean mInsideDatabase;
+    private boolean mInsideWiktionary;
 
     private String mTranslation;
 
@@ -157,6 +157,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
+                        mInsideWiktionary = true;
                         // Display the first 500 characters of the response string.
                         String extract = extractResponseContent(response);
                         WiktionaryParser wikiParser = new WiktionaryParser(extract);
@@ -197,6 +198,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                             Log.e("BingTTS","unexpected JSON exception", e);
                             extract = "Parse Failed: " + e.getMessage();
                             mWikiContent.setText(extract);
+                            TextView saved_definition = findViewById(R.id.text_error_message);
+                            saved_definition.setVisibility(View.VISIBLE);
+                            mInsideWiktionary = false;
                         }
                         return extract;
                     }
@@ -205,6 +209,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             @Override
             public void onErrorResponse(VolleyError error) {
                 mWikiContent.setText(R.string.no_entry);
+                TextView saved_definition = findViewById(R.id.text_error_message);
+                saved_definition.setVisibility(View.VISIBLE);
             }
         });
         // Add the request to the RequestQueue.
@@ -322,7 +328,10 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     public void onLanguageDetected(String translation) {
         mTranslation = translation;
         if(mIsSentence){
-            TextView mTextTranslation = (TextView) findViewById(R.id.text_translation);
+            TextView mTextTranslation = findViewById(R.id.text_translation);
+            mTextTranslation.setText(translation);
+        } else if(!mInsideWiktionary){
+            TextView mTextTranslation = findViewById(R.id.text_error_message);
             mTextTranslation.setText(translation);
         }
     }
