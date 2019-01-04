@@ -22,6 +22,7 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -52,7 +53,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
     private boolean mIsSentence;
     private boolean mInsideDatabase;
-    private boolean mInsideWiktionary;
+    private boolean mWikiRequestDone;
+    private boolean mInsideWikitionary;
+    private boolean mLanguageDetected;
 
     private String mTranslation;
 
@@ -68,8 +71,17 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         final String textString = getSelectedText();
         String[] splittedText = textString.split(" ");
         mIsSentence = splittedText.length > 1;
+        mInsideWikitionary = true;
+        mWikiRequestDone = false;
+        mLanguageDetected = false;
 
-        setWindowParams();
+        // setWindowParams();
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wlp = getWindow().getAttributes();
+        wlp.dimAmount = 0;
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        getWindow().setAttributes(wlp);
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
@@ -79,9 +91,15 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
         if(mIsSentence){
             setSentenceLayout();
+            mWikiRequestDone = true;
+            mInsideWikitionary = false;
         }else{
             setWordLayout(textString);
             if(!mInsideDatabase) sendWiktionaryRequest(textString);
+            else {
+                mInsideWikitionary = false;
+                mWikiRequestDone = true;
+            }
         }
         tts.determineLanguage(textString);
         TextView mTextTTS = findViewById(R.id.text_tts);
@@ -157,7 +175,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        mInsideWiktionary = true;
                         // Display the first 500 characters of the response string.
                         String extract = extractResponseContent(response);
                         WiktionaryParser wikiParser = new WiktionaryParser(extract);
@@ -200,8 +217,11 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                             mWikiContent.setText(extract);
                             TextView saved_definition = findViewById(R.id.text_error_message);
                             saved_definition.setVisibility(View.VISIBLE);
-                            mInsideWiktionary = false;
+                            Toast.makeText(getApplicationContext(), "Not inside wiktionary", Toast.LENGTH_LONG).show();
+                            mInsideWikitionary = false;
                         }
+                        mWikiRequestDone = true;
+                        setLayout();
                         return extract;
                     }
 
@@ -306,12 +326,10 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     }
 
     public void setWindowParams() {
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         WindowManager.LayoutParams wlp = getWindow().getAttributes();
-        wlp.dimAmount = 0;
-        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        if(mIsSentence){
+        if(mInsideWikitionary){
+            wlp.flags = wlp.flags | WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+        }else{
             wlp.gravity = Gravity.BOTTOM;
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         }
@@ -327,12 +345,23 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     @Override
     public void onLanguageDetected(String translation) {
         mTranslation = translation;
-        if(mIsSentence){
-            TextView mTextTranslation = findViewById(R.id.text_translation);
-            mTextTranslation.setText(translation);
-        } else if(!mInsideWiktionary){
-            TextView mTextTranslation = findViewById(R.id.text_error_message);
-            mTextTranslation.setText(translation);
+        mLanguageDetected = true;
+        setLayout();
+    }
+
+    private void setLayout(){
+        if(mLanguageDetected && mWikiRequestDone){
+            setWindowParams();
+            Log.d(TAG,"All data ready");
+            if(mIsSentence){
+                TextView mTextTranslation = findViewById(R.id.text_translation);
+                mTextTranslation.setText(mTranslation);
+            } else if(mWikiRequestDone){
+                TextView mTextTranslation = findViewById(R.id.text_error_message);
+                mTextTranslation.setText(mTranslation);
+            }
+        }else{
+            Log.d(TAG,"Not all data ready");
         }
     }
 }
