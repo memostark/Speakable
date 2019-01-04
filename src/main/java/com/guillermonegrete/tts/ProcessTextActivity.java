@@ -74,6 +74,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         mInsideWikitionary = true;
         mWikiRequestDone = false;
         mLanguageDetected = false;
+        mInsideDatabase = false;
 
         // setWindowParams();
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -99,9 +100,14 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             else {
                 mInsideWikitionary = false;
                 mWikiRequestDone = true;
+                mLanguageDetected = true;
             }
         }
-        tts.determineLanguage(textString);
+        if(!mInsideDatabase){
+            tts.determineLanguage(textString);
+        }else{
+            setLayout();
+        }
         TextView mTextTTS = findViewById(R.id.text_tts);
         mTextTTS.setText(textString);
 
