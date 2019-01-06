@@ -77,7 +77,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
                 }
                 language = langCode;
                 if(mListener!=null) mListener.onLanguageDetected(translation);
-                playVoice(text, langCode);
+                intializeTTS(text, langCode);
                 Log.i(TAG,langCode);
             }
         }, new Response.ErrorListener() {
@@ -122,7 +122,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return body;
     }
 
-    private void playVoice(final String selectedText, final String langCode) {
+     void intializeTTS(final String selectedText, final String langCode) {
         if(langCode.equals("he")){
             initializeMSService(selectedText);
         }else{
@@ -154,7 +154,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         isGoogleTTSready = (status == TextToSpeech.SUCCESS);
     }
 
-    public void finishTTS(){
+    void finishTTS(){
         if(tts!=null){
             tts.stop();
             tts.shutdown();

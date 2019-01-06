@@ -77,6 +77,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         mInsideDatabase = false;
 
         // setWindowParams();
+        // Reordenar esta parte
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         WindowManager.LayoutParams wlp = getWindow().getAttributes();
         wlp.dimAmount = 0;
@@ -106,7 +107,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         if(!mInsideDatabase){
             tts.determineLanguage(textString);
         }else{
-            setLayout();
+            setWindowParams();
         }
         TextView mTextTTS = findViewById(R.id.text_tts);
         mTextTTS.setText(textString);
