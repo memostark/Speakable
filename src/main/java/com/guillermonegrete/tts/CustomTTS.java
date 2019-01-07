@@ -76,8 +76,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
                     e.printStackTrace();
                 }
                 language = langCode;
-                if(mListener!=null) mListener.onLanguageDetected(translation);
-                intializeTTS(text, langCode);
+                intializeTTS(langCode);
+                if (mListener != null) mListener.onLanguageDetected(translation);
                 Log.i(TAG,langCode);
             }
         }, new Response.ErrorListener() {
@@ -122,30 +122,28 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return body;
     }
 
-     void intializeTTS(final String selectedText, final String langCode) {
+     void intializeTTS(final String langCode) {
         if(langCode.equals("he")){
-            initializeMSService(selectedText);
+            initializeMSService();
         }else{
-            initializeGoogleLocalService(selectedText, langCode);
+            initializeGoogleLocalService(langCode);
         }
     }
 
-    private void initializeMSService(final String selectedText){
+    private void initializeMSService(){
         mSynth.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
         Voice voice = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
         mSynth.SetVoice(voice, null);
-        mSynth.SpeakToAudio(selectedText);
         localTTS = false;
     }
 
-    private void initializeGoogleLocalService(final String selectedText, final String langCode){
+    private void initializeGoogleLocalService(final String langCode){
         int result = tts.setLanguage(new Locale(langCode));
         if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
             Log.e("Initialize TTS Error", "This Language is not supported");
         } else {
             localTTS = true;
-            tts.speak(selectedText, TextToSpeech.QUEUE_ADD, null);
         }
     }
 

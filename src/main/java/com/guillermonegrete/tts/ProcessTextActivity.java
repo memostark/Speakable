@@ -58,6 +58,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     private boolean mLanguageDetected;
 
     private String mTranslation;
+    private String mSelectedText;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -68,22 +69,14 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             tts.setListener(this);
         }
 
-        final String textString = getSelectedText();
-        String[] splittedText = textString.split(" ");
+        mSelectedText = getSelectedText();
+        String[] splittedText = mSelectedText.split(" ");
         mIsSentence = splittedText.length > 1;
         mInsideWikitionary = true;
         mWikiRequestDone = false;
         mLanguageDetected = false;
         mInsideDatabase = false;
 
-        // setWindowParams();
-        // Reordenar esta parte
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        WindowManager.LayoutParams wlp = getWindow().getAttributes();
-        wlp.dimAmount = 0;
-        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        getWindow().setAttributes(wlp);
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
@@ -92,27 +85,21 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         mAdapter = new WiktionaryListAdapter(this);
 
         if(mIsSentence){
-            setSentenceLayout();
             mWikiRequestDone = true;
             mInsideWikitionary = false;
+            tts.determineLanguage(mSelectedText);
         }else{
-            setWordLayout(textString);
-            if(!mInsideDatabase) sendWiktionaryRequest(textString);
-            else {
-                mInsideWikitionary = false;
-                mWikiRequestDone = true;
-                mLanguageDetected = true;
+            Words foundWord = searchInDatabase(mSelectedText);
+            if(!mInsideDatabase) {
+                sendWiktionaryRequest(mSelectedText);
+                tts.determineLanguage(mSelectedText);
+            } else {
+                setBottomDialog();
+                setWordLayout(mSelectedText, foundWord);
+                tts.intializeTTS(foundWord.lang);
+                tts.speak(mSelectedText);
             }
         }
-        if(!mInsideDatabase){
-            tts.determineLanguage(textString);
-        }else{
-            setWindowParams();
-        }
-        TextView mTextTTS = findViewById(R.id.text_tts);
-        mTextTTS.setText(textString);
-
-
     }
 
     private String getSelectedText(){
@@ -122,13 +109,20 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         return selected_text.toString();
     }
 
-    private void setWordLayout(final String textString){
+    private Words searchInDatabase(String selected_word){
+        WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
+        Words foundWords = wordsDAO.findWord(selected_word);
+        mInsideDatabase = foundWords != null;
+        return foundWords;
+    }
+
+    private void setWordLayout(final String textString, Words foundWords){
         setContentView(R.layout.activity_processtext);
 
-        WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
-        Words foundWords = wordsDAO.findWord(textString);
-        mInsideDatabase = foundWords != null;
-        if(mInsideDatabase) {
+        TextView mTextTTS = findViewById(R.id.text_tts);
+        mTextTTS.setText(textString);
+
+        if(foundWords != null) {
             ImageButton saveIcon = findViewById(R.id.save_icon);
             saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
             TextView saved_definition = findViewById(R.id.text_error_message);
@@ -136,7 +130,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             saved_definition.setText(foundWords.definition);
             TextView saved_notes = findViewById(R.id.text_notes);
             saved_notes.setVisibility(View.VISIBLE);
-            if(foundWords.notes != null) saved_notes.setText(foundWords.notes);
+            if (foundWords.notes != null) saved_notes.setText(foundWords.notes);
         }
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
@@ -160,7 +154,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
     private void setSentenceLayout(){
         setContentView(R.layout.activity_process_sentence);
-
+        TextView mTextTTS = findViewById(R.id.text_tts);
+        mTextTTS.setText(mSelectedText);
     }
 
     private void showSaveDialog(String word) {
@@ -172,8 +167,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     private void sendWiktionaryRequest(String textString){
         //------------------------------ Taken from https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
         String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&redirects=1&titles=" + textString;
-        final TextView mWikiContent = findViewById(R.id.text_error_message);
-        mWikiContent.setMovementMethod(new ScrollingMovementMethod());
+
 
         RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -201,8 +195,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                                     break;
                             }
                         }
-
-                        setList();
                     }
 
                     private String extractResponseContent(String response){
@@ -221,10 +213,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                         }catch (JSONException e){
                             Log.e("BingTTS","unexpected JSON exception", e);
                             extract = "Parse Failed: " + e.getMessage();
-                            mWikiContent.setText(extract);
-                            TextView saved_definition = findViewById(R.id.text_error_message);
-                            saved_definition.setVisibility(View.VISIBLE);
-                            Toast.makeText(getApplicationContext(), "Not inside wiktionary", Toast.LENGTH_LONG).show();
                             mInsideWikitionary = false;
                         }
                         mWikiRequestDone = true;
@@ -235,9 +223,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                mWikiContent.setText(R.string.no_entry);
-                TextView saved_definition = findViewById(R.id.text_error_message);
-                saved_definition.setVisibility(View.VISIBLE);
+                mInsideWikitionary = false;
             }
         });
         // Add the request to the RequestQueue.
@@ -333,14 +319,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     }
 
     public void setWindowParams() {
-        WindowManager.LayoutParams wlp = getWindow().getAttributes();
-        if(mInsideWikitionary){
-            wlp.flags = wlp.flags | WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-        }else{
-            wlp.gravity = Gravity.BOTTOM;
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        }
-        getWindow().setAttributes(wlp);
+        if(mInsideWikitionary) setCenterDialog();
+        else setBottomDialog();
     }
 
     private void setList(){
@@ -356,17 +336,45 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         setLayout();
     }
 
+    private void setCenterDialog(){
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wlp = getWindow().getAttributes();
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
+                WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+        getWindow().setAttributes(wlp);
+    }
+
+    private void setBottomDialog(){
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wlp = getWindow().getAttributes();
+        wlp.dimAmount = 0;
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        wlp.gravity = Gravity.BOTTOM;
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        getWindow().setAttributes(wlp);
+    }
+
     private void setLayout(){
         if(mLanguageDetected && mWikiRequestDone){
             setWindowParams();
             Log.d(TAG,"All data ready");
             if(mIsSentence){
+                setSentenceLayout();
                 TextView mTextTranslation = findViewById(R.id.text_translation);
                 mTextTranslation.setText(mTranslation);
-            } else if(mWikiRequestDone){
+            } else if(mInsideWikitionary){
+                setWordLayout(mSelectedText, null);
+                setList();
+            } else { // Single word not in wiktionary
+                setWordLayout(mSelectedText, null);
                 TextView mTextTranslation = findViewById(R.id.text_error_message);
+                mTextTranslation.setMovementMethod(new ScrollingMovementMethod());
+                mTextTranslation.setVisibility(View.VISIBLE);
                 mTextTranslation.setText(mTranslation);
             }
+            tts.speak(mSelectedText);
         }else{
             Log.d(TAG,"Not all data ready");
         }
