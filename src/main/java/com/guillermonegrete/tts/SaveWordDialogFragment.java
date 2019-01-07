@@ -28,6 +28,8 @@ public class SaveWordDialogFragment extends DialogFragment {
     private static final String EXTRA_LANGUAGE= "language";
     private static final String EXTRA_TRANSLATION = "translation";
 
+    public static final String TAG_DIALOG_UPDATE_WORD = "dialog_update_word";
+
     public static SaveWordDialogFragment newInstance(String word, String language, String translation){
         SaveWordDialogFragment fragment = new SaveWordDialogFragment();
 
@@ -60,10 +62,10 @@ public class SaveWordDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         View dialogue_layout = getActivity().getLayoutInflater().inflate(R.layout.new_word_dialog, null);
-        final EditText wordEditText = (EditText) dialogue_layout.findViewById(R.id.new_word_edit);
-        final EditText languageEditText = (EditText) dialogue_layout.findViewById(R.id.new_word_language_edit);
-        final EditText translationEditText = (EditText) dialogue_layout.findViewById(R.id.new_translation_edit);
-        final EditText notesEditText = (EditText) dialogue_layout.findViewById(R.id.new_notes_edit);
+        final EditText wordEditText = dialogue_layout.findViewById(R.id.new_word_edit);
+        final EditText languageEditText = dialogue_layout.findViewById(R.id.new_word_language_edit);
+        final EditText translationEditText = dialogue_layout.findViewById(R.id.new_translation_edit);
+        final EditText notesEditText = dialogue_layout.findViewById(R.id.new_notes_edit);
 
         if(wordExtra != null){
             wordEditText.setText(wordExtra);
@@ -109,8 +111,27 @@ public class SaveWordDialogFragment extends DialogFragment {
         if(!TextUtils.isEmpty(notes)) word_entry.notes = notes;
 
         WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
-        wordsDAO.insert(word_entry);
-        Toast.makeText(getActivity(), "Word saved", Toast.LENGTH_SHORT).show();
+
+        if(TAG_DIALOG_UPDATE_WORD.equals(getTag())){
+
+            Toast.makeText(getActivity(), "Word updated", Toast.LENGTH_SHORT).show();
+            Words wordToUpdate = wordsDAO.findWord(wordExtra);
+            if (wordToUpdate != null)  {
+                if (wordToUpdate.notes == null){
+                    wordToUpdate.notes = notes;
+                    wordsDAO.update(wordToUpdate);
+                } else if (!wordToUpdate.notes.equals(notes)) {
+                    wordToUpdate.notes = notes;
+                    wordsDAO.update(wordToUpdate);
+                }
+            }
+        }else{
+            wordsDAO.insert(word_entry);
+            Toast.makeText(getActivity(), "New word saved", Toast.LENGTH_SHORT).show();
+        }
+
+        // This part should not be here, it makes the fragment tightly coupled to the activity
+        // Should be removed to improve fragment flexibility
         ImageButton saveIcon = getActivity().findViewById(R.id.save_icon);
         if(saveIcon != null) saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
 

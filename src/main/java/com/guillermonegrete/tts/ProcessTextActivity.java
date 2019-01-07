@@ -22,7 +22,6 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -318,15 +317,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         super.onDestroy();
     }
 
-    public void setWindowParams() {
-        if(mInsideWikitionary) setCenterDialog();
-        else setBottomDialog();
-    }
 
-    private void setList(){
-        ListView listView = findViewById(R.id.listView_wiki);
-        listView.setAdapter(mAdapter);
-    }
 
 
     @Override
@@ -336,25 +327,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         setLayout();
     }
 
-    private void setCenterDialog(){
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        WindowManager.LayoutParams wlp = getWindow().getAttributes();
-        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
-                WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-        getWindow().setAttributes(wlp);
-    }
-
-    private void setBottomDialog(){
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        WindowManager.LayoutParams wlp = getWindow().getAttributes();
-        wlp.dimAmount = 0;
-        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        wlp.gravity = Gravity.BOTTOM;
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        getWindow().setAttributes(wlp);
-    }
 
     private void setLayout(){
         if(mLanguageDetected && mWikiRequestDone){
@@ -378,6 +350,36 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         }else{
             Log.d(TAG,"Not all data ready");
         }
+    }
+
+    public void setWindowParams() {
+        if(mInsideWikitionary) setCenterDialog();
+        else setBottomDialog();
+    }
+
+    private void setCenterDialog(){
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wlp = getWindow().getAttributes();
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
+                WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+        getWindow().setAttributes(wlp);
+    }
+
+    private void setBottomDialog(){
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wlp = getWindow().getAttributes();
+        wlp.dimAmount = 0;
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        wlp.gravity = Gravity.BOTTOM;
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        getWindow().setAttributes(wlp);
+    }
+
+    private void setList(){
+        ListView listView = findViewById(R.id.listView_wiki);
+        listView.setAdapter(mAdapter);
     }
 }
 

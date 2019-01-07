@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.SavedWords;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.ActionMode;
 import android.support.v7.widget.RecyclerView;
@@ -16,12 +17,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.SaveWordDialogFragment;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.guillermonegrete.tts.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
 
 public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdapter.WordsViewHolder> {
 
@@ -63,6 +67,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                 holder.notesText.setVisibility(View.VISIBLE);
                 holder.notesText.setText(word.notes);
             }
+
         }
 
         holder.update();
@@ -169,6 +174,13 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                     selectedItems.add(item);
                     container.setBackgroundColor(Color.LTGRAY);
                 }
+            } else {
+                Toast.makeText(context, "Updating item", Toast.LENGTH_SHORT).show();
+                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
+                        wordText.getText().toString(),
+                        languageText.getText().toString(),
+                        translationText.getText().toString());
+                dialogFragment.show(((AppCompatActivity) context).getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
             }
         }
     }
