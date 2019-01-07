@@ -66,6 +66,8 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             if (word.notes != null) {
                 holder.notesText.setVisibility(View.VISIBLE);
                 holder.notesText.setText(word.notes);
+            }else {
+                holder.notesText.setVisibility(View.GONE);
             }
 
         }
