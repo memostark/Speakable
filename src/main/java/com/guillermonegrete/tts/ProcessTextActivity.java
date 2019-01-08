@@ -8,11 +8,13 @@
 package com.guillermonegrete.tts;
 
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AlertDialog;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -58,6 +60,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
 
     private String mTranslation;
     private String mSelectedText;
+
+
+    private WordsDAO mWordsDAO;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -109,8 +114,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     }
 
     private Words searchInDatabase(String selected_word){
-        WordsDAO wordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
-        Words foundWords = wordsDAO.findWord(selected_word);
+        mWordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
+        Words foundWords = mWordsDAO.findWord(selected_word);
         mInsideDatabase = foundWords != null;
         return foundWords;
     }
@@ -143,7 +148,10 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             @Override
             public void onClick(View view) {
                 // saveWord(textString);
-                showSaveDialog(textString);
+                if(mInsideDatabase)
+                    showDeleteDialog(textString);
+                else
+                    showSaveDialog(textString);
 
             }
         });
@@ -161,6 +169,26 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         DialogFragment dialogFragment;
         dialogFragment = SaveWordDialogFragment.newInstance(word, tts.language, mTranslation);
         dialogFragment.show(getSupportFragmentManager(), "New word process");
+    }
+
+    private void showDeleteDialog(final String word){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Do you want to delete this word?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        mWordsDAO.deleteWord(word);
+                        ImageButton saveIcon = findViewById(R.id.save_icon);
+                        saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+                        dialog.dismiss();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.dismiss();
+                    }
+                });
+
+        builder.create().show();
     }
 
     private void sendWiktionaryRequest(String textString){
