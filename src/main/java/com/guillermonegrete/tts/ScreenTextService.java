@@ -12,6 +12,8 @@ import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ClipDescription;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -48,6 +50,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -212,11 +215,11 @@ public class ScreenTextService extends Service {
                         case MotionEvent.ACTION_MOVE:
                             xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
                             yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
-                            final boolean isIntersecting = isIntersectWithTrash();
+                            final boolean isIntersecting = isIntersectingWithTrash();
                             final boolean isIntersect = state == STATE_INTERSECTING;
                             if (isIntersecting) {
                                 bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
-                                params.x= (int) trash_layout.getTrashIconCenterX();
+                                params.x = (int) trash_layout.getTrashIconCenterX();
                                 params.y = (int) trash_layout.getTrashIconCenterY();
                             }else{
                                 params.x = initialX + (int) (event.getRawX() - initialTouchX);
@@ -268,7 +271,7 @@ public class ScreenTextService extends Service {
 
             }
 
-            private boolean isIntersectWithTrash() {
+            private boolean isIntersectingWithTrash() {
 
                 trash_layout.getWindowDrawingRect(mTrashViewRect);
                 getBubbleWindowDrawingRect(mFloatingViewRect);
@@ -317,11 +320,6 @@ public class ScreenTextService extends Service {
 
         });
 
-/*        FirebaseVisionCloudDetectorOptions options =
-                new FirebaseVisionCloudDetectorOptions.Builder()
-                        .setModelType(FirebaseVisionCloudDetectorOptions.LATEST_MODEL)
-                        .setMaxResults(15)
-                        .build();*/
 
         new Thread() {
             @Override
@@ -331,6 +329,9 @@ public class ScreenTextService extends Service {
                 Looper.loop();
             }
         }.start();
+
+        setClipboardCallback();
+
 
     }
 
@@ -352,6 +353,41 @@ public class ScreenTextService extends Service {
 
     private boolean isSnipViewVisible(){
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
+    }
+
+    private void setClipboardCallback(){
+        final ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboard.addPrimaryClipChangedListener(new ClipboardManager.OnPrimaryClipChangedListener() {
+                    @Override
+                    public void onPrimaryClipChanged() {
+                        Log.d("prueba", "on clipboard changed");
+                        Log.d("prueba", "clipboard type " + clipboard.getPrimaryClipDescription().toString());
+                        Log.d("prueba", "clipboard type " + clipboard.getPrimaryClip().toString());
+                        Handler mainHandler = new Handler(getMainLooper());
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Do your stuff here related to UI, e.g. show toast
+                                Toast.makeText(getApplicationContext(), "On clipboard changed", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        if (!(clipboard.hasPrimaryClip())) {
+
+                        } else if (!(clipboard.getPrimaryClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN))) {
+
+                        } else {
+                            Log.d("prueba", "clipboard" + clipboard.getPrimaryClip().toString());
+
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // Do your stuff here related to UI, e.g. show toast
+                                    Toast.makeText(getApplicationContext(), "Copy: " + clipboard.getPrimaryClip().toString(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    }
+        });
     }
 
     protected static void setScreenshotPermission(final Intent intent, int result) {
@@ -634,7 +670,7 @@ public class ScreenTextService extends Service {
 
     private void createForeground(String action){
         Intent intentHide = new Intent(this, Receiver.class);
-        PendingIntent pendingIntentHide = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent stopServiceIntent = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
 
         Intent intent = new Intent(this, ScreenTextService.class);
         intent.setAction(action);
@@ -648,7 +684,7 @@ public class ScreenTextService extends Service {
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText("Tap to start text recognition"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .addAction(R.drawable.ic_close, getString(R.string.close_notification),pendingIntentHide)
+                .addAction(R.drawable.ic_close, getString(R.string.close_notification),stopServiceIntent)
                 .setOngoing(true)
                 .setContentIntent(pendingIntent).build();
 

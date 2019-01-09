@@ -46,7 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 
 
-public class ProcessTextActivity extends FragmentActivity implements CustomTTSListener{
+public class ProcessTextActivity extends FragmentActivity implements CustomTTS.CustomTTSListener {
     private CustomTTS tts;
     private WiktionaryListAdapter mAdapter;
 
@@ -105,7 +105,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
             } else {
                 setBottomDialog();
                 setWordLayout(mSelectedText, foundWord);
-                tts.intializeTTS(foundWord.lang);
+                tts.initializeTTS(foundWord.lang);
                 if(mAutoTTS) tts.speak(mSelectedText);
             }
         }
