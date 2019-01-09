@@ -5,9 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,6 +54,7 @@ public class TextToSpeechFragment extends Fragment {
         final WebView webview = (WebView) fragment_layout.findViewById(R.id.webview_wiktionary);
         webview.setWebViewClient(new HelloWebViewClient());
 
+        // TODO fix audio not playing, implemente tts listener
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

@@ -4,10 +4,10 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
-import android.support.v7.app.AlertDialog;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
+import androidx.appcompat.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
@@ -130,8 +130,10 @@ public class SaveWordDialogFragment extends DialogFragment {
             Toast.makeText(getActivity(), "New word saved", Toast.LENGTH_SHORT).show();
         }
 
-        // This part should not be here, it makes the fragment tightly coupled to the activity
-        // Should be removed to improve fragment flexibility
+        /* TODO
+         This part should not be here, it makes the fragment tightly coupled to the activity
+         Should be removed to improve fragment flexibility
+        */
         ImageButton saveIcon = getActivity().findViewById(R.id.save_icon);
         if(saveIcon != null) saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
 
