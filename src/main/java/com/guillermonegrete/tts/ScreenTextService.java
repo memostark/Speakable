@@ -12,6 +12,7 @@ import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -357,37 +358,32 @@ public class ScreenTextService extends Service {
 
     private void setClipboardCallback(){
         final ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        clipboard.addPrimaryClipChangedListener(new ClipboardManager.OnPrimaryClipChangedListener() {
-                    @Override
-                    public void onPrimaryClipChanged() {
-                        Log.d("prueba", "on clipboard changed");
-                        Log.d("prueba", "clipboard type " + clipboard.getPrimaryClipDescription().toString());
-                        Log.d("prueba", "clipboard type " + clipboard.getPrimaryClip().toString());
-                        Handler mainHandler = new Handler(getMainLooper());
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Do your stuff here related to UI, e.g. show toast
-                                Toast.makeText(getApplicationContext(), "On clipboard changed", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        if (!(clipboard.hasPrimaryClip())) {
+        if(clipboard != null) {
+            clipboard.addPrimaryClipChangedListener(new ClipboardManager.OnPrimaryClipChangedListener() {
+                @Override
+                public void onPrimaryClipChanged() {
+                    Log.d("prueba", "on clipboard changed");
 
-                        } else if (!(clipboard.getPrimaryClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN))) {
+                    ClipData clip = clipboard.getPrimaryClip();
 
-                        } else {
-                            Log.d("prueba", "clipboard" + clipboard.getPrimaryClip().toString());
+                    if(clip == null) return;
+                    if(clip.getItemCount() <= 0) return;
 
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    // Do your stuff here related to UI, e.g. show toast
-                                    Toast.makeText(getApplicationContext(), "Copy: " + clipboard.getPrimaryClip().toString(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                    final CharSequence pasteData = clip.getItemAt(0).getText();
+
+                    if (pasteData == null) return;
+
+                    Handler mainHandler = new Handler(getMainLooper());
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Do your stuff here related to UI, e.g. show toast
+                            Toast.makeText(getApplicationContext(), pasteData, Toast.LENGTH_SHORT).show();
                         }
-                    }
-        });
+                    });
+                }
+            });
+        }
     }
 
     protected static void setScreenshotPermission(final Intent intent, int result) {
