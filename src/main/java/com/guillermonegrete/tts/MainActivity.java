@@ -84,6 +84,11 @@ public class MainActivity extends AppCompatActivity {
                         fragmentTransaction.replace(R.id.main_tts_fragment_container, savedWordsFragment);
                         fragmentTransaction.commit();
                         break;
+                    case  R.id.nav_item_settings:
+                        SettingsFragment settingsFragment  = new SettingsFragment();
+                        fragmentTransaction.replace(R.id.main_tts_fragment_container, settingsFragment);
+                        fragmentTransaction.commit();
+                        break;
                 }
 
                 return true;

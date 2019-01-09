@@ -5,5 +5,7 @@
             android:title="@string/main"/>
         <item android:id="@+id/nav_item_saved"
             android:title="@string/saved"/>
+        <item android:id="@+id/nav_item_settings"
+            android:title="@string/settings"/>
     </group>
 </menu>

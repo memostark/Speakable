@@ -10,7 +10,9 @@ package com.guillermonegrete.tts;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
@@ -24,6 +26,7 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -58,6 +61,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
     private boolean mInsideWikitionary;
     private boolean mLanguageDetected;
 
+    private boolean mAutoTTS;
+
     private String mTranslation;
     private String mSelectedText;
 
@@ -87,6 +92,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
         startService(intentService);
 
         mAdapter = new WiktionaryListAdapter(this);
+        mAutoTTS = getAutoTTSPreference();
 
         if(mIsSentence){
             mWikiRequestDone = true;
@@ -101,16 +107,24 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                 setBottomDialog();
                 setWordLayout(mSelectedText, foundWord);
                 tts.intializeTTS(foundWord.lang);
-                tts.speak(mSelectedText);
+                if(mAutoTTS) tts.speak(mSelectedText);
             }
         }
+
     }
+
 
     private String getSelectedText(){
         Intent intent = getIntent();
         final CharSequence selected_text = intent
                 .getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
         return selected_text.toString();
+    }
+
+    private boolean getAutoTTSPreference(){
+        SharedPreferences sharedPref =
+                PreferenceManager.getDefaultSharedPreferences(this);
+        return sharedPref.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
     }
 
     private Words searchInDatabase(String selected_word){
@@ -374,7 +388,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTSLi
                 mTextTranslation.setVisibility(View.VISIBLE);
                 mTextTranslation.setText(mTranslation);
             }
-            tts.speak(mSelectedText);
+            if(mAutoTTS) tts.speak(mSelectedText);
         }else{
             Log.d(TAG,"Not all data ready");
         }

@@ -37,6 +37,7 @@ dependencies {
     // Required -- JUnit 4 framework
     testImplementation 'junit:junit:4.12'
 
+    implementation "com.android.support:preference-v7:${supportLibVersion}"
     implementation "com.android.support:appcompat-v7:${supportLibVersion}"
     implementation "com.android.support:recyclerview-v7:${supportLibVersion}"
     implementation "com.android.support:design:${supportLibVersion}"
