@@ -372,15 +372,12 @@ public class ScreenTextService extends Service {
                     final CharSequence pasteData = clip.getItemAt(0).getText();
 
                     if (pasteData == null) return;
+                    
+                    Intent dialogIntent = new Intent(ScreenTextService.this, ProcessTextActivity.class);
+                    dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    dialogIntent.putExtra("android.intent.extra.PROCESS_TEXT", pasteData);
+                    startActivity(dialogIntent);
 
-                    Handler mainHandler = new Handler(getMainLooper());
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            // Do your stuff here related to UI, e.g. show toast
-                            Toast.makeText(getApplicationContext(), pasteData, Toast.LENGTH_SHORT).show();
-                        }
-                    });
                 }
             });
         }

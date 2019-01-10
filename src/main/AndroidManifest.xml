@@ -23,6 +23,7 @@
         <activity
             android:name="com.guillermonegrete.tts.ProcessTextActivity"
             android:label="@string/process_text_action_name"
+            android:excludeFromRecents="true"
             android:theme="@style/ProcessTextStyle">
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />
