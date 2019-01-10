@@ -17,6 +17,7 @@ import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
@@ -34,6 +35,8 @@ import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+
+import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
@@ -362,7 +365,9 @@ public class ScreenTextService extends Service {
             clipboard.addPrimaryClipChangedListener(new ClipboardManager.OnPrimaryClipChangedListener() {
                 @Override
                 public void onPrimaryClipChanged() {
-                    Log.d("prueba", "on clipboard changed");
+                    SharedPreferences sharedPref =
+                            PreferenceManager.getDefaultSharedPreferences(ScreenTextService.this);
+                    if (!sharedPref.getBoolean(SettingsFragment.PREF_CLIPBOARD_SWITCH, false)) return;
 
                     ClipData clip = clipboard.getPrimaryClip();
 
@@ -372,7 +377,7 @@ public class ScreenTextService extends Service {
                     final CharSequence pasteData = clip.getItemAt(0).getText();
 
                     if (pasteData == null) return;
-                    
+
                     Intent dialogIntent = new Intent(ScreenTextService.this, ProcessTextActivity.class);
                     dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     dialogIntent.putExtra("android.intent.extra.PROCESS_TEXT", pasteData);
