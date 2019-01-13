@@ -9,7 +9,7 @@
     android:visibility="visible"
     android:layout_marginTop="50dp"
     android:layout_marginBottom="50dp"
-    android:clickable="true"
+    android:focusable="true"
     android:background="@drawable/black_border">
 
     <LinearLayout
@@ -86,6 +86,11 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
+        <Button
+            android:id="@+id/more_definitions_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="More definitions"/>
 
     </LinearLayout>
 

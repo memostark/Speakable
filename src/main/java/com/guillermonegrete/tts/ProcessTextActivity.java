@@ -11,9 +11,11 @@ package com.guillermonegrete.tts;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import androidx.annotation.Nullable;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.appcompat.app.AlertDialog;
@@ -23,6 +25,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -68,6 +71,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     private WordsDAO mWordsDAO;
 
+    private final static String ReversoConjugationBaseURL = "http://conjugator.reverso.net/conjugation-hebrew-verb-";
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,6 +116,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         }
 
     }
+    
 
 
     private String getSelectedText(){
@@ -160,11 +166,22 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // saveWord(textString);
                 if(mInsideDatabase)
                     showDeleteDialog(textString);
                 else
                     showSaveDialog(textString);
+
+            }
+        });
+
+        findViewById(R.id.more_definitions_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+                CustomTabsIntent customTabsIntent = builder.build();
+                customTabsIntent.launchUrl(ProcessTextActivity.this, Uri.parse(
+                        ReversoConjugationBaseURL + textString + ".html"
+                ));
 
             }
         });
