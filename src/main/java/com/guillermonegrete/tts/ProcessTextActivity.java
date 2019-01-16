@@ -11,23 +11,25 @@ package com.guillermonegrete.tts;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.appcompat.app.AlertDialog;
-import android.text.method.ScrollingMovementMethod;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -36,6 +38,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.guillermonegrete.tts.TextProcessing.DefinitionFragment;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
@@ -73,6 +76,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     private final static String ReversoConjugationBaseURL = "http://conjugator.reverso.net/conjugation-hebrew-verb-";
 
+    private Words mFoundWords;
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,14 +109,19 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
             mInsideWikitionary = false;
             tts.determineLanguage(mSelectedText);
         }else{
-            Words foundWord = searchInDatabase(mSelectedText);
+            mFoundWords = searchInDatabase(mSelectedText);
             if(!mInsideDatabase) {
                 sendWiktionaryRequest(mSelectedText);
                 tts.determineLanguage(mSelectedText);
             } else {
                 setBottomDialog();
-                setWordLayout(mSelectedText, foundWord);
-                tts.initializeTTS(foundWord.lang);
+                mAdapter = null;
+                mTranslation = null;
+                setWordLayout(mSelectedText, mFoundWords);
+                ViewPager pager =  findViewById(R.id.process_view_pager);
+                pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
+
+                tts.initializeTTS(mFoundWords.lang);
                 if(mAutoTTS) tts.speak(mSelectedText);
             }
         }
@@ -148,12 +159,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         if(foundWords != null) {
             ImageButton saveIcon = findViewById(R.id.save_icon);
             saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
-            TextView saved_definition = findViewById(R.id.text_error_message);
-            saved_definition.setVisibility(View.VISIBLE);
-            saved_definition.setText(foundWords.definition);
-            TextView saved_notes = findViewById(R.id.text_notes);
-            saved_notes.setVisibility(View.VISIBLE);
-            if (foundWords.notes != null) saved_notes.setText(foundWords.notes);
         }
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
@@ -174,17 +179,17 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
             }
         });
 
-        findViewById(R.id.more_definitions_btn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-                CustomTabsIntent customTabsIntent = builder.build();
-                customTabsIntent.launchUrl(ProcessTextActivity.this, Uri.parse(
-                        ReversoConjugationBaseURL + textString + ".html"
-                ));
-
-            }
-        });
+//        findViewById(R.id.more_definitions_btn).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+//                CustomTabsIntent customTabsIntent = builder.build();
+//                customTabsIntent.launchUrl(ProcessTextActivity.this, Uri.parse(
+//                        ReversoConjugationBaseURL + textString + ".html"
+//                ));
+//
+//            }
+//        });
 
 
     }
@@ -396,13 +401,13 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                 mTextTranslation.setText(mTranslation);
             } else if(mInsideWikitionary){
                 setWordLayout(mSelectedText, null);
-                setList();
+                ViewPager pager =  findViewById(R.id.process_view_pager);
+                pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
             } else { // Single word not in wiktionary
                 setWordLayout(mSelectedText, null);
-                TextView mTextTranslation = findViewById(R.id.text_error_message);
-                mTextTranslation.setMovementMethod(new ScrollingMovementMethod());
-                mTextTranslation.setVisibility(View.VISIBLE);
-                mTextTranslation.setText(mTranslation);
+                mAdapter = null;
+                ViewPager pager =  findViewById(R.id.process_view_pager);
+                pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
             }
             if(mAutoTTS) tts.speak(mSelectedText);
         }else{
@@ -435,9 +440,26 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         getWindow().setAttributes(wlp);
     }
 
-    private void setList(){
-        ListView listView = findViewById(R.id.listView_wiki);
-        listView.setAdapter(mAdapter);
+
+    private class MyPageAdapter extends FragmentPagerAdapter{
+
+        MyPageAdapter(@NonNull FragmentManager fm) {
+            super(fm);
+        }
+
+        @NonNull
+        @Override
+        public Fragment getItem(int position) {
+            switch (position){
+                case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
+                default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return 1;
+        }
     }
 }
 

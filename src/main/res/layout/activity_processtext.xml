@@ -20,6 +20,7 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -55,42 +56,11 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/text_error_message"
-            android:layout_width="match_parent"
+
+        <androidx.viewpager.widget.ViewPager
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:maxLines="15"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:visibility="gone"/>
-
-        <TextView
-            android:id="@+id/text_notes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:maxLines="15"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:visibility="gone"/>
-
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="0dp"
-            android:layout_weight="0.1"
-            android:orientation="horizontal">
-
-            <ListView
-                android:id="@+id/listView_wiki"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/more_definitions_btn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="More definitions"/>
+            android:id="@+id/process_view_pager"/>
 
     </LinearLayout>
 
