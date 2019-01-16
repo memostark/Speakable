@@ -39,6 +39,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.guillermonegrete.tts.TextProcessing.DefinitionFragment;
+import com.guillermonegrete.tts.TextProcessing.ExternalLinksFragment;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
@@ -452,13 +453,14 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         public Fragment getItem(int position) {
             switch (position){
                 case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
+                case 1: return ExternalLinksFragment.newInstance();
                 default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
             }
         }
 
         @Override
         public int getCount() {
-            return 1;
+            return 2;
         }
     }
 }
