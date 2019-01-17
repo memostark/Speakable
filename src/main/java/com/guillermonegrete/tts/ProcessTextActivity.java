@@ -27,6 +27,7 @@ import androidx.viewpager.widget.ViewPager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
@@ -119,8 +120,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                 mAdapter = null;
                 mTranslation = null;
                 setWordLayout(mSelectedText, mFoundWords);
-                ViewPager pager =  findViewById(R.id.process_view_pager);
-                pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
+                createSmallViewPager();
 
                 tts.initializeTTS(mFoundWords.lang);
                 if(mAutoTTS) tts.speak(mSelectedText);
@@ -407,8 +407,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
             } else { // Single word not in wiktionary
                 setWordLayout(mSelectedText, null);
                 mAdapter = null;
-                ViewPager pager =  findViewById(R.id.process_view_pager);
-                pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
+                createSmallViewPager();
             }
             if(mAutoTTS) tts.speak(mSelectedText);
         }else{
@@ -439,6 +438,14 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         wlp.gravity = Gravity.BOTTOM;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         getWindow().setAttributes(wlp);
+    }
+
+    private void createSmallViewPager(){
+        ViewPager pager =  findViewById(R.id.process_view_pager);
+        ViewGroup.LayoutParams params = pager.getLayoutParams();
+        params.height = 250;
+        pager.setLayoutParams(params);
+        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
     }
 
 

@@ -13,24 +13,24 @@
         android:gravity="center"
         grid:layout_gravity="fill_horizontal"
         android:textSize="14sp"
-        android:layout_margin="15dp"/>
+        android:layout_margin="10dp"/>
     <Button
         android:text="Link 1"
         grid:layout_columnWeight="1"
         grid:layout_gravity="fill_horizontal"
         android:textSize="14sp"
-        android:layout_margin="15dp"/>
+        android:layout_margin="10dp"/>
 
     <Button
         android:text="Link 2"
         grid:layout_columnWeight="1"
         grid:layout_gravity="fill_horizontal"
         android:textSize="14sp"
-        android:layout_margin="15dp"/>
+        android:layout_margin="10dp"/>
     <Button
         android:text="Link 3"
         grid:layout_columnWeight="1"
         android:textSize="14sp"
-        android:layout_margin="15dp"/>
+        android:layout_margin="10dp"/>
 
 </androidx.gridlayout.widget.GridLayout >
