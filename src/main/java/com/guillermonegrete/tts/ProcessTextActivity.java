@@ -77,8 +77,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     private WordsDAO mWordsDAO;
 
-    private final static String ReversoConjugationBaseURL = "http://conjugator.reverso.net/conjugation-hebrew-verb-";
-
     private Words mFoundWords;
 
 
@@ -180,18 +178,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
             }
         });
-
-//        findViewById(R.id.more_definitions_btn).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-//                CustomTabsIntent customTabsIntent = builder.build();
-//                customTabsIntent.launchUrl(ProcessTextActivity.this, Uri.parse(
-//                        ReversoConjugationBaseURL + textString + ".html"
-//                ));
-//
-//            }
-//        });
 
 
     }
@@ -465,7 +451,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         public Fragment getItem(int position) {
             switch (position){
                 case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
-                case 1: return ExternalLinksFragment.newInstance();
+                case 1: return ExternalLinksFragment.newInstance(mSelectedText);
                 default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
             }
         }

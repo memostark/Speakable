@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.TextProcessing;
 
+import android.content.Context;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
@@ -14,9 +16,12 @@ import com.guillermonegrete.tts.db.Words;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.fragment.app.Fragment;
 
 public class DefinitionFragment extends Fragment {
+
+    private Context mContext;
 
     private String wordExtra;
     private String definitionExtra;
@@ -47,6 +52,7 @@ public class DefinitionFragment extends Fragment {
         return fragment;
 
     }
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
