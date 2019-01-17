@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:theme="@android:style/Theme.Dialog"
     tools:context=".ProcessTextActivity"
     android:id="@+id/testLayout"
@@ -10,60 +11,61 @@
     android:layout_marginTop="50dp"
     android:layout_marginBottom="50dp"
     android:focusable="true"
-    android:background="@drawable/black_border">
+    android:background="@drawable/black_border"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#FFFFBB33">
+        <TextView
+            android:id="@+id/text_tts"
+            android:text = "Selected text"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp"
-            android:background="#FFFFBB33">
-            <TextView
-                android:id="@+id/text_tts"
-                android:text = "Selected text"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:textColor="#000000"
-                android:textSize="20sp"
-                android:layout_weight="1"/>
-            <ImageButton
-                android:id="@+id/save_icon"
-                android:paddingStart="3dp"
-                android:paddingEnd="3dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_bookmark_border_black_24dp"
-                android:contentDescription="@string/play_tts_icon_description"
-                android:background="?android:selectableItemBackgroundBorderless"/>
-            <ImageButton
-                android:id="@+id/play_tts_icon"
-                android:paddingStart="3dp"
-                android:paddingEnd="3dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_volume_up_black_24dp"
-                android:contentDescription="@string/save_icon_description"
-                android:background="?android:selectableItemBackgroundBorderless"/>
-
-        </LinearLayout>
-
-
-        <androidx.viewpager.widget.ViewPager
+            android:textColor="#000000"
+            android:textSize="20sp"
+            android:layout_weight="1"/>
+        <ImageButton
+            android:id="@+id/save_icon"
+            android:paddingStart="3dp"
+            android:paddingEnd="3dp"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/process_view_pager"/>
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_bookmark_border_black_24dp"
+            android:contentDescription="@string/play_tts_icon_description"
+            android:background="?android:selectableItemBackgroundBorderless"/>
+        <ImageButton
+            android:id="@+id/play_tts_icon"
+            android:paddingStart="3dp"
+            android:paddingEnd="3dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_volume_up_black_24dp"
+            android:contentDescription="@string/save_icon_description"
+            android:background="?android:selectableItemBackgroundBorderless"/>
 
     </LinearLayout>
 
 
+    <androidx.viewpager.widget.ViewPager
+        android:layout_width="wrap_content"
+        android:layout_height="400dp"
+        android:id="@+id/process_view_pager"/>
 
-</RelativeLayout>
+    <com.google.android.material.tabs.TabLayout
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:id="@+id/pager_menu_dots"
+        app:tabBackground="@drawable/tab_selector"
+        app:tabGravity="center"
+        app:tabIndicatorHeight="0dp"/>
+
+
+
+</LinearLayout>

@@ -2,4 +2,5 @@
 <resources>
     <color name="transparentBG">#8000ff00</color>
     <color name="transparentBlueBG">#800000ff</color>
+    <color name="indicatorSelected">#95979b</color>
 </resources>

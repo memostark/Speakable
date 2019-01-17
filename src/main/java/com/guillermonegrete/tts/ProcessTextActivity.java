@@ -39,6 +39,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.tabs.TabLayout;
 import com.guillermonegrete.tts.TextProcessing.DefinitionFragment;
 import com.guillermonegrete.tts.TextProcessing.ExternalLinksFragment;
 import com.guillermonegrete.tts.db.Words;
@@ -403,6 +404,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
             } else if(mInsideWikitionary){
                 setWordLayout(mSelectedText, null);
                 ViewPager pager =  findViewById(R.id.process_view_pager);
+                TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
+                tabLayout.setupWithViewPager(pager, true);
                 pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
             } else { // Single word not in wiktionary
                 setWordLayout(mSelectedText, null);
@@ -445,6 +448,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         ViewGroup.LayoutParams params = pager.getLayoutParams();
         params.height = 250;
         pager.setLayoutParams(params);
+        TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
+        tabLayout.setupWithViewPager(pager, true);
         pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
     }
 
