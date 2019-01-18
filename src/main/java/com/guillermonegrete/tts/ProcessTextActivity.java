@@ -83,6 +83,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        overridePendingTransition(0, 0);
+
 
         if(tts == null) {
             tts = new CustomTTS(ProcessTextActivity.this);
@@ -368,8 +370,11 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         super.onDestroy();
     }
 
-
-
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+    }
 
     @Override
     public void onLanguageDetected(String translation) {
@@ -381,8 +386,8 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     private void setLayout(){
         if(mLanguageDetected && mWikiRequestDone){
+
             setWindowParams();
-            Log.d(TAG,"All data ready");
             if(mIsSentence){
                 setSentenceLayout();
                 TextView mTextTranslation = findViewById(R.id.text_translation);

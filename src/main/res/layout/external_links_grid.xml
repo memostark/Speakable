@@ -16,7 +16,8 @@
         android:id="@+id/external_link_btn_1"
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
-        grid:layout_columnWeight="0"
+        grid:layout_columnWeight="1"
+        grid:layout_rowWeight="1"
         grid:layout_gravity="fill" />
     <Button
         style="?buttonStyle"
@@ -24,6 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
         grid:layout_columnWeight="1"
+        grid:layout_rowWeight="1"
         grid:layout_gravity="fill"/>
 
     <Button
@@ -32,6 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
         grid:layout_columnWeight="1"
+        grid:layout_rowWeight="1"
         grid:layout_gravity="fill"/>
     <Button
         style="?buttonStyle"
@@ -39,6 +42,7 @@
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
         grid:layout_columnWeight="1"
+        grid:layout_rowWeight="1"
         grid:layout_gravity="fill"/>
 
 </androidx.gridlayout.widget.GridLayout >
