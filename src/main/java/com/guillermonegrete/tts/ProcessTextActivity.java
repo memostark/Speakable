@@ -54,6 +54,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.guillermonegrete.tts.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
+
 
 public class ProcessTextActivity extends FragmentActivity implements CustomTTS.CustomTTSListener {
     private CustomTTS tts;
@@ -108,6 +110,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         mAutoTTS = getAutoTTSPreference();
 
         if("WITH_FLAG".equals(getIntent().getAction())){
+            mInsideDatabase = false;
             sendWiktionaryRequest(mSelectedText);
             tts.determineLanguage(mSelectedText);
             return;
@@ -158,7 +161,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         return foundWords;
     }
 
-    private void setWordLayout(final String textString, Words foundWords){
+    private void setWordLayout(final String textString, final Words foundWords){
         setContentView(R.layout.activity_processtext);
 
         TextView mTextTTS = findViewById(R.id.text_tts);
@@ -167,6 +170,19 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         if(foundWords != null) {
             ImageButton saveIcon = findViewById(R.id.save_icon);
             saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+
+            ImageButton editIcon = findViewById(R.id.edit_icon);
+            editIcon.setVisibility(View.VISIBLE);
+            editIcon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
+                        foundWords.word,
+                        foundWords.lang,
+                        foundWords.definition);
+                    dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
+                }
+            });
         }
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
@@ -399,7 +415,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                 TextView mTextTranslation = findViewById(R.id.text_translation);
                 mTextTranslation.setText(mTranslation);
             } else if(mInsideWikitionary){
-                setWordLayout(mSelectedText, null);
+                if("WITH_FLAG".equals(getIntent().getAction())) mFoundWords = searchInDatabase(mSelectedText);
+                setWordLayout(mSelectedText, mFoundWords);
+                mFoundWords = null;
                 ViewPager pager =  findViewById(R.id.process_view_pager);
                 TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
                 tabLayout.setupWithViewPager(pager, true);

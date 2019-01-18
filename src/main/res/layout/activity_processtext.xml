@@ -41,6 +41,16 @@
             android:contentDescription="@string/play_tts_icon_description"
             android:background="?android:selectableItemBackgroundBorderless"/>
         <ImageButton
+            android:id="@+id/edit_icon"
+            android:paddingStart="3dp"
+            android:paddingEnd="3dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_edit_black_24dp"
+            android:contentDescription="@string/edit_icon_description"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:visibility="gone"/>
+        <ImageButton
             android:id="@+id/play_tts_icon"
             android:paddingStart="3dp"
             android:paddingEnd="3dp"
