@@ -107,6 +107,12 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         mAdapter = new WiktionaryListAdapter(this);
         mAutoTTS = getAutoTTSPreference();
 
+        if("WITH_FLAG".equals(getIntent().getAction())){
+            sendWiktionaryRequest(mSelectedText);
+            tts.determineLanguage(mSelectedText);
+            return;
+        }
+
         if(mIsSentence){
             mWikiRequestDone = true;
             mInsideWikitionary = false;

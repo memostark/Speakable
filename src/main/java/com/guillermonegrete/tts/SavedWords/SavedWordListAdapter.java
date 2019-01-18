@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.SavedWords;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,8 +17,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.guillermonegrete.tts.ProcessTextActivity;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.SaveWordDialogFragment;
+import com.guillermonegrete.tts.ScreenTextService;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
@@ -177,12 +180,16 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                     container.setBackgroundColor(Color.LTGRAY);
                 }
             } else {
-                Toast.makeText(context, "Updating item", Toast.LENGTH_SHORT).show();
-                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
+                Toast.makeText(context, "Show more definitions", Toast.LENGTH_SHORT).show();
+                Intent wiktionaryIntent = new Intent(context, ProcessTextActivity.class);
+                wiktionaryIntent.putExtra("android.intent.extra.PROCESS_TEXT", wordText.getText().toString());
+                wiktionaryIntent.setAction("WITH_FLAG");
+                context.startActivity(wiktionaryIntent);
+                /*DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
                         wordText.getText().toString(),
                         languageText.getText().toString(),
                         translationText.getText().toString());
-                dialogFragment.show(((AppCompatActivity) context).getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
+                dialogFragment.show(((AppCompatActivity) context).getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);*/
             }
         }
     }
