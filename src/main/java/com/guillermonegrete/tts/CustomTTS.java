@@ -35,17 +35,17 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     public String language;
 
-    CustomTTS(Context context){
+    public CustomTTS(Context context){
         mContext = context;
         tts = new TextToSpeech(context, this);
         mSynth = new Synthesizer(mContext.getResources().getString(R.string.api_key));
     }
 
-    void setListener(CustomTTSListener listener){
+    public void setListener(CustomTTSListener listener){
         mListener=listener;
     }
 
-    void speak(String text){
+    public void speak(String text){
         if(localTTS){
             tts.speak(text, TextToSpeech.QUEUE_ADD, null);
         }else{
@@ -53,7 +53,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         }
     }
 
-    void determineLanguage(final String text){
+    public void determineLanguage(final String text){
         final JSONArray body = createRequestBody(text);
 
         String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=en";
@@ -122,7 +122,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return body;
     }
 
-     void initializeTTS(final String langCode) {
+     public void initializeTTS(final String langCode) {
         if(langCode.equals("he")){
             initializeMSService();
         }else{
@@ -152,14 +152,14 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         isGoogleTTSready = (status == TextToSpeech.SUCCESS);
     }
 
-    void finishTTS(){
+    public void finishTTS(){
         if(tts!=null){
             tts.stop();
             tts.shutdown();
         }
     }
 
-    interface CustomTTSListener  {
+    public interface CustomTTSListener  {
         void onLanguageDetected(String translation);
     }
 }

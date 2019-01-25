@@ -21,7 +21,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.guillermonegrete.tts.ProcessTextActivity"
+            android:name="com.guillermonegrete.tts.TextProcessing.ProcessTextActivity"
             android:label="@string/process_text_action_name"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"

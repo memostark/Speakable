@@ -1,6 +1,6 @@
 package com.guillermonegrete.tts;
 
-import com.guillermonegrete.tts.ProcessTextActivity;
+import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
 
 import static org.junit.Assert.*;
 import org.junit.Test;

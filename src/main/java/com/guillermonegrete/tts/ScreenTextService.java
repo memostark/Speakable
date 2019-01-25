@@ -13,7 +13,6 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -54,7 +53,6 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -69,6 +67,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
 import com.guillermonegrete.tts.CustomViews.DrawView;
 import com.guillermonegrete.tts.CustomViews.TrashView;
+import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;

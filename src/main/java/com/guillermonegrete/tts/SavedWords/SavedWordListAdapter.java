@@ -3,7 +3,7 @@ package com.guillermonegrete.tts.SavedWords;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import androidx.fragment.app.DialogFragment;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,18 +17,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.guillermonegrete.tts.ProcessTextActivity;
+import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.SaveWordDialogFragment;
-import com.guillermonegrete.tts.ScreenTextService;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.guillermonegrete.tts.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
 
 public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdapter.WordsViewHolder> {
 

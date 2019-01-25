@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:theme="@android:style/Theme.Dialog"
-    tools:context=".ProcessTextActivity"
+    tools:context=".TextProcessing.ProcessTextActivity"
     android:id="@+id/testLayout"
     android:visibility="visible"
     android:layout_marginTop="50dp"

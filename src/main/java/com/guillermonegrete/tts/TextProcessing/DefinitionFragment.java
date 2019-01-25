@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.TextProcessing;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
@@ -11,12 +10,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.WiktionaryListAdapter;
 import com.guillermonegrete.tts.db.Words;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.fragment.app.Fragment;
 
 public class DefinitionFragment extends Fragment {

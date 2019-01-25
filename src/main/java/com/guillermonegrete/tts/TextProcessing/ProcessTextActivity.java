@@ -5,7 +5,7 @@
                         http://www.androidmethlab.com/2015/09/transparent-floating-window-in-front-of.html
 */
 
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.TextProcessing;
 
 
 import android.content.DialogInterface;
@@ -40,8 +40,11 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.tabs.TabLayout;
-import com.guillermonegrete.tts.TextProcessing.DefinitionFragment;
-import com.guillermonegrete.tts.TextProcessing.ExternalLinksFragment;
+import com.guillermonegrete.tts.CustomTTS;
+import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.SaveWordDialogFragment;
+import com.guillermonegrete.tts.ScreenTextService;
+import com.guillermonegrete.tts.SettingsFragment;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
