@@ -3,8 +3,8 @@ package com.guillermonegrete.tts.TextProcessing.domain.interactors;
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
-import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
 
 
@@ -31,16 +31,21 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         }else{
             // Search in database
             System.out.print("Request layouts");
-            mRepository.getWordLanguageInfo(mText, new WordDataSource.GetWordCallback() {
+            mRepository.getWordLanguageInfo(mText, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
-                public void onWordLoaded(Words word) {
+                public void onLocalWordLoaded(Words word) {
                     System.out.print("Word retrieved");
                     System.out.print(word.word);
                 }
 
                 @Override
+                public void onRemoteWordLoaded(Words word) {
+
+                }
+
+                @Override
                 public void onDataNotAvailable() {
-                    // Not in database nor microsoft translation
+
                 }
             });
         }
