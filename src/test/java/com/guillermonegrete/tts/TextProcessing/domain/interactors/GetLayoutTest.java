@@ -23,11 +23,28 @@ public class GetLayoutTest {
     }
 
     @Test
-    public void testLayoutDetermined(){
+    public void setLayoutForWordInDatabase(){
         String word = "Test";
         System.out.print("Running my tests...");
         GetLayout interactor = new GetLayout(executor, mainThread, callback, repository, word);
         interactor.run();
+
+        //Assert that onLocalWordLoaded is called.
+    }
+
+    @Test
+    public void setLayoutForSentence(){
+
+    }
+
+    @Test
+    public void setLayoutForExternalDictionary(){
+
+    }
+
+    @Test
+    public void setLayoutForWordInDBandExternalDict(){
+
     }
 
 
