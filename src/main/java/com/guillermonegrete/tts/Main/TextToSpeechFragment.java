@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.Main;
 
 
 import android.content.Context;
@@ -16,10 +16,14 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.guillermonegrete.tts.CustomTTS.CustomTTS;
+import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.Services.ScreenTextService;
+
 public class TextToSpeechFragment extends Fragment {
 
     protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
-    static final String NORMAL_SERVICE = "startService";
+    public static final String NORMAL_SERVICE = "startService";
 
     private CustomTTS tts;
 

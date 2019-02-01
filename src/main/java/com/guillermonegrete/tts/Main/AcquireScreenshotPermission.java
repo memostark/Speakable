@@ -1,7 +1,7 @@
 /*
         Reference: https://stackoverflow.com/questions/33398211/how-do-i-get-a-media-projection-manager-without-disturbing-the-current-foregroun
 */
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.Main;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -9,6 +9,8 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import android.util.Log;
+
+import com.guillermonegrete.tts.Services.ScreenTextService;
 
 
 public class AcquireScreenshotPermission extends Activity{

@@ -31,11 +31,14 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.Main;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
 import com.google.android.material.navigation.NavigationView;
+import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.SavedWords.SavedWordsFragment;
+
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.core.view.GravityCompat;

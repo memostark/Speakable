@@ -5,7 +5,7 @@
                      https://stackoverflow.com/questions/42417606/bypassing-google-tts-engine-initialization-lag-in-android/42588475
  */
 
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.Services;
 
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
@@ -64,10 +64,15 @@ import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.cloud.text.FirebaseVisionCloudText;
 import com.google.firebase.ml.vision.cloud.text.FirebaseVisionCloudTextDetector;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+import com.guillermonegrete.tts.Main.AcquireScreenshotPermission;
+import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
 import com.guillermonegrete.tts.CustomViews.DrawView;
 import com.guillermonegrete.tts.CustomViews.TrashView;
+import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.Main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
+import com.guillermonegrete.tts.Main.TextToSpeechFragment;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -387,7 +392,7 @@ public class ScreenTextService extends Service {
         }
     }
 
-    protected static void setScreenshotPermission(final Intent intent, int result) {
+    public static void setScreenshotPermission(final Intent intent, int result) {
         permissionIntent = intent;
         resultCode= result;
         if(permissionIntent!=null) hasPermission=true;

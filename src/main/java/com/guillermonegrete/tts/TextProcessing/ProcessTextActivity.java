@@ -40,11 +40,11 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.tabs.TabLayout;
-import com.guillermonegrete.tts.CustomTTS;
+import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.SaveWordDialogFragment;
-import com.guillermonegrete.tts.ScreenTextService;
-import com.guillermonegrete.tts.SettingsFragment;
+import com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment;
+import com.guillermonegrete.tts.Services.ScreenTextService;
+import com.guillermonegrete.tts.Main.SettingsFragment;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
@@ -57,7 +57,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.guillermonegrete.tts.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
+import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
 
 
 public class ProcessTextActivity extends FragmentActivity implements CustomTTS.CustomTTSListener {

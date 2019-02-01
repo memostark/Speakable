@@ -1,8 +1,10 @@
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.Services;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
+import com.guillermonegrete.tts.Services.ScreenTextService;
 
 public class Receiver extends BroadcastReceiver {
 

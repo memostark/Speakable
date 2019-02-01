@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.CustomTTS;
 
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
@@ -13,6 +13,7 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
 import com.guillermonegrete.speech.tts.Synthesizer;
 import com.guillermonegrete.speech.tts.Voice;
+import com.guillermonegrete.tts.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;

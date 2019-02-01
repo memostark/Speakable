@@ -1,7 +1,10 @@
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.Main;
 
 
 import android.os.Bundle;
+
+import com.guillermonegrete.tts.R;
+
 import androidx.preference.PreferenceFragmentCompat;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
