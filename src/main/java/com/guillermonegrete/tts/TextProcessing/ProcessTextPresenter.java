@@ -1,10 +1,24 @@
 package com.guillermonegrete.tts.TextProcessing;
 
 
-public class ProcessTextPresenter implements ProcessTextContract.Presenter{
+import com.guillermonegrete.tts.AbstractPresenter;
+import com.guillermonegrete.tts.Executor;
+import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
+import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayoutInteractor;
+import com.guillermonegrete.tts.data.source.WordRepository;
 
-    public ProcessTextPresenter(ProcessTextContract.View view ){
+public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
+    private ProcessTextContract.View mView;
+    private WordRepository mRepository;
+
+    public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view, WordRepository repository){
+        super(executor, mainThread);
+        mView = view;
+        mRepository = repository;
+
+        mView.setPresenter(this);
     }
 
     @Override
@@ -29,7 +43,14 @@ public class ProcessTextPresenter implements ProcessTextContract.Presenter{
 
     @Override
     public void getLayout(String text) {
+        GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
+            @Override
+            public void onLayoutDetermined() {
+                System.out.print("Got layout");
+            }
+        }, mRepository, text);
 
+        interactor.run();
 
     }
 
