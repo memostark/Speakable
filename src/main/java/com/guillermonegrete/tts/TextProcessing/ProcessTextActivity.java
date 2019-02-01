@@ -45,6 +45,7 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.Services.ScreenTextService;
 import com.guillermonegrete.tts.Main.SettingsFragment;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
@@ -257,9 +258,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                         String extract = extractResponseContent(response);
                         WiktionaryParser wikiParser = new WiktionaryParser(extract);
 
-                        List<WiktionaryParser.WiktionaryItem> wikiItems = wikiParser.parse();
+                        List<WiktionaryItem> wikiItems = wikiParser.parse();
 
-                        for (WiktionaryParser.WiktionaryItem item: wikiItems) {
+                        for (WiktionaryItem item: wikiItems) {
                             switch (item.itemType){
                                 case WiktionaryParser.TYPE_HEADER:
                                     mAdapter.addSectionHeaderItem(item.itemText);
@@ -352,29 +353,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
             List<String> langs = new ArrayList<>();
             Collections.addAll(langs, separated);
             return langs;
-        }
-
-        public static class WiktionaryItem{
-            String itemText;
-            int itemType;
-            public WiktionaryItem(String itemText, int itemType){
-                this.itemText = itemText;
-                this.itemType = itemType;
-            }
-
-            /*
-            *  Used for Collections.frequency to count how many types are inside List
-            *  Should find a better way to do this
-            * */
-            @Override
-            public boolean equals(Object o) {
-                WiktionaryItem instance;
-                if(!(o instanceof WiktionaryItem)) return false;
-                else {
-                    instance = (WiktionaryItem) o;
-                    return this.itemType == instance.itemType;
-                }
-            }
         }
     }
 
