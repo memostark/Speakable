@@ -8,13 +8,26 @@ public interface ProcessTextContract {
     interface View extends BaseView<Presenter>{
         void setWindow();
 
-        void setExternalDictionaryData();
+        void setExternalDictionary();
 
+        void setTranslation();
+
+        void onClickBookmark();
+
+        void onClickReproduce();
+
+        void onClickEdit();
     }
 
     interface Presenter extends BasePresenter{
 
         void reproduceTTS();
+
+        void addNewWord();
+
+        void deleteWord();
+
+        void editWord();
 
         void getLayout(String text);
 
