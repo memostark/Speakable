@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.SavedWords;
 
 
 import androidx.lifecycle.Observer;
@@ -25,8 +25,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.guillermonegrete.tts.SavedWords.SavedWordListAdapter;
-import com.guillermonegrete.tts.SavedWords.WordsViewModel;
+import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
