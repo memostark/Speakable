@@ -26,6 +26,9 @@ public class ProcessTextPresenterTest {
     @Captor
     private ArgumentCaptor<WordRepositorySource.GetWordRepositoryCallback> getWordCallbackCaptor;
 
+    @Captor
+    private ArgumentCaptor<WordRepositorySource.GetTranslationCallback> getTranslationCallbackCaptor;
+
     private ProcessTextPresenter presenter;
 
     @Before
@@ -75,12 +78,12 @@ public class ProcessTextPresenterTest {
 
     @Test
     public void setSentenceLayout(){
-        String test_text = "Prueba";
+        String test_text = "Prueba oracion";
         presenter.getLayout(test_text);
 
-        verify(repository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
-        Words return_word = new Words(test_text,"ES", "Test");
-        getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
+        verify(repository).getLanguageAndTranslation(eq(test_text), getTranslationCallbackCaptor.capture());
+        Words return_word = new Words(test_text,"ES", "Sentence test");
+        getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(return_word);
 
         verify(view).setSentenceLayout(return_word);
     }

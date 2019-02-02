@@ -29,6 +29,17 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         if(splittedText.length > 1){
             System.out.print("Get sentence layout");
             // Get translation, wait for callback
+            mRepository.getLanguageAndTranslation(mText, new WordRepositorySource.GetTranslationCallback() {
+                @Override
+                public void onTranslationAndLanguage(Words word) {
+                    mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION);
+                }
+
+                @Override
+                public void onDataNotAvailable() {
+
+                }
+            });
         }else{
             // Search in database
             System.out.print("Request layouts");

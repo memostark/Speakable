@@ -39,7 +39,7 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public void getLanguageAndTranslation(String text) {
+    public void getLanguageAndTranslation(String text, GetTranslationCallback callback) {
 
     }
 
