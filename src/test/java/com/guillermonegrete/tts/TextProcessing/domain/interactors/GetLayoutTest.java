@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.TextProcessing.domain.interactors;
 
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.threading.TestMainThread;
 
@@ -15,6 +16,7 @@ public class GetLayoutTest {
     @Mock private Executor executor;
     @Mock private GetLayout.Callback callback;
     @Mock private WordRepository repository;
+    @Mock private DictionaryRepository dictionaryRepository;
 
     @Before
     public void setUp() throws Exception{
@@ -27,7 +29,7 @@ public class GetLayoutTest {
 
         String word = "Test";
         System.out.print("Running my tests...");
-        GetLayout interactor = new GetLayout(executor, mainThread, callback, repository, word);
+        GetLayout interactor = new GetLayout(executor, mainThread, callback, repository, dictionaryRepository, word);
         interactor.run();
 
         //Assert that onLocalWordLoaded is called.

@@ -4,28 +4,37 @@ import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.ProcessTextLayoutType;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.data.source.DictionaryDataSource;
+import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
+
+import java.util.List;
 
 
 public class GetLayout extends AbstractInteractor implements GetLayoutInteractor {
 
     private GetLayoutInteractor.Callback mCallback;
     private WordRepository mRepository;
+    private DictionaryRepository dictionaryRepository;
     private String mText;
+    private boolean insideDictionary;
 
-    public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, String text){
+    public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, DictionaryRepository dictRepository, String text){
         super(threadExecutor, mainThread);
         mCallback = callback;
         mText = text;
         mRepository = repository;
+        dictionaryRepository = dictRepository;
     }
 
     @Override
     public void run() {
         System.out.print("Get layout implementation run method");
         String[] splittedText = mText.split(" ");
+
         if(splittedText.length > 1){
             System.out.print("Get sentence layout");
             // Get translation, wait for callback
@@ -50,6 +59,11 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
                 }
 
                 @Override
+                public void onLocalWordNotAvailable() {
+                    getDictionaryEntry(mText);
+                }
+
+                @Override
                 public void onRemoteWordLoaded(Words word) {
                     mCallback.onLayoutDetermined(word, ProcessTextLayoutType.WORD_TRANSLATION);
                 }
@@ -62,4 +76,25 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         }
 
     }
+
+    private void getDictionaryEntry(String mText) {
+        dictionaryRepository.getDefinition(mText, new DictionaryDataSource.GetDefinitionCallback() {
+            @Override
+            public void onDefinitionLoaded(List<WiktionaryLanguage> definitions) {
+                mCallback.onDictionaryLayoutDetermined(definitions);
+            }
+
+            @Override
+            public void onDataNotAvailable() {
+                insideDictionary = false;
+
+            }
+        });
+    }
+
+    private void setRemoteLayout(){
+
+    }
+
+
 }

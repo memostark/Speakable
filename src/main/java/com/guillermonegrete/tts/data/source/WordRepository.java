@@ -34,8 +34,7 @@ public class WordRepository implements WordRepositorySource {
             @Override
             public void onDataNotAvailable() {
                 System.out.print("Try to get remote data");
-                // implement microsoft translator and wiktionary request
-                // Return both if wiktionary entry exits
+                callback.onLocalWordNotAvailable();
                 getRemoteWord(wordText, callback);
             }
         });

@@ -8,6 +8,8 @@ public interface WordRepositorySource {
 
         void onLocalWordLoaded(Words word);
 
+        void onLocalWordNotAvailable();
+
         void onRemoteWordLoaded(Words word);
 
         void onDataNotAvailable();

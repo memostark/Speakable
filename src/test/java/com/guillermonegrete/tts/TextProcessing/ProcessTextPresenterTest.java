@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.TextProcessing;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.data.source.DictionaryDataSource;
+import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
@@ -24,7 +26,8 @@ import static org.mockito.Mockito.verify;
 public class ProcessTextPresenterTest {
 
     @Mock private ProcessTextContract.View view;
-    @Mock private WordRepository repository;
+    @Mock private WordRepository wordRepository;
+    @Mock private DictionaryRepository dictionaryRepository;
     @Mock private Executor executor;
 
     @Captor
@@ -32,6 +35,9 @@ public class ProcessTextPresenterTest {
 
     @Captor
     private ArgumentCaptor<WordRepositorySource.GetTranslationCallback> getTranslationCallbackCaptor;
+
+    @Captor
+    private ArgumentCaptor<DictionaryDataSource.GetDefinitionCallback> getDefinitionCallbacCaptor;
 
     private ProcessTextPresenter presenter;
 
@@ -43,7 +49,7 @@ public class ProcessTextPresenterTest {
 
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
-        return new ProcessTextPresenter(executor, mainThread, view, repository);
+        return new ProcessTextPresenter(executor, mainThread, view, wordRepository, dictionaryRepository);
     }
 
     @Test
@@ -60,7 +66,7 @@ public class ProcessTextPresenterTest {
         String test_text = "Prueba";
         presenter.getLayout(test_text);
 //        verify(view).setWiktionaryLayout();
-        verify(repository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Test");
         getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
 
@@ -73,7 +79,7 @@ public class ProcessTextPresenterTest {
         String test_text = "Prueba";
         presenter.getLayout(test_text);
 
-        verify(repository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Test");
         getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
 
@@ -85,7 +91,7 @@ public class ProcessTextPresenterTest {
         String test_text = "Prueba oracion";
         presenter.getLayout(test_text);
 
-        verify(repository).getLanguageAndTranslation(eq(test_text), getTranslationCallbackCaptor.capture());
+        verify(wordRepository).getLanguageAndTranslation(eq(test_text), getTranslationCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Sentence test");
         getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(return_word);
 
@@ -97,10 +103,12 @@ public class ProcessTextPresenterTest {
         String test_text = "Prueba";
         presenter.getLayout(test_text);
 
-        verify(repository).getLanguageAndTranslation(eq(test_text), getTranslationCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
         List<WiktionaryLanguage> wiktionaryLanguages = new ArrayList<>();
-        Words return_word = new Words(test_text,"ES", "Sentence test");
-        getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
+
+        getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
+        verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
+        getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(wiktionaryLanguages);
 
         verify(view).setWiktionaryLayout(wiktionaryLanguages);
 
