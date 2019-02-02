@@ -7,6 +7,7 @@ import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayoutInteractor;
 import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.db.Words;
 
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
@@ -45,8 +46,18 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void getLayout(String text) {
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
-            public void onLayoutDetermined() {
+            public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
                 System.out.print("Got layout");
+                switch (layoutType){
+                    case WORD_TRANSLATION:
+                        mView.setTranslationLayout(word);
+                        break;
+                    case SAVED_WORD:
+                        mView.setSavedWordLayout(word);
+                        break;
+                    case SENTENCE_TRANSLATION:
+                        mView.setSentenceLayout(word);
+                }
             }
         }, mRepository, text);
 

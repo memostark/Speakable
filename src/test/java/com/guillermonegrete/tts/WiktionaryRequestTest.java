@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts;
 
 import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryItem;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class WiktionaryRequestTest {
     public void parser_generates_one_of_each_type(){
         String input = "\n== English ==\n\n\n=== Etymology ===\nBorrowed from Spanish hola.";
         ProcessTextActivity.WiktionaryParser parser = new ProcessTextActivity.WiktionaryParser(input);
-        List<ProcessTextActivity.WiktionaryParser.WiktionaryItem> result_items = parser.parse();
+        List<WiktionaryItem> result_items = parser.parse();
 
         assertEquals(1, getItemTypeOccurrences(result_items, 100));
         assertEquals(1, getItemTypeOccurrences(result_items, 101));
@@ -45,14 +46,14 @@ public class WiktionaryRequestTest {
     public void parses_two_languages(){
         String input = "\n== English ==\n\n\n=== Etymology ===\nBorrowed from Spanish hola.\n== Spanish ==\n\n\n=== Etymology ===\nBorrowed from Spanish hola.";
         ProcessTextActivity.WiktionaryParser parser = new ProcessTextActivity.WiktionaryParser(input);
-        List<ProcessTextActivity.WiktionaryParser.WiktionaryItem> result_items = parser.parse();
+        List<WiktionaryItem> result_items = parser.parse();
 
         assertEquals(2, getItemTypeOccurrences(result_items, 100));
         assertEquals(2, getItemTypeOccurrences(result_items, 101));
         assertEquals(2, getItemTypeOccurrences(result_items, 102));
     }
 
-    private int getItemTypeOccurrences(List<ProcessTextActivity.WiktionaryParser.WiktionaryItem> items, int type){
-        return Collections.frequency(items, new ProcessTextActivity.WiktionaryParser.WiktionaryItem("test", type));
+    private int getItemTypeOccurrences(List<WiktionaryItem> items, int type){
+        return Collections.frequency(items, new WiktionaryItem("test", type));
     }
 }

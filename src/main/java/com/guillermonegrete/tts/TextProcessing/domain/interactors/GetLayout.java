@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.TextProcessing.domain.interactors;
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.TextProcessing.ProcessTextLayoutType;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
@@ -34,13 +35,12 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             mRepository.getWordLanguageInfo(mText, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(Words word) {
-                    System.out.print("Word retrieved");
-                    System.out.print(word.word);
+                    mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SAVED_WORD);
                 }
 
                 @Override
                 public void onRemoteWordLoaded(Words word) {
-
+                    mCallback.onLayoutDetermined(word, ProcessTextLayoutType.WORD_TRANSLATION);
                 }
 
                 @Override
