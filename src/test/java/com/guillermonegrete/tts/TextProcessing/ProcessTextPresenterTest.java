@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.TextProcessing;
 
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
@@ -13,6 +14,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -86,6 +90,20 @@ public class ProcessTextPresenterTest {
         getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(return_word);
 
         verify(view).setSentenceLayout(return_word);
+    }
+
+    @Test
+    public void setExternalDictionaryLayout(){
+        String test_text = "Prueba";
+        presenter.getLayout(test_text);
+
+        verify(repository).getLanguageAndTranslation(eq(test_text), getTranslationCallbackCaptor.capture());
+        List<WiktionaryLanguage> wiktionaryLanguages = new ArrayList<>();
+        Words return_word = new Words(test_text,"ES", "Sentence test");
+        getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
+
+        verify(view).setWiktionaryLayout(wiktionaryLanguages);
+
     }
 
 }

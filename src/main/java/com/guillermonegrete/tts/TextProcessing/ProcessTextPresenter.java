@@ -6,8 +6,11 @@ import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayoutInteractor;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.db.Words;
+
+import java.util.List;
 
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
@@ -58,6 +61,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                     case SENTENCE_TRANSLATION:
                         mView.setSentenceLayout(word);
                 }
+            }
+
+            @Override
+            public void onDictionaryLayoutDetermined(List<WiktionaryLanguage> items) {
+                mView.setWiktionaryLayout(items);
             }
         }, mRepository, text);
 

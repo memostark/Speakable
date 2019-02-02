@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.source;
 
+
 import com.guillermonegrete.tts.db.Words;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
@@ -10,10 +11,14 @@ public class WordRepository implements WordRepositorySource {
 
     private final WordDataSource mWordLocalDataSource;
 
+    private final DictionaryDataSource mWiktionaryDataSource;
+
     private WordRepository(WordDataSource wordMSTranslatorSource,
-                           WordDataSource wordLocalDataSource){
+                           WordDataSource wordLocalDataSource,
+                           DictionaryDataSource wiktionaryDataSource){
         mWordMSTranslatorSource = checkNotNull(wordMSTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
+        mWiktionaryDataSource = checkNotNull(wiktionaryDataSource);
     }
 
     @Override
@@ -33,6 +38,7 @@ public class WordRepository implements WordRepositorySource {
                 // implement microsoft translator and wiktionary request
                 // Return both if wiktionary entry exits
                 getRemoteWord(wordText, callback);
+                getWiktionary(wordText, callback);
             }
         });
 
@@ -40,6 +46,17 @@ public class WordRepository implements WordRepositorySource {
 
     @Override
     public void getLanguageAndTranslation(String text, GetTranslationCallback callback) {
+        mWordMSTranslatorSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
+            @Override
+            public void onWordLoaded(Words word) {
+
+            }
+
+            @Override
+            public void onDataNotAvailable() {
+
+            }
+        });
 
     }
 
@@ -56,5 +73,9 @@ public class WordRepository implements WordRepositorySource {
                 callback.onDataNotAvailable();
             }
         });
+    }
+
+    private void getWiktionary(String wordText, GetWordRepositoryCallback callback) {
+
     }
 }
