@@ -1,7 +1,10 @@
 package com.guillermonegrete.tts.data.source;
 
 
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
 import com.guillermonegrete.tts.db.Words;
+
+import java.util.List;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
@@ -11,14 +14,10 @@ public class WordRepository implements WordRepositorySource {
 
     private final WordDataSource mWordLocalDataSource;
 
-    private final DictionaryDataSource mWiktionaryDataSource;
-
     private WordRepository(WordDataSource wordMSTranslatorSource,
-                           WordDataSource wordLocalDataSource,
-                           DictionaryDataSource wiktionaryDataSource){
+                           WordDataSource wordLocalDataSource){
         mWordMSTranslatorSource = checkNotNull(wordMSTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
-        mWiktionaryDataSource = checkNotNull(wiktionaryDataSource);
     }
 
     @Override
@@ -38,7 +37,6 @@ public class WordRepository implements WordRepositorySource {
                 // implement microsoft translator and wiktionary request
                 // Return both if wiktionary entry exits
                 getRemoteWord(wordText, callback);
-                getWiktionary(wordText, callback);
             }
         });
 
@@ -73,9 +71,5 @@ public class WordRepository implements WordRepositorySource {
                 callback.onDataNotAvailable();
             }
         });
-    }
-
-    private void getWiktionary(String wordText, GetWordRepositoryCallback callback) {
-
     }
 }
