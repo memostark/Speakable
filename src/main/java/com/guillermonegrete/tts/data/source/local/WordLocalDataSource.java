@@ -28,8 +28,11 @@ public class WordLocalDataSource implements WordDataSource {
     @Override
     public void getWordLanguageInfo(String wordText, GetWordCallback callback) {
         System.out.print("Retrieving local word data");
-        Words dummyWord = new Words("Dummy", "EN", "Dummy local translation");
-        callback.onWordLoaded(dummyWord);
-
+        Words retrieved_word = mWordDAO.findWord(wordText);
+        if(retrieved_word == null){
+            callback.onDataNotAvailable();
+        }else {
+            callback.onWordLoaded(retrieved_word);
+        }
     }
 }

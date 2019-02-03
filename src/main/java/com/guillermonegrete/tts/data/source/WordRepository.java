@@ -1,10 +1,7 @@
 package com.guillermonegrete.tts.data.source;
 
-
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
 import com.guillermonegrete.tts.db.Words;
 
-import java.util.List;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
