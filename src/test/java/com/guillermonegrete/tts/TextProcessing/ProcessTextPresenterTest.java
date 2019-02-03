@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class ProcessTextPresenterTest {
 
@@ -61,18 +63,6 @@ public class ProcessTextPresenterTest {
         verify(view).setPresenter(presenter);
     }
 
-    @Test
-    public void setTranslationLayout(){
-        String test_text = "Prueba";
-        presenter.getLayout(test_text);
-//        verify(view).setWiktionaryLayout();
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
-        Words return_word = new Words(test_text,"ES", "Test");
-        getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
-
-        verify(view).setTranslationLayout(return_word);
-
-    }
 
     @Test
     public void setSavedWordLayout(){
@@ -99,17 +89,41 @@ public class ProcessTextPresenterTest {
     }
 
     @Test
-    public void setExternalDictionaryLayout(){
+    public void setTranslationLayout(){
         String test_text = "Prueba";
         presenter.getLayout(test_text);
 
         verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
-        List<WiktionaryLanguage> wiktionaryLanguages = new ArrayList<>();
-
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
+
+        Words return_word = new Words(test_text,"ES", "Test");
+        getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
+
+        verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
+        getDefinitionCallbacCaptor.getValue().onDataNotAvailable();
+
+        verify(view).setTranslationLayout(return_word);
+
+    }
+
+    @Test
+    public void setExternalDictionaryLayout(){
+        String test_text = "Prueba";
+        System.out.println("setExternalDict:");
+        presenter.getLayout(test_text);
+
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
+        getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
+
+        Words return_word = new Words(test_text,"ES", "Sentence test");
+        getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
+
+        List<WiktionaryLanguage> wiktionaryLanguages = new ArrayList<>();
         verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
         getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(wiktionaryLanguages);
 
+
+        verify(view, never()).setTranslationLayout(return_word);
         verify(view).setWiktionaryLayout(wiktionaryLanguages);
 
     }

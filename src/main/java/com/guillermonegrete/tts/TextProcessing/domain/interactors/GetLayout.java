@@ -20,7 +20,12 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private WordRepository mRepository;
     private DictionaryRepository dictionaryRepository;
     private String mText;
+
     private boolean insideDictionary;
+    private boolean dictionaryRequestDone;
+    private boolean translationDone;
+
+    private Words mWord;
 
     public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, DictionaryRepository dictRepository, String text){
         super(threadExecutor, mainThread);
@@ -28,11 +33,14 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         mText = text;
         mRepository = repository;
         dictionaryRepository = dictRepository;
+
+        insideDictionary = false;
+        dictionaryRequestDone = false;
+        translationDone = false;
     }
 
     @Override
     public void run() {
-        System.out.print("Get layout implementation run method");
         String[] splittedText = mText.split(" ");
 
         if(splittedText.length > 1){
@@ -51,7 +59,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             });
         }else{
             // Search in database
-            System.out.print("Request layouts");
+            System.out.println("Request layouts");
             mRepository.getWordLanguageInfo(mText, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(Words word) {
@@ -65,7 +73,9 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
                 @Override
                 public void onRemoteWordLoaded(Words word) {
-                    mCallback.onLayoutDetermined(word, ProcessTextLayoutType.WORD_TRANSLATION);
+                    translationDone = true;
+                    mWord = word;
+                    setRemoteLayout(null);
                 }
 
                 @Override
@@ -81,19 +91,30 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         dictionaryRepository.getDefinition(mText, new DictionaryDataSource.GetDefinitionCallback() {
             @Override
             public void onDefinitionLoaded(List<WiktionaryLanguage> definitions) {
-                mCallback.onDictionaryLayoutDetermined(definitions);
+                insideDictionary = true;
+                dictionaryRequestDone = true;
+                setRemoteLayout(definitions);
             }
 
             @Override
             public void onDataNotAvailable() {
                 insideDictionary = false;
+                dictionaryRequestDone = true;
+                setRemoteLayout(null);
 
             }
         });
     }
 
-    private void setRemoteLayout(){
+    private void setRemoteLayout(List<WiktionaryLanguage> definitions){
 
+        if(dictionaryRequestDone && translationDone){
+            if(insideDictionary){
+                mCallback.onDictionaryLayoutDetermined(definitions);
+            }else{
+                mCallback.onLayoutDetermined(mWord, ProcessTextLayoutType.WORD_TRANSLATION);
+            }
+        }
     }
 
 

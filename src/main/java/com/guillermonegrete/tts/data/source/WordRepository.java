@@ -42,16 +42,17 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public void getLanguageAndTranslation(String text, GetTranslationCallback callback) {
+    public void getLanguageAndTranslation(String text, final GetTranslationCallback callback) {
         mWordMSTranslatorSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
+                callback.onTranslationAndLanguage(word);
 
             }
 
             @Override
             public void onDataNotAvailable() {
-
+                callback.onDataNotAvailable();
             }
         });
 
