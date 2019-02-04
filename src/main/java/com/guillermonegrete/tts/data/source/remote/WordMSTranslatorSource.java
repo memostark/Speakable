@@ -1,25 +1,24 @@
 package com.guillermonegrete.tts.data.source.remote;
 
-
-
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.db.Words;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.util.HashMap;
-import java.util.Map;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class WordMSTranslatorSource implements WordDataSource {
 
     private static WordMSTranslatorSource INSTANCE;
+    private static final String BASE_URL = "https://api.cognitive.microsofttranslator.com/";
+
+    private MicrosoftTranslatorAPI MSTranslatorAPI;
 
     public static WordMSTranslatorSource getInstance(){
         if(INSTANCE == null){
@@ -30,69 +29,61 @@ public class WordMSTranslatorSource implements WordDataSource {
     }
 
     private WordMSTranslatorSource(){
+        Gson gson = new GsonBuilder()
+                .setLenient()
+                .create();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+
+        MSTranslatorAPI = retrofit.create(MicrosoftTranslatorAPI.class);
 
     }
 
     @Override
     public void getWordLanguageInfo(final String wordText, final GetWordCallback callback) {
-        System.out.print("Retrieving remote word data");
-        final JSONArray body = createRequestBody(wordText);
+        System.out.println("Retrieving remote word data");
+        // final JSONArray body = createRequestBody(wordText);
 
-        String urlDetectLang = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=en";
-
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.POST, urlDetectLang,null, new Response.Listener<JSONArray>() {
+        RequestBody body = new RequestBody(wordText);
+        List<RequestBody> bodyList = new ArrayList<>();
+        bodyList.add(body);
+        MSTranslatorAPI.getWord(bodyList).enqueue(new Callback<List<MSTranslatorResponse>>() {
             @Override
-            public void onResponse(JSONArray response) {
-
-                String langCode, translation;
-                try {
-                    JSONObject jsonObject = response.getJSONObject(0);
-                    JSONObject jsonLang = jsonObject.getJSONObject("detectedLanguage");
-                    JSONArray jsonTranslation = jsonObject.getJSONArray("translations");
-                    langCode = jsonLang.getString("language");
-                    translation = jsonTranslation.getJSONObject(0).getString("text");
-                    Words retrieved_word = new Words(wordText, langCode, translation);
-                    callback.onWordLoaded(retrieved_word);
-                } catch (JSONException e) {
+            public void onResponse(Call<List<MSTranslatorResponse>> call, final retrofit2.Response<List<MSTranslatorResponse>> response) {
+                System.out.print(response.isSuccessful());
+                if(response.isSuccessful() && response.body() != null){
+                    MSTranslatorResponse response_word = response.body().get(0);
+                    callback.onWordLoaded(new Words(wordText,
+                            response_word.getDetectedLanguage().getLanguage(),
+                            response_word.getTranslations().get(0).getText()));
+                }else
                     callback.onDataNotAvailable();
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-
-            }
-        }){
-            @Override
-            public byte[] getBody() {
-                return body.toString().getBytes();
             }
 
             @Override
-            public String getBodyContentType() {
-                return "application/json";
+            public void onFailure(Call<List<MSTranslatorResponse>> call, final Throwable t) {
+                System.out.println("On failure:");
+                System.out.println(t.getMessage());
+                callback.onDataNotAvailable();
             }
+        });
 
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type","application/json");
-                headers.put("Ocp-Apim-Subscription-Key", "49596075062f40e1b30f709feb7b1018");
-                return headers;
-            }
-        };
 
     }
 
-    private JSONArray createRequestBody(final String text){
-        JSONArray body = new JSONArray();
-        try {
-            JSONObject obj = new JSONObject();
-            obj.put("Text", text);
-            body.put(obj);
-        } catch (JSONException e) {
-            e.printStackTrace();
+
+    public static class RequestBody{
+        private String Text;
+        RequestBody(String Text){
+            this.Text = Text;
         }
-        return body;
+
+        @Override
+        public String toString() {
+            return String.format("{'Text': '%s'}", Text);
+        }
     }
 }
