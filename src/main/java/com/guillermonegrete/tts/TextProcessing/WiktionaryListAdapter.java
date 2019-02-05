@@ -100,7 +100,7 @@ public class WiktionaryListAdapter extends BaseAdapter {
                     break;
                 case TYPE_SUBHEADER:
                     convertView = mInflater.inflate(R.layout.subheader_item, null);
-                    holder.textView = (TextView) convertView.findViewById(R.id.text_subheader);
+                    holder.textView = (TextView) convertView.findViewById(R.id.text_subheader_old);
                     break;
             }
             convertView.setTag(holder);
