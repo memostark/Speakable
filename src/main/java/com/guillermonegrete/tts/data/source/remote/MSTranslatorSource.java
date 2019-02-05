@@ -13,22 +13,22 @@ import retrofit2.Callback;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class WordMSTranslatorSource implements WordDataSource {
+public class MSTranslatorSource implements WordDataSource {
 
-    private static WordMSTranslatorSource INSTANCE;
+    private static MSTranslatorSource INSTANCE;
     private static final String BASE_URL = "https://api.cognitive.microsofttranslator.com/";
 
     private MicrosoftTranslatorAPI MSTranslatorAPI;
 
-    public static WordMSTranslatorSource getInstance(){
+    public static MSTranslatorSource getInstance(){
         if(INSTANCE == null){
-          INSTANCE = new WordMSTranslatorSource();
+          INSTANCE = new MSTranslatorSource();
         }
 
         return INSTANCE;
     }
 
-    private WordMSTranslatorSource(){
+    private MSTranslatorSource(){
         Gson gson = new GsonBuilder()
                 .setLenient()
                 .create();

@@ -2,7 +2,7 @@ package com.guillermonegrete.tts.TextProcessing;
 
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -117,7 +117,7 @@ public class ProcessTextPresenterTest {
         Words return_word = new Words(test_text,"ES", "Sentence test");
         getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
 
-        List<WiktionaryLanguage> wiktionaryLanguages = new ArrayList<>();
+        List<WikiItem> wiktionaryLanguages = new ArrayList<>();
         verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
         getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(wiktionaryLanguages);
 

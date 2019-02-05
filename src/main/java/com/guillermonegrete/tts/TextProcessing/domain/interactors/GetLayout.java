@@ -4,7 +4,7 @@ import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.ProcessTextLayoutType;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -90,7 +90,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private void getDictionaryEntry(String mText) {
         dictionaryRepository.getDefinition(mText, new DictionaryDataSource.GetDefinitionCallback() {
             @Override
-            public void onDefinitionLoaded(List<WiktionaryLanguage> definitions) {
+            public void onDefinitionLoaded(List<WikiItem> definitions) {
                 insideDictionary = true;
                 dictionaryRequestDone = true;
                 setRemoteLayout(definitions);
@@ -106,7 +106,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         });
     }
 
-    private void setRemoteLayout(List<WiktionaryLanguage> definitions){
+    private void setRemoteLayout(List<WikiItem> definitions){
 
         if(dictionaryRequestDone && translationDone){
             if(insideDictionary){

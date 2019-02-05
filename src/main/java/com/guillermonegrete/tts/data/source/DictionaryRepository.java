@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.data.source;
 
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLangHeader;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class DictionaryRepository implements DictionaryDataSource{
     public void getDefinition(String word, GetDefinitionCallback callback) {
         mWiktionaryDataSource.getDefinition(word, new DictionaryDataSource.GetDefinitionCallback() {
             @Override
-            public void onDefinitionLoaded(List<WiktionaryLanguage> definitions) {
+            public void onDefinitionLoaded(List<WikiItem> definitions) {
 
             }
 

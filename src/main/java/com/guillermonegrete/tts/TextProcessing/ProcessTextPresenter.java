@@ -6,7 +6,7 @@ import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayoutInteractor;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.db.Words;
@@ -67,7 +67,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             }
 
             @Override
-            public void onDictionaryLayoutDetermined(List<WiktionaryLanguage> items) {
+            public void onDictionaryLayoutDetermined(List<WikiItem> items) {
                 mView.setWiktionaryLayout(items);
             }
         }, mRepository, dictionaryRepository, text);

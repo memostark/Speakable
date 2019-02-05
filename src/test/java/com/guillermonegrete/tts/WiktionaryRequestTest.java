@@ -54,6 +54,6 @@ public class WiktionaryRequestTest {
     }
 
     private int getItemTypeOccurrences(List<WiktionaryItem> items, int type){
-        return Collections.frequency(items, new WiktionaryItem("test", type));
+        return Collections.frequency(items, new WiktionaryItem("test", "placeholder"));
     }
 }

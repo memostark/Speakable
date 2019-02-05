@@ -1,13 +1,13 @@
 package com.guillermonegrete.tts.data.source;
 
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 
 import java.util.List;
 
 public interface DictionaryDataSource {
     interface GetDefinitionCallback{
 
-        void onDefinitionLoaded(List<WiktionaryLanguage> definitions);
+        void onDefinitionLoaded(List<WikiItem> definitions);
 
         void onDataNotAvailable();
     }

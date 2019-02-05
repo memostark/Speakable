@@ -2,7 +2,7 @@ package com.guillermonegrete.tts.TextProcessing;
 
 import com.guillermonegrete.tts.BasePresenter;
 import com.guillermonegrete.tts.BaseView;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLanguage;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.db.Words;
 
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
 public interface ProcessTextContract {
 
     interface View extends BaseView<Presenter>{
-        void setWiktionaryLayout(List<WiktionaryLanguage> items);
+        void setWiktionaryLayout(List<WikiItem> items);
 
         void setSavedWordLayout(Words word);
 

@@ -329,7 +329,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                 separated = LanguageSections.get(i).split("\n=== ");
                 String lang = separated[0].split(" ")[0];
 
-                items.add(new WiktionaryItem(lang, TYPE_HEADER));
+                items.add(new WiktionaryItem(lang, "Placeholder"));
 
                 int j;
                 //Log.i(TAG,"--------------"+lang+"---------------");
@@ -337,10 +337,10 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                     String[] subheaders = separated[j].split(" ===\n");
                     //Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
                     //Log.i(TAG,subheaders[1]);
-                    items.add(new WiktionaryItem(subheaders[0], TYPE_SUBHEADER));
+                    items.add(new WiktionaryItem(subheaders[0], "Placeholder"));
                     String[] subsubheader = subheaders[1].split("\n==== ");
                     for(int k=0; k<subsubheader.length; k++){
-                        items.add(new WiktionaryItem(subsubheader[k].replace("====\n",""), TYPE_TEXT));
+                        items.add(new WiktionaryItem(subsubheader[k].replace("====\n",""), "Placeholder"));
                     }
                 }
             }
