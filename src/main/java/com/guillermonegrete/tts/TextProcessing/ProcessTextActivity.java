@@ -22,6 +22,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
 import android.util.Log;
@@ -31,7 +32,9 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -45,10 +48,18 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.Services.ScreenTextService;
 import com.guillermonegrete.tts.Main.SettingsFragment;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryItem;
+import com.guillermonegrete.tts.ThreadExecutor;
+import com.guillermonegrete.tts.data.source.DictionaryRepository;
+import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
+import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
+import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.threading.MainThreadImpl;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -61,9 +72,9 @@ import java.util.List;
 import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
 
 
-public class ProcessTextActivity extends FragmentActivity implements CustomTTS.CustomTTSListener {
+public class ProcessTextActivity extends FragmentActivity implements CustomTTS.CustomTTSListener, ProcessTextContract.View {
     private CustomTTS tts;
-    private WiktionaryListAdapter mAdapter;
+    private WiktionaryAdapter mAdapter;
 
     private String TAG = this.getClass().getSimpleName();
     public static final String LONGPRESS_SERVICE_NOSHOW = "startServiceLong";
@@ -84,6 +95,10 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     private WordsDAO mWordsDAO;
 
     private Words mFoundWords;
+
+    private ProcessTextContract.Presenter presenter;
+
+    private ListView listView;
 
 
     @Override
@@ -110,10 +125,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
         startService(intentService);
 
-        mAdapter = new WiktionaryListAdapter(this);
         mAutoTTS = getAutoTTSPreference();
 
-        if("WITH_FLAG".equals(getIntent().getAction())){
+        /*if("WITH_FLAG".equals(getIntent().getAction())){
             mInsideDatabase = false;
             sendWiktionaryRequest(mSelectedText);
             tts.determineLanguage(mSelectedText);
@@ -139,7 +153,14 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                 tts.initializeTTS(mFoundWords.lang);
                 if(mAutoTTS) tts.speak(mSelectedText);
             }
-        }
+        }*/
+
+        presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
+                MainThreadImpl.getInstance(),
+                this,
+                WordRepository.getInstance(MSTranslatorSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
+                DictionaryRepository.getInstance(WiktionarySource.getInstance()));
+        presenter.getLayout(getSelectedText());
 
     }
 
@@ -199,9 +220,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(mInsideDatabase)
-                    showDeleteDialog(textString);
-                else
                     showSaveDialog(textString);
 
             }
@@ -210,10 +228,10 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     }
 
-    private void setSentenceLayout(){
+    private void setSentenceLayout(String text){
         setContentView(R.layout.activity_process_sentence);
         TextView mTextTTS = findViewById(R.id.text_tts);
-        mTextTTS.setText(mSelectedText);
+        mTextTTS.setText(text);
     }
 
     private void showSaveDialog(String word) {
@@ -260,7 +278,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
                         List<WiktionaryItem> wikiItems = wikiParser.parse();
 
-                        for (WiktionaryItem item: wikiItems) {
+                        /*for (WiktionaryItem item: wikiItems) {
                             switch (item.itemType){
                                 case WiktionaryParser.TYPE_HEADER:
                                     mAdapter.addSectionHeaderItem(item.itemText);
@@ -272,7 +290,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                                     mAdapter.addItem(item.itemText);
                                     break;
                             }
-                        }
+                        }*/
                     }
 
                     private String extractResponseContent(String response){
@@ -307,6 +325,64 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
 
+    }
+
+    @Override
+    public void setWiktionaryLayout(List<WikiItem> items) {
+        setCenterDialog();
+        Toast.makeText(this, "wiktionary", Toast.LENGTH_SHORT).show();
+
+        setWordLayout(getSelectedText(), null);
+        mAdapter = new WiktionaryAdapter(this, items);
+        RecyclerView mlistView =  findViewById(R.id.recycler_view_wiki);
+        mlistView.setAdapter(mAdapter);
+    }
+
+    @Override
+    public void setSavedWordLayout(Words word) {
+        setBottomDialog();
+        Toast.makeText(this,"saved word", Toast.LENGTH_SHORT).show();
+        setWordLayout(getSelectedText(), word);
+    }
+
+    @Override
+    public void setTranslationLayout(Words word) {
+        setBottomDialog();
+        Toast.makeText(this,"translation", Toast.LENGTH_SHORT).show();
+        setWordLayout(getSelectedText(), word);
+    }
+
+    @Override
+    public void setSentenceLayout(Words word) {
+        setBottomDialog();
+        setContentView(R.layout.activity_process_sentence);
+        TextView mTextTTS = findViewById(R.id.text_tts);
+        mTextTTS.setText(word.definition);
+    }
+
+    @Override
+    public void setExternalDictionary() {
+
+    }
+
+    @Override
+    public void onClickBookmark() {
+
+    }
+
+    @Override
+    public void onClickReproduce() {
+
+    }
+
+    @Override
+    public void onClickEdit() {
+
+    }
+
+    @Override
+    public void setPresenter(ProcessTextContract.Presenter presenter) {
+        this.presenter = presenter;
     }
 
     public static class WiktionaryParser{
@@ -392,7 +468,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
             setWindowParams();
             if(mIsSentence){
-                setSentenceLayout();
+
                 TextView mTextTranslation = findViewById(R.id.text_translation);
                 mTextTranslation.setText(mTranslation);
             } else if(mInsideWikitionary){
@@ -460,9 +536,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         @Override
         public Fragment getItem(int position) {
             switch (position){
-                case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
+                case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, new WiktionaryListAdapter(ProcessTextActivity.this));
                 case 1: return ExternalLinksFragment.newInstance(mSelectedText);
-                default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
+                default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, new WiktionaryListAdapter(ProcessTextActivity.this));
             }
         }
 

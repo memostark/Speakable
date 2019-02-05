@@ -1,11 +1,12 @@
 package com.guillermonegrete.tts.data.source;
 
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLangHeader;
 
 import java.util.List;
 
 public class DictionaryRepository implements DictionaryDataSource{
+
+    private static DictionaryRepository INSTANCE;
 
     private final DictionaryDataSource mWiktionaryDataSource;
 
@@ -13,19 +14,27 @@ public class DictionaryRepository implements DictionaryDataSource{
         mWiktionaryDataSource = wiktionaryDataSource;
     }
 
+    public static DictionaryRepository getInstance(DictionaryDataSource wiktionaryDataSource){
+        if(INSTANCE == null){
+            INSTANCE = new DictionaryRepository(wiktionaryDataSource);
+        }
+
+        return INSTANCE;
+    }
+
 
 
     @Override
-    public void getDefinition(String word, GetDefinitionCallback callback) {
+    public void getDefinition(String word, final GetDefinitionCallback callback) {
         mWiktionaryDataSource.getDefinition(word, new DictionaryDataSource.GetDefinitionCallback() {
             @Override
             public void onDefinitionLoaded(List<WikiItem> definitions) {
-
+                callback.onDefinitionLoaded(definitions);
             }
 
             @Override
             public void onDataNotAvailable() {
-
+                callback.onDataNotAvailable();
             }
         });
     }

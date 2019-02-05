@@ -7,6 +7,8 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
 public class WordRepository implements WordRepositorySource {
 
+    private static WordRepository INSTANCE;
+
     private final WordDataSource mWordMSTranslatorSource;
 
     private final WordDataSource mWordLocalDataSource;
@@ -15,6 +17,15 @@ public class WordRepository implements WordRepositorySource {
                            WordDataSource wordLocalDataSource){
         mWordMSTranslatorSource = checkNotNull(wordMSTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
+    }
+
+    public static WordRepository getInstance(WordDataSource wordMSTranslatorSource,
+                           WordDataSource wordLocalDataSource){
+        if(INSTANCE == null){
+            INSTANCE = new WordRepository(wordMSTranslatorSource, wordLocalDataSource);
+        }
+
+        return INSTANCE;
     }
 
     @Override

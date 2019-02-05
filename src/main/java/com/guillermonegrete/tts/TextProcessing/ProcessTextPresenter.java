@@ -63,6 +63,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                         break;
                     case SENTENCE_TRANSLATION:
                         mView.setSentenceLayout(word);
+                        break;
+                    default:
+                        mView.onClickEdit();
+                        break;
                 }
             }
 
