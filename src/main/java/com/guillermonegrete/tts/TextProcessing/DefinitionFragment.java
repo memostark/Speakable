@@ -15,6 +15,8 @@ import com.guillermonegrete.tts.db.Words;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class DefinitionFragment extends Fragment {
 
@@ -30,9 +32,9 @@ public class DefinitionFragment extends Fragment {
     private static final String WORD_NOTES = "word_notes";
     private static final String WORD_TRANSLATION = "word_translation";
 
-    private static WiktionaryListAdapter mAdapter;
+    private static WiktionaryAdapter mAdapter;
 
-    public static DefinitionFragment newInstance(Words foundWord, String translation, WiktionaryListAdapter adapter){
+    public static DefinitionFragment newInstance(Words foundWord, String translation, WiktionaryAdapter adapter){
         DefinitionFragment fragment = new DefinitionFragment();
 
         Bundle args = new Bundle();
@@ -67,7 +69,6 @@ public class DefinitionFragment extends Fragment {
         final View fragment_layout = inflater.inflate(R.layout.fragment_process_definition, container, false);
 
 
-
         if(wordExtra != null){ // Inside database
             TextView saved_definition = fragment_layout.findViewById(R.id.text_error_message);
             saved_definition.setVisibility(View.VISIBLE);
@@ -76,8 +77,9 @@ public class DefinitionFragment extends Fragment {
             saved_notes.setVisibility(View.VISIBLE);
             if (notesExtra != null) saved_notes.setText(notesExtra);
         }else if(mAdapter != null){ // Inside wiktionary
-            ListView listView = fragment_layout.findViewById(R.id.listView_wiki);
-            listView.setAdapter(mAdapter);
+            RecyclerView mlistView =  fragment_layout.findViewById(R.id.recycler_view_wiki);
+            mlistView.setAdapter(mAdapter);
+            mlistView.setLayoutManager(new LinearLayoutManager(getActivity()));
             return fragment_layout;
         } else { // Inside neither wiktionary nor database
 

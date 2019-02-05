@@ -1,5 +1,9 @@
 package com.guillermonegrete.tts.TextProcessing.domain.interactors;
 
+// Must delete this imports later
+import android.os.Handler;
+import android.os.Looper;
+
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
@@ -26,6 +30,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private boolean translationDone;
 
     private Words mWord;
+    private List<WikiItem> items;
 
     public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, DictionaryRepository dictRepository, String text){
         super(threadExecutor, mainThread);
@@ -41,7 +46,16 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
     @Override
     public void run() {
+        System.out.println("Running get layout interactor");
         String[] splittedText = mText.split(" ");
+        /*Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("Get layout callback to main thread");
+                mCallback.onDictionaryLayoutDetermined(new ArrayList<WikiItem>());
+            }
+        });*/
 
         if(splittedText.length > 1){
             System.out.print("Get sentence layout");
@@ -75,7 +89,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
                 public void onRemoteWordLoaded(Words word) {
                     translationDone = true;
                     mWord = word;
-                    setRemoteLayout(null);
+                    setRemoteLayout();
                 }
 
                 @Override
@@ -93,24 +107,32 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             public void onDefinitionLoaded(List<WikiItem> definitions) {
                 insideDictionary = true;
                 dictionaryRequestDone = true;
-                setRemoteLayout(definitions);
+                items = definitions;
+                setRemoteLayout();
             }
 
             @Override
             public void onDataNotAvailable() {
                 insideDictionary = false;
                 dictionaryRequestDone = true;
-                setRemoteLayout(null);
+                setRemoteLayout();
 
             }
         });
     }
 
-    private void setRemoteLayout(List<WikiItem> definitions){
+    private void setRemoteLayout(){
 
         if(dictionaryRequestDone && translationDone){
             if(insideDictionary){
-                mCallback.onDictionaryLayoutDetermined(definitions);
+                System.out.println(String.format("In background thread, get layout interactor, items size: %s", String.valueOf(items.size())));
+                Handler mainHandler = new Handler(Looper.getMainLooper());
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mCallback.onDictionaryLayoutDetermined(items);
+                    }
+                });
             }else{
                 mCallback.onLayoutDetermined(mWord, ProcessTextLayoutType.WORD_TRANSLATION);
             }

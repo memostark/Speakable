@@ -76,7 +76,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             }
         }, mRepository, dictionaryRepository, text);
 
-        interactor.run();
+        interactor.execute();
 
     }
 

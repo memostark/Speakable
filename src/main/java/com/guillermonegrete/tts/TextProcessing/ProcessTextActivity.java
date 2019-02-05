@@ -22,7 +22,6 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
 import android.util.Log;
@@ -36,12 +35,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
+
 import com.google.android.material.tabs.TabLayout;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.R;
@@ -50,6 +44,7 @@ import com.guillermonegrete.tts.Services.ScreenTextService;
 import com.guillermonegrete.tts.Main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryItem;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLangHeader;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -260,82 +255,44 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         builder.create().show();
     }
 
-    private void sendWiktionaryRequest(String textString){
-        //------------------------------ Taken from https://stackoverflow.com/questions/20337389/how-to-parse-wiktionary-api-------------------------------------------------
-        String url = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&explaintext=&redirects=1&titles=" + textString;
-
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        String extract = extractResponseContent(response);
-                        WiktionaryParser wikiParser = new WiktionaryParser(extract);
-
-                        List<WiktionaryItem> wikiItems = wikiParser.parse();
-
-                        /*for (WiktionaryItem item: wikiItems) {
-                            switch (item.itemType){
-                                case WiktionaryParser.TYPE_HEADER:
-                                    mAdapter.addSectionHeaderItem(item.itemText);
-                                    break;
-                                case WiktionaryParser.TYPE_SUBHEADER:
-                                    mAdapter.addSectionSubHeaderItem(item.itemText);
-                                    break;
-                                case WiktionaryParser.TYPE_TEXT:
-                                    mAdapter.addItem(item.itemText);
-                                    break;
-                            }
-                        }*/
-                    }
-
-                    private String extractResponseContent(String response){
-                        String extract;
-                        try{
-                            JSONObject reader = new JSONObject(response);
-                            JSONObject pagesJSON = reader.getJSONObject("query").getJSONObject("pages");
-                            Iterator<String> iterator = pagesJSON.keys();
-                            String key="";
-                            while (iterator.hasNext()) {
-                                key = iterator.next();
-                                Log.i("TAG","key:"+key);
-                            }
-                            JSONObject extractJSON = pagesJSON.getJSONObject(key);
-                            extract = extractJSON.getString("extract");
-                        }catch (JSONException e){
-                            Log.e("BingTTS","unexpected JSON exception", e);
-                            extract = "Parse Failed: " + e.getMessage();
-                            mInsideWikitionary = false;
-                        }
-                        mWikiRequestDone = true;
-                        setLayout();
-                        return extract;
-                    }
-
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                mInsideWikitionary = false;
-            }
-        });
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest);
-
-    }
-
     @Override
     public void setWiktionaryLayout(List<WikiItem> items) {
-        setCenterDialog();
-        Toast.makeText(this, "wiktionary", Toast.LENGTH_SHORT).show();
 
+
+
+
+        /*List<WikiItem> view_items = new ArrayList<>();
+        for (WikiItem item: items){
+            view_items.add(item);
+        }
+        Toast.makeText(this, "wiktionary", Toast.LENGTH_SHORT).show();*/
+
+        Toast.makeText(this, "iniciado", Toast.LENGTH_SHORT).show();
+
+        /*for (WikiItem def : items){
+            if(def instanceof WiktionaryItem){
+                WiktionaryItem item = (WiktionaryItem) def;
+                System.out.println("---------Item type:");
+                System.out.println(item.getSubHeaderText());
+                System.out.println(item.getItemText());
+            }else{
+                WiktionaryLangHeader item = (WiktionaryLangHeader) def;
+                System.out.println("---------Header type:");
+                System.out.println(item.getLanguage());
+            }
+        }*/
+        System.out.println(String.format("In UI thread, set wiki layout method, items size %s", String.valueOf(items.size())));
+        setCenterDialog();
         setWordLayout(getSelectedText(), null);
         mAdapter = new WiktionaryAdapter(this, items);
-        RecyclerView mlistView =  findViewById(R.id.recycler_view_wiki);
-        mlistView.setAdapter(mAdapter);
+
+        mFoundWords = null;
+
+        ViewPager pager =  findViewById(R.id.process_view_pager);
+        TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
+        tabLayout.setupWithViewPager(pager, true);
+        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
+
     }
 
     @Override
@@ -536,9 +493,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         @Override
         public Fragment getItem(int position) {
             switch (position){
-                case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, new WiktionaryListAdapter(ProcessTextActivity.this));
+                case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
                 case 1: return ExternalLinksFragment.newInstance(mSelectedText);
-                default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, new WiktionaryListAdapter(ProcessTextActivity.this));
+                default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
             }
         }
 
@@ -546,6 +503,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         public int getCount() {
             return 2;
         }
+
     }
 }
 

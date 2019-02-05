@@ -62,14 +62,10 @@
 
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_wiki"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
 
     <androidx.viewpager.widget.ViewPager
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
+        android:layout_height="400dp"
         android:id="@+id/process_view_pager"/>
 
     <com.google.android.material.tabs.TabLayout

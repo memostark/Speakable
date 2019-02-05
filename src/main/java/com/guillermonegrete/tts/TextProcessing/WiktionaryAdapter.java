@@ -58,7 +58,7 @@ public class WiktionaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     @Override
     public int getItemCount() {
-        return WikiItem.RowType.values().length;
+        return items.size();
     }
 
     class HeaderViewHolder extends RecyclerView.ViewHolder{
