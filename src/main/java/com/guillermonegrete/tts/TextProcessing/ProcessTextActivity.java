@@ -93,8 +93,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     private ProcessTextContract.Presenter presenter;
 
-    private ListView listView;
-
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -127,27 +125,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
             sendWiktionaryRequest(mSelectedText);
             tts.determineLanguage(mSelectedText);
             return;
-        }
-
-        if(mIsSentence){
-            mWikiRequestDone = true;
-            mInsideWikitionary = false;
-            tts.determineLanguage(mSelectedText);
-        }else{
-            mFoundWords = searchInDatabase(mSelectedText);
-            if(!mInsideDatabase) {
-                sendWiktionaryRequest(mSelectedText);
-                tts.determineLanguage(mSelectedText);
-            } else {
-                setBottomDialog();
-                mAdapter = null;
-                mTranslation = null;
-                setWordLayout(mSelectedText, mFoundWords);
-                createSmallViewPager();
-
-                tts.initializeTTS(mFoundWords.lang);
-                if(mAutoTTS) tts.speak(mSelectedText);
-            }
         }*/
 
         presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
@@ -187,23 +164,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         TextView mTextTTS = findViewById(R.id.text_tts);
         mTextTTS.setText(textString);
 
-        if(foundWords != null) {
-            ImageButton saveIcon = findViewById(R.id.save_icon);
-            saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
-
-            ImageButton editIcon = findViewById(R.id.edit_icon);
-            editIcon.setVisibility(View.VISIBLE);
-            editIcon.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
-                        foundWords.word,
-                        foundWords.lang,
-                        foundWords.definition);
-                    dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
-                }
-            });
-        }
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -220,7 +180,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
             }
         });
 
-
+        createSmallViewPager();
     }
 
     private void setSentenceLayout(String text){
@@ -258,30 +218,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     @Override
     public void setWiktionaryLayout(List<WikiItem> items) {
 
-
-
-
-        /*List<WikiItem> view_items = new ArrayList<>();
-        for (WikiItem item: items){
-            view_items.add(item);
-        }
-        Toast.makeText(this, "wiktionary", Toast.LENGTH_SHORT).show();*/
-
-        Toast.makeText(this, "iniciado", Toast.LENGTH_SHORT).show();
-
-        /*for (WikiItem def : items){
-            if(def instanceof WiktionaryItem){
-                WiktionaryItem item = (WiktionaryItem) def;
-                System.out.println("---------Item type:");
-                System.out.println(item.getSubHeaderText());
-                System.out.println(item.getItemText());
-            }else{
-                WiktionaryLangHeader item = (WiktionaryLangHeader) def;
-                System.out.println("---------Header type:");
-                System.out.println(item.getLanguage());
-            }
-        }*/
-        System.out.println(String.format("In UI thread, set wiki layout method, items size %s", String.valueOf(items.size())));
         setCenterDialog();
         setWordLayout(getSelectedText(), null);
         mAdapter = new WiktionaryAdapter(this, items);
@@ -296,16 +232,34 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     }
 
     @Override
-    public void setSavedWordLayout(Words word) {
+    public void setSavedWordLayout(final Words word) {
         setBottomDialog();
         Toast.makeText(this,"saved word", Toast.LENGTH_SHORT).show();
+        mFoundWords = word;
         setWordLayout(getSelectedText(), word);
+
+        ImageButton saveIcon = findViewById(R.id.save_icon);
+        saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+
+        ImageButton editIcon = findViewById(R.id.edit_icon);
+        editIcon.setVisibility(View.VISIBLE);
+        editIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
+                        word.word,
+                        word.lang,
+                        word.definition);
+                dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
+            }
+        });
     }
 
     @Override
     public void setTranslationLayout(Words word) {
         setBottomDialog();
-        Toast.makeText(this,"translation", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,word.definition, Toast.LENGTH_SHORT).show();
+        mFoundWords = word;
         setWordLayout(getSelectedText(), word);
     }
 
@@ -314,7 +268,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         setBottomDialog();
         setContentView(R.layout.activity_process_sentence);
         TextView mTextTTS = findViewById(R.id.text_tts);
-        mTextTTS.setText(word.definition);
+        mTextTTS.setText(word.word);
+        TextView mTextTranslation = findViewById(R.id.text_translation);
+        mTextTranslation.setText(word.definition);
     }
 
     @Override
@@ -340,53 +296,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     @Override
     public void setPresenter(ProcessTextContract.Presenter presenter) {
         this.presenter = presenter;
-    }
-
-    public static class WiktionaryParser{
-        String text;
-        final static int TYPE_HEADER = 100;
-        final static int TYPE_SUBHEADER = 101;
-        final static int TYPE_TEXT = 102;
-
-        public WiktionaryParser(String text){
-            this.text = text;
-        }
-
-        public List<WiktionaryItem> parse(){
-            List<String> LanguageSections = getLanguages(text);
-
-            String[] separated;
-            List<WiktionaryItem> items = new ArrayList<>();
-
-            for (int i=1; i<LanguageSections.size(); i++){
-                separated = LanguageSections.get(i).split("\n=== ");
-                String lang = separated[0].split(" ")[0];
-
-                items.add(new WiktionaryItem(lang, "Placeholder"));
-
-                int j;
-                //Log.i(TAG,"--------------"+lang+"---------------");
-                for (j=1; j<separated.length;j++){
-                    String[] subheaders = separated[j].split(" ===\n");
-                    //Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
-                    //Log.i(TAG,subheaders[1]);
-                    items.add(new WiktionaryItem(subheaders[0], "Placeholder"));
-                    String[] subsubheader = subheaders[1].split("\n==== ");
-                    for(int k=0; k<subsubheader.length; k++){
-                        items.add(new WiktionaryItem(subsubheader[k].replace("====\n",""), "Placeholder"));
-                    }
-                }
-            }
-
-            return items;
-        }
-
-        private List<String> getLanguages(String extract){
-            String[] separated = extract.split("\n== ");
-            List<String> langs = new ArrayList<>();
-            Collections.addAll(langs, separated);
-            return langs;
-        }
     }
 
 

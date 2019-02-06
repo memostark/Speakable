@@ -58,8 +58,12 @@ public class WiktionarySource implements DictionaryDataSource {
                 if(response.isSuccessful() && response.body() != null){
 
                     WiktionaryResponse.PageInfo info = response.body().getQuery().getPageNumber().firstEntry().getValue();
-                    List<WikiItem> items = WiktionaryParser.parse(info.getExtract());
-                    callback.onDefinitionLoaded(items);
+                    if(info.getExtract() != null) {
+                        List<WikiItem> items = WiktionaryParser.parse(info.getExtract());
+                        callback.onDefinitionLoaded(items);
+                    }else {
+                        callback.onDataNotAvailable();
+                    }
                 }else {
                     callback.onDataNotAvailable();
                 }
