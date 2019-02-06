@@ -68,13 +68,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     public static final String LONGPRESS_SERVICE_NOSHOW = "startServiceLong";
     public static final String LONGPRESS_SERVICE = "showServiceg";
 
-    private boolean mIsSentence;
-    private boolean mWikiRequestDone;
-    private boolean mInsideWikitionary;
-    private boolean mLanguageDetected;
-
-    private boolean mAutoTTS;
-
     private String mTranslation;
     private String mSelectedText;
 
@@ -97,18 +90,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         }
 
         mSelectedText = getSelectedText();
-        String[] splittedText = mSelectedText.split(" ");
-        mIsSentence = splittedText.length > 1;
-        mInsideWikitionary = true;
-        mWikiRequestDone = false;
-        mLanguageDetected = false;
 
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
         startService(intentService);
 
-        mAutoTTS = getAutoTTSPreference();
+        boolean mAutoTTS = getAutoTTSPreference();
 
         /*if("WITH_FLAG".equals(getIntent().getAction())){
             mInsideDatabase = false;
@@ -121,7 +109,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 MainThreadImpl.getInstance(),
                 this,
                 WordRepository.getInstance(MSTranslatorSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
-                DictionaryRepository.getInstance(WiktionarySource.getInstance()));
+                DictionaryRepository.getInstance(WiktionarySource.getInstance()),
+                tts);
         presenter.getLayout(getSelectedText());
 
     }
@@ -157,7 +146,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                tts.speak(textString);
+                // tts.speak(textString);
+                presenter.onClickReproduce(textString);
             }
         });
 
@@ -172,7 +162,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private void showSaveDialog(String word) {
         DialogFragment dialogFragment;
-        dialogFragment = SaveWordDialogFragment.newInstance(word, tts.language, mTranslation);
+        dialogFragment = SaveWordDialogFragment.newInstance(word, "", "");
         dialogFragment.show(getSupportFragmentManager(), "New word process");
     }
 
@@ -217,7 +207,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         setBottomDialog();
         mFoundWords = word;
 
-        setWordLayout(word.word);
+        final String word_text = word.word;
+        setWordLayout(word_text);
         createSmallViewPager();
 
         ImageButton saveIcon = findViewById(R.id.save_icon);
@@ -229,12 +220,14 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
             @Override
             public void onClick(View view) {
                 DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
-                        word.word,
+                        word_text,
                         word.lang,
                         word.definition);
                 dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
             }
         });
+
+        presenter.onClickReproduce(word_text);
 
     }
 
@@ -244,6 +237,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mFoundWords = word;
         setWordLayout(word.word);
         createSmallViewPager();
+        presenter.onClickReproduce(word.word);
     }
 
     @Override
@@ -254,6 +248,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mTextTTS.setText(word.word);
         TextView mTextTranslation = findViewById(R.id.text_translation);
         mTextTranslation.setText(word.definition);
+        presenter.onClickReproduce(word.word);
     }
 
     @Override
@@ -261,20 +256,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     }
 
-    @Override
-    public void onClickBookmark() {
-
-    }
-
-    @Override
-    public void onClickReproduce() {
-
-    }
-
-    @Override
-    public void onClickEdit() {
-
-    }
 
     @Override
     public void setPresenter(ProcessTextContract.Presenter presenter) {
@@ -293,47 +274,9 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     @Override
-    protected void onDestroy() {
-        if(tts != null) tts.finishTTS();
-        super.onDestroy();
-    }
-
-    @Override
     public void onBackPressed() {
         super.onBackPressed();
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-    }
-
-
-
-    private void setLayout(){
-        if(mLanguageDetected && mWikiRequestDone){
-
-            setWindowParams();
-            if(mIsSentence){
-
-                TextView mTextTranslation = findViewById(R.id.text_translation);
-                mTextTranslation.setText(mTranslation);
-            } else if(mInsideWikitionary){
-                if("WITH_FLAG".equals(getIntent().getAction())) mFoundWords = searchInDatabase(mSelectedText);
-                mFoundWords = null;
-                ViewPager pager =  findViewById(R.id.process_view_pager);
-                TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
-                tabLayout.setupWithViewPager(pager, true);
-                pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
-            } else { // Single word not in wiktionary
-                mAdapter = null;
-                createSmallViewPager();
-            }
-            if(mAutoTTS) tts.speak(mSelectedText);
-        }else{
-            Log.d(TAG,"Not all data ready");
-        }
-    }
-
-    public void setWindowParams() {
-        if(mInsideWikitionary) setCenterDialog();
-        else setBottomDialog();
     }
 
     private void setCenterDialog(){

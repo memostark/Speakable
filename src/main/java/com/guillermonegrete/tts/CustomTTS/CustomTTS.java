@@ -4,24 +4,12 @@ import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.Volley;
 import com.guillermonegrete.speech.tts.Synthesizer;
 import com.guillermonegrete.speech.tts.Voice;
 import com.guillermonegrete.tts.R;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
+
 
 public class CustomTTS implements TextToSpeech.OnInitListener{
     private static CustomTTS INSTANCE;
@@ -29,12 +17,12 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private TextToSpeech tts;
     private Synthesizer mSynth;
 
-    private Boolean isGoogleTTSready;
+    private Boolean isInitialized;
     private Boolean localTTS;
 
     private String TAG = this.getClass().getSimpleName();
 
-    public String language;
+    private String language;
 
     public static CustomTTS getInstance(Context context){
         if(INSTANCE == null){
@@ -47,6 +35,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private CustomTTS(Context context){
         tts = new TextToSpeech(context, this);
         mSynth = new Synthesizer(context.getResources().getString(R.string.api_key));
+        isInitialized = false;
+        localTTS = false;
     }
 
     public void speak(String text){
@@ -58,6 +48,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
      public void initializeTTS(final String langCode) {
+        language = langCode;
+        isInitialized = false;
         if(langCode.equals("he")){
             initializeMSService();
         }else{
@@ -70,6 +62,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         Voice voice = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
         mSynth.SetVoice(voice, null);
         localTTS = false;
+        isInitialized = true;
     }
 
     private void initializeGoogleLocalService(final String langCode){
@@ -84,11 +77,20 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     @Override
     public void onInit(int status) {
-        isGoogleTTSready = (status == TextToSpeech.SUCCESS);
+        isInitialized = (status == TextToSpeech.SUCCESS);
+    }
+
+    public Boolean getInitialized() {
+        return isInitialized;
+    }
+
+    public String getLanguage() {
+        return language;
     }
 
     public void finishTTS(){
         if(tts!=null){
+            isInitialized = false;
             tts.stop();
             tts.shutdown();
         }

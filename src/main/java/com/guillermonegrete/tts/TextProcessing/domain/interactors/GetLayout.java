@@ -46,7 +46,6 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
     @Override
     public void run() {
-        System.out.println("Running get layout interactor");
         String[] splittedText = mText.split(" ");
         /*Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(new Runnable() {
@@ -58,7 +57,6 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         });*/
 
         if(splittedText.length > 1){
-            System.out.print("Get sentence layout");
             // Get translation, wait for callback
             mRepository.getLanguageAndTranslation(mText, new WordRepositorySource.GetTranslationCallback() {
                 @Override
@@ -73,7 +71,6 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             });
         }else{
             // Search in database
-            System.out.println("Request layouts");
             mRepository.getWordLanguageInfo(mText, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(final Words word) {

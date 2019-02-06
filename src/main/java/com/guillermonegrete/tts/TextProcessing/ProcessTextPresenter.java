@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.TextProcessing;
 
 
 import com.guillermonegrete.tts.AbstractPresenter;
+import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
@@ -18,12 +19,15 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private ProcessTextContract.View mView;
     private WordRepository mRepository;
     private DictionaryRepository dictionaryRepository;
+    private CustomTTS customTTS;
 
-    public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view, WordRepository repository, DictionaryRepository dictRepository){
+    public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
+                                WordRepository repository, DictionaryRepository dictRepository, CustomTTS customTTS){
         super(executor, mainThread);
         mView = view;
         mRepository = repository;
         dictionaryRepository = dictRepository;
+        this.customTTS = customTTS;
 
         mView.setPresenter(this);
     }
@@ -57,6 +61,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 System.out.println(word.word);
                 System.out.println(word.definition);
                 System.out.println(word.lang);
+                System.out.println(String.format("Is initialized: %s", String.valueOf(customTTS.getInitialized())));
+                if(!customTTS.getInitialized()) customTTS.initializeTTS(word.lang);
+                //customTTS.speak(word.word);
                 switch (layoutType){
                     case WORD_TRANSLATION:
                         mView.setTranslationLayout(word);
@@ -66,9 +73,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                         break;
                     case SENTENCE_TRANSLATION:
                         mView.setSentenceLayout(word);
-                        break;
-                    default:
-                        mView.onClickEdit();
                         break;
                 }
             }
@@ -85,6 +89,21 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void getExternalLinks() {
+
+    }
+
+    @Override
+    public void onClickBookmark() {
+
+    }
+
+    @Override
+    public void onClickReproduce(String text) {
+        if(customTTS.getInitialized()) customTTS.speak(text);
+    }
+
+    @Override
+    public void onClickEdit() {
 
     }
 

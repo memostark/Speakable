@@ -19,12 +19,6 @@ public interface ProcessTextContract {
         void setSentenceLayout(Words word);
 
         void setExternalDictionary();
-
-        void onClickBookmark();
-
-        void onClickReproduce();
-
-        void onClickEdit();
     }
 
     interface Presenter extends BasePresenter{
@@ -40,6 +34,12 @@ public interface ProcessTextContract {
         void getLayout(String text);
 
         void getExternalLinks();
+
+        void onClickBookmark();
+
+        void onClickReproduce(String text);
+
+        void onClickEdit();
 
     }
 }
