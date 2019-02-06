@@ -31,7 +31,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,8 +42,6 @@ import com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.Services.ScreenTextService;
 import com.guillermonegrete.tts.Main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryItem;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLangHeader;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -56,12 +53,8 @@ import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
@@ -76,7 +69,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     public static final String LONGPRESS_SERVICE = "showServiceg";
 
     private boolean mIsSentence;
-    private boolean mInsideDatabase;
     private boolean mWikiRequestDone;
     private boolean mInsideWikitionary;
     private boolean mLanguageDetected;
@@ -111,7 +103,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         mInsideWikitionary = true;
         mWikiRequestDone = false;
         mLanguageDetected = false;
-        mInsideDatabase = false;
 
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
@@ -154,7 +145,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     private Words searchInDatabase(String selected_word){
         mWordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
         Words foundWords = mWordsDAO.findWord(selected_word);
-        mInsideDatabase = foundWords != null;
         return foundWords;
     }
 
@@ -181,12 +171,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         });
 
         createSmallViewPager();
-    }
-
-    private void setSentenceLayout(String text){
-        setContentView(R.layout.activity_process_sentence);
-        TextView mTextTTS = findViewById(R.id.text_tts);
-        mTextTTS.setText(text);
     }
 
     private void showSaveDialog(String word) {
@@ -233,9 +217,10 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     @Override
     public void setSavedWordLayout(final Words word) {
-        setBottomDialog();
         Toast.makeText(this,"saved word", Toast.LENGTH_SHORT).show();
+        setBottomDialog();
         mFoundWords = word;
+
         setWordLayout(getSelectedText(), word);
 
         ImageButton saveIcon = findViewById(R.id.save_icon);
@@ -253,6 +238,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                 dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
             }
         });
+
     }
 
     @Override

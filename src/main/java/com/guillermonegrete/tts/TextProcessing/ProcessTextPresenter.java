@@ -53,7 +53,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
-                System.out.print("Got layout");
+                System.out.println(String.format("Got layout: %s", layoutType.name()));
+                System.out.println(word.word);
+                System.out.println(word.definition);
+                System.out.println(word.lang);
                 switch (layoutType){
                     case WORD_TRANSLATION:
                         mView.setTranslationLayout(word);

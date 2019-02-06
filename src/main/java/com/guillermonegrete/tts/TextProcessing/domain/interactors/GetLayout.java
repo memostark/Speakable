@@ -76,8 +76,14 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             System.out.println("Request layouts");
             mRepository.getWordLanguageInfo(mText, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
-                public void onLocalWordLoaded(Words word) {
-                    mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SAVED_WORD);
+                public void onLocalWordLoaded(final Words word) {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SAVED_WORD);
+                        }
+                    });
                 }
 
                 @Override
