@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.TextProcessing;
 
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
+import com.guillermonegrete.tts.CustomTTS.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
@@ -99,7 +100,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onClickReproduce(String text) {
-        if(customTTS.getInitialized()) customTTS.speak(text);
+        //if(customTTS.getInitialized()) customTTS.speak(text);
+        PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, text);
+        interactor.execute();
     }
 
     @Override
