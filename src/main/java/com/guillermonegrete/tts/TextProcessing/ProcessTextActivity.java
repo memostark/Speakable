@@ -60,7 +60,7 @@ import java.util.List;
 import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
 
 
-public class ProcessTextActivity extends FragmentActivity implements CustomTTS.CustomTTSListener, ProcessTextContract.View {
+public class ProcessTextActivity extends FragmentActivity implements ProcessTextContract.View {
     private CustomTTS tts;
     private WiktionaryAdapter mAdapter;
 
@@ -93,8 +93,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
 
         if(tts == null) {
-            tts = new CustomTTS(ProcessTextActivity.this);
-            tts.setListener(this);
+            tts = CustomTTS.getInstance(ProcessTextActivity.this);
         }
 
         mSelectedText = getSelectedText();
@@ -305,12 +304,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
     }
 
-    @Override
-    public void onLanguageDetected(String translation) {
-        mTranslation = translation;
-        mLanguageDetected = true;
-        setLayout();
-    }
 
 
     private void setLayout(){

@@ -150,7 +150,7 @@ public class ScreenTextService extends Service {
         mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
-        tts = new CustomTTS(ScreenTextService.this);
+        tts = CustomTTS.getInstance(ScreenTextService.this);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         bubble = (BubbleView) service_layout.findViewById(R.id.image_bubble);
@@ -564,9 +564,11 @@ public class ScreenTextService extends Service {
                                                 sentenceString.append(wordWhitespace);
                                             }
                                             Log.i(TAG, index + "sentence:  " + sentenceString.toString());
-                                            tts.determineLanguage(sentenceString.toString());
+                                            tts.initializeTTS(langCode);
+                                            tts.speak(sentenceString.toString());
                                         }else{
-                                            tts.determineLanguage(recognizedText);
+                                            tts.initializeTTS(langCode);
+                                            tts.speak(recognizedText);
                                         }
 
                                     }
@@ -596,7 +598,6 @@ public class ScreenTextService extends Service {
             for (int i = 0; i < textBlocks.size(); i++) {
                 TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
                 imageText = textBlock.getValue();                   // return string
-                tts.determineLanguage(imageText);
                 Log.i(TAG, i+".- "+imageText);
             }
         }

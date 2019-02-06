@@ -31,7 +31,7 @@ public class TextToSpeechFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if(tts == null) {
-            tts = new CustomTTS(getActivity());
+            tts = CustomTTS.getInstance(getActivity());
         }
     }
 
@@ -64,7 +64,7 @@ public class TextToSpeechFragment extends Fragment {
             public void onClick(View view) {
                 EditText mEdit   = (EditText)fragment_layout.findViewById(R.id.tts_ev);
                 final String text = mEdit.getText().toString();
-                tts.determineLanguage(text);
+                // tts.determineLanguage(text);
                 webview.loadUrl("https://en.m.wiktionary.org/wiki/"+text);
             }
         });
