@@ -148,7 +148,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
         return foundWords;
     }
 
-    private void setWordLayout(final String textString, final Words foundWords){
+    private void setWordLayout(final String textString){
         setContentView(R.layout.activity_processtext);
 
         TextView mTextTTS = findViewById(R.id.text_tts);
@@ -169,8 +169,6 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
             }
         });
-
-        createSmallViewPager();
     }
 
     private void showSaveDialog(String word) {
@@ -203,7 +201,7 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     public void setWiktionaryLayout(List<WikiItem> items) {
 
         setCenterDialog();
-        setWordLayout(getSelectedText(), null);
+        setWordLayout(getSelectedText());
         mAdapter = new WiktionaryAdapter(this, items);
 
         mFoundWords = null;
@@ -217,11 +215,11 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
 
     @Override
     public void setSavedWordLayout(final Words word) {
-        Toast.makeText(this,"saved word", Toast.LENGTH_SHORT).show();
         setBottomDialog();
         mFoundWords = word;
 
-        setWordLayout(getSelectedText(), word);
+        setWordLayout(word.word);
+        createSmallViewPager();
 
         ImageButton saveIcon = findViewById(R.id.save_icon);
         saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
@@ -244,9 +242,9 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
     @Override
     public void setTranslationLayout(Words word) {
         setBottomDialog();
-        Toast.makeText(this,word.definition, Toast.LENGTH_SHORT).show();
         mFoundWords = word;
-        setWordLayout(getSelectedText(), word);
+        setWordLayout(word.word);
+        createSmallViewPager();
     }
 
     @Override
@@ -325,14 +323,12 @@ public class ProcessTextActivity extends FragmentActivity implements CustomTTS.C
                 mTextTranslation.setText(mTranslation);
             } else if(mInsideWikitionary){
                 if("WITH_FLAG".equals(getIntent().getAction())) mFoundWords = searchInDatabase(mSelectedText);
-                setWordLayout(mSelectedText, mFoundWords);
                 mFoundWords = null;
                 ViewPager pager =  findViewById(R.id.process_view_pager);
                 TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
                 tabLayout.setupWithViewPager(pager, true);
                 pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
             } else { // Single word not in wiktionary
-                setWordLayout(mSelectedText, null);
                 mAdapter = null;
                 createSmallViewPager();
             }
