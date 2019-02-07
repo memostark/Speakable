@@ -71,8 +71,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     private String mTranslation;
     private String mSelectedText;
 
-
-    private WordsDAO mWordsDAO;
+    private Boolean mAutoTTS;
 
     private Words mFoundWords;
 
@@ -96,7 +95,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
         startService(intentService);
 
-        boolean mAutoTTS = getAutoTTSPreference();
+        mAutoTTS = getAutoTTSPreference();
 
         /*if("WITH_FLAG".equals(getIntent().getAction())){
             mInsideDatabase = false;
@@ -130,12 +129,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         return sharedPref.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
     }
 
-    private Words searchInDatabase(String selected_word){
-        mWordsDAO = WordsDatabase.getDatabase(getApplicationContext()).wordsDAO();
-        Words foundWords = mWordsDAO.findWord(selected_word);
-        return foundWords;
-    }
-
     private void setWordLayout(final String textString){
         setContentView(R.layout.activity_processtext);
 
@@ -158,6 +151,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
             }
         });
+
+        if(mAutoTTS) presenter.onClickReproduce(textString);
     }
 
 
@@ -203,8 +198,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
             }
         });
 
-        presenter.onClickReproduce(word_text);
-
     }
 
     @Override
@@ -213,7 +206,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mFoundWords = word;
         setWordLayout(word.word);
         createSmallViewPager();
-        presenter.onClickReproduce(word.word);
     }
 
     @Override
@@ -246,7 +238,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         builder.setMessage("Do you want to delete this word?")
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        mWordsDAO.deleteWord(word);
+                        // TODO Create use case/interactor for deleting words
+                        WordsDatabase.getDatabase(getApplicationContext()).wordsDAO().deleteWord(word);
                         ImageButton saveIcon = findViewById(R.id.save_icon);
                         saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
                         dialog.dismiss();
