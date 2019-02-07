@@ -19,11 +19,13 @@ public interface ProcessTextContract {
         void setSentenceLayout(Words word);
 
         void setExternalDictionary();
+
+        void showSaveDialog(Words word);
+
+        void showDeleteDialog(String word);
     }
 
     interface Presenter extends BasePresenter{
-
-        void reproduceTTS();
 
         void addNewWord();
 
@@ -36,6 +38,8 @@ public interface ProcessTextContract {
         void getExternalLinks();
 
         void onClickBookmark();
+
+        void onClickDeleteWord();
 
         void onClickReproduce(String text);
 

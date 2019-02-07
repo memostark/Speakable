@@ -133,7 +133,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        mCallback.onDictionaryLayoutDetermined(items);
+                        mCallback.onDictionaryLayoutDetermined(mWord, items);
                     }
                 });
             }else{

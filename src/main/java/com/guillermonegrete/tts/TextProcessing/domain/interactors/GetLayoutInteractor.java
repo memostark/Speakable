@@ -10,6 +10,6 @@ public interface GetLayoutInteractor {
     interface Callback{
         void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType);
 
-        void onDictionaryLayoutDetermined(List<WikiItem> items);
+        void onDictionaryLayoutDetermined(Words word, List<WikiItem> items);
     }
 }

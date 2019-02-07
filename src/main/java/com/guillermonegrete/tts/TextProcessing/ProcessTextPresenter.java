@@ -22,6 +22,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private DictionaryRepository dictionaryRepository;
     private CustomTTS customTTS;
 
+    private boolean insideLocalDatabase;
+    private Words foundWord;
+
     public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
                                 WordRepository repository, DictionaryRepository dictRepository, CustomTTS customTTS){
         super(executor, mainThread);
@@ -30,12 +33,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         dictionaryRepository = dictRepository;
         this.customTTS = customTTS;
 
+        insideLocalDatabase = false;
         mView.setPresenter(this);
-    }
-
-    @Override
-    public void reproduceTTS() {
-
     }
 
     @Override
@@ -63,13 +62,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 System.out.println(word.definition);
                 System.out.println(word.lang);
                 System.out.println(String.format("Is initialized: %s", String.valueOf(customTTS.getInitialized())));
+                foundWord = word;
                 if(!customTTS.getInitialized()) customTTS.initializeTTS(word.lang);
-                //customTTS.speak(word.word);
                 switch (layoutType){
                     case WORD_TRANSLATION:
                         mView.setTranslationLayout(word);
                         break;
                     case SAVED_WORD:
+                        insideLocalDatabase = true;
                         mView.setSavedWordLayout(word);
                         break;
                     case SENTENCE_TRANSLATION:
@@ -79,7 +79,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             }
 
             @Override
-            public void onDictionaryLayoutDetermined(List<WikiItem> items) {
+            public void onDictionaryLayoutDetermined(Words word, List<WikiItem> items) {
+                foundWord = word;
                 mView.setWiktionaryLayout(items);
             }
         }, mRepository, dictionaryRepository, text);
@@ -95,6 +96,13 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onClickBookmark() {
+        if(insideLocalDatabase) mView.showDeleteDialog(foundWord.word);
+        else mView.showSaveDialog(foundWord);
+
+    }
+
+    @Override
+    public void onClickDeleteWord() {
 
     }
 

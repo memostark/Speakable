@@ -154,37 +154,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                    showSaveDialog(textString);
+                presenter.onClickBookmark();
 
             }
         });
     }
 
-    private void showSaveDialog(String word) {
-        DialogFragment dialogFragment;
-        dialogFragment = SaveWordDialogFragment.newInstance(word, "", "");
-        dialogFragment.show(getSupportFragmentManager(), "New word process");
-    }
 
-    private void showDeleteDialog(final String word){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Do you want to delete this word?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        mWordsDAO.deleteWord(word);
-                        ImageButton saveIcon = findViewById(R.id.save_icon);
-                        saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
-                        dialog.dismiss();
-                    }
-                })
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.dismiss();
-                    }
-                });
-
-        builder.create().show();
-    }
 
     @Override
     public void setWiktionaryLayout(List<WikiItem> items) {
@@ -254,6 +230,36 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     public void setExternalDictionary() {
 
+    }
+
+    @Override
+    public void showSaveDialog(Words word) {
+        DialogFragment dialogFragment;
+        dialogFragment = SaveWordDialogFragment.newInstance(word.word, word.lang, word.definition);
+        dialogFragment.show(getSupportFragmentManager(), "New word process");
+    }
+
+    @Override
+    public void showDeleteDialog(final String word) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Do you want to delete this word?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        mWordsDAO.deleteWord(word);
+                        ImageButton saveIcon = findViewById(R.id.save_icon);
+                        saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+                        dialog.dismiss();
+
+                    }
+                })
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.dismiss();
+                    }
+                });
+
+        builder.create().show();
     }
 
 
