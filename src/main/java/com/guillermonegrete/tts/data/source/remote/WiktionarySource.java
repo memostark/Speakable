@@ -49,7 +49,7 @@ public class WiktionarySource implements DictionaryDataSource {
 
     @Override
     public void getDefinition(String word, final GetDefinitionCallback callback) {
-        System.out.println("Retrieving remote dictionary data");
+        // System.out.println("Retrieving remote dictionary data");
 
         wiktionaryAPI.getDefinition(word).enqueue(new Callback<WiktionaryResponse>() {
             @Override

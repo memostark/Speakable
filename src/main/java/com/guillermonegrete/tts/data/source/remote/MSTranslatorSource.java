@@ -44,7 +44,6 @@ public class MSTranslatorSource implements WordDataSource {
 
     @Override
     public void getWordLanguageInfo(final String wordText, final GetWordCallback callback) {
-        System.out.println("Retrieving remote word data");
         // final JSONArray body = createRequestBody(wordText);
 
         RequestBody body = new RequestBody(wordText);

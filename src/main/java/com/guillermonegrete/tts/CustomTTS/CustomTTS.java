@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.CustomTTS;
 
 import android.content.Context;
+import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 
@@ -32,7 +33,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return INSTANCE;
     }
 
-    private CustomTTS(Context context){
+    public CustomTTS(Context context){
         tts = new TextToSpeech(context, this);
         mSynth = new Synthesizer(context.getResources().getString(R.string.api_key));
         isInitialized = false;
@@ -41,7 +42,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     public void speak(String text){
         if(localTTS){
-            tts.speak(text, TextToSpeech.QUEUE_ADD, null);
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
         }else{
             mSynth.SpeakToAudio(text);
         }
@@ -65,19 +66,24 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         isInitialized = true;
     }
 
-    private void initializeGoogleLocalService(final String langCode){
-        int result = tts.setLanguage(new Locale(langCode));
+    private void initializeGoogleLocalService(String langCode){
+        System.out.println(String.format("Language to set: %s", langCode ));
+        int result = tts.setLanguage(new Locale(langCode.toUpperCase()));
         if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            Log.e("Initialize TTS Error", "This Language is not supported");
+            System.out.print("Error code: ");
+            System.out.println(result);
+            System.out.println("Initialize TTS Error, This Language is not supported");
         } else {
             localTTS = true;
+            isInitialized = true;
         }
     }
 
     @Override
     public void onInit(int status) {
-        isInitialized = (status == TextToSpeech.SUCCESS);
+        System.out.print("Local TTS Status: ");
+        System.out.println(status);
     }
 
     public Boolean getInitialized() {
@@ -89,8 +95,9 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     public void finishTTS(){
+        System.out.println("Destroying tts");
+        isInitialized = false;
         if(tts!=null){
-            isInitialized = false;
             tts.stop();
             tts.shutdown();
         }

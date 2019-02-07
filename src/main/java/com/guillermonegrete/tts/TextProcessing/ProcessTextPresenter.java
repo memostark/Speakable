@@ -61,9 +61,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 System.out.println(word.word);
                 System.out.println(word.definition);
                 System.out.println(word.lang);
-                System.out.println(String.format("Is initialized: %s", String.valueOf(customTTS.getInitialized())));
+                Boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
+                System.out.println(String.format("Is initialized %s", String.valueOf(isInitialized)));
                 foundWord = word;
-                if(!customTTS.getInitialized()) customTTS.initializeTTS(word.lang);
+                if(!isInitialized) customTTS.initializeTTS(word.lang);
                 switch (layoutType){
                     case WORD_TRANSLATION:
                         mView.setTranslationLayout(word);
@@ -80,7 +81,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
             @Override
             public void onDictionaryLayoutDetermined(Words word, List<WikiItem> items) {
+                System.out.println("Got dictionary layout:");
+                System.out.println(word.word);
+                System.out.println(word.definition);
+                System.out.println(word.lang);
+                Boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
+                System.out.println(String.format("Is initialized %s", String.valueOf(isInitialized)));
                 foundWord = word;
+                if(!isInitialized) customTTS.initializeTTS(word.lang);
                 mView.setWiktionaryLayout(items);
             }
         }, mRepository, dictionaryRepository, text);
@@ -121,5 +129,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void start() {
 
+    }
+
+    @Override
+    public void destroy() {
     }
 }

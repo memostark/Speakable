@@ -61,7 +61,7 @@ import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIA
 
 
 public class ProcessTextActivity extends FragmentActivity implements ProcessTextContract.View {
-    private CustomTTS tts;
+
     private WiktionaryAdapter mAdapter;
 
     private String TAG = this.getClass().getSimpleName();
@@ -82,11 +82,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
-
-
-        if(tts == null) {
-            tts = CustomTTS.getInstance(ProcessTextActivity.this);
-        }
 
         mSelectedText = getSelectedText();
 
@@ -109,12 +104,16 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 this,
                 WordRepository.getInstance(MSTranslatorSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
-                tts);
+                CustomTTS.getInstance(ProcessTextActivity.this));
         presenter.getLayout(getSelectedText());
 
     }
 
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        presenter.destroy();
+    }
 
     private String getSelectedText(){
         Intent intent = getIntent();

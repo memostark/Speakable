@@ -30,18 +30,15 @@ public class WordRepository implements WordRepositorySource {
 
     @Override
     public void getWordLanguageInfo(final String wordText, final GetWordRepositoryCallback callback) {
-        System.out.println("On trying to get language");
         mWordLocalDataSource.getWordLanguageInfo(wordText, new WordDataSource.GetWordCallback(){
 
             @Override
             public void onWordLoaded(Words word) {
-                System.out.println("Local word retrieved");
                 callback.onLocalWordLoaded(word);
             }
 
             @Override
             public void onDataNotAvailable() {
-                System.out.println("Try to get remote data");
                 callback.onLocalWordNotAvailable();
                 getRemoteWord(wordText, callback);
             }
@@ -70,7 +67,6 @@ public class WordRepository implements WordRepositorySource {
         mWordMSTranslatorSource.getWordLanguageInfo(wordText, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
-                System.out.println("External source retrieved");
                 callback.onRemoteWordLoaded(word);
             }
 

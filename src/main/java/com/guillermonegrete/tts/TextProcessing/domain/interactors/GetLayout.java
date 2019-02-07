@@ -128,7 +128,6 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
         if(dictionaryRequestDone && translationDone){
             if(insideDictionary){
-                System.out.println(String.format("In background thread, get layout interactor, items size: %s", String.valueOf(items.size())));
                 Handler mainHandler = new Handler(Looper.getMainLooper());
                 mainHandler.post(new Runnable() {
                     @Override
