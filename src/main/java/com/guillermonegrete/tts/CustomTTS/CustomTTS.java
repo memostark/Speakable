@@ -101,5 +101,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             tts.stop();
             tts.shutdown();
         }
+        INSTANCE = null;
     }
 }

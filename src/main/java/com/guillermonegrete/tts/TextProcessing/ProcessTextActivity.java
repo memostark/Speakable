@@ -104,7 +104,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 this,
                 WordRepository.getInstance(MSTranslatorSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
-                CustomTTS.getInstance(ProcessTextActivity.this));
+                CustomTTS.getInstance(getApplicationContext()));
         presenter.getLayout(getSelectedText());
 
     }

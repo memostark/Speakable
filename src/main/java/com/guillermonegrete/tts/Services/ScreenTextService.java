@@ -150,7 +150,8 @@ public class ScreenTextService extends Service {
         mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
-        tts = new CustomTTS(ScreenTextService.this);
+//        tts = new CustomTTS(ScreenTextService.this);
+        tts = CustomTTS.getInstance(getApplicationContext());
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         bubble = (BubbleView) service_layout.findViewById(R.id.image_bubble);
