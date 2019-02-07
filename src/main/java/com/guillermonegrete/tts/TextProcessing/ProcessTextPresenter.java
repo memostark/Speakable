@@ -116,7 +116,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onClickReproduce(String text) {
-        //if(customTTS.getInitialized()) customTTS.speak(text);
         PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, text);
         interactor.execute();
     }

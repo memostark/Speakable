@@ -1,9 +1,7 @@
 package com.guillermonegrete.tts.CustomTTS;
 
 import android.content.Context;
-import android.os.Build;
 import android.speech.tts.TextToSpeech;
-import android.util.Log;
 
 import com.guillermonegrete.speech.tts.Synthesizer;
 import com.guillermonegrete.speech.tts.Voice;
@@ -33,7 +31,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return INSTANCE;
     }
 
-    public CustomTTS(Context context){
+    private CustomTTS(Context context){
         tts = new TextToSpeech(context, this);
         mSynth = new Synthesizer(context.getResources().getString(R.string.api_key));
         isInitialized = false;
@@ -44,7 +42,10 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         if(localTTS){
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
         }else{
-            mSynth.SpeakToAudio(text);
+            if(mSynth.getLocalAudioBytes(text) == null){
+                mSynth.getAudio(text);
+            }
+            mSynth.speakLocalAudio();
         }
     }
 

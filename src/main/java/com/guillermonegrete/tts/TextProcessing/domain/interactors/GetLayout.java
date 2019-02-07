@@ -1,9 +1,5 @@
 package com.guillermonegrete.tts.TextProcessing.domain.interactors;
 
-// Must delete this imports later
-import android.os.Handler;
-import android.os.Looper;
-
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
@@ -32,6 +28,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private Words mWord;
     private List<WikiItem> items;
 
+
     public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, DictionaryRepository dictRepository, String text){
         super(threadExecutor, mainThread);
         mCallback = callback;
@@ -47,14 +44,6 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     @Override
     public void run() {
         String[] splittedText = mText.split(" ");
-        /*Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("Get layout callback to main thread");
-                mCallback.onDictionaryLayoutDetermined(new ArrayList<WikiItem>());
-            }
-        });*/
 
         if(splittedText.length > 1){
             // Get translation, wait for callback
@@ -74,8 +63,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             mRepository.getWordLanguageInfo(mText, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(final Words word) {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    mainHandler.post(new Runnable() {
+                    mMainThread.post(new Runnable() {
                         @Override
                         public void run() {
                             mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SAVED_WORD);
@@ -128,8 +116,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
         if(dictionaryRequestDone && translationDone){
             if(insideDictionary){
-                Handler mainHandler = new Handler(Looper.getMainLooper());
-                mainHandler.post(new Runnable() {
+                mMainThread.post(new Runnable() {
                     @Override
                     public void run() {
                         mCallback.onDictionaryLayoutDetermined(mWord, items);

@@ -18,7 +18,7 @@ public abstract class AbstractInteractor implements Interactor {
 
     public AbstractInteractor(Executor executor, MainThread mainThread){
         mThreadExecutor = executor;
-        mainThread = mainThread;
+        mMainThread = mainThread;
     }
 
     /**
