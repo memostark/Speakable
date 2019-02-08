@@ -9,10 +9,15 @@ import android.view.ViewGroup;
 
 import com.guillermonegrete.tts.R;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class ExternalLinksFragment extends Fragment {
 
@@ -51,7 +56,7 @@ public class ExternalLinksFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.external_links_grid, container, false);
-        fragment_layout.findViewById(R.id.external_link_btn_1).setOnClickListener(new View.OnClickListener() {
+        /*fragment_layout.findViewById(R.id.external_link_btn_1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
@@ -60,7 +65,16 @@ public class ExternalLinksFragment extends Fragment {
                         ReversoConjugationBaseURL + wordExtra  + ".html"
                 ));
             }
-        });
+        });*/
+        RecyclerView recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
+        List<String> links = new ArrayList<>();
+        links.add("Wikipedia");
+        links.add("Cambridge dictionary");
+        links.add("Encyclopedia");
+
+        ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, links);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new GridLayoutManager(mContext, 2));
         return fragment_layout;
     }
 }

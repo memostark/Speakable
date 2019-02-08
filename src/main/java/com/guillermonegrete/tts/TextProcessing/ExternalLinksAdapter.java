@@ -1,0 +1,53 @@
+package com.guillermonegrete.tts.TextProcessing;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+import com.guillermonegrete.tts.R;
+
+import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdapter.ViewHolder> {
+
+    private List<String> links;
+    private LayoutInflater inflater;
+
+    public ExternalLinksAdapter(Context context, List<String> links){
+        this.links = links;
+        inflater = LayoutInflater.from(context);
+    }
+
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = inflater.inflate(R.layout.external_link_item, parent, false);
+        return new ViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        holder.linkButton.setText(links.get(position));
+    }
+
+    @Override
+    public int getItemCount() {
+        return links.size();
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder{
+
+        Button linkButton;
+
+        ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            linkButton = itemView.findViewById(R.id.external_link_btn);
+        }
+    }
+}

@@ -1,48 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.gridlayout.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:grid="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
 
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:layout_centerHorizontal="true"
-    android:padding="4dp"
+    android:padding="4dp">
 
-    grid:alignmentMode="alignBounds"
-    grid:columnCount="2">
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/external_links_recycle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
-    <Button
-        style="?buttonStyle"
-        android:text="Reverso conjugation"
-        android:id="@+id/external_link_btn_1"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        grid:layout_columnWeight="1"
-        grid:layout_rowWeight="1"
-        grid:layout_gravity="fill" />
-    <Button
-        style="?buttonStyle"
-        android:text="Link 2"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        grid:layout_columnWeight="1"
-        grid:layout_rowWeight="1"
-        grid:layout_gravity="fill"/>
-
-    <Button
-        style="?buttonStyle"
-        android:text="Link 3"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        grid:layout_columnWeight="1"
-        grid:layout_rowWeight="1"
-        grid:layout_gravity="fill"/>
-    <Button
-        style="?buttonStyle"
-        android:text="Link 4"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        grid:layout_columnWeight="1"
-        grid:layout_rowWeight="1"
-        grid:layout_gravity="fill"/>
-
-</androidx.gridlayout.widget.GridLayout >
+</FrameLayout >

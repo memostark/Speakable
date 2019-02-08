@@ -1,7 +1,5 @@
 package com.guillermonegrete.tts;
 
-import java.util.logging.Handler;
-
 public class TestThreadExecutor implements Executor {
     @Override
     public void execute(final AbstractInteractor interactor) {
