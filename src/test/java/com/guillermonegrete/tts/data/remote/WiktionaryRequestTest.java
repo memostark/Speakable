@@ -1,12 +1,14 @@
-package com.guillermonegrete.tts;
+package com.guillermonegrete.tts.data.remote;
 
-import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
+
+import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryItem;
+import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLangHeader;
+import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 public class WiktionaryRequestTest {
@@ -26,7 +28,7 @@ public class WiktionaryRequestTest {
                 "\n== Norwegian Bokm\u00e5l ==\n\n\n=== Alternative forms ===\nholen\n\n\n=== Noun ===\nhola m, f\n\ndefinite feminine singular of hole\n\n" +
                 "\n== Norwegian Nynorsk ==\n\n\n=== Noun ===\nhola f\n\ndefinite singular of hole\n\n" +
                 "\n== Spanish ==\n\n\n=== Etymology ===\n\nUnknown. Hola is etymologically unrelated to the Germanic expressions hello in English and hallo in German";
-        List<String> result = ProcessTextActivity.getLanguages(input);
+        List<String> result = WiktionarySource.WiktionaryParser.getLanguages(input);
         int expectedSize = 13;
         assertEquals(expectedSize, result.size());
     }
@@ -34,26 +36,29 @@ public class WiktionaryRequestTest {
     @Test
     public void parser_generates_one_of_each_type(){
         String input = "\n== English ==\n\n\n=== Etymology ===\nBorrowed from Spanish hola.";
-        ProcessTextActivity.WiktionaryParser parser = new ProcessTextActivity.WiktionaryParser(input);
-        List<WiktionaryItem> result_items = parser.parse();
+        List<WikiItem> result_items = WiktionarySource.WiktionaryParser.parse(input);
 
-        assertEquals(1, getItemTypeOccurrences(result_items, 100));
-        assertEquals(1, getItemTypeOccurrences(result_items, 101));
-        assertEquals(1, getItemTypeOccurrences(result_items, 102));
+        assertEquals(1, getItemTypeOccurrences(result_items, WiktionaryItem.class));
+        assertEquals(1, getItemTypeOccurrences(result_items, WiktionaryLangHeader.class));
     }
 
     @Test
     public void parses_two_languages(){
         String input = "\n== English ==\n\n\n=== Etymology ===\nBorrowed from Spanish hola.\n== Spanish ==\n\n\n=== Etymology ===\nBorrowed from Spanish hola.";
-        ProcessTextActivity.WiktionaryParser parser = new ProcessTextActivity.WiktionaryParser(input);
-        List<WiktionaryItem> result_items = parser.parse();
+        List<WikiItem> result_items = WiktionarySource.WiktionaryParser.parse(input);
 
-        assertEquals(2, getItemTypeOccurrences(result_items, 100));
-        assertEquals(2, getItemTypeOccurrences(result_items, 101));
-        assertEquals(2, getItemTypeOccurrences(result_items, 102));
+        assertEquals(2, getItemTypeOccurrences(result_items, WiktionaryItem.class));
+        assertEquals(2, getItemTypeOccurrences(result_items, WiktionaryLangHeader.class));
     }
 
-    private int getItemTypeOccurrences(List<WiktionaryItem> items, int type){
-        return Collections.frequency(items, new WiktionaryItem("test", "placeholder"));
+    private int getItemTypeOccurrences(List<WikiItem> items, Class type){
+
+        int count = 0;
+        for (WikiItem item : items){
+            if(item.getClass() ==  type){
+                count++;
+            }
+        }
+        return count;
     }
 }

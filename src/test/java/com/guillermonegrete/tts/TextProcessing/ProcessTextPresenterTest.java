@@ -1,8 +1,11 @@
 package com.guillermonegrete.tts.TextProcessing;
 
+import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.TestThreadExecutor;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
+import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -29,7 +32,7 @@ public class ProcessTextPresenterTest {
     @Mock private ProcessTextContract.View view;
     @Mock private WordRepository wordRepository;
     @Mock private DictionaryRepository dictionaryRepository;
-    @Mock private Executor executor;
+    @Mock private CustomTTS customTTS;
 
     @Captor
     private ArgumentCaptor<WordRepositorySource.GetWordRepositoryCallback> getWordCallbackCaptor;
@@ -50,7 +53,8 @@ public class ProcessTextPresenterTest {
 
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
-        return new ProcessTextPresenter(executor, mainThread, view, wordRepository, dictionaryRepository);
+        Executor executor = new TestThreadExecutor();
+        return new ProcessTextPresenter(executor, mainThread, view, wordRepository, dictionaryRepository, customTTS);
     }
 
     @Test

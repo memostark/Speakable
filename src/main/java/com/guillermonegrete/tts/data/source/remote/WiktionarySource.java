@@ -107,7 +107,7 @@ public class WiktionarySource implements DictionaryDataSource {
             return items;
         }
 
-        private static List<String> getLanguages(String extract){
+        public static List<String> getLanguages(String extract){
             String[] separated = extract.split("\n== ");
             List<String> langs = new ArrayList<>();
             Collections.addAll(langs, separated);
