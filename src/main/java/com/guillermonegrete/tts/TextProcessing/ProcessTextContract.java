@@ -23,6 +23,8 @@ public interface ProcessTextContract {
         void showSaveDialog(Words word);
 
         void showDeleteDialog(String word);
+
+        void showWordDeleted();
     }
 
     interface Presenter extends BasePresenter{
@@ -39,7 +41,7 @@ public interface ProcessTextContract {
 
         void onClickBookmark();
 
-        void onClickDeleteWord();
+        void onClickDeleteWord(String word);
 
         void onClickReproduce(String text);
 

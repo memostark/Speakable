@@ -6,6 +6,7 @@ import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomTTS.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.TextProcessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayoutInteractor;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
@@ -110,8 +111,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
-    public void onClickDeleteWord() {
-
+    public void onClickDeleteWord(String word) {
+        DeleteWord interactor = new DeleteWord(mExecutor, mMainThread, mRepository, word);
+        interactor.execute();
+        mView.showWordDeleted();
     }
 
     @Override

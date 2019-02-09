@@ -239,8 +239,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                     public void onClick(DialogInterface dialog, int id) {
                         // TODO Create use case/interactor for deleting words
                         WordsDatabase.getDatabase(getApplicationContext()).wordsDAO().deleteWord(word);
-                        ImageButton saveIcon = findViewById(R.id.save_icon);
-                        saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+                        presenter.onClickDeleteWord(word);
+
                         dialog.dismiss();
 
                     }
@@ -252,6 +252,12 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 });
 
         builder.create().show();
+    }
+
+    @Override
+    public void showWordDeleted() {
+        ImageButton saveIcon = findViewById(R.id.save_icon);
+        saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
     }
 
 

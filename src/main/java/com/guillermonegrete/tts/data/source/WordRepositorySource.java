@@ -24,4 +24,8 @@ public interface WordRepositorySource {
     void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback);
 
     void getLanguageAndTranslation(String text, GetTranslationCallback callback);
+
+    void deleteWord(String word);
+
+    void deleteWord(Words word);
 }

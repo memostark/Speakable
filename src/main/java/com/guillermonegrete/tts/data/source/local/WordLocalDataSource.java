@@ -34,4 +34,13 @@ public class WordLocalDataSource implements WordDataSource {
             callback.onWordLoaded(retrieved_word);
         }
     }
+
+    public void deleteWord(String word) {
+        mWordDAO.deleteWord(word);
+
+    }
+
+    public void deleteWord(Words word) {
+        // TODO implement method to delete word by Words object
+    }
 }

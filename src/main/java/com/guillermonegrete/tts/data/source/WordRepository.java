@@ -1,11 +1,12 @@
 package com.guillermonegrete.tts.data.source;
 
+import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.db.Words;
 
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
-public class WordRepository implements WordRepositorySource {
+        public class WordRepository implements WordRepositorySource {
 
     private static WordRepository INSTANCE;
 
@@ -61,6 +62,18 @@ public class WordRepository implements WordRepositorySource {
             }
         });
 
+    }
+
+    @Override
+    public void deleteWord(String word) {
+        WordLocalDataSource wordSource = (WordLocalDataSource) mWordLocalDataSource;
+        wordSource.deleteWord(word);
+    }
+
+    @Override
+    public void deleteWord(Words word) {
+        WordLocalDataSource wordSource = (WordLocalDataSource) mWordLocalDataSource;
+        wordSource.deleteWord(word);
     }
 
     private void getRemoteWord(String wordText, final GetWordRepositoryCallback callback) {
