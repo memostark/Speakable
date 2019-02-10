@@ -75,7 +75,7 @@ public class ExternalLinksFragment extends Fragment {
         });*/
         RecyclerView recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
 
-        ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, links);
+        ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, wordExtra, links);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new GridLayoutManager(mContext, 2));
         return fragment_layout;
