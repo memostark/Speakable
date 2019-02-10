@@ -43,10 +43,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     }
 
-    @Override
-    public void deleteWord() {
-
-    }
 
     @Override
     public void editWord() {

@@ -31,7 +31,6 @@ public interface ProcessTextContract {
 
         void addNewWord();
 
-        void deleteWord();
 
         void editWord();
 

@@ -22,7 +22,7 @@ public interface WordsDAO {
     long insert(Words word);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    void insert(Words... directors);
+    void insert(Words... words);
 
     @Update(onConflict = OnConflictStrategy.IGNORE)
     void update(Words words);
