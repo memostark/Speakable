@@ -68,13 +68,15 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 System.out.println(String.format("Is initialized %s", String.valueOf(isInitialized)));
                 foundWord = word;
                 if(!isInitialized) customTTS.initializeTTS(word.lang);
-                getExternalLinks(word.lang);
+
                 switch (layoutType){
                     case WORD_TRANSLATION:
+                        getExternalLinks(word.lang);
                         mView.setTranslationLayout(word);
                         break;
                     case SAVED_WORD:
                         insideLocalDatabase = true;
+                        getExternalLinks(word.lang);
                         mView.setSavedWordLayout(word);
                         break;
                     case SENTENCE_TRANSLATION:
@@ -93,6 +95,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 System.out.println(String.format("Is initialized %s", String.valueOf(isInitialized)));
                 foundWord = word;
                 if(!isInitialized) customTTS.initializeTTS(word.lang);
+                getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(items);
             }
         }, mRepository, dictionaryRepository, text);

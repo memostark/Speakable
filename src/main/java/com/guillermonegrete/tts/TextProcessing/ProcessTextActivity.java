@@ -169,12 +169,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mAdapter = new WiktionaryAdapter(this, items);
 
         mFoundWords = null;
-
-        ViewPager pager =  findViewById(R.id.process_view_pager);
-        TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
-        tabLayout.setupWithViewPager(pager, true);
-        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
-
     }
 
     @Override
@@ -225,7 +219,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     public void setExternalDictionary(List<ExternalLink> links) {
         this.links = (ArrayList<ExternalLink>) links;
-        createSmallViewPager();
+        if(mAdapter != null) createViewPager();
+            else createSmallViewPager();
     }
 
     @Override
@@ -242,7 +237,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         builder.setMessage("Do you want to delete this word?")
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        // TODO Create use case/interactor for deleting words
                         presenter.onClickDeleteWord(word);
                         dialog.dismiss();
 
@@ -270,16 +264,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
 
-    public static List<String> getLanguages(String extract){
-        String[] separated = extract.split("\n== ");
-        List<String> langs = new ArrayList<>();
-        for (int i=0; i<separated.length; i++){
-            langs.add(separated[i]);
-            //Log.i(TAG,(i+1)+".- "+separated[i]);
-        }
-        return langs;
-    }
-
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -304,6 +288,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         wlp.gravity = Gravity.BOTTOM;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         getWindow().setAttributes(wlp);
+    }
+
+    private void createViewPager(){
+        ViewPager pager =  findViewById(R.id.process_view_pager);
+        TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
+        tabLayout.setupWithViewPager(pager, true);
+        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
     }
 
     private void createSmallViewPager(){
