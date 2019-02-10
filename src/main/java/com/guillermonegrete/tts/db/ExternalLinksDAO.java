@@ -17,7 +17,7 @@ public interface ExternalLinksDAO {
     long insert(ExternalLink link);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    long insert(ExternalLink... links);
+    void insert(ExternalLink... links);
 
     @Query("DELETE FROM links")
     void deleteAll();

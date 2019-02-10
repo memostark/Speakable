@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.db.ExternalLink;
 
 import java.util.List;
 
@@ -15,10 +16,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdapter.ViewHolder> {
 
-    private List<String> links;
+    private List<ExternalLink> links;
     private LayoutInflater inflater;
 
-    public ExternalLinksAdapter(Context context, List<String> links){
+    public ExternalLinksAdapter(Context context, List<ExternalLink> links){
         this.links = links;
         inflater = LayoutInflater.from(context);
     }
@@ -33,7 +34,7 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.linkButton.setText(links.get(position));
+        holder.linkButton.setText(links.get(position).siteName);
     }
 
     @Override

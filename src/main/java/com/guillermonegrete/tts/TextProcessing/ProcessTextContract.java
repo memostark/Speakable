@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.TextProcessing;
 import com.guillermonegrete.tts.BasePresenter;
 import com.guillermonegrete.tts.BaseView;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
+import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public interface ProcessTextContract {
 
         void setSentenceLayout(Words word);
 
-        void setExternalDictionary();
+        void setExternalDictionary(List<ExternalLink> links);
 
         void showSaveDialog(Words word);
 
@@ -36,7 +37,7 @@ public interface ProcessTextContract {
 
         void getLayout(String text);
 
-        void getExternalLinks();
+        void getExternalLinks(String language);
 
         void onClickBookmark();
 

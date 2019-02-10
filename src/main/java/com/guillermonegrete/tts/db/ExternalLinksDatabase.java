@@ -51,7 +51,7 @@ public abstract class ExternalLinksDatabase extends RoomDatabase {
         protected Void doInBackground(Void... voids) {
             externalLinksDAO.deleteAll();
 
-            ExternalLink link1 = new ExternalLink("Reverso Conjugator","http://conjugator.reverso.net/conjugation-hebrew-verb-{q}","he");
+            ExternalLink link1 = new ExternalLink("Reverso Conjugator","http://conjugator.reverso.net/conjugation-hebrew-verb-{q}.html","he");
             ExternalLink link2 = new ExternalLink("Pealim","https://www.pealim.com/search/?q={q}","he");
             ExternalLink link3 = new ExternalLink("Wiktionary","https://en.wiktionary.org/wiki/{q}","he");
 

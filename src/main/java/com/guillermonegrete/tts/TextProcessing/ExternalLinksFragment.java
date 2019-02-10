@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.db.ExternalLink;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,15 +26,20 @@ public class ExternalLinksFragment extends Fragment {
 
     private String wordExtra;
 
+    private List<ExternalLink> links;
+
     private static final String WORD_TEXT = "word_text";
+    private static final String LINKS_LIST = "links";
+
 
     private final static String ReversoConjugationBaseURL = "http://conjugator.reverso.net/conjugation-hebrew-verb-";
 
-    public static ExternalLinksFragment newInstance(String word){
+    public static ExternalLinksFragment newInstance(String word, ArrayList<ExternalLink> links){
         ExternalLinksFragment fragment = new ExternalLinksFragment();
 
         Bundle args = new Bundle();
         args.putString(WORD_TEXT, word);
+        args.putParcelableArrayList(LINKS_LIST, links);
         fragment.setArguments(args);
 
         return fragment;
@@ -50,6 +56,7 @@ public class ExternalLinksFragment extends Fragment {
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
         wordExtra = args.getString(WORD_TEXT);
+        links = args.getParcelableArrayList(LINKS_LIST);
     }
 
     @Nullable
@@ -67,10 +74,6 @@ public class ExternalLinksFragment extends Fragment {
             }
         });*/
         RecyclerView recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
-        List<String> links = new ArrayList<>();
-        links.add("Wikipedia");
-        links.add("Cambridge dictionary");
-        links.add("Encyclopedia");
 
         ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, links);
         recyclerView.setAdapter(adapter);

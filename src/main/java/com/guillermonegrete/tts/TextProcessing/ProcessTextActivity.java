@@ -45,11 +45,13 @@ import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
+import com.guillermonegrete.tts.db.ExternalLink;
+import com.guillermonegrete.tts.db.ExternalLinksDatabase;
 import com.guillermonegrete.tts.db.Words;
-import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
 
@@ -76,6 +78,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     private Words mFoundWords;
 
     private ProcessTextContract.Presenter presenter;
+
+    private ArrayList<ExternalLink> links;
 
 
     @Override
@@ -104,6 +108,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 this,
                 WordRepository.getInstance(MSTranslatorSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
+                ExternalLinksDataSource.getInstance(ExternalLinksDatabase.getDatabase(getApplicationContext()).externalLinksDAO()),
                 CustomTTS.getInstance(getApplicationContext()));
         presenter.getLayout(getSelectedText());
 
@@ -179,7 +184,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         final String word_text = word.word;
         setWordLayout(word_text);
-        createSmallViewPager();
 
         ImageButton saveIcon = findViewById(R.id.save_icon);
         saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
@@ -204,7 +208,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         setBottomDialog();
         mFoundWords = word;
         setWordLayout(word.word);
-        createSmallViewPager();
+
     }
 
     @Override
@@ -219,8 +223,9 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     @Override
-    public void setExternalDictionary() {
-
+    public void setExternalDictionary(List<ExternalLink> links) {
+        this.links = (ArrayList<ExternalLink>) links;
+        createSmallViewPager();
     }
 
     @Override
@@ -238,9 +243,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // TODO Create use case/interactor for deleting words
-                        WordsDatabase.getDatabase(getApplicationContext()).wordsDAO().deleteWord(word);
                         presenter.onClickDeleteWord(word);
-
                         dialog.dismiss();
 
                     }
@@ -325,7 +328,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         public Fragment getItem(int position) {
             switch (position){
                 case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
-                case 1: return ExternalLinksFragment.newInstance(mSelectedText);
+                case 1: return ExternalLinksFragment.newInstance(mSelectedText, links);
                 default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
             }
         }

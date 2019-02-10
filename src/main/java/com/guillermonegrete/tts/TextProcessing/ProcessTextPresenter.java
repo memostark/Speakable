@@ -7,11 +7,15 @@ import com.guillermonegrete.tts.CustomTTS.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.DeleteWord;
+import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetExternalLink;
+import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetExternalLinksInteractor;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayoutInteractor;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
+import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
 
 import java.util.List;
@@ -21,17 +25,19 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private ProcessTextContract.View mView;
     private WordRepository mRepository;
     private DictionaryRepository dictionaryRepository;
+    private ExternalLinksDataSource linksRepository;
     private CustomTTS customTTS;
 
     private boolean insideLocalDatabase;
     private Words foundWord;
 
     public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
-                                WordRepository repository, DictionaryRepository dictRepository, CustomTTS customTTS){
+                                WordRepository repository, DictionaryRepository dictRepository, ExternalLinksDataSource linksRepository, CustomTTS customTTS){
         super(executor, mainThread);
         mView = view;
         mRepository = repository;
         dictionaryRepository = dictRepository;
+        this.linksRepository = linksRepository;
         this.customTTS = customTTS;
 
         insideLocalDatabase = false;
@@ -62,6 +68,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 System.out.println(String.format("Is initialized %s", String.valueOf(isInitialized)));
                 foundWord = word;
                 if(!isInitialized) customTTS.initializeTTS(word.lang);
+                getExternalLinks(word.lang);
                 switch (layoutType){
                     case WORD_TRANSLATION:
                         mView.setTranslationLayout(word);
@@ -95,8 +102,21 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
-    public void getExternalLinks() {
+    public void getExternalLinks(String language) {
+        GetExternalLink link_interactor = new GetExternalLink(mExecutor, mMainThread, new GetExternalLinksInteractor.Callback(){
 
+            @Override
+            public void onExternalLinksRetrieved(List<ExternalLink> links) {
+                mView.setExternalDictionary(links);
+                for(ExternalLink link : links){
+                    System.out.print("Site name: ");
+                    System.out.println(link.siteName);
+                }
+
+            }
+        }, linksRepository, language);
+
+        link_interactor.execute();
     }
 
     @Override

@@ -10,6 +10,7 @@ import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
+import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.threading.TestMainThread;
 
@@ -32,6 +33,7 @@ public class ProcessTextPresenterTest {
     @Mock private ProcessTextContract.View view;
     @Mock private WordRepository wordRepository;
     @Mock private DictionaryRepository dictionaryRepository;
+    @Mock private ExternalLinksDataSource linksRepository;
     @Mock private CustomTTS customTTS;
 
     @Captor
@@ -54,7 +56,7 @@ public class ProcessTextPresenterTest {
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
         Executor executor = new TestThreadExecutor();
-        return new ProcessTextPresenter(executor, mainThread, view, wordRepository, dictionaryRepository, customTTS);
+        return new ProcessTextPresenter(executor, mainThread, view, wordRepository, dictionaryRepository, linksRepository, customTTS);
     }
 
     @Test
