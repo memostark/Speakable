@@ -81,6 +81,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private ArrayList<ExternalLink> links;
 
+    private ViewPager pager;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -95,13 +97,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         startService(intentService);
 
         mAutoTTS = getAutoTTSPreference();
-
-        /*if("WITH_FLAG".equals(getIntent().getAction())){
-            mInsideDatabase = false;
-            sendWiktionaryRequest(mSelectedText);
-            tts.determineLanguage(mSelectedText);
-            return;
-        }*/
 
         presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
@@ -169,6 +164,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mAdapter = new WiktionaryAdapter(this, items);
 
         mFoundWords = null;
+
+        createViewPager();
     }
 
     @Override
@@ -178,6 +175,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         final String word_text = word.word;
         setWordLayout(word_text);
+        createSmallViewPager();
 
         ImageButton saveIcon = findViewById(R.id.save_icon);
         saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
@@ -202,7 +200,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         setBottomDialog();
         mFoundWords = word;
         setWordLayout(word.word);
-
+        createSmallViewPager();
     }
 
     @Override
@@ -219,8 +217,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     public void setExternalDictionary(List<ExternalLink> links) {
         this.links = (ArrayList<ExternalLink>) links;
-        if(mAdapter != null) createViewPager();
-            else createSmallViewPager();
+        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
     }
 
     @Override
@@ -291,20 +288,18 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private void createViewPager(){
-        ViewPager pager =  findViewById(R.id.process_view_pager);
+        pager =  findViewById(R.id.process_view_pager);
         TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
         tabLayout.setupWithViewPager(pager, true);
-        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
     }
 
     private void createSmallViewPager(){
-        ViewPager pager =  findViewById(R.id.process_view_pager);
+        pager = findViewById(R.id.process_view_pager);
         ViewGroup.LayoutParams params = pager.getLayoutParams();
         params.height = 250;
         pager.setLayoutParams(params);
         TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
         tabLayout.setupWithViewPager(pager, true);
-        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
     }
 
 
