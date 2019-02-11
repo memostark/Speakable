@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.SavedWords;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -111,6 +112,7 @@ public class SaveWordDialogFragment extends DialogFragment {
         Words word_entry = new Words(word, language, translation);
         if(!TextUtils.isEmpty(notes)) word_entry.notes = notes;
 
+        // TODO remove database logic from here
         WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
 
         if(TAG_DIALOG_UPDATE_WORD.equals(getTag())){
@@ -131,12 +133,13 @@ public class SaveWordDialogFragment extends DialogFragment {
             Toast.makeText(getActivity(), "New word saved", Toast.LENGTH_SHORT).show();
         }
 
-        /* TODO
-         This part should not be here, it makes the fragment tightly coupled to the activity
-         Should be removed to improve fragment flexibility
-        */
-        ImageButton saveIcon = getActivity().findViewById(R.id.save_icon);
-        if(saveIcon != null) saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+        Activity activity = getActivity();
+        if(activity instanceof Callback)
+            ((Callback)activity).onWordSaved();
 
+    }
+
+    public interface Callback{
+        void onWordSaved();
     }
 }

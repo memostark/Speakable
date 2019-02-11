@@ -62,7 +62,7 @@ import java.util.List;
 import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
 
 
-public class ProcessTextActivity extends FragmentActivity implements ProcessTextContract.View {
+public class ProcessTextActivity extends FragmentActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
 
     private WiktionaryAdapter mAdapter;
 
@@ -300,6 +300,12 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         pager.setLayoutParams(params);
         TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
         tabLayout.setupWithViewPager(pager, true);
+    }
+
+    @Override
+    public void onWordSaved() {
+        ImageButton saveIcon = findViewById(R.id.save_icon);
+        if(saveIcon != null) saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
     }
 
 
