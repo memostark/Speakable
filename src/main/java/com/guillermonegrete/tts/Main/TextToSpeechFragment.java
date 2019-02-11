@@ -28,7 +28,6 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
     protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
     public static final String NORMAL_SERVICE = "startService";
 
-    private CustomTTS tts;
     private MainTTSPresenter presenter;
 
     private WebView webview;
@@ -61,13 +60,11 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
         webview = fragment_layout.findViewById(R.id.webview_wiktionary);
         webview.setWebViewClient(new HelloWebViewClient());
 
-        // TODO fix audio not playing, implemente tts listener
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 EditText mEdit   = fragment_layout.findViewById(R.id.tts_ev);
                 final String text = mEdit.getText().toString();
-                // tts.determineLanguage(text);
                 presenter.onClickReproduce(text);
             }
         });

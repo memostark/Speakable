@@ -24,6 +24,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
 
     @Override
     public void onClickReproduce(final String text) {
+        // TODO this request should be done in a background thread
         languageSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {

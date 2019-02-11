@@ -41,6 +41,8 @@ public interface ProcessTextContract {
 
         void onClickBookmark();
 
+        void onClickSaveWord(Words word);
+
         void onClickDeleteWord(String word);
 
         void onClickReproduce(String text);

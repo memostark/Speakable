@@ -252,6 +252,9 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     public void showWordDeleted() {
         ImageButton saveIcon = findViewById(R.id.save_icon);
         saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+
+        ImageButton editIcon = findViewById(R.id.edit_icon);
+        editIcon.setVisibility(View.GONE);
     }
 
 
@@ -303,9 +306,23 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     @Override
-    public void onWordSaved() {
+    public void onWordSaved(final Words word) {
+        presenter.onClickSaveWord(word);
         ImageButton saveIcon = findViewById(R.id.save_icon);
-        if(saveIcon != null) saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+        saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+
+        ImageButton editIcon = findViewById(R.id.edit_icon);
+        editIcon.setVisibility(View.VISIBLE);
+        editIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
+                        word.word,
+                        word.lang,
+                        word.definition);
+                dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
+            }
+        });
     }
 
 

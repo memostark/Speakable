@@ -131,15 +131,15 @@ public class SaveWordDialogFragment extends DialogFragment {
         }else{
             wordsDAO.insert(word_entry);
             Toast.makeText(getActivity(), "New word saved", Toast.LENGTH_SHORT).show();
-        }
 
-        Activity activity = getActivity();
-        if(activity instanceof Callback)
-            ((Callback)activity).onWordSaved();
+            Activity activity = getActivity();
+            if(activity instanceof Callback)
+                ((Callback)activity).onWordSaved(word_entry);
+        }
 
     }
 
     public interface Callback{
-        void onWordSaved();
+        void onWordSaved(Words word);
     }
 }

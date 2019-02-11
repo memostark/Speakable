@@ -130,6 +130,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
+    public void onClickSaveWord(Words word) {
+        insideLocalDatabase = true;
+    }
+
+    @Override
     public void onClickDeleteWord(String word) {
         DeleteWord interactor = new DeleteWord(mExecutor, mMainThread, mRepository, word);
         interactor.execute();
