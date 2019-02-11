@@ -19,25 +19,35 @@ import android.widget.EditText;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.Services.ScreenTextService;
+import com.guillermonegrete.tts.ThreadExecutor;
+import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
+import com.guillermonegrete.tts.threading.MainThreadImpl;
 
-public class TextToSpeechFragment extends Fragment {
+public class TextToSpeechFragment extends Fragment implements MainTTSContract.View {
 
     protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
     public static final String NORMAL_SERVICE = "startService";
 
     private CustomTTS tts;
+    private MainTTSPresenter presenter;
+
+    private WebView webview;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(tts == null) {
-            tts = CustomTTS.getInstance(getActivity());
-        }
+        presenter = new MainTTSPresenter(
+                ThreadExecutor.getInstance(),
+                MainThreadImpl.getInstance(),
+                this,
+                MSTranslatorSource.getInstance(),
+                CustomTTS.getInstance(getActivity().getApplicationContext())
+        );
     }
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(final LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.fragment_main_tts, container, false);
 
         fragment_layout.findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
@@ -47,25 +57,18 @@ public class TextToSpeechFragment extends Fragment {
                 }
         });
 
-        // Use a string for speech.
-        //m_syn.SpeakToAudio(getString(R.string.tts_text));
-
-        // Use SSML for speech.
-        //String text = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" xml:lang=\"en-US\"><voice xml:lang=\"en-US\" name=\"Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)\">You can also use SSML markup for text to speech.</voice></speak>";
-        //m_syn.SpeakSSMLToAudio(text);
-
-        Button playBtn = (Button) fragment_layout.findViewById(R.id.play_btn);
-        final WebView webview = (WebView) fragment_layout.findViewById(R.id.webview_wiktionary);
+        Button playBtn = fragment_layout.findViewById(R.id.play_btn);
+        webview = fragment_layout.findViewById(R.id.webview_wiktionary);
         webview.setWebViewClient(new HelloWebViewClient());
 
         // TODO fix audio not playing, implemente tts listener
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                EditText mEdit   = (EditText)fragment_layout.findViewById(R.id.tts_ev);
+                EditText mEdit   = fragment_layout.findViewById(R.id.tts_ev);
                 final String text = mEdit.getText().toString();
                 // tts.determineLanguage(text);
-                webview.loadUrl("https://en.m.wiktionary.org/wiki/"+text);
+                presenter.onClickReproduce(text);
             }
         });
 
@@ -74,8 +77,10 @@ public class TextToSpeechFragment extends Fragment {
             public void onClick(View view) {
                 final MediaProjectionManager manager
                         = (MediaProjectionManager)getActivity().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-                final Intent permissionIntent = manager.createScreenCaptureIntent();
-                startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
+                if(manager != null) {
+                    final Intent permissionIntent = manager.createScreenCaptureIntent();
+                    startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
+                }
             }
         });
 
@@ -98,9 +103,8 @@ public class TextToSpeechFragment extends Fragment {
     }
 
     @Override
-    public void onDestroy() {
-        if(tts != null) tts.finishTTS();
-        super.onDestroy();
+    public void setDictionaryWebPage(String word) {
+        webview.loadUrl("https://en.m.wiktionary.org/wiki/" + word);
     }
 
     private class HelloWebViewClient extends WebViewClient {
