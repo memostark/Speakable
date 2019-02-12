@@ -39,4 +39,12 @@
     <string name="play_tts_icon_description">Play TTS</string>
     <string name="edit_icon_description">Edit TTS</string>
     <string name="save_icon_description">Save word</string>
+
+    <string-array name="language_code_arrays">
+        <item>All</item>
+        <item>EN</item>
+        <item>ES</item>
+        <item>DE</item>
+        <item>HE</item>
+    </string-array>
 </resources>

@@ -22,6 +22,9 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,14 +33,19 @@ import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class SavedWordsFragment extends Fragment {
+public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener {
 
     private SavedWordListAdapter wordListAdapter;
     private WordsViewModel wordsViewModel;
     private RecyclerView mRecyclerView;
     private Context context;
+
+    private String language_filter;
+
+    private List<Words> words;
 
     @Override
     public void onAttach(Context context) {
@@ -52,6 +60,7 @@ public class SavedWordsFragment extends Fragment {
         initData();
     }
 
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
@@ -63,6 +72,13 @@ public class SavedWordsFragment extends Fragment {
         mRecyclerView.setLayoutManager(new LinearLayoutManager(context));
 
         setUpItemTouchHelper();
+
+        Spinner spinner = fragment_layout.findViewById(R.id.select_language_spinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
+                R.array.language_code_arrays, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setOnItemSelectedListener(this);
+        spinner.setAdapter(adapter);
 
         fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -78,7 +94,9 @@ public class SavedWordsFragment extends Fragment {
         wordsViewModel.getWordsList().observe(this, new Observer<List<Words>>() {
             @Override
             public void onChanged(@Nullable List<Words> movies) {
-                wordListAdapter.setWordsList(movies);
+                words = movies;
+                filterWords();
+
             }
         });
     }
@@ -166,6 +184,35 @@ public class SavedWordsFragment extends Fragment {
         };
         ItemTouchHelper mItemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         mItemTouchHelper.attachToRecyclerView(mRecyclerView);
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long id) {
+        language_filter = (String) adapterView.getItemAtPosition(pos);
+        filterWords();
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+
+    }
+
+    // TODO filter in worker thread
+    private void filterWords(){
+        if(language_filter == null || language_filter.equals("All")) {
+            wordListAdapter.setWordsList(words);
+
+        }else {
+
+            List<Words> filtered_word = new ArrayList<>();
+            for (Words word : words) {
+                if (language_filter.equals(word.lang.toUpperCase())) {
+                    filtered_word.add(word);
+                }
+            }
+
+            wordListAdapter.setWordsList(filtered_word);
+        }
     }
 
     public class DividerItemDecoration extends RecyclerView.ItemDecoration {

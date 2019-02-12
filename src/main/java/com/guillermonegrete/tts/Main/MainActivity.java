@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private DrawerLayout mDrawerLayout;
+    private ActionBar actionbar;
 
 
     @Override
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         setActionBar();
 
         NavigationView nav_view = findViewById(R.id.nav_view);
+        nav_view.setCheckedItem(R.id.nav_item_main);
         nav_view.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem menuItem) {
@@ -76,17 +78,21 @@ public class MainActivity extends AppCompatActivity {
                 switch (menuItem.getItemId()){
                     case R.id.nav_item_main:
 
+                        actionbar.setTitle("Cognitive TTS");
                         TextToSpeechFragment TTSFragment = new TextToSpeechFragment();
                         fragmentTransaction.replace(R.id.main_tts_fragment_container, TTSFragment);
                         fragmentTransaction.commit();
                         break;
                     case R.id.nav_item_saved:
 
+                        actionbar.setTitle("Saved words");
                         SavedWordsFragment savedWordsFragment  = new SavedWordsFragment();
                         fragmentTransaction.replace(R.id.main_tts_fragment_container, savedWordsFragment);
                         fragmentTransaction.commit();
                         break;
                     case  R.id.nav_item_settings:
+
+                        actionbar.setTitle("");
                         SettingsFragment settingsFragment  = new SettingsFragment();
                         fragmentTransaction.replace(R.id.main_tts_fragment_container, settingsFragment);
                         fragmentTransaction.commit();
@@ -117,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
     private void setActionBar(){
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        ActionBar actionbar = getSupportActionBar();
+        actionbar = getSupportActionBar();
         actionbar.setDisplayHomeAsUpEnabled(true);
         actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
     }
