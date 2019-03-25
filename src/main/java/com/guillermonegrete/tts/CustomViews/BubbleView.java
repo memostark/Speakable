@@ -5,17 +5,18 @@ import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.view.ViewCompat;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ImageView;
 
 import java.lang.ref.WeakReference;
 
 
-public class BubbleView extends ImageView {
+public class BubbleView extends AppCompatImageView {
 
     private final WindowManager mWindowManager;
     private final WindowManager.LayoutParams mParams;

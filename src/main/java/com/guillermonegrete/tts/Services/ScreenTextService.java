@@ -54,16 +54,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
-import com.google.firebase.ml.vision.FirebaseVision;
-import com.google.firebase.ml.vision.cloud.text.FirebaseVisionCloudText;
-import com.google.firebase.ml.vision.cloud.text.FirebaseVisionCloudTextDetector;
-import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.guillermonegrete.tts.Main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
@@ -78,7 +71,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 public class ScreenTextService extends Service {
 
@@ -490,7 +482,7 @@ public class ScreenTextService extends Service {
                     IMAGES_PRODUCED++;
                     Log.e(TAG, "Captured image: " + IMAGES_PRODUCED);
                     stopProjection();
-                    doFirebaseOCR(croppedBitmap);
+                    // doFirebaseOCR(croppedBitmap);
                     //openScreenshot(imageFile); // Visualize captured image
                 }
 
@@ -524,7 +516,7 @@ public class ScreenTextService extends Service {
             return bitmap;
         }
 
-        private void doFirebaseOCR(Bitmap bitmap){
+        /*private void doFirebaseOCR(Bitmap bitmap){
             //---------Reference https://firebase.google.com/docs/ml-kit/android/recognize-text?authuser=0
             FirebaseVisionImage imageFB = FirebaseVisionImage.fromBitmap(bitmap);
             FirebaseVisionCloudTextDetector detector = FirebaseVision.getInstance().getVisionCloudTextDetector();
@@ -584,7 +576,7 @@ public class ScreenTextService extends Service {
                         }
                     });
 
-        }
+        }*/
 
         private void doGoogleVisionOCR(Bitmap bitmap){
             // https://stackoverflow.com/questions/37287910/how-to-extract-text-from-image-android-app
