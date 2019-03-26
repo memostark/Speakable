@@ -39,6 +39,8 @@
     <string name="play_tts_icon_description">Play TTS</string>
     <string name="edit_icon_description">Edit TTS</string>
     <string name="save_icon_description">Save word</string>
+    <string name="definition_label">Definition</string>
+    <string name="notes_label">Notes</string>
 
     <string-array name="language_code_arrays">
         <item>All</item>

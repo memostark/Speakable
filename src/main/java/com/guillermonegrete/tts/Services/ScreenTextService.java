@@ -141,15 +141,15 @@ public class ScreenTextService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
+        // textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
 //        tts = new CustomTTS(ScreenTextService.this);
         tts = CustomTTS.getInstance(getApplicationContext());
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
-        bubble = (BubbleView) service_layout.findViewById(R.id.image_bubble);
-        takeSS = (ImageView) service_layout.findViewById(R.id.takeScreenShot_image);
-        snipView = (DrawView) service_layout.findViewById(R.id.snip_view);
-        icon_container = (LinearLayout) service_layout.findViewById(R.id.icon_container);
+        bubble = service_layout.findViewById(R.id.image_bubble);
+        takeSS =  service_layout.findViewById(R.id.takeScreenShot_image);
+        snipView = service_layout.findViewById(R.id.snip_view);
+        icon_container = service_layout.findViewById(R.id.icon_container);
 
         params = new WindowManager.LayoutParams();
         defaultSnippingView();

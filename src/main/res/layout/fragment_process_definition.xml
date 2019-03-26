@@ -1,25 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/text_error_message"
+    <LinearLayout
+        android:id="@+id/notes_definition_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:maxLines="15"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:visibility="gone"/>
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/saved_definition_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="15"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="@string/definition_label"
+            android:textAppearance="@android:style/TextAppearance.Material.Title" />
 
-    <TextView
-        android:id="@+id/text_notes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:maxLines="15"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:visibility="gone"/>
+        <TextView
+            android:id="@+id/text_error_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="15"
+            android:paddingStart="20dp"
+            android:paddingEnd="10dp"
+            tools:text="Definition saved previously by the user" />
+
+        <TextView
+            android:id="@+id/saved_notes_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="15"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="@string/notes_label"
+            android:textAppearance="@android:style/TextAppearance.Material.Title"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/text_notes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="15"
+            android:paddingStart="20dp"
+            android:paddingEnd="10dp"
+            tools:text="Additional notes previously saved by the user" />
+    </LinearLayout>
 
 
     <LinearLayout
@@ -32,7 +62,10 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_wiki"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            tools:listheader="@layout/header_item"
+            tools:listitem = "@layout/definition_item"
+            tools:itemCount="5"/>
 
     </LinearLayout>
 

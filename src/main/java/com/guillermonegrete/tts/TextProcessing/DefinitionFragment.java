@@ -6,6 +6,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -19,8 +20,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class DefinitionFragment extends Fragment {
-
-    private Context mContext;
 
     private String wordExtra;
     private String definitionExtra;
@@ -57,10 +56,12 @@ public class DefinitionFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
-        wordExtra = args.getString(WORD_TEXT);
-        definitionExtra = args.getString(WORD_DEFINITION);
-        notesExtra = args.getString(WORD_NOTES);
-        translationExtra = args.getString(WORD_TRANSLATION);
+        if (args != null) {
+            wordExtra = args.getString(WORD_TEXT);
+            definitionExtra = args.getString(WORD_DEFINITION);
+            notesExtra = args.getString(WORD_NOTES);
+            translationExtra = args.getString(WORD_TRANSLATION);
+        }
     }
 
     @Nullable
@@ -71,11 +72,14 @@ public class DefinitionFragment extends Fragment {
 
         if(wordExtra != null){ // Inside database
             TextView saved_definition = fragment_layout.findViewById(R.id.text_error_message);
-            saved_definition.setVisibility(View.VISIBLE);
             saved_definition.setText(definitionExtra);
             TextView saved_notes = fragment_layout.findViewById(R.id.text_notes);
-            saved_notes.setVisibility(View.VISIBLE);
-            if (notesExtra != null) saved_notes.setText(notesExtra);
+            if (notesExtra != null) {
+                saved_notes.setText(notesExtra);
+                fragment_layout.findViewById(R.id.saved_notes_label).setVisibility(View.VISIBLE);
+            }
+            LinearLayout definitionContainer = fragment_layout.findViewById(R.id.notes_definition_container);
+            definitionContainer.setVisibility(View.VISIBLE);
         }else if(mAdapter != null){ // Inside wiktionary
             RecyclerView mlistView =  fragment_layout.findViewById(R.id.recycler_view_wiki);
             mlistView.setAdapter(mAdapter);

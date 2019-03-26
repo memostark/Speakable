@@ -12,6 +12,7 @@
     android:layout_marginBottom="50dp"
     android:focusable="true"
     android:background="@drawable/black_border"
+    android:layout_marginEnd="1dp"
     android:gravity="center_horizontal"
     android:orientation="vertical">
 
@@ -22,15 +23,17 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:background="#FFFFBB33">
+        android:background="#FFFFBB33"
+        android:layout_margin="1dp">
+
         <TextView
             android:id="@+id/text_tts"
-            android:text = "Selected text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:textColor="#000000"
             android:textSize="20sp"
-            android:layout_weight="1"/>
+            tools:text="Selected text" />
         <ImageButton
             android:id="@+id/save_icon"
             android:paddingStart="3dp"
@@ -66,7 +69,8 @@
     <androidx.viewpager.widget.ViewPager
         android:layout_width="wrap_content"
         android:layout_height="400dp"
-        android:id="@+id/process_view_pager"/>
+        android:id="@+id/process_view_pager"
+        android:layout_margin="1dp"/>
 
     <com.google.android.material.tabs.TabLayout
         android:layout_width="match_parent"
