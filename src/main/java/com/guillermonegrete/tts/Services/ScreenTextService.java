@@ -31,7 +31,6 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
@@ -132,11 +131,11 @@ public class ScreenTextService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        isForeground = false;
+        isForeground=false;
 
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
-        trash_layout = new TrashView(this);
-        hasPermission = false;
+        trash_layout= new TrashView(this);
+        hasPermission=false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
@@ -220,7 +219,7 @@ public class ScreenTextService extends Service {
                             final boolean isIntersect = state == STATE_INTERSECTING;
                             if (isIntersecting) {
                                 bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
-                                params.x = (int) trash_layout.getTrashIconCenterX();
+                                params.x= (int) trash_layout.getTrashIconCenterX();
                                 params.y = (int) trash_layout.getTrashIconCenterY();
                             }else{
                                 params.x = initialX + (int) (event.getRawX() - initialTouchX);
@@ -292,7 +291,7 @@ public class ScreenTextService extends Service {
                 setSnippingView(false);
                 mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
 
-                if(mediaProjection != null) {
+                if(mediaProjection!=null) {
                     File externalFilesDir = getExternalFilesDir(null);
                     if (externalFilesDir != null) {
                         STORE_DIRECTORY = externalFilesDir.getAbsolutePath() + "/screenshotService/";
@@ -317,10 +316,7 @@ public class ScreenTextService extends Service {
                 }
 
             }
-
-
         });
-
 
         new Thread() {
             @Override
@@ -470,7 +466,7 @@ public class ScreenTextService extends Service {
                     // create bitmap
                     bitmap = createBitmapFromImagePlane(planes[0]);
                     int statusBarHeight = 0;
-                    croppedBitmap = Bitmap.createBitmap(bitmap, snipView.getPosx(),snipView.getPosy() + statusBarHeight, snipView.getRectWidth(),snipView.getRectHeight() + statusBarHeight);
+                    croppedBitmap = Bitmap.createBitmap(bitmap,snipView.getPosx(),snipView.getPosy() +statusBarHeight,snipView.getRectWidth(),snipView.getRectHeight()+statusBarHeight);
 
                     String mPath =  STORE_DIRECTORY + "/myscreen_" + IMAGES_PRODUCED + ".png";
                     File imageFile = new File(mPath);
@@ -634,7 +630,7 @@ public class ScreenTextService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if(intent != null) {
+        if(intent!=null) {
             String action = intent.getAction();
             Log.d("prueba","Intent action " + action);
             if(TextToSpeechFragment.NORMAL_SERVICE.equals(action) ) {
@@ -661,8 +657,6 @@ public class ScreenTextService extends Service {
         }
         return super.onStartCommand(intent, flags, startId);
     }
-
-
 
     private void createForeground(String action){
         Intent intentHide = new Intent(this, Receiver.class);
@@ -702,10 +696,11 @@ public class ScreenTextService extends Service {
         if (trash_layout != null) {
             if(trash_layout.getWindowToken() != null) windowManager.removeView(trash_layout);
         }
-        if(tts != null) tts.finishTTS();
+        if(tts!=null) tts.finishTTS();
     }
 
     private class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
+
         @Override
         public boolean onSingleTapUp(MotionEvent event) {
             return true;
