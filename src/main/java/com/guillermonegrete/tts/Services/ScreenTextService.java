@@ -119,6 +119,8 @@ public class ScreenTextService extends Service {
 
     private boolean isForeground;
 
+    private ClipboardManager clipboard;
+
 
     @Nullable
     @Override
@@ -327,6 +329,7 @@ public class ScreenTextService extends Service {
             }
         }.start();
 
+        clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         setClipboardCallback();
 
 
@@ -352,32 +355,33 @@ public class ScreenTextService extends Service {
         return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
     }
 
+    private ClipboardManager.OnPrimaryClipChangedListener clipboardListener = new ClipboardManager.OnPrimaryClipChangedListener(){
+
+        @Override
+        public void onPrimaryClipChanged() {
+            SharedPreferences sharedPref =
+                    PreferenceManager.getDefaultSharedPreferences(ScreenTextService.this);
+            if (!sharedPref.getBoolean(SettingsFragment.PREF_CLIPBOARD_SWITCH, false)) return;
+
+            ClipData clip = clipboard.getPrimaryClip();
+
+            if(clip == null) return;
+            if(clip.getItemCount() <= 0) return;
+
+            final CharSequence pasteData = clip.getItemAt(0).getText();
+
+            if (pasteData == null) return;
+
+            Intent dialogIntent = new Intent(ScreenTextService.this, ProcessTextActivity.class);
+            dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            dialogIntent.putExtra("android.intent.extra.PROCESS_TEXT", pasteData);
+            startActivity(dialogIntent);
+        }
+    };
+
     private void setClipboardCallback(){
-        final ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         if(clipboard != null) {
-            clipboard.addPrimaryClipChangedListener(new ClipboardManager.OnPrimaryClipChangedListener() {
-                @Override
-                public void onPrimaryClipChanged() {
-                    SharedPreferences sharedPref =
-                            PreferenceManager.getDefaultSharedPreferences(ScreenTextService.this);
-                    if (!sharedPref.getBoolean(SettingsFragment.PREF_CLIPBOARD_SWITCH, false)) return;
-
-                    ClipData clip = clipboard.getPrimaryClip();
-
-                    if(clip == null) return;
-                    if(clip.getItemCount() <= 0) return;
-
-                    final CharSequence pasteData = clip.getItemAt(0).getText();
-
-                    if (pasteData == null) return;
-
-                    Intent dialogIntent = new Intent(ScreenTextService.this, ProcessTextActivity.class);
-                    dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    dialogIntent.putExtra("android.intent.extra.PROCESS_TEXT", pasteData);
-                    startActivity(dialogIntent);
-
-                }
-            });
+            clipboard.addPrimaryClipChangedListener(clipboardListener);
         }
     }
 
@@ -695,6 +699,9 @@ public class ScreenTextService extends Service {
         }
         if (trash_layout != null) {
             if(trash_layout.getWindowToken() != null) windowManager.removeView(trash_layout);
+        }
+        if(clipboard != null) {
+            clipboard.removePrimaryClipChangedListener(clipboardListener);
         }
         if(tts!=null) tts.finishTTS();
     }
