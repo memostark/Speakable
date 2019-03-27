@@ -103,7 +103,10 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
                 ExternalLinksDataSource.getInstance(ExternalLinksDatabase.getDatabase(getApplicationContext()).externalLinksDAO()),
                 CustomTTS.getInstance(getApplicationContext()));
-        presenter.getLayout(getSelectedText());
+
+        Words extraWord = getIntent().getParcelableExtra("Word");
+        if(extraWord != null) presenter.getDictionaryEntry(extraWord);
+        else presenter.getLayout(getSelectedText());
 
     }
 
@@ -166,6 +169,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         createViewPager();
     }
 
+
+
     @Override
     public void setSavedWordLayout(final Words word) {
         setBottomDialog();
@@ -175,21 +180,22 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         setWordLayout(word_text);
         createSmallViewPager();
 
-        ImageButton saveIcon = findViewById(R.id.save_icon);
-        saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+        setSavedWordToolbar(word);
 
-        ImageButton editIcon = findViewById(R.id.edit_icon);
-        editIcon.setVisibility(View.VISIBLE);
-        editIcon.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
-                        word_text,
-                        word.lang,
-                        word.definition);
-                dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
-            }
-        });
+    }
+
+    @Override
+    public void setDictWithSaveWordLayout(Words word, List<WikiItem> items) {
+        setCenterDialog();
+        setWordLayout(word.word);
+        mAdapter = new WiktionaryAdapter(this, items);
+
+        mFoundWords = null;
+
+        createViewPager();
+
+        setSavedWordToolbar(word);
+
 
     }
 
@@ -286,6 +292,25 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         wlp.gravity = Gravity.BOTTOM;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         getWindow().setAttributes(wlp);
+    }
+
+    private void setSavedWordToolbar(final Words word){
+        ImageButton saveIcon = findViewById(R.id.save_icon);
+        saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp);
+
+        ImageButton editIcon = findViewById(R.id.edit_icon);
+        editIcon.setVisibility(View.VISIBLE);
+        editIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
+                        word.word,
+                        word.lang,
+                        word.definition);
+                dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
+            }
+        });
+
     }
 
     private void createViewPager(){

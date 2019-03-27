@@ -7,6 +7,8 @@ import com.guillermonegrete.tts.CustomTTS.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.DeleteWord;
+import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetDictionaryEntry;
+import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetDictionaryEntryInteractor;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetExternalLink;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetExternalLinksInteractor;
 import com.guillermonegrete.tts.TextProcessing.domain.interactors.GetLayout;
@@ -17,6 +19,8 @@ import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -60,12 +64,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
-                System.out.println(String.format("Got layout: %s", layoutType.name()));
-                System.out.println(word.word);
-                System.out.println(word.definition);
-                System.out.println(word.lang);
-                Boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
-                System.out.println(String.format("Is initialized %s", String.valueOf(isInitialized)));
+                boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
                 if(!isInitialized) customTTS.initializeTTS(word.lang);
 
@@ -87,12 +86,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
             @Override
             public void onDictionaryLayoutDetermined(Words word, List<WikiItem> items) {
-                System.out.println("Got dictionary layout:");
-                System.out.println(word.word);
-                System.out.println(word.definition);
-                System.out.println(word.lang);
-                Boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
-                System.out.println(String.format("Is initialized %s", String.valueOf(isInitialized)));
+                boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
                 if(!isInitialized) customTTS.initializeTTS(word.lang);
                 getExternalLinks(word.lang);
@@ -103,6 +97,31 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         interactor.execute();
 
     }
+
+    @Override
+    public void getDictionaryEntry(final Words word) {
+        boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
+        foundWord = word;
+        if(!isInitialized) customTTS.initializeTTS(word.lang);
+        GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
+
+            @Override
+            public void onEntryNotAvailable() {
+                getExternalLinks(word.lang);
+                mView.setSavedWordLayout(word);
+            }
+
+            @Override
+            public void onDictionaryLayoutDetermined(@NotNull List<WikiItem> items) {
+                getExternalLinks(word.lang);
+                mView.setDictWithSaveWordLayout(word, items);
+            }
+
+
+        });
+        interactor.execute();
+    }
+
 
     @Override
     public void getExternalLinks(String language) {
@@ -126,7 +145,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void onClickBookmark() {
         if(insideLocalDatabase) mView.showDeleteDialog(foundWord.word);
         else mView.showSaveDialog(foundWord);
-
     }
 
     @Override

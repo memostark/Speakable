@@ -57,18 +57,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         }
 
         final Words word = wordsList.get(position);
-        if (word != null) {
-            holder.wordText.setText(word.word);
-            holder.languageText.setText(word.lang);
-            holder.translationText.setText(word.definition);
-            if (word.notes != null) {
-                holder.notesText.setVisibility(View.VISIBLE);
-                holder.notesText.setText(context.getString(R.string.notes_item_label, word.notes));
-            }else {
-                holder.notesText.setVisibility(View.GONE);
-            }
-
-        }
+        if (word != null) holder.setWord(word);
 
         holder.update();
 
@@ -129,6 +118,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         private TextView translationText;
         private TextView notesText;
         private ConstraintLayout container;
+        private Words word;
 
         public WordsViewHolder(View itemView){
             super(itemView);
@@ -164,6 +154,19 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             });
         }
 
+        void setWord(Words word){
+            this.word = word;
+            wordText.setText(word.word);
+            languageText.setText(word.lang);
+            translationText.setText(word.definition);
+            if (word.notes != null) {
+                notesText.setVisibility(View.VISIBLE);
+                notesText.setText(context.getString(R.string.notes_item_label, word.notes));
+            }else {
+                notesText.setVisibility(View.GONE);
+            }
+        }
+
         void selectItem(String item){
             if (multiSelect) {
                 if (selectedItems.contains(item)) {
@@ -176,13 +179,8 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             } else {
                 Intent wiktionaryIntent = new Intent(context, ProcessTextActivity.class);
                 wiktionaryIntent.putExtra("android.intent.extra.PROCESS_TEXT", wordText.getText().toString());
-                wiktionaryIntent.setAction("WITH_FLAG");
+                wiktionaryIntent.putExtra("Word", word);
                 context.startActivity(wiktionaryIntent);
-                /*DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
-                        wordText.getText().toString(),
-                        languageText.getText().toString(),
-                        translationText.getText().toString());
-                dialogFragment.show(((AppCompatActivity) context).getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);*/
             }
         }
     }

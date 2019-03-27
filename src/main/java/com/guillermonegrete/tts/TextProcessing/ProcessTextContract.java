@@ -15,6 +15,8 @@ public interface ProcessTextContract {
 
         void setSavedWordLayout(Words word);
 
+        void setDictWithSaveWordLayout(Words word, List<WikiItem> items);
+
         void setTranslationLayout(Words word);
 
         void setSentenceLayout(Words word);
@@ -36,6 +38,8 @@ public interface ProcessTextContract {
         void editWord();
 
         void getLayout(String text);
+
+        void getDictionaryEntry(Words word);
 
         void getExternalLinks(String language);
 
