@@ -10,8 +10,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/word_edit_text"
-        android:inputType="textCapWords"
-        android:layout_marginBottom="16dp"/>
+        android:inputType="textCapSentences"
+        android:layout_marginBottom="16dp" />
 
     <EditText
         android:id="@+id/new_word_language_edit"
@@ -25,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/translation_edit_text"
-        android:inputType="text" />
+        android:inputType="textCapSentences" />
 
     <EditText
         android:id="@+id/new_notes_edit"

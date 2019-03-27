@@ -41,6 +41,7 @@
     <string name="save_icon_description">Save word</string>
     <string name="definition_label">Definition</string>
     <string name="notes_label">Notes</string>
+    <string name="notes_item_label">Notes: %1$s</string>
 
     <string-array name="language_code_arrays">
         <item>All</item>

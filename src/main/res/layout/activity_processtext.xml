@@ -24,7 +24,9 @@
         android:orientation="horizontal"
         android:padding="8dp"
         android:background="#FFFFBB33"
-        android:layout_margin="1dp">
+        android:layout_marginTop="1dp"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp">
 
         <TextView
             android:id="@+id/text_tts"
@@ -70,7 +72,8 @@
         android:layout_width="wrap_content"
         android:layout_height="400dp"
         android:id="@+id/process_view_pager"
-        android:layout_margin="1dp"/>
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"/>
 
     <com.google.android.material.tabs.TabLayout
         android:layout_width="match_parent"

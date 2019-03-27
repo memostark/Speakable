@@ -6,6 +6,7 @@ import android.graphics.Color;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -13,9 +14,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
 import com.guillermonegrete.tts.R;
@@ -64,7 +63,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             holder.translationText.setText(word.definition);
             if (word.notes != null) {
                 holder.notesText.setVisibility(View.VISIBLE);
-                holder.notesText.setText(word.notes);
+                holder.notesText.setText(context.getString(R.string.notes_item_label, word.notes));
             }else {
                 holder.notesText.setVisibility(View.GONE);
             }
@@ -110,7 +109,6 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                         wordsDAO.deleteWord(intItem);
                         to_remove += ", " + intItem;
                     }
-                    Toast.makeText(context, "To delete: " + to_remove, Toast.LENGTH_SHORT).show();
                     break;
             }
             actionMode.finish();
@@ -130,7 +128,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         private TextView languageText;
         private TextView translationText;
         private TextView notesText;
-        private LinearLayout container;
+        private ConstraintLayout container;
 
         public WordsViewHolder(View itemView){
             super(itemView);
@@ -176,7 +174,6 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                     container.setBackgroundColor(Color.LTGRAY);
                 }
             } else {
-                Toast.makeText(context, "Show more definitions", Toast.LENGTH_SHORT).show();
                 Intent wiktionaryIntent = new Intent(context, ProcessTextActivity.class);
                 wiktionaryIntent.putExtra("android.intent.extra.PROCESS_TEXT", wordText.getText().toString());
                 wiktionaryIntent.setAction("WITH_FLAG");
