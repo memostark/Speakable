@@ -90,7 +90,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 foundWord = word;
                 if(!isInitialized) customTTS.initializeTTS(word.lang);
                 getExternalLinks(word.lang);
-                mView.setWiktionaryLayout(items);
+                mView.setWiktionaryLayout(word, items);
             }
         }, mRepository, dictionaryRepository, text);
 

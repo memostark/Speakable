@@ -6,7 +6,6 @@ import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem
 import com.guillermonegrete.tts.data.source.DictionaryDataSource
 import com.guillermonegrete.tts.data.source.DictionaryRepository
-import com.guillermonegrete.tts.db.Words
 
 class GetDictionaryEntry(
         executor: Executor,

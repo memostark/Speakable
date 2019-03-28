@@ -77,8 +77,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private ProcessTextContract.Presenter presenter;
 
-    private ArrayList<ExternalLink> links;
-
     private ViewPager pager;
 
 
@@ -158,13 +156,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
 
     @Override
-    public void setWiktionaryLayout(List<WikiItem> items) {
+    public void setWiktionaryLayout(Words word, List<WikiItem> items) {
 
         setCenterDialog();
         setWordLayout(getSelectedText());
         mAdapter = new WiktionaryAdapter(this, items);
 
-        mFoundWords = null;
+        mFoundWords = word;
 
         createViewPager();
     }
@@ -186,17 +184,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     public void setDictWithSaveWordLayout(Words word, List<WikiItem> items) {
-        setCenterDialog();
-        setWordLayout(word.word);
-        mAdapter = new WiktionaryAdapter(this, items);
-
-        mFoundWords = null;
-
-        createViewPager();
-
+        setWiktionaryLayout(word, items);
         setSavedWordToolbar(word);
-
-
     }
 
     @Override
@@ -220,8 +209,11 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     public void setExternalDictionary(List<ExternalLink> links) {
-        this.links = (ArrayList<ExternalLink>) links;
-        pager.setAdapter(new MyPageAdapter(getSupportFragmentManager()));
+        MyPageAdapter adapter = new MyPageAdapter(getSupportFragmentManager());
+        if(mAdapter != null) adapter.addFragment(DefinitionFragment.newInstance(mAdapter));
+        adapter.addFragment(TranslationFragment.newInstance(mFoundWords));
+        adapter.addFragment(ExternalLinksFragment.newInstance(mSelectedText, (ArrayList<ExternalLink>) links));
+        pager.setAdapter(adapter);
     }
 
     @Override
@@ -351,6 +343,12 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private class MyPageAdapter extends FragmentPagerAdapter{
 
+        private List<Fragment> fragments = new ArrayList<>();
+
+        void addFragment(Fragment fragment) {
+            fragments.add(fragment);
+        }
+
         MyPageAdapter(@NonNull FragmentManager fm) {
             super(fm);
         }
@@ -358,18 +356,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         @NonNull
         @Override
         public Fragment getItem(int position) {
-            switch (position){
-                case 0: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
-                case 1: return ExternalLinksFragment.newInstance(mSelectedText, links);
-                default: return DefinitionFragment.newInstance(mFoundWords, mTranslation, mAdapter);
-            }
+            return fragments.get(position);
         }
 
         @Override
         public int getCount() {
-            return 2;
+            return fragments.size();
         }
-
     }
 }
 

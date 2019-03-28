@@ -11,7 +11,7 @@ import java.util.List;
 public interface ProcessTextContract {
 
     interface View extends BaseView<Presenter>{
-        void setWiktionaryLayout(List<WikiItem> items);
+        void setWiktionaryLayout(Words word, List<WikiItem> items);
 
         void setSavedWordLayout(Words word);
 
