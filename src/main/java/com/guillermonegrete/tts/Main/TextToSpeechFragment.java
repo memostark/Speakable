@@ -15,6 +15,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.R;
@@ -49,14 +50,14 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
     public View onCreateView(final LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.fragment_main_tts, container, false);
 
-        fragment_layout.findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    // TO DO
-                }
-        });
+//        fragment_layout.findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//                    // TO DO
+//                }
+//        });
 
-        Button playBtn = fragment_layout.findViewById(R.id.play_btn);
+        ImageButton playBtn = fragment_layout.findViewById(R.id.play_btn);
         webview = fragment_layout.findViewById(R.id.webview_wiktionary);
         webview.setWebViewClient(new HelloWebViewClient());
 

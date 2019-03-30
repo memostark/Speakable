@@ -16,7 +16,7 @@
 
     <string name="play_button_name">Play</string>
     <string name="stop_button_name">Stop</string>
-    <string name="startBubble_button_name">Start overlay mode</string>
+    <string name="startBubble_button_name">Overlay mode</string>
 
     <string name="no_entry">No entry</string>
 
@@ -42,6 +42,7 @@
     <string name="definition_label">Definition</string>
     <string name="notes_label">Notes</string>
     <string name="notes_item_label">Notes: %1$s</string>
+    <string name="tts_edit_text_hint">Enter text to reproduce</string>
 
     <string-array name="language_code_arrays">
         <item>All</item>
