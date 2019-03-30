@@ -39,8 +39,15 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
 
             }
         });
-        view.setDictionaryWebPage(text);
+    }
 
+    @Override
+    public void onClickShowBrowser(String text) {
+        view.setDictionaryWebPage(text);
+    }
+
+    @Override
+    public void onClickPaste() {
 
     }
 }

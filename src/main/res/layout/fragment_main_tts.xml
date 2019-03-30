@@ -62,7 +62,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@+id/tts_ev"
-        app:layout_constraintEnd_toStartOf="@+id/imageButton3"
+        app:layout_constraintEnd_toStartOf="@+id/browse_btn"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tts_ev"
         app:layout_constraintTop_toTopOf="@+id/tts_ev"
@@ -75,12 +75,12 @@
         android:layout_marginEnd="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/imageButton3"
-        app:layout_constraintTop_toTopOf="@+id/imageButton3"
+        app:layout_constraintStart_toEndOf="@+id/browse_btn"
+        app:layout_constraintTop_toTopOf="@+id/browse_btn"
         app:srcCompat="@drawable/ic_content_paste_black_24dp" />
 
     <ImageButton
-        android:id="@+id/imageButton3"
+        android:id="@+id/browse_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toStartOf="@+id/imageButton2"

@@ -7,5 +7,9 @@ public interface MainTTSContract {
 
     interface Presenter{
         void onClickReproduce(String text);
+
+        void onClickShowBrowser(String text);
+
+        void onClickPaste();
     }
 }

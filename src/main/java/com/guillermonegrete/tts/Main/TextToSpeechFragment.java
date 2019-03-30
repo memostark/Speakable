@@ -24,6 +24,8 @@ import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
 
+import java.util.Objects;
+
 public class TextToSpeechFragment extends Fragment implements MainTTSContract.View {
 
     protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
@@ -58,15 +60,26 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
 //        });
 
         ImageButton playBtn = fragment_layout.findViewById(R.id.play_btn);
+        ImageButton browseBtn = fragment_layout.findViewById(R.id.browse_btn);
+
         webview = fragment_layout.findViewById(R.id.webview_wiktionary);
         webview.setWebViewClient(new HelloWebViewClient());
+
+        final EditText mEdit   = fragment_layout.findViewById(R.id.tts_ev);
 
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                EditText mEdit   = fragment_layout.findViewById(R.id.tts_ev);
-                final String text = mEdit.getText().toString();
+                String text = mEdit.getText().toString();
                 presenter.onClickReproduce(text);
+            }
+        });
+
+        browseBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String text = mEdit.getText().toString();
+                presenter.onClickShowBrowser(text);
             }
         });
 
@@ -74,7 +87,7 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
             @Override
             public void onClick(View view) {
                 final MediaProjectionManager manager
-                        = (MediaProjectionManager)getActivity().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                        = (MediaProjectionManager) Objects.requireNonNull(getActivity()).getSystemService(Context.MEDIA_PROJECTION_SERVICE);
                 if(manager != null) {
                     final Intent permissionIntent = manager.createScreenCaptureIntent();
                     startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
