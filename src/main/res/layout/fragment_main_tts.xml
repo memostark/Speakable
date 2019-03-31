@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -31,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="@string/startBubble_button_name"
-        app:layout_constraintEnd_toStartOf="@+id/button"
+        app:layout_constraintEnd_toStartOf="@+id/clipboard_btn"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tts_ev" />
 
@@ -47,11 +46,11 @@
         app:layout_constraintTop_toBottomOf="@+id/startBubble_btn" />
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/clipboard_btn"
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="wrap_content"
         android:layout_height="48dp"
-        android:text="Clipboard Mode"
+        android:text="@string/clipboard_btn_caption"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/startBubble_btn"
@@ -66,10 +65,11 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tts_ev"
         app:layout_constraintTop_toTopOf="@+id/tts_ev"
-        app:srcCompat="@drawable/ic_volume_up_black_24dp" />
+        app:srcCompat="@drawable/ic_volume_up_black_24dp"
+        android:contentDescription="@string/play_tts_icon_description" />
 
     <ImageButton
-        android:id="@+id/imageButton2"
+        android:id="@+id/paste_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
@@ -77,15 +77,17 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/browse_btn"
         app:layout_constraintTop_toTopOf="@+id/browse_btn"
-        app:srcCompat="@drawable/ic_content_paste_black_24dp" />
+        app:srcCompat="@drawable/ic_content_paste_black_24dp"
+        android:contentDescription="@string/paste_icon_description" />
 
     <ImageButton
         android:id="@+id/browse_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toStartOf="@+id/imageButton2"
+        app:layout_constraintEnd_toStartOf="@+id/paste_btn"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/play_btn"
         app:layout_constraintTop_toTopOf="@+id/play_btn"
-        app:srcCompat="@drawable/ic_public_black_24dp" />
+        app:srcCompat="@drawable/ic_public_black_24dp"
+        android:contentDescription="@string/browse_icon_description" />
 </androidx.constraintlayout.widget.ConstraintLayout>

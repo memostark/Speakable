@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.Main;
 public interface MainTTSContract {
     interface View {
         void setDictionaryWebPage(String word);
+
+        void setEditText(String text);
     }
 
     interface Presenter{
@@ -10,6 +12,6 @@ public interface MainTTSContract {
 
         void onClickShowBrowser(String text);
 
-        void onClickPaste();
+        void onClickPaste(String text);
     }
 }

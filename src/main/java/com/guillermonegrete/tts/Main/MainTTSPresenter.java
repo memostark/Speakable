@@ -47,7 +47,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     }
 
     @Override
-    public void onClickPaste() {
-
+    public void onClickPaste(String text) {
+        view.setEditText(text);
     }
 }

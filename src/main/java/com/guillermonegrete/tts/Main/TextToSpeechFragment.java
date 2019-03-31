@@ -1,6 +1,8 @@
 package com.guillermonegrete.tts.Main;
 
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
@@ -13,7 +15,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
@@ -26,6 +27,7 @@ import com.guillermonegrete.tts.threading.MainThreadImpl;
 
 import java.util.Objects;
 
+
 public class TextToSpeechFragment extends Fragment implements MainTTSContract.View {
 
     protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
@@ -33,6 +35,7 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
 
     private MainTTSPresenter presenter;
 
+    private EditText editText;
     private WebView webview;
 
     @Override
@@ -61,16 +64,18 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
 
         ImageButton playBtn = fragment_layout.findViewById(R.id.play_btn);
         ImageButton browseBtn = fragment_layout.findViewById(R.id.browse_btn);
+        ImageButton pasteBtn = fragment_layout.findViewById(R.id.paste_btn);
+
+        editText = fragment_layout.findViewById(R.id.tts_ev);
 
         webview = fragment_layout.findViewById(R.id.webview_wiktionary);
         webview.setWebViewClient(new HelloWebViewClient());
 
-        final EditText mEdit   = fragment_layout.findViewById(R.id.tts_ev);
 
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String text = mEdit.getText().toString();
+                String text = editText.getText().toString();
                 presenter.onClickReproduce(text);
             }
         });
@@ -78,10 +83,19 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
         browseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String text = mEdit.getText().toString();
+                String text = editText.getText().toString();
                 presenter.onClickShowBrowser(text);
             }
         });
+
+        pasteBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                presenter.onClickPaste(getClipText());
+            }
+        });
+
+
 
         fragment_layout.findViewById(R.id.startBubble_btn).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -116,6 +130,29 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
     @Override
     public void setDictionaryWebPage(String word) {
         webview.loadUrl("https://en.m.wiktionary.org/wiki/" + word);
+    }
+
+    @Override
+    public void setEditText(String text) {
+        editText.setText(text);
+    }
+
+    private String getClipText(){
+        ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
+
+        if(clipboard == null) return "";
+
+        ClipData clip = clipboard.getPrimaryClip();
+
+        if(clip == null) return "";
+        if(clip.getItemCount() <= 0) return"";
+
+        final CharSequence pasteData = clip.getItemAt(0).getText();
+        if(pasteData == null){
+            return "";
+        }else {
+            return pasteData.toString();
+        }
     }
 
     private class HelloWebViewClient extends WebViewClient {
