@@ -1,23 +1,29 @@
 package com.guillermonegrete.tts.Main;
 
 
+import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.Services.ScreenTextService;
@@ -37,6 +43,8 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
 
     private EditText editText;
     private WebView webview;
+    private LinearLayout bottomSheet;
+    private BottomSheetBehavior bottomSheetBehavior;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -50,17 +58,15 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
         );
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Nullable
     @Override
-    public View onCreateView(final LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull final LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.fragment_main_tts, container, false);
 
-//        fragment_layout.findViewById(R.id.stop_btn).setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//                    // TO DO
-//                }
-//        });
+        bottomSheet = fragment_layout.findViewById(R.id.bottom_sheet);
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
 
         ImageButton playBtn = fragment_layout.findViewById(R.id.play_btn);
         ImageButton browseBtn = fragment_layout.findViewById(R.id.browse_btn);
@@ -69,6 +75,13 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
         editText = fragment_layout.findViewById(R.id.tts_ev);
 
         webview = fragment_layout.findViewById(R.id.webview_wiktionary);
+        webview.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                view.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
+            }
+        });
         webview.setWebViewClient(new HelloWebViewClient());
 
 
@@ -85,6 +98,7 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
             public void onClick(View view) {
                 String text = editText.getText().toString();
                 presenter.onClickShowBrowser(text);
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             }
         });
 
