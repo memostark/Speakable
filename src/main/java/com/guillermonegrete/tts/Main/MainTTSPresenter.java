@@ -9,7 +9,7 @@ import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.db.Words;
 
-public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
+            public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
 
     private CustomTTS tts;
     private MSTranslatorSource languageSource;
@@ -28,7 +28,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         languageSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
-                Boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(word.lang);
+                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(word.lang);
                 if(!isInitialized) tts.initializeTTS(word.lang);
                 PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
                 interactor.execute();
@@ -49,5 +49,15 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     @Override
     public void onClickPaste(String text) {
         view.setEditText(text);
+    }
+
+    @Override
+    public void onStartOverlayMode() {
+        view.startOverlayService();
+    }
+
+    @Override
+    public void onStartClipboardMode() {
+        view.startClipboardService();
     }
 }

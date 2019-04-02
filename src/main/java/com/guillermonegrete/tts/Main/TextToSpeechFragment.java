@@ -35,11 +35,13 @@ import com.guillermonegrete.tts.threading.MainThreadImpl;
 
 import java.util.Objects;
 
+import static com.guillermonegrete.tts.Services.ScreenTextService.NORMAL_SERVICE;
+import static com.guillermonegrete.tts.Services.ScreenTextService.NO_FLOATING_ICON_SERVICE;
+
 
 public class TextToSpeechFragment extends Fragment implements MainTTSContract.View {
 
     protected static final int REQUEST_CODE_SCREEN_CAPTURE = 100;
-    public static final String NORMAL_SERVICE = "startService";
 
     private MainTTSPresenter presenter;
 
@@ -122,12 +124,14 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
         fragment_layout.findViewById(R.id.startBubble_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final MediaProjectionManager manager
-                        = (MediaProjectionManager) Objects.requireNonNull(getActivity()).getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-                if(manager != null) {
-                    final Intent permissionIntent = manager.createScreenCaptureIntent();
-                    startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
-                }
+                presenter.onStartOverlayMode();
+            }
+        });
+
+        fragment_layout.findViewById(R.id.clipboard_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                presenter.onStartClipboardMode();
             }
         });
 
@@ -157,6 +161,23 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
     @Override
     public void setEditText(String text) {
         editText.setText(text);
+    }
+
+    @Override
+    public void startClipboardService() {
+        final Intent intent = new Intent(getActivity(), ScreenTextService.class);
+        intent.setAction(NO_FLOATING_ICON_SERVICE);
+        getActivity().startService(intent);
+    }
+
+    @Override
+    public void startOverlayService() {
+        final MediaProjectionManager manager
+                = (MediaProjectionManager) Objects.requireNonNull(getActivity()).getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        if(manager != null) {
+            final Intent permissionIntent = manager.createScreenCaptureIntent();
+            startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE);
+        }
     }
 
     private String getClipText(){

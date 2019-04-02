@@ -64,7 +64,6 @@ import com.guillermonegrete.tts.CustomViews.TrashView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.Main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
-import com.guillermonegrete.tts.Main.TextToSpeechFragment;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -120,6 +119,13 @@ public class ScreenTextService extends Service {
     private boolean isForeground;
 
     private ClipboardManager clipboard;
+
+    /*
+    *  Type of service
+    * */
+    public static final String NORMAL_SERVICE = "startService";
+    public static final String NO_FLOATING_ICON_SERVICE = "startNoFloatingIcon";
+    public static final String LONGPRESS_SERVICE = "showServiceg";
 
 
     @Nullable
@@ -637,16 +643,16 @@ public class ScreenTextService extends Service {
         if(intent!=null) {
             String action = intent.getAction();
             Log.d("prueba","Intent action " + action);
-            if(TextToSpeechFragment.NORMAL_SERVICE.equals(action) ) {
+            if(NORMAL_SERVICE.equals(action) ) {
                 addViews();
                 if (!hasPermission) {
                     permissionIntent = intent;
                     resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
                 }
                 hasPermission = true;
-            }else if(ProcessTextActivity.LONGPRESS_SERVICE_NOSHOW.equals(action)){
-                action=ProcessTextActivity.LONGPRESS_SERVICE;
-            }else if(ProcessTextActivity.LONGPRESS_SERVICE.equals(action)) {
+            }else if(NO_FLOATING_ICON_SERVICE.equals(action)){
+                action=LONGPRESS_SERVICE;
+            }else if(LONGPRESS_SERVICE.equals(action)) {
                 if(!hasPermission){
                     final Intent intentGetPermission = new Intent(this, AcquireScreenshotPermission.class);
                     intentGetPermission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

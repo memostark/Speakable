@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
+import static com.guillermonegrete.tts.Services.ScreenTextService.NO_FLOATING_ICON_SERVICE;
 
 
 public class ProcessTextActivity extends FragmentActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
@@ -65,8 +66,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     private WiktionaryAdapter mAdapter;
 
     private String TAG = this.getClass().getSimpleName();
-    public static final String LONGPRESS_SERVICE_NOSHOW = "startServiceLong";
-    public static final String LONGPRESS_SERVICE = "showServiceg";
 
     private String mTranslation;
     private String mSelectedText;
@@ -89,7 +88,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
 
         final Intent intentService = new Intent(this, ScreenTextService.class);
-        intentService.setAction(LONGPRESS_SERVICE_NOSHOW);
+        intentService.setAction(NO_FLOATING_ICON_SERVICE);
         startService(intentService);
 
         mAutoTTS = getAutoTTSPreference();

@@ -5,6 +5,11 @@ public interface MainTTSContract {
         void setDictionaryWebPage(String word);
 
         void setEditText(String text);
+
+        void startClipboardService();
+
+        void startOverlayService();
+
     }
 
     interface Presenter{
@@ -13,5 +18,9 @@ public interface MainTTSContract {
         void onClickShowBrowser(String text);
 
         void onClickPaste(String text);
+
+        void onStartOverlayMode();
+
+        void onStartClipboardMode();
     }
 }
