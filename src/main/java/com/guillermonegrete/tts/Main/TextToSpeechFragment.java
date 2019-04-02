@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.Main;
 
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -17,6 +18,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.EditText;
@@ -43,7 +45,6 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
 
     private EditText editText;
     private WebView webview;
-    private LinearLayout bottomSheet;
     private BottomSheetBehavior bottomSheetBehavior;
 
     @Override
@@ -64,7 +65,7 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
     public View onCreateView(@NonNull final LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.fragment_main_tts, container, false);
 
-        bottomSheet = fragment_layout.findViewById(R.id.bottom_sheet);
+        LinearLayout bottomSheet = fragment_layout.findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
 
@@ -73,6 +74,12 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
         ImageButton pasteBtn = fragment_layout.findViewById(R.id.paste_btn);
 
         editText = fragment_layout.findViewById(R.id.tts_ev);
+        editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if(hasFocus) bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            }
+        });
 
         webview = fragment_layout.findViewById(R.id.webview_wiktionary);
         webview.setOnTouchListener(new View.OnTouchListener() {
@@ -96,6 +103,7 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
         browseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                hideKeyboard();
                 String text = editText.getText().toString();
                 presenter.onClickShowBrowser(text);
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -166,6 +174,19 @@ public class TextToSpeechFragment extends Fragment implements MainTTSContract.Vi
             return "";
         }else {
             return pasteData.toString();
+        }
+    }
+
+    private void hideKeyboard(){
+        Activity context = getActivity();
+        if(context != null){
+            InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (inputMethodManager != null) {
+                View focusedView = context.getCurrentFocus();
+                if (focusedView != null) {
+                    inputMethodManager.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
+                }
+            }
         }
     }
 

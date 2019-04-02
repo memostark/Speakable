@@ -3,8 +3,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/bottom_sheet"
     android:layout_width="match_parent"
-    android:layout_height="340dp"
-    android:background="@android:color/darker_gray"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
     android:orientation="vertical"
     app:behavior_hideable="true"
     app:behavior_skipCollapsed="true"
@@ -12,15 +12,16 @@
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:background="#F35678"
+        android:layout_height="40dp"
+        android:background="@drawable/browser_tab_background"
         android:gravity="center"
-        android:text="Swipe down from here to hide"
+        android:text="Swipe to hide"
         android:textColor="@android:color/white" />
 
     <WebView
         android:id="@+id/webview_wiktionary"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="match_parent"
+        android:background="@android:color/darker_gray"/>
 
 </LinearLayout>
