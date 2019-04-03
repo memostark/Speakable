@@ -1,88 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:theme="@android:style/Theme.Dialog"
-    tools:context=".TextProcessing.ProcessTextActivity"
-    android:id="@+id/testLayout"
-    android:visibility="visible"
+    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
     android:layout_marginTop="50dp"
     android:layout_marginBottom="50dp"
-    android:focusable="true"
-    android:background="@drawable/black_border"
-    android:layout_marginEnd="1dp"
-    android:gravity="center_horizontal"
-    android:orientation="vertical">
-
-
+    android:layout_marginStart="5dp"
+    android:layout_marginEnd="5dp"
+    android:theme="@android:style/Theme.Dialog"
+    app:cardElevation="5dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:background="#FFFFBB33"
-        android:layout_marginTop="1dp"
-        android:layout_marginStart="1dp"
-        android:layout_marginEnd="1dp">
+        tools:context=".TextProcessing.ProcessTextActivity"
+        android:id="@+id/testLayout"
+        android:focusable="true"
+        android:background="@drawable/black_border"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/text_tts"
-            android:layout_width="0dp"
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            tools:text="Selected text" />
-        <ImageButton
-            android:id="@+id/save_icon"
-            android:paddingStart="3dp"
-            android:paddingEnd="3dp"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:background="#FFFFBB33"
+            android:layout_marginTop="1dp"
+            android:layout_marginStart="1dp"
+            android:layout_marginEnd="1dp">
+
+            <TextView
+                android:id="@+id/text_tts"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#000000"
+                android:textSize="20sp"
+                tools:text="Selected text" />
+            <ImageButton
+                android:id="@+id/save_icon"
+                android:paddingStart="3dp"
+                android:paddingEnd="3dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_bookmark_border_black_24dp"
+                android:contentDescription="@string/play_tts_icon_description"
+                android:background="?android:selectableItemBackgroundBorderless"/>
+            <ImageButton
+                android:id="@+id/edit_icon"
+                android:paddingStart="3dp"
+                android:paddingEnd="3dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_edit_black_24dp"
+                android:contentDescription="@string/edit_icon_description"
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:visibility="gone"/>
+            <ImageButton
+                android:id="@+id/play_tts_icon"
+                android:paddingStart="3dp"
+                android:paddingEnd="3dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_volume_up_black_24dp"
+                android:contentDescription="@string/save_icon_description"
+                android:background="?android:selectableItemBackgroundBorderless"/>
+
+        </LinearLayout>
+
+
+        <androidx.viewpager.widget.ViewPager
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_bookmark_border_black_24dp"
-            android:contentDescription="@string/play_tts_icon_description"
-            android:background="?android:selectableItemBackgroundBorderless"/>
-        <ImageButton
-            android:id="@+id/edit_icon"
-            android:paddingStart="3dp"
-            android:paddingEnd="3dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_edit_black_24dp"
-            android:contentDescription="@string/edit_icon_description"
-            android:background="?android:selectableItemBackgroundBorderless"
-            android:visibility="gone"/>
-        <ImageButton
-            android:id="@+id/play_tts_icon"
-            android:paddingStart="3dp"
-            android:paddingEnd="3dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_volume_up_black_24dp"
-            android:contentDescription="@string/save_icon_description"
-            android:background="?android:selectableItemBackgroundBorderless"/>
+            android:layout_height="400dp"
+            android:id="@+id/process_view_pager"
+            android:layout_marginStart="1dp"
+            android:layout_marginEnd="1dp"/>
+
+        <com.google.android.material.tabs.TabLayout
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:id="@+id/pager_menu_dots"
+            app:tabBackground="@drawable/tab_selector"
+            app:tabGravity="center"
+            app:tabIndicatorHeight="0dp"/>
+
+
 
     </LinearLayout>
 
-
-    <androidx.viewpager.widget.ViewPager
-        android:layout_width="wrap_content"
-        android:layout_height="400dp"
-        android:id="@+id/process_view_pager"
-        android:layout_marginStart="1dp"
-        android:layout_marginEnd="1dp"/>
-
-    <com.google.android.material.tabs.TabLayout
-        android:layout_width="match_parent"
-        android:layout_height="20dp"
-        android:id="@+id/pager_menu_dots"
-        app:tabBackground="@drawable/tab_selector"
-        app:tabGravity="center"
-        app:tabIndicatorHeight="0dp"/>
-
-
-
-</LinearLayout>
+</androidx.cardview.widget.CardView>
