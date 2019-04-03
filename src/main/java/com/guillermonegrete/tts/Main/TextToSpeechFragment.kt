@@ -2,11 +2,10 @@ package com.guillermonegrete.tts.Main
 
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -17,15 +16,12 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.LinearLayout
+import android.widget.*
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.CustomTTS.CustomTTS
@@ -34,8 +30,6 @@ import com.guillermonegrete.tts.Services.ScreenTextService
 import com.guillermonegrete.tts.ThreadExecutor
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import com.guillermonegrete.tts.threading.MainThreadImpl
-
-import java.util.Objects
 
 import com.guillermonegrete.tts.Services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.Services.ScreenTextService.NO_FLOATING_ICON_SERVICE
@@ -48,6 +42,9 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
     private lateinit var editText: EditText
     private lateinit var webview: WebView
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<*>
+
+    private lateinit var clipboardButton: Button
+    private lateinit var overlayButton: Button
 
     private val clipText: String
         get() {
@@ -81,6 +78,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.how_to_menu_item -> {
+                playTutorial()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -126,9 +124,13 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
 
 
-        fragment_layout.findViewById<View>(R.id.startBubble_btn).setOnClickListener { presenter!!.onStartOverlayMode() }
+        overlayButton = fragment_layout.findViewById<Button>(R.id.startBubble_btn).apply {
+            setOnClickListener { presenter?.onStartOverlayMode() }
+        }
 
-        fragment_layout.findViewById<View>(R.id.clipboard_btn).setOnClickListener { presenter!!.onStartClipboardMode() }
+        clipboardButton = fragment_layout.findViewById<Button>(R.id.clipboard_btn).apply {
+            setOnClickListener { presenter?.onStartClipboardMode() }
+        }
 
         return fragment_layout
     }
@@ -175,6 +177,39 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
             if (focusedView != null) {
                 inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
             }
+        }
+    }
+
+    private fun playTutorial(){
+        activity?.let {
+
+            val guideOverlay: TourGuide = TourGuide.create(it){
+                toolTip {
+                    title{"Enable overlay mode"}
+                    description { "Shows floating icon that allows you to select text to reproduce" }
+                }
+                overlay {
+                    backgroundColor { Color.parseColor("#66FF0000") }
+                    disableClickThroughHole(true)
+                    setOnClickListener(View.OnClickListener { this@create.cleanUp() })
+                }
+            }
+
+            val guide: TourGuide? = TourGuide.create(it){
+                toolTip {
+                    title{"Enable clipboard mode"}
+                    description { "Shows dialog with translation whenever text is copied to clipboard" }
+                }
+                overlay {
+                    backgroundColor { Color.parseColor("#66FF0000") }
+                    disableClickThroughHole(true)
+                    setOnClickListener(View.OnClickListener {
+                        this@create.cleanUp()
+                        guideOverlay.playOn(overlayButton)
+                    })
+                }
+            }.playOn(clipboardButton)
+
         }
     }
 
