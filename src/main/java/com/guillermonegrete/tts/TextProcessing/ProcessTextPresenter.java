@@ -48,6 +48,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         mView.setPresenter(this);
     }
 
+
+
+
     @Override
     public void addNewWord() {
 
@@ -57,6 +60,17 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void editWord() {
 
+    }
+
+    @Override
+    public void start(Words word) {
+        getDictionaryEntry(word);
+    }
+
+    @Override
+    public void start(String selectedText) {
+        mView.startService();
+        getLayout(selectedText);
     }
 
     @Override

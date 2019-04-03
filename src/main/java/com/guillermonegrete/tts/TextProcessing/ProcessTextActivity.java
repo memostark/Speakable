@@ -86,11 +86,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         mSelectedText = getSelectedText();
 
-
-        final Intent intentService = new Intent(this, ScreenTextService.class);
-        intentService.setAction(NO_FLOATING_ICON_SERVICE);
-        startService(intentService);
-
         mAutoTTS = getAutoTTSPreference();
 
         presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
@@ -102,9 +97,10 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 CustomTTS.getInstance(getApplicationContext()));
 
         Words extraWord = getIntent().getParcelableExtra("Word");
-        if(extraWord != null) presenter.getDictionaryEntry(extraWord);
-        else presenter.getLayout(getSelectedText());
-
+        if(extraWord != null) presenter.start(extraWord);
+        else {
+            presenter.start(getSelectedText());
+        }
     }
 
     @Override
@@ -250,6 +246,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         ImageButton editIcon = findViewById(R.id.edit_icon);
         editIcon.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void startService() {
+        final Intent intentService = new Intent(this, ScreenTextService.class);
+        intentService.setAction(NO_FLOATING_ICON_SERVICE);
+        startService(intentService);
     }
 
 

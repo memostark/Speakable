@@ -28,6 +28,8 @@ public interface ProcessTextContract {
         void showDeleteDialog(String word);
 
         void showWordDeleted();
+
+        void startService();
     }
 
     interface Presenter extends BasePresenter{
@@ -36,6 +38,10 @@ public interface ProcessTextContract {
 
 
         void editWord();
+
+        void start(Words word);
+
+        void start(String selectedText);
 
         void getLayout(String text);
 

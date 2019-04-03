@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -44,14 +45,15 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         notifyDataSetChanged();
     }
 
+    @NonNull
     @Override
-    public WordsViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public WordsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         final View itemView = layoutInflater.inflate(R.layout.saved_word_item, parent, false);
         return new WordsViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(WordsViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull WordsViewHolder holder, int position) {
         if (wordsList == null) {
             return;
         }
@@ -91,12 +93,10 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
             switch (menuItem.getItemId()){
                 case (R.id.action_menu_delete):
-                    String to_remove="";
+                    // TODO move this code to view model
                     WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
-                    //StringBuilder stringBuilder =
                     for (String intItem : selectedItems) {
                         wordsDAO.deleteWord(intItem);
-                        to_remove += ", " + intItem;
                     }
                     break;
             }

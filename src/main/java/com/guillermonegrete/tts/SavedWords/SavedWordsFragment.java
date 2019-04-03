@@ -1,14 +1,13 @@
 package com.guillermonegrete.tts.SavedWords;
 
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -49,7 +48,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     private List<Words> words;
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         this.context = context;
         wordListAdapter = new SavedWordListAdapter(context);
@@ -64,7 +63,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.fragment_saved_words, container, false);
 
         mRecyclerView = fragment_layout.findViewById(R.id.recyclerview_saved_words);
@@ -135,7 +134,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             }
 
             @Override
-            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 return false;
             }
 
@@ -151,7 +150,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             }
 
             @Override
-            public void onChildDraw(Canvas canvas, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+            public void onChildDraw(@NonNull Canvas canvas, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
                 if (!initiated) {
                     init();
                 }
