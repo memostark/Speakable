@@ -214,7 +214,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     public void showSaveDialog(Words word) {
         DialogFragment dialogFragment;
-        dialogFragment = SaveWordDialogFragment.newInstance(word.word, word.lang, word.definition);
+        dialogFragment = SaveWordDialogFragment.newInstance(word);
         dialogFragment.show(getSupportFragmentManager(), "New word process");
     }
 
@@ -297,10 +297,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         editIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
-                        word.word,
-                        word.lang,
-                        word.definition);
+                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(word);
                 dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
             }
         });
@@ -333,10 +330,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         editIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(
-                        word.word,
-                        word.lang,
-                        word.definition);
+                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(word);
                 dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
             }
         });

@@ -109,7 +109,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private void showSaveDialog() {
         DialogFragment dialogFragment;
-        dialogFragment = SaveWordDialogFragment.newInstance(null, null, null);
+        dialogFragment = SaveWordDialogFragment.newInstance(null);
         dialogFragment.show(getActivity().getSupportFragmentManager(), "New word");
     }
 

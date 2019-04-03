@@ -22,30 +22,26 @@ import com.guillermonegrete.tts.db.WordsDatabase;
 
 public class SaveWordDialogFragment extends DialogFragment {
     private Context context;
-    private String wordExtra;
-    private String languageExtra;
-    private String translationExtra;
 
-    private static final String EXTRA_WORD = "word";
-    private static final String EXTRA_LANGUAGE= "language";
-    private static final String EXTRA_TRANSLATION = "translation";
+    private Words wordItem;
+    private static final String EXTRA_WORD_OBJECT = "wordObject";
+
 
     public static final String TAG_DIALOG_UPDATE_WORD = "dialog_update_word";
 
-    public static SaveWordDialogFragment newInstance(String word, String language, String translation){
+
+    public static SaveWordDialogFragment newInstance(Words word){
         SaveWordDialogFragment fragment = new SaveWordDialogFragment();
 
         Bundle args = new Bundle();
-        args.putString(EXTRA_WORD, word);
-        args.putString(EXTRA_LANGUAGE, language);
-        args.putString(EXTRA_TRANSLATION, translation);
+        args.putParcelable(EXTRA_WORD_OBJECT, word);
         fragment.setArguments(args);
 
         return fragment;
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         this.context = context;
     }
@@ -54,9 +50,9 @@ public class SaveWordDialogFragment extends DialogFragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
-        wordExtra = args.getString(EXTRA_WORD);
-        languageExtra = args.getString(EXTRA_LANGUAGE);
-        translationExtra = args.getString(EXTRA_TRANSLATION);
+        if (args != null) {
+            wordItem = args.getParcelable(EXTRA_WORD_OBJECT);
+        }
     }
 
     @NonNull
@@ -69,19 +65,14 @@ public class SaveWordDialogFragment extends DialogFragment {
         final EditText translationEditText = dialogue_layout.findViewById(R.id.new_translation_edit);
         final EditText notesEditText = dialogue_layout.findViewById(R.id.new_notes_edit);
 
-        if(wordExtra != null){
-            wordEditText.setText(wordExtra);
-            wordEditText.setSelection(wordExtra.length());
+        if(wordItem != null) {
+            wordEditText.setText(wordItem.word);
+            wordEditText.setSelection(wordItem.word.length());
+            languageEditText.setText(wordItem.lang);
+            translationEditText.setText(wordItem.definition);
+            notesEditText.setText(wordItem.notes);
         }
 
-        if(languageExtra != null){
-            languageEditText.setText(languageExtra);
-            languageEditText.setSelection(languageExtra.length());
-        }
-        if(translationExtra != null){
-            translationEditText.setText(translationExtra);
-            translationEditText.setSelection(translationExtra.length());
-        }
 
         builder.setView(dialogue_layout)
                 .setTitle(getString(R.string.dialog_new_word_title))
@@ -118,7 +109,8 @@ public class SaveWordDialogFragment extends DialogFragment {
         if(TAG_DIALOG_UPDATE_WORD.equals(getTag())){
 
             Toast.makeText(getActivity(), "Word updated", Toast.LENGTH_SHORT).show();
-            Words wordToUpdate = wordsDAO.findWord(wordExtra);
+            // TODO allow users to update other fields
+            Words wordToUpdate = wordsDAO.findWord(wordItem.word);
             if (wordToUpdate != null)  {
                 if (wordToUpdate.notes == null){
                     wordToUpdate.notes = notes;
