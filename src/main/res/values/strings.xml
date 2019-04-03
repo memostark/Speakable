@@ -46,6 +46,7 @@
     <string name="paste_icon_description">Paste</string>
     <string name="browse_icon_description">Browse</string>
     <string name="clipboard_btn_caption">Clipboard Mode</string>
+    <string name="how_to_menu_title">How to use</string>
 
     <string-array name="language_code_arrays">
         <item>All</item>

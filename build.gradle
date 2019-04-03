@@ -29,6 +29,9 @@ repositories {
         maven { url 'https://kotlin.bintray.com/kotlinx/' }
     }
     mavenCentral()
+    maven() {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
 }
 
 ext {
@@ -78,6 +81,12 @@ dependencies {
     annotationProcessor "androidx.lifecycle:lifecycle-compiler:2.1.0-alpha03"
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+
+    // How to use app library
+    implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {
+        transitive=true
+    }
 }
 
 apply plugin: 'com.google.gms.google-services'
