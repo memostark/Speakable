@@ -129,7 +129,7 @@ public class ProcessTextPresenterTest {
 
 
         verify(view, never()).setTranslationLayout(return_word);
-        verify(view).setWiktionaryLayout(wiktionaryLanguages);
+//        verify(view).setWiktionaryLayout(wiktionaryLanguages);
 
     }
 
