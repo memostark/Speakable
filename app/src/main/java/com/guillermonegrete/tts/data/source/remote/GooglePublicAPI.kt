@@ -7,6 +7,7 @@ import retrofit2.http.Query
 
 interface GooglePublicAPI {
 
-    @GET("single?client=gtx&sl=auto&tl=en&dt=t")
+    // Parameter unofficial reference: https://stackoverflow.com/questions/26714426/what-is-the-meaning-of-google-translate-query-params
+    @GET("single?client=gtx&sl=auto&tl=en&dt=t&oe=UTF-8&ie=UTF-8")
     fun getWord(@Query("q") text: String): Call<ResponseBody>
 }

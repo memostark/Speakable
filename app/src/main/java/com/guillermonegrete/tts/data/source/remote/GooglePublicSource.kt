@@ -10,6 +10,40 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+/*  Expected JSON response scheme:
+    [
+       [
+          [
+             "my friend",
+             "amigo mio",
+             null,
+             null,
+             1
+          ]
+       ],
+       null,
+       "es",
+       null,
+       null,
+       null,
+       1,
+       null,
+       [
+          [
+             "es"
+          ],
+          null,
+          [
+             1
+          ],
+          [
+             "es"
+          ]
+       ]
+    ]
+
+    Because response JSON cannot be converted to POJO we have to parse it manually.
+*/
 
 class GooglePublicSource private constructor() : WordDataSource {
 
@@ -39,9 +73,11 @@ class GooglePublicSource private constructor() : WordDataSource {
                     val body = response.body()
                     if(response.isSuccessful && body != null){
                         val jsonArray  = gson.fromJson(body.string(), JsonArray::class.java)
-                        val translation = jsonArray[0].asJsonArray[0].asJsonArray[0]
-                        val language = jsonArray.last().asJsonArray[0].asJsonArray[0]
-                        callback?.onWordLoaded(Words(wordText, language.toString(), translation.toString()))
+                        val rawTranslation = jsonArray[0].asJsonArray[0].asJsonArray[0].toString()
+                        val rawLanguage = jsonArray.last().asJsonArray[0].asJsonArray[0].toString()
+                        val translation = rawTranslation.substring(1, rawTranslation.length - 1)
+                        val language = rawLanguage.substring(1, rawLanguage.length - 1)
+                        callback?.onWordLoaded(Words(wordText, language, translation))
                     }else{
                         callback?.onDataNotAvailable()
                     }
