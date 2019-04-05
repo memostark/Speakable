@@ -10,6 +10,8 @@ public interface MainTTSContract {
 
         void startOverlayService();
 
+        void showDetectedLanguage(String language);
+
     }
 
     interface Presenter{
