@@ -45,7 +45,7 @@ import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
-import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
+import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.ExternalLinksDatabase;
@@ -91,7 +91,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
                 this,
-                WordRepository.getInstance(MSTranslatorSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
+                WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
                 ExternalLinksDataSource.getInstance(ExternalLinksDatabase.getDatabase(getApplicationContext()).externalLinksDAO()),
                 CustomTTS.getInstance(getApplicationContext()));

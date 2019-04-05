@@ -6,17 +6,18 @@ import com.guillermonegrete.tts.db.Words;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
-        public class WordRepository implements WordRepositorySource {
+public class WordRepository implements WordRepositorySource {
 
     private static WordRepository INSTANCE;
 
-    private final WordDataSource mWordMSTranslatorSource;
+    private final WordDataSource remoteTranslatorSource;
 
     private final WordDataSource mWordLocalDataSource;
 
+
     private WordRepository(WordDataSource wordMSTranslatorSource,
                            WordDataSource wordLocalDataSource){
-        mWordMSTranslatorSource = checkNotNull(wordMSTranslatorSource);
+        remoteTranslatorSource = checkNotNull(wordMSTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
     }
 
@@ -49,7 +50,7 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
     @Override
     public void getLanguageAndTranslation(String text, final GetTranslationCallback callback) {
-        mWordMSTranslatorSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
+        remoteTranslatorSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
                 callback.onTranslationAndLanguage(word);
@@ -77,7 +78,7 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
     }
 
     private void getRemoteWord(String wordText, final GetWordRepositoryCallback callback) {
-        mWordMSTranslatorSource.getWordLanguageInfo(wordText, new WordDataSource.GetWordCallback() {
+        remoteTranslatorSource.getWordLanguageInfo(wordText, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
                 callback.onRemoteWordLoaded(word);
