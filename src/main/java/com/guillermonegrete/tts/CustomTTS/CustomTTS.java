@@ -23,6 +23,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private String language;
 
+    private Listener listener;
+
     public static CustomTTS getInstance(Context context){
         if(INSTANCE == null){
             INSTANCE = new CustomTTS(context);
@@ -36,6 +38,10 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         mSynth = new Synthesizer(context.getResources().getString(R.string.api_key));
         isInitialized = false;
         localTTS = false;
+    }
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
     }
 
     public void speak(String text){
@@ -75,6 +81,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             System.out.print("Error code: ");
             System.out.println(result);
             System.out.println("Initialize TTS Error, This Language is not supported");
+            if(listener != null) listener.onLanguageUnavailable();
         } else {
             localTTS = true;
             isInitialized = true;
@@ -103,5 +110,9 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             tts.shutdown();
         }
         INSTANCE = null;
+    }
+
+    public interface Listener{
+        void onLanguageUnavailable();
     }
 }

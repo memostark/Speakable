@@ -180,6 +180,10 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
         languageTextView.text = language
     }
 
+    override fun showLanguageNotAvailable() {
+        Toast.makeText(context, "Detected language not available for Text to Speech", Toast.LENGTH_SHORT).show()
+    }
+
 
     private fun hideKeyboard() {
         val context = activity

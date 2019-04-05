@@ -12,6 +12,8 @@ public interface MainTTSContract {
 
         void showDetectedLanguage(String language);
 
+        void showLanguageNotAvailable();
+
     }
 
     interface Presenter{

@@ -19,6 +19,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         super(executor, mainThread);
         this.view = view;
         this.tts = tts;
+        this.tts.setListener(ttsListener);
         this.wordRepository = wordRepository;
     }
 
@@ -63,4 +64,11 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     public void onStartClipboardMode() {
         view.startClipboardService();
     }
+
+    private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+        @Override
+        public void onLanguageUnavailable() {
+            view.showLanguageNotAvailable();
+        }
+    };
 }
