@@ -29,8 +29,10 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
             @Override
             public void onTranslationAndLanguage(Words word) {
-                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(word.lang);
-                if(!isInitialized) tts.initializeTTS(word.lang);
+                String language = word.lang;
+                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                if(!isInitialized) tts.initializeTTS(language);
+                view.showDetectedLanguage(language);
                 PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
                 interactor.execute();
             }

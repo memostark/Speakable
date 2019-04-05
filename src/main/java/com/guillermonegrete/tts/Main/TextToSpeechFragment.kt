@@ -49,6 +49,8 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
     private lateinit var clipboardButton: Button
     private lateinit var overlayButton: Button
 
+    private lateinit var languageTextView: TextView
+
     private val clipText: String
         get() {
             val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -96,7 +98,9 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
-        val playBtn = fragment_layout.findViewById<ImageButton>(R.id.play_btn)
+        languageTextView = fragment_layout.findViewById(R.id.text_language_code)
+
+        val playButton = fragment_layout.findViewById<ImageButton>(R.id.play_btn)
         val browseBtn = fragment_layout.findViewById<ImageButton>(R.id.browse_btn)
         val pasteBtn = fragment_layout.findViewById<ImageButton>(R.id.paste_btn)
 
@@ -111,7 +115,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
         webview.webViewClient = HelloWebViewClient()
 
 
-        playBtn.setOnClickListener {
+        playButton.setOnClickListener {
             val text = editText.text.toString()
             presenter?.onClickReproduce(text)
         }
@@ -171,6 +175,11 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
         val permissionIntent = manager.createScreenCaptureIntent()
         startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE)
     }
+
+    override fun showDetectedLanguage(language: String?) {
+        languageTextView.text = language
+    }
+
 
     private fun hideKeyboard() {
         val context = activity
