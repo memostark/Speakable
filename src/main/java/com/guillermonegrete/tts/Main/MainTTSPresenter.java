@@ -5,29 +5,30 @@ import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomTTS.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
-import com.guillermonegrete.tts.data.source.WordDataSource;
-import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
+import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
 
 public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
 
     private CustomTTS tts;
-    private MSTranslatorSource languageSource;
     private MainTTSContract.View view;
+    private WordRepository wordRepository;
 
-    public MainTTSPresenter(Executor executor, MainThread mainThread, MainTTSContract.View view, MSTranslatorSource languageSource, CustomTTS tts) {
+    public MainTTSPresenter(Executor executor, MainThread mainThread, MainTTSContract.View view, WordRepository wordRepository, CustomTTS tts) {
         super(executor, mainThread);
         this.view = view;
         this.tts = tts;
-        this.languageSource = languageSource;
+        this.wordRepository = wordRepository;
     }
 
     @Override
     public void onClickReproduce(final String text) {
         // TODO this request should be done in a background thread
-        languageSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
+
+        wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
             @Override
-            public void onWordLoaded(Words word) {
+            public void onTranslationAndLanguage(Words word) {
                 boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(word.lang);
                 if(!isInitialized) tts.initializeTTS(word.lang);
                 PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
