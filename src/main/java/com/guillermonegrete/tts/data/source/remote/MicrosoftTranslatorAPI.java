@@ -11,7 +11,7 @@ public interface MicrosoftTranslatorAPI  {
 
     @Headers({
             "Content-Type: application/json",
-            "Ocp-Apim-Subscription-Key: 49596075062f40e1b30f709feb7b1018"
+            "Ocp-Apim-Subscription-Key: Add your key here"
     })
     @POST("translate?api-version=3.0&to=en")
     Call<List<MSTranslatorResponse>> getWord(@Body List<MSTranslatorSource.RequestBody> body);

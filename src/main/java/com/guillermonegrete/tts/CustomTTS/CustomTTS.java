@@ -3,10 +3,6 @@ package com.guillermonegrete.tts.CustomTTS;
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
 
-import com.guillermonegrete.speech.tts.Synthesizer;
-import com.guillermonegrete.speech.tts.Voice;
-import com.guillermonegrete.tts.R;
-
 import java.util.Locale;
 
 
@@ -14,10 +10,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private static CustomTTS INSTANCE;
 
     private TextToSpeech tts;
-    private Synthesizer mSynth;
 
     private Boolean isInitialized;
-    private Boolean localTTS;
 
     private String TAG = this.getClass().getSimpleName();
 
@@ -35,39 +29,18 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private CustomTTS(Context context){
         tts = new TextToSpeech(context, this);
-        mSynth = new Synthesizer(context.getResources().getString(R.string.api_key));
         isInitialized = false;
-        localTTS = false;
     }
 
     public void speak(String text){
-        if(localTTS){
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-        }else{
-            if(mSynth.getLocalAudioBytes(text) == null){
-                mSynth.getAudio(text);
-            }
-            mSynth.speakLocalAudio();
-        }
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
     }
 
      public void initializeTTS(final String langCode, Listener listener) {
         this.listener = listener;
         language = langCode;
         isInitialized = false;
-        if(langCode.equals("he")){
-            initializeMSService();
-        }else{
-            initializeGoogleLocalService(langCode);
-        }
-    }
-
-    private void initializeMSService(){
-        mSynth.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
-        Voice voice = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
-        mSynth.SetVoice(voice, null);
-        localTTS = false;
-        isInitialized = true;
+        initializeGoogleLocalService(langCode);
     }
 
     private void initializeGoogleLocalService(String langCode){
@@ -80,7 +53,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             System.out.println("Initialize TTS Error, This Language is not supported");
             if(listener != null) listener.onLanguageUnavailable();
         } else {
-            localTTS = true;
             isInitialized = true;
         }
     }
