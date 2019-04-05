@@ -80,7 +80,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
                 boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
-                if(!isInitialized) customTTS.initializeTTS(word.lang);
+                if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
 
                 switch (layoutType){
                     case WORD_TRANSLATION:
@@ -102,7 +102,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             public void onDictionaryLayoutDetermined(Words word, List<WikiItem> items) {
                 boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
-                if(!isInitialized) customTTS.initializeTTS(word.lang);
+                if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
                 getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(word, items);
             }
@@ -116,7 +116,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void getDictionaryEntry(final Words word) {
         boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
         foundWord = word;
-        if(!isInitialized) customTTS.initializeTTS(word.lang);
+        if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
         GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
 
             @Override
@@ -192,4 +192,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void destroy() {
     }
+
+    private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+        @Override
+        public void onLanguageUnavailable() {
+        }
+    };
 }
