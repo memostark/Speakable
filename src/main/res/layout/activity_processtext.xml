@@ -7,8 +7,8 @@
     android:layout_width="match_parent"
     android:layout_marginTop="50dp"
     android:layout_marginBottom="50dp"
-    android:layout_marginStart="5dp"
-    android:layout_marginEnd="5dp"
+    android:layout_marginStart="30dp"
+    android:layout_marginEnd="30dp"
     android:theme="@android:style/Theme.Dialog"
     app:cardElevation="5dp">
 
@@ -42,6 +42,14 @@
                 android:textColor="#000000"
                 android:textSize="20sp"
                 tools:text="Selected text" />
+            <TextView
+                android:id="@+id/text_language_code"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="5dp"
+                android:layout_marginStart="5dp"
+                android:gravity="center"
+                tools:text="ES" />
             <ImageButton
                 android:id="@+id/save_icon"
                 android:paddingStart="3dp"

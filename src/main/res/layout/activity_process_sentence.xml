@@ -7,52 +7,62 @@
     android:layout_width="match_parent"
     android:layout_marginTop="50dp"
     android:layout_marginBottom="50dp"
-    android:layout_marginStart="5dp"
-    android:layout_marginEnd="5dp"
+    android:layout_marginStart="30dp"
+    android:layout_marginEnd="30dp"
     android:theme="@android:style/Theme.Dialog"
-    app:cardElevation="5dp">
-    <RelativeLayout
+    app:cardElevation="5dp"
+    tools:context=".TextProcessing.ProcessTextActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:context=".TextProcessing.ProcessTextActivity"
-        android:id="@+id/testLayout"
-        android:focusable="true"
         android:background="@drawable/black_border">
 
-        <LinearLayout
+
+        <TextView
+            android:id="@+id/text_language_code"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginEnd="1dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:gravity="center"
+            android:background="#FFFFBB33"
+            app:layout_constraintBottom_toBottomOf="@+id/text_tts"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/text_tts"
+            tools:text="ES" />
+
+        <TextView
+            android:id="@+id/text_tts"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:background="#FFFFBB33"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:textColor="#000000"
+            android:textSize="20sp"
+            app:layout_constraintBottom_toTopOf="@+id/text_translation"
+            app:layout_constraintEnd_toStartOf="@+id/text_language_code"
+            app:layout_constraintHeight_min="40dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Selected text" />
+
+        <TextView
+            android:id="@+id/text_translation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:orientation="vertical"
-            android:layout_marginTop="1dp"
-            android:layout_marginStart="1dp"
-            android:layout_marginEnd="1dp">
+            android:maxLines="15"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:scrollbars="vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_tts"
+            tools:text="Translated text" />
 
-            <TextView
-                android:id="@+id/text_tts"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="#FFFFBB33"
-                android:minHeight="50dp"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:textColor="#000000"
-                android:textSize="20sp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <TextView
-                android:id="@+id/text_translation"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:maxLines="15"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:scrollbars="vertical"
-                android:text="Translated text" />
-
-        </LinearLayout>
-
-
-    </RelativeLayout>
 </androidx.cardview.widget.CardView>
