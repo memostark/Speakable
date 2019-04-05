@@ -9,7 +9,7 @@ import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.db.Words;
 
-            public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
+public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
 
     private CustomTTS tts;
     private MSTranslatorSource languageSource;
