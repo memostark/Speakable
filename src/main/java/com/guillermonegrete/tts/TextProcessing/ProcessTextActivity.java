@@ -122,11 +122,15 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         return sharedPref.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
     }
 
-    private void setWordLayout(final String textString){
+    private void setWordLayout(Words word){
         setContentView(R.layout.activity_processtext);
+        final String textString = word.word;
 
         TextView mTextTTS = findViewById(R.id.text_tts);
         mTextTTS.setText(textString);
+
+        TextView textViewLanguage = findViewById(R.id.text_language_code);
+        textViewLanguage.setText(word.lang);
 
 
         findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
@@ -154,7 +158,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     public void setWiktionaryLayout(Words word, List<WikiItem> items) {
 
         setCenterDialog();
-        setWordLayout(getSelectedText());
+        setWordLayout(word);
         mAdapter = new WiktionaryAdapter(this, items);
 
         mFoundWords = word;
@@ -169,8 +173,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         setBottomDialog();
         mFoundWords = word;
 
-        final String word_text = word.word;
-        setWordLayout(word_text);
+        setWordLayout(word);
         createSmallViewPager();
 
         setSavedWordToolbar(word);
@@ -187,7 +190,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     public void setTranslationLayout(Words word) {
         setBottomDialog();
         mFoundWords = word;
-        setWordLayout(word.word);
+        setWordLayout(word);
         createSmallViewPager();
     }
 
@@ -199,6 +202,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mTextTTS.setText(word.word);
         TextView mTextTranslation = findViewById(R.id.text_translation);
         mTextTranslation.setText(word.definition);
+        TextView textLanguage = findViewById(R.id.text_language_code);
+        textLanguage.setText(word.lang);
         presenter.onClickReproduce(word.word);
     }
 
@@ -270,22 +275,26 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private void setCenterDialog(){
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        WindowManager.LayoutParams wlp = getWindow().getAttributes();
+        Window window = getWindow();
+        WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
                 WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-        getWindow().setAttributes(wlp);
+        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        window.setAttributes(wlp);
     }
 
     private void setBottomDialog(){
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        WindowManager.LayoutParams wlp = getWindow().getAttributes();
+        Window window = getWindow();
+        WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.dimAmount = 0;
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         wlp.gravity = Gravity.BOTTOM;
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        getWindow().setAttributes(wlp);
+        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        window.setAttributes(wlp);
     }
 
     private void setSavedWordToolbar(final Words word){
