@@ -40,10 +40,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         localTTS = false;
     }
 
-    public void setListener(Listener listener) {
-        this.listener = listener;
-    }
-
     public void speak(String text){
         if(localTTS){
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
@@ -55,7 +51,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         }
     }
 
-     public void initializeTTS(final String langCode) {
+     public void initializeTTS(final String langCode, Listener listener) {
+        this.listener = listener;
         language = langCode;
         isInitialized = false;
         if(langCode.equals("he")){
