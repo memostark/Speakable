@@ -17,168 +17,294 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6b515cb8-9fce-45ed-908f-0bd354195f75" name="Default" comment="Moved root directory.">
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Main/MainActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/fileChanges/last-build.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/fileContent/fileContent.lock" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/fileHashes/fileHashes.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/fileHashes/fileHashes.lock" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/fileHashes/resourceHashesCache.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/gc.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/javaCompile/classAnalysis.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/javaCompile/jarAnalysis.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/javaCompile/javaCompile.lock" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/javaCompile/taskHistory.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/taskHistory/taskHistory.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/4.10.1/taskHistory/taskHistory.lock" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/cache.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/vcs-1/gc.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gradle/vcsWorkingDirs/gc.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/Sample.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_activity_activity_1_0_0_alpha05_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_annotation_annotation_1_1_0_alpha02_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_appcompat_appcompat_1_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_appcompat_appcompat_resources_1_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_arch_core_core_common_2_0_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_arch_core_core_common_2_0_1_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_arch_core_core_runtime_2_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_arch_core_core_runtime_2_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_asynclayoutinflater_asynclayoutinflater_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_browser_browser_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_cardview_cardview_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_collection_collection_1_1_0_alpha03_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_concurrent_concurrent_futures_1_0_0_alpha02_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_constraintlayout_constraintlayout_2_0_0_alpha2_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_constraintlayout_constraintlayout_solver_2_0_0_alpha2_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_coordinatorlayout_coordinatorlayout_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_coordinatorlayout_coordinatorlayout_1_1_0_alpha01_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_core_core_1_1_0_alpha05_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_cursoradapter_cursoradapter_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_customview_customview_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_documentfile_documentfile_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_drawerlayout_drawerlayout_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_exifinterface_exifinterface_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_fragment_fragment_1_1_0_alpha05_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_gridlayout_gridlayout_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_interpolator_interpolator_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_legacy_legacy_support_core_ui_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_legacy_legacy_support_core_utils_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_legacy_legacy_support_v4_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_common_2_1_0_alpha03_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_extensions_2_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_livedata_2_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_livedata_2_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_livedata_core_2_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_livedata_core_2_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_process_2_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_runtime_2_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_service_2_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_lifecycle_lifecycle_viewmodel_2_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_loader_loader_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_localbroadcastmanager_localbroadcastmanager_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_media_media_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_preference_preference_1_1_0_alpha04_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_print_print_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_recyclerview_recyclerview_1_1_0_alpha03_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_room_room_common_2_1_0_alpha06_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_room_room_runtime_2_1_0_alpha06_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_savedstate_savedstate_1_0_0_alpha02_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_slidingpanelayout_slidingpanelayout_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_sqlite_sqlite_2_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_sqlite_sqlite_framework_2_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_swiperefreshlayout_swiperefreshlayout_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_transition_transition_1_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_vectordrawable_vectordrawable_1_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_vectordrawable_vectordrawable_1_1_0_alpha01_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_vectordrawable_vectordrawable_animated_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_versionedparcelable_versionedparcelable_1_1_0_alpha02_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__androidx_viewpager_viewpager_1_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_android_volley_volley_1_1_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_github_worker8_tourguide_2_0_0_SNAPSHOT_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_ads_identifier_16_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_auth_base_16_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_base_16_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_basement_16_2_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_clearcut_16_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_flags_16_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_measurement_16_4_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_measurement_api_16_4_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_measurement_base_16_4_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_measurement_impl_16_4_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_measurement_sdk_16_4_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_measurement_sdk_api_16_4_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_phenotype_16_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_stats_16_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_tasks_16_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_vision_17_0_2_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_vision_common_17_0_2_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_gms_play_services_vision_image_label_17_0_2_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_android_material_material_1_1_0_alpha04_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_code_gson_gson_2_8_2_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_analytics_16_4_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_common_16_0_3_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_core_16_0_8_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_iid_17_0_3_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_iid_interop_16_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_measurement_connector_17_0_1_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_ml_common_17_0_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_firebase_firebase_ml_vision_19_0_3_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_google_guava_listenablefuture_1_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_nineoldandroids_library_2_4_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_squareup_okhttp3_okhttp_3_12_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_squareup_okio_okio_1_15_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_squareup_retrofit2_converter_gson_2_5_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_squareup_retrofit2_retrofit_2_5_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__junit_junit_4_12_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__net_bytebuddy_byte_buddy_1_8_10_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__net_bytebuddy_byte_buddy_agent_1_8_10_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__net_i2p_android_ext_floatingactionbutton_1_9_0_aar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_hamcrest_hamcrest_core_1_3_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_jetbrains_annotations_13_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_jetbrains_kotlin_kotlin_stdlib_1_3_21_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_jetbrains_kotlin_kotlin_stdlib_common_1_3_21_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_jetbrains_kotlin_kotlin_stdlib_jdk7_1_3_21_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_mockito_mockito_core_2_19_0_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_objenesis_objenesis_2_6_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/app.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/proguard-rules.pro" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/local.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/caches/gradle_models.ser" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/google-services.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/libs/speechsdk.aar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/google-services.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/google-services.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libs/speechsdk.aar" beforeDir="false" afterPath="$PROJECT_DIR$/app/libs/speechsdk.aar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/speechsdk/speechsdk.iml" beforeDir="false" afterPath="$PROJECT_DIR$/speechsdk/speechsdk.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/AndroidManifest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/AbstractInteractor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/AbstractPresenter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/BasePresenter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/BaseView.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomTTS/CustomTTS.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomTTS/interactors/PlayTTS.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomTTS/interactors/PlayTTSInteractor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomViews/BubbleView.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomViews/DrawView.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomViews/TrashView.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Executor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Interactor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/AcquireScreenshotPermission.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/MainActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/MainTTSContract.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/MainTTSPresenter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/SettingsFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/TextToSpeechFragment.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/MainThread.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/SaveWordDialogFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/SavedWordListAdapter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/SavedWordsFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/WordsViewModel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Services/Receiver.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Services/ScreenTextService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/DefinitionFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ExternalLinksAdapter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ExternalLinksFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextContract.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextLayoutType.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextPresenter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/TranslationFragment.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/WiktionaryAdapter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/DeleteWord.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/DeleteWordInteractor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetDictionaryEntry.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetDictionaryEntryInteractor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetExternalLink.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetExternalLinksInteractor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayout.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayoutInteractor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WikiItem.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WiktionaryItem.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WiktionaryLangHeader.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/ThreadExecutor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/DictionaryDataSource.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/DictionaryRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/WordDataSource.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/WordRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/WordRepositorySource.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/local/ExternalLinksDataSource.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/local/WordLocalDataSource.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/GooglePublicAPI.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/GooglePublicSource.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/MSTranslatorResponse.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/MSTranslatorSource.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/MicrosoftTranslatorAPI.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionaryAPI.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionaryResponse.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionarySource.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/ExternalLink.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/ExternalLinksDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/ExternalLinksDatabase.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/Words.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/WordsDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/WordsDatabase.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/threading/MainThreadImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/anim/no_animation.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_in_left.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_in_right.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_out_left.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_out_right.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_accept.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_ball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_close.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_squareball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_accept.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_ball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_close.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_squareball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_accept.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_ball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_close.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_squareball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_accept.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_ball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_close.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_squareball.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_trash_action.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_trash_fixed.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/black_border.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/browser_tab_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_bottomleft.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_bottomright.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_topleft.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_topright.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_bookmark_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_bookmark_border_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_content_paste_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_delete_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_drag_handle_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_edit_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_menu_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_public_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_stop_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_volume_up_black_24dp.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/tab_indicator_default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/tab_indicator_selected.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/tab_selector.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout-v23/saved_word_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_main.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_process_sentence.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_processtext.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/definition_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/external_link_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/external_links_grid.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_main_tts.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_process_definition.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_process_translation.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_saved_words.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/header_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/main_tts_bottom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/main_tts_layout.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/nav_header.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/new_word_dialog.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/saved_word_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/service_processtext.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/subheader_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/trash_layout.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/menu/action_mode_menu.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/menu/drawer_view.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/menu/menu_tts_fragment.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-hdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-mdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-xhdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-xxhdpi/ic_launcher.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/values-w820dp/dimens.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/values/ProcessTextStyle.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/values/color.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/values/dimens.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/values/strings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/values/styles.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/xml/preferences_main.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/TestThreadExecutor.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/TextProcessing/ProcessTextPresenterTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayoutTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/GooglePublicRequestTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/MicrosoftTranslatorTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/WiktionaryRequestTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/WiktionaryTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/threading/TestMainThread.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/AbstractInteractor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/AbstractInteractor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/AbstractPresenter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/AbstractPresenter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/BasePresenter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/BasePresenter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/BaseView.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/BaseView.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomTTS/CustomTTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/CustomTTS/CustomTTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomTTS/interactors/PlayTTS.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/CustomTTS/interactors/PlayTTS.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomTTS/interactors/PlayTTSInteractor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/CustomTTS/interactors/PlayTTSInteractor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomViews/BubbleView.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/CustomViews/BubbleView.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomViews/DrawView.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/CustomViews/DrawView.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/CustomViews/TrashView.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/CustomViews/TrashView.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Executor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Executor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Interactor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Interactor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/AcquireScreenshotPermission.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Main/AcquireScreenshotPermission.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Main/MainActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/MainTTSContract.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Main/MainTTSContract.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/MainTTSPresenter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Main/MainTTSPresenter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/SettingsFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Main/SettingsFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Main/TextToSpeechFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Main/TextToSpeechFragment.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/MainThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/MainThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/SaveWordDialogFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/SavedWords/SaveWordDialogFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/SavedWordListAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/SavedWords/SavedWordListAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/SavedWordsFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/SavedWords/SavedWordsFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/SavedWords/WordsViewModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/SavedWords/WordsViewModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Services/Receiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Services/Receiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/Services/ScreenTextService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/Services/ScreenTextService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/DefinitionFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/DefinitionFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ExternalLinksAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/ExternalLinksAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ExternalLinksFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/ExternalLinksFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextContract.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextContract.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextLayoutType.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextLayoutType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextPresenter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/ProcessTextPresenter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/TranslationFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/TranslationFragment.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/WiktionaryAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/WiktionaryAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/DeleteWord.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/DeleteWord.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/DeleteWordInteractor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/DeleteWordInteractor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetDictionaryEntry.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetDictionaryEntry.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetDictionaryEntryInteractor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetDictionaryEntryInteractor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetExternalLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetExternalLink.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetExternalLinksInteractor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetExternalLinksInteractor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayout.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayout.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayoutInteractor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayoutInteractor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WikiItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WikiItem.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WiktionaryItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WiktionaryItem.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WiktionaryLangHeader.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/TextProcessing/domain/model/WiktionaryLangHeader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/ThreadExecutor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/ThreadExecutor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/DictionaryDataSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/DictionaryDataSource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/DictionaryRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/DictionaryRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/WordDataSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/WordDataSource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/WordRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/WordRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/WordRepositorySource.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/WordRepositorySource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/local/ExternalLinksDataSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/local/ExternalLinksDataSource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/local/WordLocalDataSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/local/WordLocalDataSource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/GooglePublicAPI.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/GooglePublicAPI.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/GooglePublicSource.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/GooglePublicSource.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/MSTranslatorResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/MSTranslatorResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/MSTranslatorSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/MSTranslatorSource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/MicrosoftTranslatorAPI.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/MicrosoftTranslatorAPI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionaryAPI.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionaryAPI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionaryResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionaryResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionarySource.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/data/source/remote/WiktionarySource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/ExternalLink.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/db/ExternalLink.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/ExternalLinksDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/db/ExternalLinksDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/ExternalLinksDatabase.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/db/ExternalLinksDatabase.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/Words.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/db/Words.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/WordsDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/db/WordsDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/db/WordsDatabase.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/db/WordsDatabase.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/guillermonegrete/tts/threading/MainThreadImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/guillermonegrete/tts/threading/MainThreadImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/anim/no_animation.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/anim/no_animation.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_in_left.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/anim/slide_in_left.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_in_right.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/anim/slide_in_right.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_out_left.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/anim/slide_out_left.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/anim/slide_out_right.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/anim/slide_out_right.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_accept.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_accept.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_ball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_ball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_close.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_close.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-hdpi/ic_squareball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_squareball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_accept.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_accept.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_ball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_ball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_close.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_close.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-mdpi/ic_squareball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_squareball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_accept.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_accept.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_ball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_ball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_close.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_close.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xhdpi/ic_squareball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_squareball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_accept.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_accept.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_ball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_ball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_close.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_close.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_squareball.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_squareball.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_trash_action.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_trash_action.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable-xxhdpi/ic_trash_fixed.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_trash_fixed.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/black_border.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/black_border.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/browser_tab_background.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/browser_tab_background.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/corner.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_bottomleft.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/corner_bottomleft.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_bottomright.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/corner_bottomright.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_topleft.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/corner_topleft.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/corner_topright.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/corner_topright.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_bookmark_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_bookmark_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_bookmark_border_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_bookmark_border_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_content_paste_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_content_paste_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_delete_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_delete_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_drag_handle_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_drag_handle_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_edit_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_edit_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_menu_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_public_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_public_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_stop_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_stop_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/ic_volume_up_black_24dp.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_volume_up_black_24dp.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/tab_indicator_default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_indicator_default.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/tab_indicator_selected.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_indicator_selected.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/drawable/tab_selector.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_selector.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout-v23/saved_word_item.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout-v23/saved_word_item.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_process_sentence.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_process_sentence.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_processtext.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_processtext.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/definition_item.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/definition_item.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/external_link_item.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/external_link_item.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/external_links_grid.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/external_links_grid.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_main_tts.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_main_tts.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_process_definition.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_process_definition.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_process_translation.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_process_translation.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/fragment_saved_words.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_saved_words.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/header_item.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/header_item.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/main_tts_bottom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/main_tts_bottom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/main_tts_layout.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/main_tts_layout.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/nav_header.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/nav_header.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/new_word_dialog.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/new_word_dialog.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/saved_word_item.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/saved_word_item.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/service_processtext.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/service_processtext.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/subheader_item.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/subheader_item.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/trash_layout.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/trash_layout.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/menu/action_mode_menu.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/menu/action_mode_menu.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/menu/drawer_view.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/menu/drawer_view.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/menu/menu_tts_fragment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/menu/menu_tts_fragment.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-hdpi/ic_launcher.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-mdpi/ic_launcher.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-mdpi/ic_launcher.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-xhdpi/ic_launcher.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xhdpi/ic_launcher.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/mipmap-xxhdpi/ic_launcher.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/values-w820dp/dimens.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values-w820dp/dimens.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/values/ProcessTextStyle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/ProcessTextStyle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/values/color.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/color.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/values/dimens.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/dimens.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/values/styles.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/styles.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/xml/preferences_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/xml/preferences_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/TestThreadExecutor.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/TestThreadExecutor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/TextProcessing/ProcessTextPresenterTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/TextProcessing/ProcessTextPresenterTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayoutTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/TextProcessing/domain/interactors/GetLayoutTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/GooglePublicRequestTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/data/remote/GooglePublicRequestTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/MicrosoftTranslatorTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/data/remote/MicrosoftTranslatorTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/WiktionaryRequestTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/data/remote/WiktionaryRequestTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/data/remote/WiktionaryTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/data/remote/WiktionaryTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/guillermonegrete/tts/threading/TestMainThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/test/java/com/guillermonegrete/tts/threading/TestMainThread.java" afterDir="false" />
     </list>
     <list id="942d397a-fe4a-49db-a607-50c5b20434e7" name="Another forced commit." comment="" />
     <list id="05d3458b-83e1-4c94-9176-d59ad80e5014" name="Fixed border for process text not showing properly." comment="" />
@@ -262,7 +388,7 @@
     <session id="436604469">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="45" />
+          <entry key="project.closed" value="46" />
           <entry key="project.open.time.0" value="1" />
           <entry key="project.open.time.1" value="4" />
           <entry key="project.open.time.10" value="1" />
