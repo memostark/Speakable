@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linearLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_below="@id/toolbar"
+    android:background="#FAFAFA"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
+
+    <EditText
+        android:id="@+id/tts_ev"
+        android:layout_width="0dp"
+        android:layout_height="93dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="24dp"
+        android:hint="@string/tts_edit_text_hint"
+        android:inputType="text"
+        app:layout_constraintEnd_toStartOf="@+id/play_btn"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <Button
+        android:id="@+id/startBubble_btn"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/startBubble_button_name"
+        app:layout_constraintEnd_toStartOf="@+id/clipboard_btn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tts_ev" />
+
+
+    <Button
+        android:id="@+id/clipboard_btn"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:text="@string/clipboard_btn_caption"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/startBubble_btn"
+        app:layout_constraintTop_toTopOf="@+id/startBubble_btn" />
+
+    <ImageButton
+        android:id="@+id/play_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@+id/tts_ev"
+        app:layout_constraintEnd_toStartOf="@+id/browse_btn"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/tts_ev"
+        app:layout_constraintTop_toTopOf="@+id/tts_ev"
+        app:srcCompat="@drawable/ic_volume_up_black_24dp"
+        android:contentDescription="@string/play_tts_icon_description" />
+
+    <ImageButton
+        android:id="@+id/paste_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/browse_btn"
+        app:layout_constraintTop_toTopOf="@+id/browse_btn"
+        app:srcCompat="@drawable/ic_content_paste_black_24dp"
+        android:contentDescription="@string/paste_icon_description" />
+
+    <ImageButton
+        android:id="@+id/browse_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toStartOf="@+id/paste_btn"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/play_btn"
+        app:layout_constraintTop_toTopOf="@+id/play_btn"
+        app:srcCompat="@drawable/ic_public_black_24dp"
+        android:contentDescription="@string/browse_icon_description" />
+
+    <TextView
+        android:id="@+id/text_language_code"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        tools:text="EN"
+        android:gravity="center"
+        app:layout_constraintBottom_toTopOf="@+id/play_btn"
+        app:layout_constraintEnd_toStartOf="@+id/browse_btn"
+        app:layout_constraintStart_toStartOf="@+id/play_btn" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,59 @@
+<resources>
+    <!-- Note: The way to get api key:
+         Free: https://www.microsoft.com/cognitive-services/en-us/subscriptions?productId=/products/Bing.Speech.Preview
+        Paid: https://portal.azure.com/#create/Microsoft.CognitiveServices/apitype/Bing.Speech/pricingtier/S0 -->
+    <!-- If you have one api key, you can add it here to use the service -->
+    <string name="api_key">Add your key here</string>
+    <string name="translator_api_key">Add your key here</string>
+
+    <string name="add_subscription_key_tip_title">Subscription Key is Needed</string>
+    <string name="add_subscription_key_tip">Please put your subscription key to source file \"app/res/values/strings.xml\" to enable Face API calls.</string>
+
+    <string name="app_name">Cognitive TTS Sample</string>
+    <string name="process_text_action_name">TTS</string>
+
+    <string name="tts_text">This is a demo of Microsoft Cognitive Services Text to Speech API.</string>
+
+    <string name="play_button_name">Play</string>
+    <string name="stop_button_name">Stop</string>
+    <string name="startBubble_button_name">Overlay mode</string>
+
+    <string name="no_entry">No entry</string>
+
+    <string name="close_notification">Close</string>
+
+    <string name="main">Text to speech</string>
+    <string name="saved">Saved words</string>
+    <string name="settings">Settings</string>
+
+    <string name="dialog_new_word_title">New word</string>
+
+    <string name="word_edit_text">Word</string>
+    <string name="language_edit_text">Language</string>
+    <string name="translation_edit_text">Translation</string>
+    <string name="notes_edit_text">Notes</string>
+
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="play_tts_icon_description">Play TTS</string>
+    <string name="edit_icon_description">Edit TTS</string>
+    <string name="save_icon_description">Save word</string>
+    <string name="definition_label">Definition</string>
+    <string name="notes_label">Notes</string>
+    <string name="notes_item_label">Notes: %1$s</string>
+    <string name="tts_edit_text_hint">Enter text to reproduce</string>
+    <string name="paste_icon_description">Paste</string>
+    <string name="browse_icon_description">Browse</string>
+    <string name="clipboard_btn_caption">Clipboard Mode</string>
+    <string name="how_to_menu_title">How to use</string>
+    <string name="powered_by_google_label">Powered by Google Translate</string>
+
+    <string-array name="language_code_arrays">
+        <item>All</item>
+        <item>EN</item>
+        <item>ES</item>
+        <item>DE</item>
+        <item>HE</item>
+    </string-array>
+</resources>

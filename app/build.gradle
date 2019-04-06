@@ -64,8 +64,8 @@ dependencies {
     implementation 'androidx.browser:browser:1.0.0'
 
     // Firebase OCR
-    implementation 'com.google.firebase:firebase-core:16.0.7'
-    implementation 'com.google.firebase:firebase-ml-vision:19.0.2'
+    implementation 'com.google.firebase:firebase-core:16.0.8'
+    implementation 'com.google.firebase:firebase-ml-vision:19.0.3'
 
     // Room
     implementation 'androidx.room:room-runtime:2.1.0-alpha06'
