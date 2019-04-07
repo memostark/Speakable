@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">167062188889-tnuru2q1v79o2rilegs4pd9macbinani.apps.googleusercontent.com</string>
+    <string name="firebase_database_url" translatable="false">https://texttospeech-21ac7.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">167062188889</string>
+    <string name="google_api_key" translatable="false">AIzaSyAlFMEmzUzaZcn-8YaAZItCX6aIWDZFyS0</string>
+    <string name="google_app_id" translatable="false">1:167062188889:android:b3aacc6995926356</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAlFMEmzUzaZcn-8YaAZItCX6aIWDZFyS0</string>
+    <string name="google_storage_bucket" translatable="false">texttospeech-21ac7.appspot.com</string>
+    <string name="project_id" translatable="false">texttospeech-21ac7</string>
+</resources>

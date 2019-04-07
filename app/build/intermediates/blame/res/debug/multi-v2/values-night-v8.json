@@ -1,0 +1,36 @@
+{
+    "logs": [
+        {
+            "outputFile": "C:\\Users\\Memo\\Google Drive\\Proyectos\\Cognitive-Speech-TTS\\Android\\Sample\\app\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-night-v8\\values-night-v8.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\Memo\\.gradle\\caches\\transforms-1\\files-1.1\\appcompat-1.1.0-alpha03.aar\\15a37f758bef469f9fedf4cd66eb8fac\\res\\values-night-v8\\values-night-v8.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "55,125,209,293,389,491,593",
+                        "endColumns": "69,83,83,95,101,101,93",
+                        "endOffsets": "120,204,288,384,486,588,682"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\Memo\\.gradle\\caches\\transforms-1\\files-1.1\\material-1.1.0-alpha04.aar\\974e7bbda9012c26e4412a8f8baebc59\\res\\values-night-v8\\values-night-v8.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "55,143,245,347,461,581,701",
+                        "endColumns": "87,101,101,113,119,119,111",
+                        "endOffsets": "138,240,342,456,576,696,808"
+                    },
+                    "to": {
+                        "startLines": "9,10,11,12,13,14,15",
+                        "startColumns": "4,4,4,4,4,4,4",
+                        "startOffsets": "687,775,877,979,1093,1213,1333",
+                        "endColumns": "87,101,101,113,119,119,111",
+                        "endOffsets": "770,872,974,1088,1208,1328,1440"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "C:\\Users\\Memo\\Google Drive\\Proyectos\\Cognitive-Speech-TTS\\Android\\Sample\\app\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-v14\\values-v14.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\Memo\\.gradle\\caches\\transforms-1\\files-1.1\\jetified-floatingactionbutton-1.9.0.aar\\e6f76d4458008185cae6dab8381e96dc\\res\\values-v14\\values.xml",
+                    "from": {
+                        "startLines": "4,5,6",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "200,270,341",
+                        "endColumns": "69,70,72",
+                        "endOffsets": "265,336,409"
+                    },
+                    "to": {
+                        "startLines": "2,3,4",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,125,196",
+                        "endColumns": "69,70,72",
+                        "endOffsets": "120,191,264"
+                    }
+                }
+            ]
+        }
+    ]
+}
