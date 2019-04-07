@@ -1,4 +1,0 @@
-#Sat Apr 06 22:38:33 CST 2019
-base.0=C\:\\Users\\Memo\\Google Drive\\Proyectos\\Cognitive-Speech-TTS\\Android\\Sample\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\3
-path.0=classes.dex
-renamed.0=classes.dex
