@@ -38,6 +38,10 @@
             android:enabled="true"
             android:process=":remote"
             />
+        <meta-data
+            android:name="com.google.firebase.ml.vision.DEPENDENCIES"
+            android:value="ocr" />
+
     </application>
 
 </manifest>

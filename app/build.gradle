@@ -54,18 +54,16 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-alpha2'
     implementation 'com.google.android.material:material:1.1.0-alpha04'
 
-    // For API requests
-    implementation 'com.android.volley:volley:1.1.0'
-
-    // For google text recognition
-    implementation 'com.google.android.gms:play-services-vision:17.0.2'
-
     // Google custom tabs
     implementation 'androidx.browser:browser:1.0.0'
 
     // Firebase OCR
     implementation 'com.google.firebase:firebase-core:16.0.8'
     implementation 'com.google.firebase:firebase-ml-vision:19.0.3'
+
+    // Firebase language detection
+    implementation 'com.google.firebase:firebase-ml-natural-language:18.2.0'
+    implementation 'com.google.firebase:firebase-ml-natural-language-language-id-model:18.0.3'
 
     // Room
     implementation 'androidx.room:room-runtime:2.1.0-alpha06'
