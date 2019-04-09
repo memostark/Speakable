@@ -45,6 +45,11 @@
     <string name="browse_icon_description">Browse</string>
     <string name="clipboard_btn_caption">Clipboard Mode</string>
     <string name="how_to_menu_title">How to use</string>
+    <string name="powered_by_google_label">Powered by Google Translate</string>
+    <string name="bubble_view_description">Floating icon</string>
+    <string name="reproduce_description">reproduce</string>
+    <string name="translate_description">translate</string>
+    <string name="screenshot_description">screenshot</string>
 
     <string-array name="language_code_arrays">
         <item>All</item>

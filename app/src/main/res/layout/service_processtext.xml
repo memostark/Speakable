@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="0dp"
@@ -9,29 +11,63 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         android:id="@+id/snip_view"/>
-    <LinearLayout
-        android:id="@+id/icon_container"
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_gravity="center_horizontal">
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            <com.guillermonegrete.tts.CustomViews.BubbleView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="Bubble"
-                android:id="@+id/image_bubble"
-                android:src="@mipmap/ic_launcher" />
-        </FrameLayout>
-        <ImageView
-            android:id="@+id/takeScreenShot_image"
+        android:id="@+id/icon_container"
+        android:layout_gravity="bottom|center_horizontal">
+
+        <com.guillermonegrete.tts.CustomViews.BubbleView
+            android:id="@+id/image_bubble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_accept"
-            android:layout_gravity="end|top"
-            android:visibility="gone"/>
-    </LinearLayout>
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="@string/bubble_view_description"
+            android:src="@mipmap/ic_launcher"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <ImageButton
+            android:id="@+id/play_icon_button"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/reproduce_description"
+            android:src="@drawable/ic_volume_up_black_24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintStart_toEndOf="@+id/image_bubble"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
+        <ImageButton
+            android:id="@+id/translate_icon_button"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/translate_description"
+            android:src="@drawable/ic_translate_black_24dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/play_icon_button"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/play_icon_button"
+            app:layout_constraintTop_toTopOf="@+id/play_icon_button"
+            tools:visibility="visible" />
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>

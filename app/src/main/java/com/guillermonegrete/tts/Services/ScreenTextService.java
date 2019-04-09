@@ -32,12 +32,12 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 
 import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Gravity;
@@ -50,12 +50,9 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ImageButton;
+import android.widget.Toast;
 
-import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.text.TextBlock;
-import com.google.android.gms.vision.text.TextRecognizer;
 import com.guillermonegrete.tts.Main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
@@ -64,6 +61,10 @@ import com.guillermonegrete.tts.CustomViews.TrashView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.Main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
+import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor;
+import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -77,7 +78,6 @@ public class ScreenTextService extends Service {
     private View service_layout;
     private TrashView trash_layout;
     private GestureDetector gestureDetector;
-    private TextRecognizer textRecognizer;
     private CustomTTS tts;
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
@@ -98,9 +98,10 @@ public class ScreenTextService extends Service {
     private int mHeight;
     private DrawView snipView;
     private BubbleView bubble;
-    private ImageView takeSS;
-    private LinearLayout icon_container;
-    private WindowManager.LayoutParams params;
+    private ImageButton playButton;
+    private ImageButton translateButton;
+    private ConstraintLayout icon_container;
+    private WindowManager.LayoutParams windowParams;
     private WindowManager.LayoutParams mParamsTrash;
 
     private static String STORE_DIRECTORY;
@@ -119,6 +120,8 @@ public class ScreenTextService extends Service {
     private boolean isForeground;
 
     private ClipboardManager clipboard;
+
+    private FirebaseTextProcessor textProcessor;
 
     /*
     *  Type of service
@@ -148,17 +151,18 @@ public class ScreenTextService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        // textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
-//        tts = new CustomTTS(ScreenTextService.this);
+        textProcessor = FirebaseTextProcessor.Companion.getInstance();
         tts = CustomTTS.getInstance(getApplicationContext());
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         bubble = service_layout.findViewById(R.id.image_bubble);
-        takeSS =  service_layout.findViewById(R.id.takeScreenShot_image);
         snipView = service_layout.findViewById(R.id.snip_view);
         icon_container = service_layout.findViewById(R.id.icon_container);
 
-        params = new WindowManager.LayoutParams();
+        playButton = service_layout.findViewById(R.id.play_icon_button);
+        translateButton = service_layout.findViewById(R.id.translate_icon_button);
+
+        windowParams = new WindowManager.LayoutParams();
         defaultSnippingView();
 
         mParamsTrash = new WindowManager.LayoutParams();
@@ -182,22 +186,20 @@ public class ScreenTextService extends Service {
                 if (gestureDetector.onTouchEvent(event)) {
 
                     trash_layout.dismiss();
-                    if(isSnipViewVisible()){
-                        setSnippingView(false);
-                    }else {
-                        setSnippingView(true);
-                    }
+                    if(isSnipViewVisible()) setFloatingIconView();
+                    else showSnippingView();
+
                     return true;
                 } else if (!isSnipViewVisible()) {
                     // your code for move and drag
                     final int state = bubble.getState();
-                    trash_layout.onTouchFloatingView(event, params.x, params.y);
+                    trash_layout.onTouchFloatingView(event, windowParams.x, windowParams.y);
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
                             bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                             bubble.mAnimationHandler.sendAnimationMessage(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
-                            initialX = params.x;
-                            initialY = params.y;
+                            initialX = windowParams.x;
+                            initialY = windowParams.y;
                             initialTouchX = event.getRawX();
                             initialTouchY = event.getRawY();
                             touchX = event.getX();
@@ -213,8 +215,8 @@ public class ScreenTextService extends Service {
                                     windowManager.removeView(service_layout);
                                 if(trash_layout!=null)
                                     windowManager.removeView(trash_layout);
-                                params.x = 0;
-                                params.y = 100;
+                                windowParams.x = 0;
+                                windowParams.y = 100;
                             }else animateToEdge();
 
                             bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
@@ -227,11 +229,11 @@ public class ScreenTextService extends Service {
                             final boolean isIntersect = state == STATE_INTERSECTING;
                             if (isIntersecting) {
                                 bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
-                                params.x= (int) trash_layout.getTrashIconCenterX();
-                                params.y = (int) trash_layout.getTrashIconCenterY();
+                                windowParams.x= (int) trash_layout.getTrashIconCenterX();
+                                windowParams.y = (int) trash_layout.getTrashIconCenterY();
                             }else{
-                                params.x = initialX + (int) (event.getRawX() - initialTouchX);
-                                params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                                windowParams.x = initialX + (int) (event.getRawX() - initialTouchX);
+                                windowParams.y = initialY + (int) (event.getRawY() - initialTouchY);
                             }
                             if(isIntersecting && !isIntersect){
                                 bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
@@ -245,8 +247,8 @@ public class ScreenTextService extends Service {
                             trash_layout.setRect(rect);
                             trash_layout.invalidate();*/
 
-                            //Log.i(TAG,"X: "+params.x+" Y: "+ params.y);
-                            windowManager.updateViewLayout(service_layout, params);
+                            //Log.i(TAG,"X: "+windowParams.x+" Y: "+ windowParams.y);
+                            windowManager.updateViewLayout(service_layout, windowParams);
                             return true;
                     }
                 }
@@ -254,7 +256,7 @@ public class ScreenTextService extends Service {
             }
             //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
             private void animateToEdge() {
-                int currentX = params.x;
+                int currentX = windowParams.x;
                 int bubbleWidth =  bubble.getMeasuredWidth();
                 Log.i(TAG,"Width: "+mMetrics.widthPixels);
                 ValueAnimator ani;
@@ -264,13 +266,13 @@ public class ScreenTextService extends Service {
                     ani = ValueAnimator.ofInt(currentX, -bubbleWidth/3);
 
                 }
-                //params.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
+                //windowParams.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
 
                 ani.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        params.x = (Integer) animation.getAnimatedValue();
-                        windowManager.updateViewLayout(service_layout, params);
+                        windowParams.x = (Integer) animation.getAnimatedValue();
+                        windowManager.updateViewLayout(service_layout, windowParams);
                     }
                 });
                 ani.setDuration(350L);
@@ -293,10 +295,10 @@ public class ScreenTextService extends Service {
             }
         });
 
-        takeSS.setOnClickListener(new View.OnClickListener() {
+        playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                setSnippingView(false);
+
                 mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
 
                 if(mediaProjection!=null) {
@@ -337,7 +339,6 @@ public class ScreenTextService extends Service {
 
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         setClipboardCallback();
-
 
     }
 
@@ -399,14 +400,14 @@ public class ScreenTextService extends Service {
 
 
     private void defaultSnippingView(){
-        params.x = 0;
-        params.y = 100;
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.width = WindowManager.LayoutParams.WRAP_CONTENT;
-        params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        params.type = WindowManager.LayoutParams.TYPE_PHONE;
-        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
-        params.format = PixelFormat.TRANSLUCENT;
+        windowParams.x = 0;
+        windowParams.y = 100;
+        windowParams.gravity = Gravity.TOP | Gravity.START;
+        windowParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        windowParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        windowParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+        windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        windowParams.format = PixelFormat.TRANSLUCENT;
     }
 
     private void defaultTrashViewParams(){
@@ -423,30 +424,51 @@ public class ScreenTextService extends Service {
         mParamsTrash.y = 0;
     }
 
-    private void setSnippingView(Boolean visible) {
-        FrameLayout.LayoutParams rlparams = (FrameLayout.LayoutParams)icon_container.getLayoutParams();
-        if(visible){
-            rlparams.setMargins(0,35,0,0);
-            snipView.setVisibility(View.VISIBLE);
-            takeSS.setVisibility(View.VISIBLE);
-            params.x=0;
-            params.y=100;
-            params.width = WindowManager.LayoutParams.MATCH_PARENT;
-            params.height = WindowManager.LayoutParams.MATCH_PARENT;
-            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    | WindowManager.LayoutParams.FLAG_FULLSCREEN
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-            windowManager.updateViewLayout(service_layout, params);
-        }else{
-            rlparams.setMargins(0,0,0,0);
-            icon_container.setLayoutParams(rlparams);
-            snipView.setVisibility(View.GONE);
-            takeSS.setVisibility(View.GONE);
-
-            defaultSnippingView();
-            windowManager.updateViewLayout(service_layout, params);
-        }
+    private void showSnippingView(){
+        FrameLayout.LayoutParams frameLayoutParams = (FrameLayout.LayoutParams) icon_container.getLayoutParams();
+        frameLayoutParams.setMargins(0,0,0,35);
+        snipView.setVisibility(View.VISIBLE);
+        showContainerActionButtons();
+        setContainerBackground();
+        windowParams.x=0;
+        windowParams.y=100;
+        windowParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+        windowParams.height = WindowManager.LayoutParams.MATCH_PARENT;
+        windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_FULLSCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        windowManager.updateViewLayout(service_layout, windowParams);
     }
+
+    private void setFloatingIconView(){
+        snipView.setVisibility(View.GONE);
+
+        hideContainerActionButtons();
+        removeContainerBackground();
+
+        defaultSnippingView();
+        windowManager.updateViewLayout(service_layout, windowParams);
+    }
+
+    private void setContainerBackground(){
+        icon_container.setBackgroundResource(R.drawable.slot_background);
+    }
+
+    private void removeContainerBackground(){
+        icon_container.setBackgroundResource(0);
+    }
+
+    private void showContainerActionButtons(){
+        playButton.setVisibility(View.VISIBLE);
+        translateButton.setVisibility(View.VISIBLE);
+    }
+
+    private void hideContainerActionButtons() {
+        playButton.setVisibility(View.GONE);
+        translateButton.setVisibility(View.GONE);
+    }
+
+
 
     //----Based on https://github.com/mtsahakis/MediaProjectionDemo/blob/master/src/com/mtsahakis/mediaprojectiondemo/ScreenCaptureImageActivity.java
 
@@ -467,7 +489,7 @@ public class ScreenTextService extends Service {
             Image image = null;
             FileOutputStream fos = null;
             Bitmap bitmap = null;
-            Bitmap croppedBitmap = null;
+            final Bitmap croppedBitmap;
             try {
                 image = reader.acquireLatestImage();
                 if (image != null) {
@@ -486,10 +508,25 @@ public class ScreenTextService extends Service {
                     croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
                     IMAGES_PRODUCED++;
-                    Log.e(TAG, "Captured image: " + IMAGES_PRODUCED);
+                    System.out.println("Captured image: " + IMAGES_PRODUCED);
                     stopProjection();
-                    // doFirebaseOCR(croppedBitmap);
-                    //openScreenshot(imageFile); // Visualize captured image
+                    textProcessor.onDetectText(croppedBitmap, new ImageProcessingSource.Callback() {
+                        @Override
+                        public void onTextDetected(@NotNull String text, @NotNull String language) {
+                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                            // TODO should probably move this condition to the custom tts class
+                            boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                            if(!isInitialized) tts.initializeTTS(language, ttsListener);
+                            tts.speak(text);
+                            croppedBitmap.recycle();
+                        }
+
+                        @Override
+                        public void onFailure() {
+                            System.out.println("Recycling cropped bitmap");
+                            croppedBitmap.recycle();
+                        }
+                    });
                 }
 
             } catch (Exception e) {
@@ -504,7 +541,7 @@ public class ScreenTextService extends Service {
                 }
 
                 if (bitmap != null) bitmap.recycle();
-                if (croppedBitmap != null) croppedBitmap.recycle();
+
                 if (image != null) image.close();
                 reader.close();
             }
@@ -522,84 +559,6 @@ public class ScreenTextService extends Service {
             return bitmap;
         }
 
-        /*private void doFirebaseOCR(Bitmap bitmap){
-            //---------Reference https://firebase.google.com/docs/ml-kit/android/recognize-text?authuser=0
-            FirebaseVisionImage imageFB = FirebaseVisionImage.fromBitmap(bitmap);
-            FirebaseVisionCloudTextDetector detector = FirebaseVision.getInstance().getVisionCloudTextDetector();
-            Task<FirebaseVisionCloudText> result = detector.detectInImage(imageFB)
-                    .addOnSuccessListener(new OnSuccessListener<FirebaseVisionCloudText>() {
-                        @Override
-                        public void onSuccess(FirebaseVisionCloudText firebaseVisionCloudText) {
-                            String recognizedText = firebaseVisionCloudText.getText();
-                            Log.i(TAG, "Firebase text: "+recognizedText);
-
-                            Log.i(TAG, "pages size: " + firebaseVisionCloudText.getPages().size());
-                            for (FirebaseVisionCloudText.Page page: firebaseVisionCloudText.getPages()) {
-                                List<FirebaseVisionCloudText.DetectedLanguage> languages =
-                                        page.getTextProperty().getDetectedLanguages();
-                                int index=1;
-                                Log.i(TAG, "blocks size: " + page.getBlocks().size());
-                                for (FirebaseVisionCloudText.Block block: page.getBlocks()) {
-                                    Log.i(TAG, "paragraphs size: " + block.getParagraphs().size());
-                                    for (FirebaseVisionCloudText.Paragraph paragraph: block.getParagraphs()){
-                                        Log.i(TAG, "word size: " + paragraph.getWords().size());
-                                        StringBuilder sentenceString = new StringBuilder();
-                                        String langCode = "";
-                                        for (FirebaseVisionCloudText.DetectedLanguage lang : paragraph.getTextProperty().getDetectedLanguages()){
-                                            langCode=lang.getLanguageCode();
-                                            Log.i(TAG, "LANG: " + langCode);
-                                        }
-                                        int size = paragraph.getWords().size();
-                                        if (HE_LANG_CODE.equals(langCode)){
-                                            for(int i=size-1;i>=0;i--){
-                                                FirebaseVisionCloudText.Word word = paragraph.getWords().get(i);
-                                                StringBuilder wordString = new StringBuilder();
-                                                for (FirebaseVisionCloudText.Symbol symbol: word.getSymbols()) {
-                                                    wordString.append(symbol.getText());
-                                                }
-                                                Log.i(TAG, index + ".- " + wordString.toString());
-                                                index++;
-                                                String wordWhitespace= " " + wordString.toString();
-                                                sentenceString.append(wordWhitespace);
-                                            }
-                                            Log.i(TAG, index + "sentence:  " + sentenceString.toString());
-                                            tts.initializeTTS(langCode);
-                                            tts.speak(sentenceString.toString());
-                                        }else{
-                                            tts.initializeTTS(langCode);
-                                            tts.speak(recognizedText);
-                                        }
-
-                                    }
-                                }
-                            }
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.e(TAG,"Failed to detect text: "+ e.getMessage());
-                        }
-                    });
-
-        }*/
-
-        private void doGoogleVisionOCR(Bitmap bitmap){
-            // https://stackoverflow.com/questions/37287910/how-to-extract-text-from-image-android-app
-            Frame imageFrame = new Frame.Builder()
-
-                    .setBitmap(bitmap)                 // your image bitmap
-                    .build();
-
-            String imageText;
-            SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
-
-            for (int i = 0; i < textBlocks.size(); i++) {
-                TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
-                imageText = textBlock.getValue();                   // return string
-                Log.i(TAG, i+".- "+imageText);
-            }
-        }
     }
 
     private class MediaProjectionStopCallback extends MediaProjection.Callback {
@@ -693,7 +652,7 @@ public class ScreenTextService extends Service {
     }
 
     private void addViews(){
-        if(service_layout.getWindowToken() == null) windowManager.addView(service_layout, params);
+        if(service_layout.getWindowToken() == null) windowManager.addView(service_layout, windowParams);
         if(trash_layout.getWindowToken() == null) windowManager.addView(trash_layout, mParamsTrash);
     }
 
@@ -719,6 +678,13 @@ public class ScreenTextService extends Service {
             return true;
         }
     }
+
+    private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+        @Override
+        public void onLanguageUnavailable() {
+
+        }
+    };
 
 
 }
