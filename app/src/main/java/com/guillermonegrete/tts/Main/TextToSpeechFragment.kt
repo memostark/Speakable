@@ -36,6 +36,7 @@ import com.guillermonegrete.tts.Services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.Services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
+import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.db.WordsDatabase
 
 
@@ -71,7 +72,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
                 ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
                 this,
-                WordRepository.getInstance(MSTranslatorSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
+                WordRepository.getInstance(GooglePublicSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
                 CustomTTS.getInstance(activity?.applicationContext)
         )
     }
