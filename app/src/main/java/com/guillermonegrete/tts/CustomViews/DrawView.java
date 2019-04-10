@@ -7,12 +7,7 @@ package com.guillermonegrete.tts.CustomViews;
 import java.util.ArrayList;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Point;
+import android.graphics.*;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -274,6 +269,8 @@ public class DrawView extends View {
     public int getPosy(){
         return top;
     }
+
+    public Rect getPosRectangle(){ return new Rect(left, top, right, bottom);}
 
     public int getRectHeight(){
         return bottom-top;

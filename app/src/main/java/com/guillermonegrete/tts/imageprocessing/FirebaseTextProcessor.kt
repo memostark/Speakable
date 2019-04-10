@@ -7,7 +7,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 
 class FirebaseTextProcessor: ImageProcessingSource{
 
-    override fun onDetectText(bitmap: Bitmap, callback: ImageProcessingSource.Callback) {
+    override fun detectText(bitmap: Bitmap, callback: ImageProcessingSource.Callback) {
         val image = FirebaseVisionImage.fromBitmap(bitmap)
         val detector = FirebaseVision.getInstance().onDeviceTextRecognizer
 
