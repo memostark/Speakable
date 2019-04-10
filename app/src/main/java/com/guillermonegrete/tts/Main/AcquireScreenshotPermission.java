@@ -19,7 +19,9 @@ public class AcquireScreenshotPermission extends Activity{
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) AcquireScreenshotPermission.this.getSystemService(MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), TextToSpeechFragment.REQUEST_CODE_SCREEN_CAPTURE);
+        if (mediaProjectionManager != null) {
+            startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), TextToSpeechFragment.REQUEST_CODE_SCREEN_CAPTURE);
+        }
     }
 
     @Override

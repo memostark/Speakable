@@ -21,16 +21,9 @@ import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
-import android.media.Image;
-import android.media.ImageReader;
-import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
@@ -38,7 +31,6 @@ import androidx.core.app.NotificationCompat;
 import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
@@ -64,12 +56,10 @@ import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
 import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor;
 import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource;
 
+import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 
 public class ScreenTextService extends Service {
 
@@ -87,15 +77,7 @@ public class ScreenTextService extends Service {
     private static int resultCode;
     private static Intent permissionIntent = null;
 
-    private MediaProjection mediaProjection;
-    private ImageReader mImageReader;
-    private Handler mHandler;
-    private Display mDisplay;
     private static DisplayMetrics mMetrics;
-    private VirtualDisplay mVirtualDisplay;
-    private int mDensity;
-    private int mWidth;
-    private int mHeight;
     private DrawView snipView;
     private BubbleView bubble;
     private ImageButton playButton;
@@ -104,10 +86,6 @@ public class ScreenTextService extends Service {
     private WindowManager.LayoutParams windowParams;
     private WindowManager.LayoutParams mParamsTrash;
 
-    private static String STORE_DIRECTORY;
-    private static int IMAGES_PRODUCED;
-    private static final int VIRTUAL_DISPLAY_FLAGS = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
-
     private final Rect mFloatingViewRect = new Rect();
     private final Rect mTrashViewRect = new Rect();
 
@@ -115,13 +93,12 @@ public class ScreenTextService extends Service {
     static final int STATE_INTERSECTING = 1;
     static final int STATE_FINISHING = 2;
 
-    static final String HE_LANG_CODE = "iw";
-
     private boolean isForeground;
 
     private ClipboardManager clipboard;
 
     private FirebaseTextProcessor textProcessor;
+    private ScreenImageCaptor screenImageCaptor;
 
     /*
     *  Type of service
@@ -299,43 +276,33 @@ public class ScreenTextService extends Service {
             @Override
             public void onClick(View view) {
 
-                mediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
-
-                if(mediaProjection!=null) {
-                    File externalFilesDir = getExternalFilesDir(null);
-                    if (externalFilesDir != null) {
-                        STORE_DIRECTORY = externalFilesDir.getAbsolutePath() + "/screenshotService/";
-                        File storeDirectory = new File(STORE_DIRECTORY);
-                        if (!storeDirectory.exists()) {
-                            boolean success = storeDirectory.mkdirs();
-                            if (!success) {
-                                Log.e(TAG, "Failed to create file storage directory.");
-                                return;
+                Point screenSize = new Point();
+                windowManager.getDefaultDisplay().getSize(screenSize);
+                screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
+                screenImageCaptor.getImage(snipView.getPosRectangle(), new ScreenImageCaptor.Callback() {
+                    @Override
+                    public void onImageCaptured(@NotNull final Bitmap image) {
+                        textProcessor.detectText(image, new ImageProcessingSource.Callback() {
+                            @Override
+                            public void onTextDetected(@NotNull String text, @NotNull String language) {
+                                Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                                // TODO should probably move this condition to the custom tts class
+                                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                                if(!isInitialized) tts.initializeTTS(language, ttsListener);
+                                tts.speak(text);
+                                image.recycle();
                             }
-                        }
-                    } else {
-                        Log.e(TAG, "Failed to create file storage directory, getExternalFilesDir is null.");
-                        return;
-                    }
 
-                    DisplayMetrics metrics = getResources().getDisplayMetrics();
-                    mDensity = metrics.densityDpi;
-                    mDisplay = windowManager.getDefaultDisplay();
-                    createVirtualDisplay();
-                    mediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
-                }
+                            @Override
+                            public void onFailure() {
+                                image.recycle();
+                            }
+                        });
+                    }
+                });
 
             }
         });
-
-        new Thread() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                mHandler = new Handler();
-                Looper.loop();
-            }
-        }.start();
 
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         setClipboardCallback();
@@ -359,7 +326,7 @@ public class ScreenTextService extends Service {
     }
 
     private boolean isSnipViewVisible(){
-        return service_layout.findViewById(R.id.snip_view).getVisibility()==View.VISIBLE;
+        return snipView.getVisibility() == View.VISIBLE;
     }
 
     private ClipboardManager.OnPrimaryClipChangedListener clipboardListener = new ClipboardManager.OnPrimaryClipChangedListener(){
@@ -466,125 +433,6 @@ public class ScreenTextService extends Service {
     private void hideContainerActionButtons() {
         playButton.setVisibility(View.GONE);
         translateButton.setVisibility(View.GONE);
-    }
-
-
-
-    //----Based on https://github.com/mtsahakis/MediaProjectionDemo/blob/master/src/com/mtsahakis/mediaprojectiondemo/ScreenCaptureImageActivity.java
-
-    private void createVirtualDisplay(){
-        Point size = new Point();
-        mDisplay.getSize(size);
-        mWidth = size.x;
-        mHeight = size.y;
-
-        mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
-        mVirtualDisplay = mediaProjection.createVirtualDisplay("SCREENCAP", mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, mHandler);
-        mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), mHandler);
-    }
-
-    private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
-        @Override
-        public void onImageAvailable(ImageReader reader) {
-            Image image = null;
-            FileOutputStream fos = null;
-            Bitmap bitmap = null;
-            final Bitmap croppedBitmap;
-            try {
-                image = reader.acquireLatestImage();
-                if (image != null) {
-                    Image.Plane[] planes = image.getPlanes();
-
-                    // create bitmap
-                    bitmap = createBitmapFromImagePlane(planes[0]);
-                    int statusBarHeight = 0;
-                    croppedBitmap = Bitmap.createBitmap(bitmap,snipView.getPosx(),snipView.getPosy() +statusBarHeight,snipView.getRectWidth(),snipView.getRectHeight()+statusBarHeight);
-
-                    String mPath =  STORE_DIRECTORY + "/myscreen_" + IMAGES_PRODUCED + ".png";
-                    File imageFile = new File(mPath);
-
-                    // write bitmap to a file
-                    fos = new FileOutputStream(imageFile);
-                    croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
-
-                    IMAGES_PRODUCED++;
-                    System.out.println("Captured image: " + IMAGES_PRODUCED);
-                    stopProjection();
-                    textProcessor.onDetectText(croppedBitmap, new ImageProcessingSource.Callback() {
-                        @Override
-                        public void onTextDetected(@NotNull String text, @NotNull String language) {
-                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                            // TODO should probably move this condition to the custom tts class
-                            boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                            if(!isInitialized) tts.initializeTTS(language, ttsListener);
-                            tts.speak(text);
-                            croppedBitmap.recycle();
-                        }
-
-                        @Override
-                        public void onFailure() {
-                            System.out.println("Recycling cropped bitmap");
-                            croppedBitmap.recycle();
-                        }
-                    });
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                if (fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException ioe) {
-                        ioe.printStackTrace();
-                    }
-                }
-
-                if (bitmap != null) bitmap.recycle();
-
-                if (image != null) image.close();
-                reader.close();
-            }
-        }
-
-        private Bitmap createBitmapFromImagePlane(Image.Plane plane){
-            ByteBuffer buffer = plane.getBuffer();
-            int pixelStride = plane.getPixelStride();
-            int rowStride = plane.getRowStride();
-            int rowPadding = rowStride - pixelStride * mWidth;
-
-            // create bitmap
-            Bitmap bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
-            bitmap.copyPixelsFromBuffer(buffer);
-            return bitmap;
-        }
-
-    }
-
-    private class MediaProjectionStopCallback extends MediaProjection.Callback {
-        @Override
-        public void onStop() {
-            Log.e("ScreenCapture", "stopping projection.");
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (mVirtualDisplay != null) mVirtualDisplay.release();
-                    if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
-                    mediaProjection.unregisterCallback(MediaProjectionStopCallback.this);
-                }
-            });
-        }
-    }
-
-    private void stopProjection() {
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mediaProjection != null) {
-                    mediaProjection.stop();
-                }
-            }
-        });
     }
 
     private void openScreenshot(File imageFile) {
