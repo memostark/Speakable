@@ -5,7 +5,7 @@ import android.speech.tts.TextToSpeech;
 
 import com.guillermonegrete.speech.tts.Synthesizer;
 import com.guillermonegrete.speech.tts.Voice;
-import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.BuildConfig;
 
 import java.util.Locale;
 
@@ -35,7 +35,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private CustomTTS(Context context){
         tts = new TextToSpeech(context, this);
-        mSynth = new Synthesizer(context.getResources().getString(R.string.api_key));
+        mSynth = new Synthesizer(BuildConfig.TTSApiKey);
         isInitialized = false;
         localTTS = false;
     }

@@ -17,18 +17,19 @@ public class MSTranslatorSource implements WordDataSource {
 
     private static MSTranslatorSource INSTANCE;
     private static final String BASE_URL = "https://api.cognitive.microsofttranslator.com/";
+    private final String apiKey;
 
     private MicrosoftTranslatorAPI MSTranslatorAPI;
 
-    public static MSTranslatorSource getInstance(){
+    public static MSTranslatorSource getInstance(String apiKey){
         if(INSTANCE == null){
-          INSTANCE = new MSTranslatorSource();
+          INSTANCE = new MSTranslatorSource(apiKey);
         }
 
         return INSTANCE;
     }
 
-    private MSTranslatorSource(){
+    private MSTranslatorSource(String apiKey){
         Gson gson = new GsonBuilder()
                 .setLenient()
                 .create();
@@ -39,6 +40,7 @@ public class MSTranslatorSource implements WordDataSource {
                 .build();
 
         MSTranslatorAPI = retrofit.create(MicrosoftTranslatorAPI.class);
+        this.apiKey = apiKey;
 
     }
 
@@ -49,7 +51,7 @@ public class MSTranslatorSource implements WordDataSource {
         RequestBody body = new RequestBody(wordText);
         List<RequestBody> bodyList = new ArrayList<>();
         bodyList.add(body);
-        MSTranslatorAPI.getWord(bodyList).enqueue(new Callback<List<MSTranslatorResponse>>() {
+        MSTranslatorAPI.getWord(bodyList, apiKey).enqueue(new Callback<List<MSTranslatorResponse>>() {
             @Override
             public void onResponse(Call<List<MSTranslatorResponse>> call, final retrofit2.Response<List<MSTranslatorResponse>> response) {
                 System.out.print(response.isSuccessful());

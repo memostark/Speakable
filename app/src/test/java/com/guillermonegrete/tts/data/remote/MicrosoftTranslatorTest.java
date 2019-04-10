@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.remote;
 
+import com.guillermonegrete.tts.BuildConfig;
 import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.db.Words;
@@ -16,7 +17,7 @@ public class MicrosoftTranslatorTest {
 
     @Before
     public void setDataSource(){
-        dataSource = MSTranslatorSource.getInstance();
+        dataSource = MSTranslatorSource.getInstance(BuildConfig.TTSApiKey);
     }
 
     @Test
