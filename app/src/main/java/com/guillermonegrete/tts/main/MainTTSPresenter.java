@@ -1,5 +1,5 @@
 
-package com.guillermonegrete.tts.Main;
+package com.guillermonegrete.tts.main;
 
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;

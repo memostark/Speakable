@@ -31,7 +31,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-package com.guillermonegrete.tts.Main;
+package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
 import com.google.android.material.navigation.NavigationView;

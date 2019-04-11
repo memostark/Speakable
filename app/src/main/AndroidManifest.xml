@@ -12,7 +12,7 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name="com.guillermonegrete.tts.Main.MainActivity"
+            android:name="com.guillermonegrete.tts.main.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,7 +32,7 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
-        <activity android:name="com.guillermonegrete.tts.Main.AcquireScreenshotPermission"/>
+        <activity android:name="com.guillermonegrete.tts.main.AcquireScreenshotPermission"/>
         <service android:name="com.guillermonegrete.tts.Services.ScreenTextService"/>
         <receiver android:name="com.guillermonegrete.tts.Services.Receiver"
             android:enabled="true"

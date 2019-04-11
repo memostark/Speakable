@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.Main;
+package com.guillermonegrete.tts.main;
 
 public interface MainTTSContract {
     interface View {

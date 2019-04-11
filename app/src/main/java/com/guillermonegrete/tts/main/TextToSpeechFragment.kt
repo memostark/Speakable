@@ -1,5 +1,5 @@
 
-package com.guillermonegrete.tts.Main
+package com.guillermonegrete.tts.main
 
 
 import android.annotation.SuppressLint
@@ -29,7 +29,6 @@ import com.guillermonegrete.tts.CustomTTS.CustomTTS
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.Services.ScreenTextService
 import com.guillermonegrete.tts.ThreadExecutor
-import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import com.guillermonegrete.tts.threading.MainThreadImpl
 
 import com.guillermonegrete.tts.Services.ScreenTextService.NORMAL_SERVICE

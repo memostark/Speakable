@@ -45,18 +45,26 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import com.guillermonegrete.tts.Main.AcquireScreenshotPermission;
+import com.guillermonegrete.tts.ThreadExecutor;
+import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
+import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
+import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
 import com.guillermonegrete.tts.CustomViews.DrawView;
 import com.guillermonegrete.tts.CustomViews.TrashView;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.Main.SettingsFragment;
+import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.ProcessTextActivity;
 import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor;
 import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource;
 
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.threading.MainThreadImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -276,37 +284,70 @@ public class ScreenTextService extends Service {
             @Override
             public void onClick(View view) {
 
-                Point screenSize = new Point();
-                windowManager.getDefaultDisplay().getSize(screenSize);
-                screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
-                screenImageCaptor.getImage(snipView.getPosRectangle(), new ScreenImageCaptor.Callback() {
+                detectText(new ImageProcessingSource.Callback() {
                     @Override
-                    public void onImageCaptured(@NotNull final Bitmap image) {
-                        textProcessor.detectText(image, new ImageProcessingSource.Callback() {
-                            @Override
-                            public void onTextDetected(@NotNull String text, @NotNull String language) {
-                                Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                                // TODO should probably move this condition to the custom tts class
-                                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                                if(!isInitialized) tts.initializeTTS(language, ttsListener);
-                                tts.speak(text);
-                                image.recycle();
-                            }
+                    public void onTextDetected(@NotNull String text, @NotNull String language) {
+                        Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                        // TODO should probably move this condition to the custom tts class
+                        boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                        if(!isInitialized) tts.initializeTTS(language, ttsListener);
+                        tts.speak(text);
+                    }
 
-                            @Override
-                            public void onFailure() {
-                                image.recycle();
-                            }
-                        });
+                    @Override
+                    public void onFailure() {
+
                     }
                 });
 
             }
         });
 
+        translateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                detectText(new ImageProcessingSource.Callback() {
+                    @Override
+                    public void onTextDetected(@NotNull final String text, @NotNull String language) {
+                        GetLangAndTranslation interactor = new GetLangAndTranslation(
+                                ThreadExecutor.getInstance(),
+                                MainThreadImpl.getInstance(),
+                                WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
+                                text,
+                                new GetLangAndTranslation.Callback(){
+                                    @Override
+                                    public void onDataNotAvailable() { }
+
+                                    @Override
+                                    public void onTranslationAndLanguage(@NotNull Words word) {
+                                        Toast.makeText(ScreenTextService.this, word.definition, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                        interactor.execute();
+                    }
+
+                    @Override
+                    public void onFailure() {}
+                });
+            }
+        });
+
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         setClipboardCallback();
 
+    }
+
+    private void detectText(final ImageProcessingSource.Callback callback){
+        Point screenSize = new Point();
+        windowManager.getDefaultDisplay().getSize(screenSize);
+        screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
+        screenImageCaptor.getImage(snipView.getPosRectangle(), new ScreenImageCaptor.Callback() {
+            @Override
+            public void onImageCaptured(@NotNull final Bitmap image) {
+                textProcessor.detectText(image, callback);
+                image.recycle();
+            }
+        });
     }
 
     private void setTrashViewVerticalPosition(){
