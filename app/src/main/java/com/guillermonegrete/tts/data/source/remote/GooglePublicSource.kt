@@ -73,12 +73,16 @@ class GooglePublicSource private constructor() : WordDataSource {
                     val body = response.body()
                     if(response.isSuccessful && body != null){
                         val jsonArray  = gson.fromJson(body.string(), JsonArray::class.java)
-                        val rawTranslation = jsonArray[0].asJsonArray[0].asJsonArray[0].toString()
-                        val rawLanguage = jsonArray.last().asJsonArray[0].asJsonArray[0].toString()
+                        val jsonSentences = jsonArray[0].asJsonArray
+                        val sentences = arrayListOf<String>()
+                        for(i in 0 until  jsonSentences.size()){
+                            sentences.add(jsonSentences[i].asJsonArray[0].asString)
+                        }
 
-                        // Remove quotation marks
-                        val translation = rawTranslation.substring(1, rawTranslation.length - 1)
+                        val rawLanguage = jsonArray.last().asJsonArray[0].asJsonArray[0].toString()
                         val language = if(rawLanguage == "\"iw\"") "he" else rawLanguage.substring(1, rawLanguage.length - 1)
+
+                        val translation = sentences.joinToString(separator = "")
                         callback?.onWordLoaded(Words(wordText, language, translation))
                     }else{
                         callback?.onDataNotAvailable()

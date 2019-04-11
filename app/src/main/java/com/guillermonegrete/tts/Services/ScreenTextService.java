@@ -17,13 +17,11 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.PixelFormat;
-import android.graphics.Point;
-import android.graphics.Rect;
+import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.IBinder;
+import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
@@ -41,9 +39,6 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.Toast;
 
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -309,6 +304,7 @@ public class ScreenTextService extends Service {
                 detectText(new ImageProcessingSource.Callback() {
                     @Override
                     public void onTextDetected(@NotNull final String text, @NotNull String language) {
+                        System.out.println("detected text: " + text);
                         GetLangAndTranslation interactor = new GetLangAndTranslation(
                                 ThreadExecutor.getInstance(),
                                 MainThreadImpl.getInstance(),
@@ -320,7 +316,8 @@ public class ScreenTextService extends Service {
 
                                     @Override
                                     public void onTranslationAndLanguage(@NotNull Words word) {
-                                        Toast.makeText(ScreenTextService.this, word.definition, Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(ScreenTextService.this, word.definition, Toast.LENGTH_SHORT).show();
+                                        showPopUpTranslation(word.definition);
                                     }
                                 });
                         interactor.execute();
@@ -474,6 +471,18 @@ public class ScreenTextService extends Service {
     private void hideContainerActionButtons() {
         playButton.setVisibility(View.GONE);
         translateButton.setVisibility(View.GONE);
+    }
+
+    private void showPopUpTranslation(String text){
+        View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, null);
+        TextView textView = layout.findViewById(R.id.text_view_popup_translation);
+        textView.setText(text);
+        PopupWindow popupWindow = new PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        popupWindow.setFocusable(true);
+        popupWindow.setElevation(24);
+        popupWindow.setAnimationStyle(R.style.PopUpWindowAnimation);
+        popupWindow.showAtLocation(icon_container, Gravity.BOTTOM, 0, 24);
     }
 
     private void openScreenshot(File imageFile) {
