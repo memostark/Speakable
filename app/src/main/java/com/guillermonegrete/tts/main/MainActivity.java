@@ -31,7 +31,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-package com.guillermonegrete.tts.Main;
+package com.guillermonegrete.tts.main;
 
 import android.app.AlertDialog;
 import android.os.Bundle;

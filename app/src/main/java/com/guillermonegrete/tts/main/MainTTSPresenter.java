@@ -1,4 +1,5 @@
-package com.guillermonegrete.tts.Main;
+
+package com.guillermonegrete.tts.main;
 
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
@@ -12,8 +13,8 @@ import com.guillermonegrete.tts.db.Words;
 public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
 
     private CustomTTS tts;
-    private MainTTSContract.View view;
     private WordRepository wordRepository;
+    private MainTTSContract.View view;
 
     public MainTTSPresenter(Executor executor, MainThread mainThread, MainTTSContract.View view, WordRepository wordRepository, CustomTTS tts) {
         super(executor, mainThread);
@@ -25,7 +26,6 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     @Override
     public void onClickReproduce(final String text) {
         // TODO this request should be done in a background thread
-
         wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
             @Override
             public void onTranslationAndLanguage(Words word) {
@@ -71,3 +71,4 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         }
     };
 }
+

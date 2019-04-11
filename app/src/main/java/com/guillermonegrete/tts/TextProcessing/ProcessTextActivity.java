@@ -38,7 +38,7 @@ import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.Services.ScreenTextService;
-import com.guillermonegrete.tts.Main.SettingsFragment;
+import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;

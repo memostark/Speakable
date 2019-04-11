@@ -8,15 +8,18 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 class FirebaseTextProcessor: ImageProcessingSource{
 
     override fun detectText(bitmap: Bitmap, callback: ImageProcessingSource.Callback) {
-        val image = FirebaseVisionImage.fromBitmap(bitmap)
+        val bitmapCopy = bitmap.copy(bitmap.config, true)
+        val image = FirebaseVisionImage.fromBitmap(bitmapCopy)
         val detector = FirebaseVision.getInstance().onDeviceTextRecognizer
 
         val result = detector.processImage(image)
                 .addOnSuccessListener { firebaseVisionText ->
                     identifyLanguage(firebaseVisionText.text, callback)
+                    bitmapCopy.recycle()
                 }
                 .addOnFailureListener {
                     callback.onFailure()
+                    bitmapCopy.recycle()
                 }
     }
 
