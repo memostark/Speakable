@@ -96,8 +96,6 @@ public class ScreenTextService extends Service {
     static final int STATE_INTERSECTING = 1;
     static final int STATE_FINISHING = 2;
 
-    private boolean isForeground;
-
     private ClipboardManager clipboard;
 
     private FirebaseTextProcessor textProcessor;
@@ -108,7 +106,9 @@ public class ScreenTextService extends Service {
     * */
     public static final String NORMAL_SERVICE = "startService";
     public static final String NO_FLOATING_ICON_SERVICE = "startNoFloatingIcon";
-    public static final String LONGPRESS_SERVICE = "showServiceg";
+    public static final String LONGPRESS_SERVICE = "showServiceLongPress";
+
+    private Point screenSize;
 
 
     @Nullable
@@ -121,8 +121,6 @@ public class ScreenTextService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
-        isForeground=false;
 
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
         trash_layout= new TrashView(this);
@@ -141,6 +139,9 @@ public class ScreenTextService extends Service {
 
         playButton = service_layout.findViewById(R.id.play_icon_button);
         translateButton = service_layout.findViewById(R.id.translate_icon_button);
+
+        screenSize = new Point();
+        windowManager.getDefaultDisplay().getSize(screenSize);
 
         windowParams = new WindowManager.LayoutParams();
         defaultSnippingView();
@@ -290,9 +291,7 @@ public class ScreenTextService extends Service {
                     }
 
                     @Override
-                    public void onFailure() {
-
-                    }
+                    public void onFailure() {}
                 });
 
             }
@@ -316,7 +315,6 @@ public class ScreenTextService extends Service {
 
                                     @Override
                                     public void onTranslationAndLanguage(@NotNull Words word) {
-//                                        Toast.makeText(ScreenTextService.this, word.definition, Toast.LENGTH_SHORT).show();
                                         showPopUpTranslation(word.definition);
                                     }
                                 });
@@ -335,8 +333,6 @@ public class ScreenTextService extends Service {
     }
 
     private void detectText(final ImageProcessingSource.Callback callback){
-        Point screenSize = new Point();
-        windowManager.getDefaultDisplay().getSize(screenSize);
         screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
         screenImageCaptor.getImage(snipView.getPosRectangle(), new ScreenImageCaptor.Callback() {
             @Override
@@ -392,15 +388,7 @@ public class ScreenTextService extends Service {
     };
 
     private void setClipboardCallback(){
-        if(clipboard != null) {
-            clipboard.addPrimaryClipChangedListener(clipboardListener);
-        }
-    }
-
-    public static void setScreenshotPermission(final Intent intent, int result) {
-        permissionIntent = intent;
-        resultCode= result;
-        if(permissionIntent!=null) hasPermission=true;
+        if(clipboard != null) clipboard.addPrimaryClipChangedListener(clipboardListener);
     }
 
 
@@ -499,7 +487,7 @@ public class ScreenTextService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent!=null) {
             String action = intent.getAction();
-            Log.d("prueba","Intent action " + action);
+            System.out.println("Service intent action " + action);
             if(NORMAL_SERVICE.equals(action) ) {
                 addViews();
                 if (!hasPermission) {
@@ -515,10 +503,8 @@ public class ScreenTextService extends Service {
                     intentGetPermission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intentGetPermission);
                 }
-                addViews();
             }
-
-            if(!isForeground) createForeground(action);
+            createForeground(action);
         }else {
             stopSelf();
         }
@@ -536,7 +522,7 @@ public class ScreenTextService extends Service {
         String CHANNEL_IMPORTANCE = "service_notification";
         Notification notification = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Text to speech")
+                .setContentTitle("Clipboard translation is activated")
                 .setContentText("Tap to start")
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText("Tap to start text recognition"))
@@ -546,7 +532,6 @@ public class ScreenTextService extends Service {
                 .setContentIntent(pendingIntent).build();
 
         startForeground(1337, notification);
-        isForeground=true;
     }
 
     private void addViews(){

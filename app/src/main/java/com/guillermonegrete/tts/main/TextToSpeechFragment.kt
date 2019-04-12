@@ -149,7 +149,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
                 val intent = Intent(activity, ScreenTextService::class.java)
                 intent.action = NORMAL_SERVICE
                 intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode)
-                intent.putExtras(data!!)
+                intent.putExtras(data)
                 activity?.startService(intent)
                 activity?.finish()
             }
