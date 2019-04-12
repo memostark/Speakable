@@ -32,7 +32,10 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
-        <activity android:name="com.guillermonegrete.tts.main.AcquireScreenshotPermission"/>
+        <activity android:name="com.guillermonegrete.tts.main.AcquireScreenshotPermission"
+            android:theme="@style/Theme.Transparent"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"/>
         <service android:name="com.guillermonegrete.tts.Services.ScreenTextService"/>
         <receiver android:name="com.guillermonegrete.tts.Services.Receiver"
             android:enabled="true"
