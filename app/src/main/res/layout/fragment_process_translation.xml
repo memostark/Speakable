@@ -14,7 +14,7 @@
         android:maxLines="15"
         android:text="@string/definition_label"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintEnd_toStartOf="@+id/guideline2"
+        app:layout_constraintEnd_toEndOf="@+id/saved_definition_text"
         app:layout_constraintStart_toStartOf="@+id/guideline"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -23,9 +23,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:maxLines="15"
         android:textAppearance="@android:style/TextAppearance.Material.Medium"
-        app:layout_constraintEnd_toStartOf="@+id/guideline2"
+        app:layout_constraintEnd_toStartOf="@+id/copy_definition_button"
         app:layout_constraintStart_toStartOf="@+id/guideline"
         app:layout_constraintTop_toBottomOf="@+id/saved_definition_label"
         tools:text="Definition saved previously by the user" />
@@ -66,5 +67,22 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_end="8dp" />
+
+    <ImageButton
+            android:id="@+id/copy_definition_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            style="@style/SelectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/copy_definition_btn_description"
+            app:layout_constraintBottom_toBottomOf="@+id/saved_definition_text"
+            app:layout_constraintEnd_toStartOf="@+id/guideline2"
+            app:layout_constraintTop_toTopOf="@+id/saved_definition_label"
+            android:src="@drawable/ic_content_copy_black_24dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
