@@ -35,6 +35,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean insideLocalDatabase;
     private Words foundWord;
 
+    private boolean isPlaying;
+
     public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
                                 WordRepository repository, DictionaryRepository dictRepository, ExternalLinksDataSource linksRepository, CustomTTS customTTS){
         super(executor, mainThread);
@@ -45,6 +47,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         this.customTTS = customTTS;
 
         insideLocalDatabase = false;
+        isPlaying = false;
         mView.setPresenter(this);
     }
 
@@ -175,8 +178,15 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onClickReproduce(String text) {
-        PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, text);
-        interactor.execute();
+        if(isPlaying){
+            customTTS.stop();
+            isPlaying = false;
+            mView.showPlayIcon();
+        }else {
+            mView.showLoadingTTS();
+            PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, text);
+            interactor.execute();
+        }
     }
 
     @Override
@@ -196,6 +206,29 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
         public void onLanguageUnavailable() {
+        }
+
+        @Override
+        public void onSpeakStart() {
+            isPlaying = true;
+            // TODO move main thread code to interactor
+            mMainThread.post(new Runnable() {
+                @Override
+                public void run() {
+                    mView.showStopIcon();
+                }
+            });
+        }
+
+        @Override
+        public void onSpeakDone() {
+            isPlaying = false;
+            mMainThread.post(new Runnable() {
+                @Override
+                public void run() {
+                    mView.showPlayIcon();
+                }
+            });
         }
     };
 }

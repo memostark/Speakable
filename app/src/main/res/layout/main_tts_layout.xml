@@ -13,13 +13,14 @@
     <EditText
         android:id="@+id/tts_ev"
         android:layout_width="0dp"
-        android:layout_height="93dp"
+        android:layout_height="96dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="24dp"
         android:hint="@string/tts_edit_text_hint"
         android:inputType="text"
-        app:layout_constraintEnd_toStartOf="@+id/play_btn"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintEnd_toStartOf="@+id/play_icons_container"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -47,40 +48,62 @@
         app:layout_constraintStart_toEndOf="@+id/startBubble_btn"
         app:layout_constraintTop_toTopOf="@+id/startBubble_btn" />
 
-    <ImageButton
-        android:id="@+id/play_btn"
-        android:layout_width="wrap_content"
+
+    <FrameLayout
+        android:id="@+id/play_icons_container"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="@+id/tts_ev"
+        app:layout_constraintDimensionRatio="w,1:1"
         app:layout_constraintEnd_toStartOf="@+id/browse_btn"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/tts_ev"
         app:layout_constraintTop_toTopOf="@+id/tts_ev"
-        app:srcCompat="@drawable/ic_volume_up_black_24dp"
-        android:contentDescription="@string/play_tts_icon_description" />
+        app:layout_constraintHorizontal_weight="0">
 
-    <ImageButton
-        android:id="@+id/paste_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/browse_btn"
-        app:layout_constraintTop_toTopOf="@+id/browse_btn"
-        app:srcCompat="@drawable/ic_content_paste_black_24dp"
-        android:contentDescription="@string/paste_icon_description" />
+        <ImageButton
+            android:id="@+id/play_btn"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/reproduce_description"
+            android:src="@drawable/ic_volume_up_black_24dp"
+            tools:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/play_loading_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </FrameLayout>
 
     <ImageButton
         android:id="@+id/browse_btn"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:contentDescription="@string/browse_icon_description"
+        app:layout_constraintBottom_toBottomOf="@+id/play_icons_container"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toStartOf="@+id/paste_btn"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/play_btn"
-        app:layout_constraintTop_toTopOf="@+id/play_btn"
-        app:srcCompat="@drawable/ic_public_black_24dp"
-        android:contentDescription="@string/browse_icon_description" />
+        app:layout_constraintStart_toEndOf="@+id/play_icons_container"
+        app:layout_constraintTop_toTopOf="@+id/play_icons_container"
+        app:srcCompat="@drawable/ic_public_black_24dp"/>
+
+
+    <ImageButton
+        android:id="@+id/paste_btn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="@string/paste_icon_description"
+        app:layout_constraintBottom_toBottomOf="@+id/browse_btn"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/browse_btn"
+        app:layout_constraintTop_toTopOf="@+id/browse_btn"
+        app:srcCompat="@drawable/ic_content_paste_black_24dp" />
+
 
     <TextView
         android:id="@+id/text_language_code"
@@ -88,7 +111,7 @@
         android:layout_height="wrap_content"
         tools:text="EN"
         android:gravity="center"
-        app:layout_constraintBottom_toTopOf="@+id/play_btn"
-        app:layout_constraintEnd_toStartOf="@+id/browse_btn"
-        app:layout_constraintStart_toStartOf="@+id/play_btn" />
+        app:layout_constraintBottom_toTopOf="@+id/play_icons_container"
+        app:layout_constraintEnd_toEndOf="@id/play_icons_container"
+        app:layout_constraintStart_toStartOf="@+id/play_icons_container" />
 </androidx.constraintlayout.widget.ConstraintLayout>

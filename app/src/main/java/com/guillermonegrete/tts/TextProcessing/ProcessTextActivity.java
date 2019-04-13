@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 
+import android.widget.ProgressBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
@@ -78,6 +79,9 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private ViewPager pager;
 
+    private ImageButton playButton;
+    private ProgressBar playProgressBar;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -133,13 +137,16 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         textViewLanguage.setText(word.lang);
 
 
-        findViewById(R.id.play_tts_icon).setOnClickListener(new View.OnClickListener() {
+        playButton = findViewById(R.id.play_tts_icon);
+        playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // tts.speak(textString);
                 presenter.onClickReproduce(textString);
             }
         });
+
+        playProgressBar = findViewById(R.id.play_loading_icon);
 
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -258,6 +265,24 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         final Intent intentService = new Intent(this, ScreenTextService.class);
         intentService.setAction(NO_FLOATING_ICON_SERVICE);
         startService(intentService);
+    }
+
+    @Override
+    public void showLoadingTTS() {
+        playProgressBar.setVisibility(View.VISIBLE);
+        playButton.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void showPlayIcon() {
+        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+    }
+
+    @Override
+    public void showStopIcon() {
+        playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+        playProgressBar.setVisibility(View.GONE);
+        playButton.setVisibility(View.VISIBLE);
     }
 
 

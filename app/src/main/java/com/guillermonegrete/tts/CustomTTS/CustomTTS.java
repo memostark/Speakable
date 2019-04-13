@@ -1,29 +1,36 @@
 package com.guillermonegrete.tts.CustomTTS;
 
 import android.content.Context;
+import android.os.Build;
+import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 
+import android.speech.tts.UtteranceProgressListener;
 import com.guillermonegrete.speech.tts.Synthesizer;
 import com.guillermonegrete.speech.tts.Voice;
 import com.guillermonegrete.tts.BuildConfig;
 
+import java.util.HashMap;
 import java.util.Locale;
 
 
 public class CustomTTS implements TextToSpeech.OnInitListener{
     private static CustomTTS INSTANCE;
 
-    private TextToSpeech tts;
+    private TextToSpeech localTTS;
     private Synthesizer mSynth;
 
     private Boolean isInitialized;
-    private Boolean localTTS;
+    private Boolean usinglocalTTS;
 
     private String TAG = this.getClass().getSimpleName();
 
     private String language;
 
     private Listener listener;
+
+    private HashMap<String, String> map = new HashMap<>();
+    private Bundle params = new Bundle();
 
     public static CustomTTS getInstance(Context context){
         if(INSTANCE == null){
@@ -34,15 +41,21 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     private CustomTTS(Context context){
-        tts = new TextToSpeech(context, this);
+        localTTS = new TextToSpeech(context, this);
         mSynth = new Synthesizer(BuildConfig.TTSApiKey);
         isInitialized = false;
-        localTTS = false;
+        usinglocalTTS = false;
+        map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CustomTTSID");
+        params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
     public void speak(String text){
-        if(localTTS){
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        if(usinglocalTTS){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
+            } else {
+                localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+            }
         }else{
             if(mSynth.getLocalAudioBytes(text) == null){
                 mSynth.getAudio(text);
@@ -51,8 +64,13 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         }
     }
 
+    public void stop(){
+        if(usinglocalTTS) localTTS.stop();
+    }
+
      public void initializeTTS(final String langCode, Listener listener) {
         this.listener = listener;
+        localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
         language = langCode;
         isInitialized = false;
         if(langCode.equals("he")){
@@ -66,13 +84,13 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         mSynth.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
         Voice voice = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
         mSynth.SetVoice(voice, null);
-        localTTS = false;
+        usinglocalTTS = false;
         isInitialized = true;
     }
 
     private void initializeGoogleLocalService(String langCode){
         System.out.println(String.format("Language to set: %s", langCode ));
-        int result = tts.setLanguage(new Locale(langCode.toUpperCase()));
+        int result = localTTS.setLanguage(new Locale(langCode.toUpperCase()));
         if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
             System.out.print("Error code: ");
@@ -80,15 +98,33 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             System.out.println("Initialize TTS Error, This Language is not supported");
             if(listener != null) listener.onLanguageUnavailable();
         } else {
-            localTTS = true;
+            usinglocalTTS = true;
             isInitialized = true;
         }
     }
 
     @Override
     public void onInit(int status) {
-        System.out.print("Local TTS Status: ");
+        System.out.print("Local TTS Status:");
         System.out.println(status);
+    }
+
+    private class CustomUtteranceListener extends UtteranceProgressListener {
+
+        @Override
+        public void onStart(String utteranceId) {
+            System.out.println("on start utterance");
+            listener.onSpeakStart();
+        }
+
+        @Override
+        public void onDone(String utteranceId) {
+            System.out.println("on done utterance");
+            listener.onSpeakDone();
+        }
+
+        @Override
+        public void onError(String utteranceId) {}
     }
 
     public Boolean getInitialized() {
@@ -100,16 +136,20 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     public void finishTTS(){
-        System.out.println("Destroying tts");
+        System.out.println("Destroying localTTS");
         isInitialized = false;
-        if(tts!=null){
-            tts.stop();
-            tts.shutdown();
+        if(localTTS !=null){
+            localTTS.stop();
+            localTTS.shutdown();
         }
         INSTANCE = null;
     }
 
     public interface Listener{
         void onLanguageUnavailable();
+
+        void onSpeakStart();
+
+        void onSpeakDone();
     }
 }
