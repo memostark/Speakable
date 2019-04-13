@@ -69,21 +69,21 @@
         app:layout_constraintGuide_end="8dp" />
 
     <ImageButton
-            android:id="@+id/copy_definition_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
-            style="@style/SelectableItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="@string/copy_definition_btn_description"
-            app:layout_constraintBottom_toBottomOf="@+id/saved_definition_text"
-            app:layout_constraintEnd_toStartOf="@+id/guideline2"
-            app:layout_constraintTop_toTopOf="@+id/saved_definition_label"
-            android:src="@drawable/ic_content_copy_black_24dp"/>
+        android:id="@+id/copy_definition_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        style="@style/SelectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/copy_definition_btn_description"
+        app:layout_constraintBottom_toBottomOf="@+id/saved_definition_text"
+        app:layout_constraintEnd_toStartOf="@+id/guideline2"
+        app:layout_constraintTop_toTopOf="@+id/saved_definition_label"
+        android:src="@drawable/ic_content_copy_black_24dp"/>
 
     <TextView
             android:id="@+id/powered_by_label"

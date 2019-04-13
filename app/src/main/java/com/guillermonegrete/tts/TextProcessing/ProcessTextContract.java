@@ -30,6 +30,12 @@ public interface ProcessTextContract {
         void showWordDeleted();
 
         void startService();
+
+        void showLoadingTTS();
+
+        void showPlayIcon();
+
+        void showStopIcon();
     }
 
     interface Presenter extends BasePresenter{

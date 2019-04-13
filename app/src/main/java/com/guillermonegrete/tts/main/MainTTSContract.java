@@ -14,6 +14,12 @@ public interface MainTTSContract {
 
         void showLanguageNotAvailable();
 
+        void showLoadingTTS();
+
+        void showPlayIcon();
+
+        void showStopIcon();
+
     }
 
     interface Presenter{

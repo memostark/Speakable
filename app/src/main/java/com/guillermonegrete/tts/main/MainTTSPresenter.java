@@ -16,32 +16,42 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private WordRepository wordRepository;
     private MainTTSContract.View view;
 
+    private boolean isPlaying;
+
     public MainTTSPresenter(Executor executor, MainThread mainThread, MainTTSContract.View view, WordRepository wordRepository, CustomTTS tts) {
         super(executor, mainThread);
         this.view = view;
         this.tts = tts;
         this.wordRepository = wordRepository;
+        isPlaying = false;
     }
 
     @Override
     public void onClickReproduce(final String text) {
-        // TODO this request should be done in a background thread
-        wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
-            @Override
-            public void onTranslationAndLanguage(Words word) {
-                String language = word.lang;
-                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                if(!isInitialized) tts.initializeTTS(language, ttsListener);
-                view.showDetectedLanguage(language);
-                PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
-                interactor.execute();
-            }
+        if(isPlaying) {
+            tts.stop();
+            isPlaying = false;
+            view.showPlayIcon();
+        }else{
+            view.showLoadingTTS();
+            // TODO this request should be done in a background thread
+            wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
+                @Override
+                public void onTranslationAndLanguage(Words word) {
+                    String language = word.lang;
+                    boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                    if (!isInitialized) tts.initializeTTS(language, ttsListener);
+                    view.showDetectedLanguage(language);
+                    PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
+                    interactor.execute();
+                }
 
-            @Override
-            public void onDataNotAvailable() {
+                @Override
+                public void onDataNotAvailable() {
 
-            }
-        });
+                }
+            });
+        }
     }
 
     @Override
@@ -68,6 +78,29 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         @Override
         public void onLanguageUnavailable() {
             view.showLanguageNotAvailable();
+        }
+
+        @Override
+        public void onSpeakStart() {
+            isPlaying = true;
+            // TODO move main thread code to interactor
+            mMainThread.post(new Runnable() {
+                @Override
+                public void run() {
+                    view.showStopIcon();
+                }
+            });
+        }
+
+        @Override
+        public void onSpeakDone() {
+            isPlaying = false;
+            mMainThread.post(new Runnable() {
+                @Override
+                public void run() {
+                    view.showPlayIcon();
+                }
+            });
         }
     };
 }

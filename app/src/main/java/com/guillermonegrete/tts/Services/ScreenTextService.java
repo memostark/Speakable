@@ -28,7 +28,6 @@ import androidx.core.app.NotificationCompat;
 
 import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
@@ -85,7 +84,9 @@ public class ScreenTextService extends Service {
     private BubbleView bubble;
     private ImageButton playButton;
     private ImageButton translateButton;
+    private ProgressBar playLoadingIcon;
     private ConstraintLayout icon_container;
+    private FrameLayout play_icons_container;
     private WindowManager.LayoutParams windowParams;
     private WindowManager.LayoutParams mParamsTrash;
 
@@ -99,7 +100,6 @@ public class ScreenTextService extends Service {
     private ClipboardManager clipboard;
 
     private FirebaseTextProcessor textProcessor;
-    private ScreenImageCaptor screenImageCaptor;
 
     /*
     *  Type of service
@@ -109,6 +109,8 @@ public class ScreenTextService extends Service {
     public static final String LONGPRESS_SERVICE = "showServiceLongPress";
 
     private Point screenSize;
+
+    private boolean isPlaying;
 
 
     @Nullable
@@ -125,6 +127,7 @@ public class ScreenTextService extends Service {
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
         trash_layout= new TrashView(this);
         hasPermission=false;
+        isPlaying = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
@@ -136,9 +139,11 @@ public class ScreenTextService extends Service {
         bubble = service_layout.findViewById(R.id.image_bubble);
         snipView = service_layout.findViewById(R.id.snip_view);
         icon_container = service_layout.findViewById(R.id.icon_container);
+        play_icons_container = service_layout.findViewById(R.id.play_icons_container);
 
         playButton = service_layout.findViewById(R.id.play_icon_button);
         translateButton = service_layout.findViewById(R.id.translate_icon_button);
+        playLoadingIcon = service_layout.findViewById(R.id.play_loading_icon);
 
         screenSize = new Point();
         windowManager.getDefaultDisplay().getSize(screenSize);
@@ -235,32 +240,6 @@ public class ScreenTextService extends Service {
                 }
                 return true;
             }
-            //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
-            private void animateToEdge() {
-                int currentX = windowParams.x;
-                int bubbleWidth =  bubble.getMeasuredWidth();
-                Log.i(TAG,"Width: "+mMetrics.widthPixels);
-                ValueAnimator ani;
-                if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) {
-                    ani = ValueAnimator.ofInt(currentX, mMetrics.widthPixels - 2*bubbleWidth/3);
-                } else {
-                    ani = ValueAnimator.ofInt(currentX, -bubbleWidth/3);
-
-                }
-                //windowParams.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
-
-                ani.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator animation) {
-                        windowParams.x = (Integer) animation.getAnimatedValue();
-                        windowManager.updateViewLayout(service_layout, windowParams);
-                    }
-                });
-                ani.setDuration(350L);
-                ani.setInterpolator(new AccelerateDecelerateInterpolator());
-                ani.start();
-
-            }
 
             private boolean isIntersectingWithTrash() {
 
@@ -279,20 +258,28 @@ public class ScreenTextService extends Service {
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(isPlaying) {
+                    tts.stop();
+                    isPlaying = false;
+                    playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+                }else {
+                    playLoadingIcon.setVisibility(View.VISIBLE);
+                    playButton.setVisibility(View.GONE);
+                    detectText(new ImageProcessingSource.Callback() {
+                        @Override
+                        public void onTextDetected(@NotNull String text, @NotNull String language) {
+                            //                        Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                            // TODO should probably move this condition to the custom tts class
+                            boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                            if (!isInitialized) tts.initializeTTS(language, ttsListener);
+                            tts.speak(text);
+                        }
 
-                detectText(new ImageProcessingSource.Callback() {
-                    @Override
-                    public void onTextDetected(@NotNull String text, @NotNull String language) {
-                        Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                        // TODO should probably move this condition to the custom tts class
-                        boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                        if(!isInitialized) tts.initializeTTS(language, ttsListener);
-                        tts.speak(text);
-                    }
-
-                    @Override
-                    public void onFailure() {}
-                });
+                        @Override
+                        public void onFailure() {
+                        }
+                    });
+                }
 
             }
         });
@@ -333,7 +320,7 @@ public class ScreenTextService extends Service {
     }
 
     private void detectText(final ImageProcessingSource.Callback callback){
-        screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
+        ScreenImageCaptor screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
         screenImageCaptor.getImage(snipView.getPosRectangle(), new ScreenImageCaptor.Callback() {
             @Override
             public void onImageCaptured(@NotNull final Bitmap image) {
@@ -441,6 +428,12 @@ public class ScreenTextService extends Service {
 
         defaultSnippingView();
         windowManager.updateViewLayout(service_layout, windowParams);
+        icon_container.post(new Runnable() {
+            @Override
+            public void run() {
+                animateToEdge();
+            }
+        });
     }
 
     private void setContainerBackground(){
@@ -452,12 +445,12 @@ public class ScreenTextService extends Service {
     }
 
     private void showContainerActionButtons(){
-        playButton.setVisibility(View.VISIBLE);
+        play_icons_container.setVisibility(View.VISIBLE);
         translateButton.setVisibility(View.VISIBLE);
     }
 
     private void hideContainerActionButtons() {
-        playButton.setVisibility(View.GONE);
+        play_icons_container.setVisibility(View.GONE);
         translateButton.setVisibility(View.GONE);
     }
 
@@ -535,8 +528,43 @@ public class ScreenTextService extends Service {
     }
 
     private void addViews(){
-        if(service_layout.getWindowToken() == null) windowManager.addView(service_layout, windowParams);
+        if(service_layout.getWindowToken() == null) {
+            windowManager.addView(service_layout, windowParams);
+            // Runs after the view has been drawn
+            icon_container.post(new Runnable() {
+                @Override
+                public void run() {
+                    animateToEdge();
+                }
+            });
+        }
         if(trash_layout.getWindowToken() == null) windowManager.addView(trash_layout, mParamsTrash);
+    }
+
+    //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
+    private void animateToEdge() {
+        int currentX = windowParams.x;
+        int bubbleWidth =  icon_container.getMeasuredWidth();
+        ValueAnimator ani;
+        int toPosition;
+        if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2*bubbleWidth/3;
+        else toPosition = -bubbleWidth / 3;
+
+        System.out.println("currentX: " + currentX + " bubble width: " + bubbleWidth + " to: " + toPosition);
+        ani = ValueAnimator.ofInt(currentX, toPosition);
+        //windowParams.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
+
+        ani.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                windowParams.x = (Integer) animation.getAnimatedValue();
+                windowManager.updateViewLayout(service_layout, windowParams);
+            }
+        });
+        ani.setDuration(350L);
+        ani.setInterpolator(new AccelerateDecelerateInterpolator());
+        ani.start();
+
     }
 
     @Override
@@ -564,8 +592,31 @@ public class ScreenTextService extends Service {
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
-        public void onLanguageUnavailable() {
+        public void onLanguageUnavailable() {}
 
+        @Override
+        public void onSpeakStart() {
+            // TODO Should create a presenter or view model for this main thread stuff
+            MainThreadImpl.getInstance().post(new Runnable() {
+                @Override
+                public void run() {
+                    playLoadingIcon.setVisibility(View.GONE);
+                    isPlaying = true;
+                    playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+                    playButton.setVisibility(View.VISIBLE);
+                }
+            });
+        }
+
+        @Override
+        public void onSpeakDone() {
+            MainThreadImpl.getInstance().post(new Runnable() {
+                @Override
+                public void run() {
+                    isPlaying = false;
+                    playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+                }
+            });
         }
     };
 

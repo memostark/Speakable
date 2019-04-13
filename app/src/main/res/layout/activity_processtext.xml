@@ -57,7 +57,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_bookmark_border_black_24dp"
-                android:contentDescription="@string/play_tts_icon_description"
+                android:contentDescription="@string/save_icon_description"
+                android:layout_gravity="center_vertical"
                 android:background="?android:selectableItemBackgroundBorderless"/>
             <ImageButton
                 android:id="@+id/edit_icon"
@@ -68,16 +69,35 @@
                 android:src="@drawable/ic_edit_black_24dp"
                 android:contentDescription="@string/edit_icon_description"
                 android:background="?android:selectableItemBackgroundBorderless"
-                android:visibility="gone"/>
-            <ImageButton
-                android:id="@+id/play_tts_icon"
-                android:paddingStart="3dp"
-                android:paddingEnd="3dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_volume_up_black_24dp"
-                android:contentDescription="@string/save_icon_description"
-                android:background="?android:selectableItemBackgroundBorderless"/>
+                android:layout_gravity="center_vertical"
+                android:visibility="gone"
+                tools:visibility="visible"/>
+
+            <FrameLayout
+                android:layout_width="24dp"
+                android:layout_height="match_parent">
+                <ImageButton
+                    android:id="@+id/play_tts_icon"
+                    android:paddingStart="3dp"
+                    android:paddingEnd="3dp"
+                    android:layout_gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_volume_up_black_24dp"
+                    android:contentDescription="@string/save_icon_description"
+                    android:background="?android:selectableItemBackgroundBorderless"
+                    tools:visibility="visible"/>
+
+                <ProgressBar
+                    android:id="@+id/play_loading_icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    style="@android:style/Widget.Holo.ProgressBar"
+                    android:visibility="gone"
+                    tools:visibility="visible"/>
+            </FrameLayout>
+
 
         </LinearLayout>
 
