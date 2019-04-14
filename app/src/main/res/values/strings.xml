@@ -52,6 +52,7 @@
     <string name="reproduce_description">reproduce</string>
     <string name="translate_description">translate</string>
     <string name="screenshot_description">screenshot</string>
+    <string name="copy_definition_btn_description">Copy to clipboard</string>
 
     <string-array name="language_code_arrays">
         <item>All</item>

@@ -22,4 +22,14 @@
         <item name="android:windowExitAnimation">@anim/popup_hide</item>
     </style>
 
+
+    <!--Ripple effect with white background-->
+    <style name="SelectableItemTheme">
+        <item name="colorControlHighlight">@color/LightGrey</item>
+    </style>
+    <style name="SelectableItemBackground">
+        <item name="android:theme">@style/SelectableItemTheme</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+    </style>
+
 </resources>
