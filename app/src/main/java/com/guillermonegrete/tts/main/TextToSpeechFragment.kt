@@ -189,6 +189,8 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
     override fun showLanguageNotAvailable() {
         Toast.makeText(context, "Detected language not available for Text to Speech", Toast.LENGTH_SHORT).show()
+        ttsProgressBar.visibility = View.GONE
+        playButton.visibility = View.VISIBLE
     }
 
     override fun showLoadingTTS() {

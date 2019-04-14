@@ -206,6 +206,13 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
         public void onLanguageUnavailable() {
+            isPlaying = false;
+            mMainThread.post(new Runnable() {
+                @Override
+                public void run() {
+                    mView.showLanguageNotAvailable();
+                }
+            });
         }
 
         @Override

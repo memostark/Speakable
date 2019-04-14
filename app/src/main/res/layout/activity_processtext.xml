@@ -74,6 +74,7 @@
                 tools:visibility="visible"/>
 
             <FrameLayout
+                android:id="@+id/play_icons_container"
                 android:layout_width="24dp"
                 android:layout_height="match_parent">
                 <ImageButton
