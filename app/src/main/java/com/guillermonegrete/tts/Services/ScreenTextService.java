@@ -268,7 +268,7 @@ public class ScreenTextService extends Service {
                     detectText(new ImageProcessingSource.Callback() {
                         @Override
                         public void onTextDetected(@NotNull String text, @NotNull String language) {
-                            //                        Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
                             // TODO should probably move this condition to the custom tts class
                             boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
                             if (!isInitialized) tts.initializeTTS(language, ttsListener);
@@ -592,7 +592,17 @@ public class ScreenTextService extends Service {
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
-        public void onLanguageUnavailable() {}
+        public void onLanguageUnavailable() {
+            MainThreadImpl.getInstance().post(new Runnable() {
+                @Override
+                public void run() {
+                    isPlaying = false;
+                    playLoadingIcon.setVisibility(View.GONE);
+                    playButton.setVisibility(View.VISIBLE);
+                    Toast.makeText(ScreenTextService.this, "Language not available for TTS", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         @Override
         public void onSpeakStart() {

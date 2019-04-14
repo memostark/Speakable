@@ -82,6 +82,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     private ImageButton playButton;
     private ProgressBar playProgressBar;
 
+    private View playIconsContainer;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -147,6 +149,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         });
 
         playProgressBar = findViewById(R.id.play_loading_icon);
+        playIconsContainer = findViewById(R.id.play_icons_container);
 
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -265,6 +268,11 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         final Intent intentService = new Intent(this, ScreenTextService.class);
         intentService.setAction(NO_FLOATING_ICON_SERVICE);
         startService(intentService);
+    }
+
+    @Override
+    public void showLanguageNotAvailable() {
+        playIconsContainer.setVisibility(View.GONE);
     }
 
     @Override

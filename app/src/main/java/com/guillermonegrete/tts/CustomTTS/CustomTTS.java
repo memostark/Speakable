@@ -113,18 +113,16 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
         @Override
         public void onStart(String utteranceId) {
-            System.out.println("on start utterance");
             listener.onSpeakStart();
         }
 
         @Override
         public void onDone(String utteranceId) {
-            System.out.println("on done utterance");
             listener.onSpeakDone();
         }
 
         @Override
-        public void onError(String utteranceId) {}
+        public void onError(String utteranceId) {listener.onLanguageUnavailable();}
     }
 
     public Boolean getInitialized() {

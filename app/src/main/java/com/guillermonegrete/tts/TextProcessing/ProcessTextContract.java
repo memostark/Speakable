@@ -31,6 +31,8 @@ public interface ProcessTextContract {
 
         void startService();
 
+        void showLanguageNotAvailable();
+
         void showLoadingTTS();
 
         void showPlayIcon();
