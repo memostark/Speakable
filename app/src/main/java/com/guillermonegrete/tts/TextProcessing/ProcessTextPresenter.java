@@ -36,6 +36,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private Words foundWord;
 
     private boolean isPlaying;
+    private boolean isAvailable;
 
     public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
                                 WordRepository repository, DictionaryRepository dictRepository, ExternalLinksDataSource linksRepository, CustomTTS customTTS){
@@ -45,9 +46,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         dictionaryRepository = dictRepository;
         this.linksRepository = linksRepository;
         this.customTTS = customTTS;
+        this.customTTS.setListener(ttsListener);
 
         insideLocalDatabase = false;
         isPlaying = false;
+        isAvailable = true;
         mView.setPresenter(this);
     }
 
@@ -83,7 +86,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
                 boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
-                if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
+                if(!isInitialized) customTTS.initializeTTS(word.lang);
 
                 switch (layoutType){
                     case WORD_TRANSLATION:
@@ -105,7 +108,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             public void onDictionaryLayoutDetermined(Words word, List<WikiItem> items) {
                 boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
-                if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
+                if(!isInitialized) customTTS.initializeTTS(word.lang);
                 getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(word, items);
             }
@@ -119,19 +122,21 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void getDictionaryEntry(final Words word) {
         boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
         foundWord = word;
-        if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
+        if(!isInitialized) customTTS.initializeTTS(word.lang);
         GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
 
             @Override
             public void onEntryNotAvailable() {
                 getExternalLinks(word.lang);
                 mView.setSavedWordLayout(word);
+                if(!isAvailable) mView.showLanguageNotAvailable();
             }
 
             @Override
             public void onDictionaryLayoutDetermined(@NotNull List<WikiItem> items) {
                 getExternalLinks(word.lang);
                 mView.setDictWithSaveWordLayout(word, items);
+                if(!isAvailable) mView.showLanguageNotAvailable();
             }
 
 
@@ -182,7 +187,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             customTTS.stop();
             isPlaying = false;
             mView.showPlayIcon();
-        }else {
+        }else if(isAvailable){
             mView.showLoadingTTS();
             PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, text);
             interactor.execute();
@@ -200,13 +205,32 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
+    public void pause() {
+        stopPlaying();
+    }
+
+    @Override
+    public void stop() {
+        stopPlaying();
+    }
+
+    @Override
     public void destroy() {
+        stopPlaying();
+    }
+
+    private void stopPlaying(){
+        if(isPlaying) {
+            customTTS.stop();
+            isPlaying = false;
+        }
     }
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
         public void onLanguageUnavailable() {
             isPlaying = false;
+            isAvailable = false;
             mMainThread.post(new Runnable() {
                 @Override
                 public void run() {

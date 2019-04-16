@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 
 import android.widget.ProgressBar;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
@@ -110,6 +111,12 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        presenter.stop();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         presenter.destroy();
@@ -138,18 +145,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         TextView textViewLanguage = findViewById(R.id.text_language_code);
         textViewLanguage.setText(word.lang);
 
-
-        playButton = findViewById(R.id.play_tts_icon);
-        playButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // tts.speak(textString);
-                presenter.onClickReproduce(textString);
-            }
-        });
-
-        playProgressBar = findViewById(R.id.play_loading_icon);
-        playIconsContainer = findViewById(R.id.play_icons_container);
+        setPlayButton(textString);
 
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -207,14 +203,16 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     public void setSentenceLayout(Words word) {
         setBottomDialog();
+        String text = word.word;
         setContentView(R.layout.activity_process_sentence);
         TextView mTextTTS = findViewById(R.id.text_tts);
-        mTextTTS.setText(word.word);
+        mTextTTS.setText(text);
         TextView mTextTranslation = findViewById(R.id.text_translation);
         mTextTranslation.setText(word.definition);
         TextView textLanguage = findViewById(R.id.text_language_code);
         textLanguage.setText(word.lang);
-        presenter.onClickReproduce(word.word);
+        setPlayButton(text);
+        if(mAutoTTS) presenter.onClickReproduce(text);
     }
 
     @Override
@@ -272,7 +270,10 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     public void showLanguageNotAvailable() {
-        playIconsContainer.setVisibility(View.GONE);
+        if(playIconsContainer != null) {
+            playIconsContainer.setVisibility(View.GONE);
+            Toast.makeText(this, "Language not available for TTS", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -344,6 +345,20 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
             }
         });
 
+    }
+
+    private void setPlayButton(final String text){
+        playButton = findViewById(R.id.play_tts_icon);
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // tts.speak(textString);
+                presenter.onClickReproduce(text);
+            }
+        });
+
+        playProgressBar = findViewById(R.id.play_loading_icon);
+        playIconsContainer = findViewById(R.id.play_icons_container);
     }
 
     private void createViewPager(){

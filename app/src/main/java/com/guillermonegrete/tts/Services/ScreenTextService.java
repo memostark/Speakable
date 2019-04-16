@@ -111,6 +111,7 @@ public class ScreenTextService extends Service {
     private Point screenSize;
 
     private boolean isPlaying;
+    private boolean isAvailable;
 
 
     @Nullable
@@ -263,16 +264,18 @@ public class ScreenTextService extends Service {
                     isPlaying = false;
                     playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
                 }else {
+                    isAvailable = true;
                     playLoadingIcon.setVisibility(View.VISIBLE);
                     playButton.setVisibility(View.GONE);
                     detectText(new ImageProcessingSource.Callback() {
                         @Override
                         public void onTextDetected(@NotNull String text, @NotNull String language) {
-//                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
                             // TODO should probably move this condition to the custom tts class
+                            tts.setListener(ttsListener);
                             boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                            if (!isInitialized) tts.initializeTTS(language, ttsListener);
-                            tts.speak(text);
+                            if (!isInitialized) tts.initializeTTS(language);
+                            if(isAvailable) tts.speak(text);
                         }
 
                         @Override
@@ -593,15 +596,11 @@ public class ScreenTextService extends Service {
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
         public void onLanguageUnavailable() {
-            MainThreadImpl.getInstance().post(new Runnable() {
-                @Override
-                public void run() {
-                    isPlaying = false;
-                    playLoadingIcon.setVisibility(View.GONE);
-                    playButton.setVisibility(View.VISIBLE);
-                    Toast.makeText(ScreenTextService.this, "Language not available for TTS", Toast.LENGTH_SHORT).show();
-                }
-            });
+            isPlaying = false;
+            isAvailable = false;
+            playLoadingIcon.setVisibility(View.GONE);
+            playButton.setVisibility(View.VISIBLE);
+            Toast.makeText(ScreenTextService.this, "Language not available for TTS", Toast.LENGTH_SHORT).show();
         }
 
         @Override
@@ -620,6 +619,8 @@ public class ScreenTextService extends Service {
 
         @Override
         public void onSpeakDone() {
+            // For some reason I need to use main thread here even though I'm not using other threads
+            // Should find out why this is necessary
             MainThreadImpl.getInstance().post(new Runnable() {
                 @Override
                 public void run() {
