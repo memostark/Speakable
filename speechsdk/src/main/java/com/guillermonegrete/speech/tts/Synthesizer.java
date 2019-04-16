@@ -49,28 +49,39 @@ public class Synthesizer {
     private byte[] localAudioBytes;
     private String cacheText;
 
-    private void playSound(final byte[] sound, final Runnable callback) {
-        if (sound == null || sound.length == 0){
-            return;
-        }
+    private Callback callback;
+
+    private void playSound(final byte[] sound) {
+        if (sound == null || sound.length == 0) return;
+
 
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 final int SAMPLE_RATE = 16000;
+                final int audioLength = sound.length;
 
                 audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
+                        AudioFormat.ENCODING_PCM_16BIT, audioLength, AudioTrack.MODE_STREAM);
+
+                // 16 bit has to be divided by 2. More info: https://stackoverflow.com/questions/7642704/audiotrack-how-to-detect-end-of-sound
+                audioTrack.setNotificationMarkerPosition(audioLength / 2);
+                audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
+                    @Override
+                    public void onMarkerReached(AudioTrack audioTrack) {
+                        callback.onStop();
+                        audioTrack.stop();
+                        audioTrack.release();
+                    }
+
+                    @Override
+                    public void onPeriodicNotification(AudioTrack audioTrack) {}
+                });
 
                 if (audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
                     audioTrack.play();
-                    audioTrack.write(sound, 0, sound.length);
-                    audioTrack.stop();
-                    audioTrack.release();
-                }
-
-                if (callback != null) {
-                    callback.run();
+                    callback.onStart();
+                    audioTrack.write(sound, 0, audioLength);
                 }
             }
         });
@@ -84,7 +95,7 @@ public class Synthesizer {
             if (audioTrack != null && audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
                 audioTrack.pause();
                 audioTrack.flush();
-
+                callback.onStop();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -95,11 +106,12 @@ public class Synthesizer {
         AlwaysService//, WiFiOnly, WiFi3G4GOnly, NoService
     }
 
-    public Synthesizer(String apiKey) {
+    public Synthesizer(String apiKey, Callback callback) {
         m_serviceVoice = new Voice("en-US");
         m_localVoice = null;
         m_eServiceStrategy = ServiceStrategy.AlwaysService;
         m_ttsServiceClient = new TtsServiceClient(apiKey);
+        this.callback = callback;
     }
 
     public void SetVoice(Voice serviceVoice, Voice localVoice) {
@@ -125,11 +137,11 @@ public class Synthesizer {
     }
 
     public void SpeakToAudio(String text) {
-        playSound(getAudioBytes(text), null);
+        playSound(getAudioBytes(text));
     }
 
     public void SpeakSSMLToAudio(String ssml) {
-        playSound(SpeakSSML(ssml), null);
+        playSound(SpeakSSML(ssml));
     }
 
     public byte[] SpeakSSML(String ssml) {
@@ -154,7 +166,7 @@ public class Synthesizer {
     }
 
     public void speakLocalAudio(){
-        playSound(localAudioBytes, null);
+        playSound(localAudioBytes);
     }
 
     public byte[] getLocalAudioBytes(String text) {
@@ -164,4 +176,12 @@ public class Synthesizer {
 
     private TtsServiceClient m_ttsServiceClient;
     private ServiceStrategy m_eServiceStrategy;
+
+    public interface Callback{
+        void onStart();
+
+        void onStop();
+
+        void onError();
+    }
 }

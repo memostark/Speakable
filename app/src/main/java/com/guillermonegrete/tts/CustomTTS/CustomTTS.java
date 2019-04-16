@@ -42,7 +42,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private CustomTTS(Context context){
         localTTS = new TextToSpeech(context, this);
-        mSynth = new Synthesizer(BuildConfig.TTSApiKey);
+        mSynth = new Synthesizer(BuildConfig.TTSApiKey, synthCallback);
         isInitialized = false;
         usinglocalTTS = false;
         map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CustomTTSID");
@@ -70,6 +70,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     public void stop(){
         if(usinglocalTTS) localTTS.stop();
+        else mSynth.stopSound();
     }
 
      public void initializeTTS(final String langCode) {
@@ -127,6 +128,17 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         @Override
         public void onError(String utteranceId) {listener.onLanguageUnavailable();}
     }
+
+    private Synthesizer.Callback synthCallback = new Synthesizer.Callback() {
+        @Override
+        public void onStart() {listener.onSpeakStart();}
+
+        @Override
+        public void onStop() { listener.onSpeakDone();}
+
+        @Override
+        public void onError() { }
+    };
 
     public Boolean getInitialized() {
         return isInitialized;
