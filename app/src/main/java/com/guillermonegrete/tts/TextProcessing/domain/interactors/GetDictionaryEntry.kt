@@ -21,7 +21,7 @@ class GetDictionaryEntry(
 
             override fun onDefinitionLoaded(definitions: MutableList<WikiItem>?) {
                 if (definitions != null) {
-                    callback.onDictionaryLayoutDetermined(definitions)
+                    mMainThread.post{ callback.onDictionaryLayoutDetermined(definitions) }
                 }
             }
 

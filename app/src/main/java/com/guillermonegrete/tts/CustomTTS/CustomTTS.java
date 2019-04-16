@@ -22,7 +22,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private String language;
 
-    private Listener listener;
+    private Listener listener = null;
 
     private HashMap<String, String> map = new HashMap<>();
     private Bundle params = new Bundle();
@@ -42,6 +42,10 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
     public void speak(String text){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
@@ -54,8 +58,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         localTTS.stop();
     }
 
-     public void initializeTTS(final String langCode, Listener listener) {
-        this.listener = listener;
+     public void initializeTTS(final String langCode) {
         localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
         language = langCode;
         isInitialized = false;

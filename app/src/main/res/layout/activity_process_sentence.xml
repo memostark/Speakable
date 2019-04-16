@@ -20,20 +20,6 @@
 
 
         <TextView
-            android:id="@+id/text_language_code"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_marginEnd="1dp"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:gravity="center"
-            android:background="#FFFFBB33"
-            app:layout_constraintBottom_toBottomOf="@+id/text_tts"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/text_tts"
-            tools:text="ES" />
-
-        <TextView
             android:id="@+id/text_tts"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -50,6 +36,53 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Selected text" />
+
+        <TextView
+            android:id="@+id/text_language_code"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:paddingTop="4dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:gravity="top"
+            android:background="#FFFFBB33"
+            app:layout_goneMarginEnd="1dp"
+            app:layout_constraintBottom_toBottomOf="@+id/text_tts"
+            app:layout_constraintTop_toTopOf="@+id/text_tts"
+            app:layout_constraintEnd_toStartOf="@id/play_icons_container"
+            tools:text="ES" />
+
+        <FrameLayout
+            android:id="@+id/play_icons_container"
+            android:layout_width="24dp"
+            android:layout_height="0dp"
+            android:background="#FFFFBB33"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="1dp"
+            app:layout_constraintBottom_toTopOf="@+id/text_translation"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageButton
+                android:id="@+id/play_tts_icon"
+                android:padding="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:contentDescription="@string/save_icon_description"
+                android:paddingStart="3dp"
+                android:paddingEnd="3dp"
+                android:src="@drawable/ic_volume_up_black_24dp"
+                tools:visibility="visible" />
+
+            <ProgressBar
+                android:id="@+id/play_loading_icon"
+                style="@android:style/Widget.Holo.ProgressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/text_translation"

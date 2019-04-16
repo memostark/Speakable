@@ -17,22 +17,26 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private MainTTSContract.View view;
 
     private boolean isPlaying;
+    private boolean isAvailable;
 
     public MainTTSPresenter(Executor executor, MainThread mainThread, MainTTSContract.View view, WordRepository wordRepository, CustomTTS tts) {
         super(executor, mainThread);
         this.view = view;
         this.tts = tts;
+        this.tts.setListener(ttsListener);
         this.wordRepository = wordRepository;
         isPlaying = false;
     }
 
     @Override
     public void onClickReproduce(final String text) {
+
         if(isPlaying) {
             tts.stop();
             isPlaying = false;
             view.showPlayIcon();
         }else{
+            isAvailable = true;
             view.showLoadingTTS();
             // TODO this request should be done in a background thread
             wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
@@ -40,16 +44,16 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
                 public void onTranslationAndLanguage(Words word) {
                     String language = word.lang;
                     boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                    if (!isInitialized) tts.initializeTTS(language, ttsListener);
+                    if (!isInitialized) tts.initializeTTS(language);
                     view.showDetectedLanguage(language);
-                    PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
-                    interactor.execute();
+                    if(isAvailable) {
+                        PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
+                        interactor.execute();
+                    }
                 }
 
                 @Override
-                public void onDataNotAvailable() {
-
-                }
+                public void onDataNotAvailable() {}
             });
         }
     }
@@ -77,6 +81,8 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
         public void onLanguageUnavailable() {
+            isPlaying = false;
+            isAvailable = false;
             view.showLanguageNotAvailable();
         }
 
@@ -103,5 +109,32 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
             });
         }
     };
+
+    @Override
+    public void start() {
+        view.showPlayIcon();
+    }
+
+    @Override
+    public void pause() {
+        stopPlaying();
+    }
+
+    @Override
+    public void stop() {
+        stopPlaying();
+    }
+
+    @Override
+    public void destroy() {
+        stopPlaying();
+    }
+
+    private void stopPlaying(){
+        if(isPlaying) {
+            tts.stop();
+            isPlaying = false;
+        }
+    }
 }
 

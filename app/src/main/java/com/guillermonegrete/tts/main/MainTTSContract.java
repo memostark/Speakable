@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.main;
 
+import com.guillermonegrete.tts.BasePresenter;
+
 public interface MainTTSContract {
     interface View {
         void setDictionaryWebPage(String word);
@@ -22,7 +24,7 @@ public interface MainTTSContract {
 
     }
 
-    interface Presenter{
+    interface Presenter extends BasePresenter {
         void onClickReproduce(String text);
 
         void onClickShowBrowser(String text);

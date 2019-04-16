@@ -149,6 +149,21 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
         return fragment_layout
     }
 
+    override fun onStart() {
+        super.onStart()
+        presenter?.start()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        presenter?.stop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        presenter?.destroy()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
