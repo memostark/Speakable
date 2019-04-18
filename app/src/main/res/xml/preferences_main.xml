@@ -12,4 +12,15 @@
         android:summary="Show dialog when text is copied to clipboard"
         />
 
+    <PreferenceCategory
+        android:title="Text recognizer">
+        <ListPreference
+            android:title="Select recognizer service"
+            android:summary="Select service"
+            android:key="textRecognizerPref"
+            android:entries="@array/textRecognizerArray"
+            android:entryValues="@array/textRecognizerValues"
+            android:defaultValue="0"/>
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

@@ -11,7 +11,6 @@ class FirebaseTextProcessor: ImageProcessingSource{
         val bitmapCopy = bitmap.copy(bitmap.config, true)
         val image = FirebaseVisionImage.fromBitmap(bitmapCopy)
         val detector = FirebaseVision.getInstance().onDeviceTextRecognizer
-
         val result = detector.processImage(image)
                 .addOnSuccessListener { firebaseVisionText ->
                     identifyLanguage(firebaseVisionText.text, callback)

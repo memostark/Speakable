@@ -39,12 +39,14 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
+import com.google.firebase.ml.vision.FirebaseVision;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.imageprocessing.FirebaseCloudTextProcessor;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
@@ -98,8 +100,9 @@ public class ScreenTextService extends Service {
     static final int STATE_FINISHING = 2;
 
     private ClipboardManager clipboard;
+    private SharedPreferences sharedPreferences;
 
-    private FirebaseTextProcessor textProcessor;
+    private ImageProcessingSource textProcessor;
 
     /*
     *  Type of service
@@ -133,7 +136,6 @@ public class ScreenTextService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        textProcessor = FirebaseTextProcessor.Companion.getInstance();
         tts = CustomTTS.getInstance(getApplicationContext());
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
@@ -318,6 +320,8 @@ public class ScreenTextService extends Service {
         });
 
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        setTextRegognizer();
         setClipboardCallback();
 
     }
@@ -327,6 +331,7 @@ public class ScreenTextService extends Service {
         screenImageCaptor.getImage(snipView.getPosRectangle(), new ScreenImageCaptor.Callback() {
             @Override
             public void onImageCaptured(@NotNull final Bitmap image) {
+
                 textProcessor.detectText(image, callback);
                 image.recycle();
             }
@@ -357,9 +362,7 @@ public class ScreenTextService extends Service {
 
         @Override
         public void onPrimaryClipChanged() {
-            SharedPreferences sharedPref =
-                    PreferenceManager.getDefaultSharedPreferences(ScreenTextService.this);
-            if (!sharedPref.getBoolean(SettingsFragment.PREF_CLIPBOARD_SWITCH, false)) return;
+            if (!sharedPreferences.getBoolean(SettingsFragment.PREF_CLIPBOARD_SWITCH, false)) return;
 
             ClipData clip = clipboard.getPrimaryClip();
 
@@ -379,6 +382,30 @@ public class ScreenTextService extends Service {
 
     private void setClipboardCallback(){
         if(clipboard != null) clipboard.addPrimaryClipChangedListener(clipboardListener);
+    }
+
+    enum TextRecognizerType{
+        FIREBASE_LOCAL, FIREBASE_CLOUD
+    }
+
+    private void setTextRegognizer(){
+        int recognizerPreference = Integer.parseInt(sharedPreferences.getString("textRecognizerPref", "0"));
+        System.out.println("Recognizer preference " + recognizerPreference);
+
+        TextRecognizerType recognizerType = TextRecognizerType.values()[recognizerPreference];
+
+        switch (recognizerType){
+            case FIREBASE_CLOUD:
+//                Toast.makeText(this, "Cloud recognizer", Toast.LENGTH_SHORT).show();
+                textProcessor = FirebaseCloudTextProcessor.Companion.getInstance(FirebaseVision.getInstance().getCloudTextRecognizer());
+                break;
+            case FIREBASE_LOCAL:
+//                Toast.makeText(this, "Local recognizer", Toast.LENGTH_SHORT).show();
+                textProcessor = FirebaseTextProcessor.Companion.getInstance();
+                break;
+            default:
+                break;
+        }
     }
 
 
