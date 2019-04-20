@@ -60,10 +60,9 @@ class GooglePublicSource private constructor() : WordDataSource {
         googlePublicAPI = retrofit.create(GooglePublicAPI::class.java)
     }
 
-
-    override fun getWordLanguageInfo(wordText: String?, callback: WordDataSource.GetWordCallback?) {
-        if (wordText != null) {
-            googlePublicAPI?.getWord(wordText)?.enqueue(object : Callback<ResponseBody>{
+    override fun getWordLanguageInfo(wordText: String?, language: String?, callback: WordDataSource.GetWordCallback?) {
+        if (wordText != null && language!= null) {
+            googlePublicAPI?.getWord(wordText, language)?.enqueue(object : Callback<ResponseBody>{
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     callback?.onDataNotAvailable()
                 }
@@ -80,10 +79,10 @@ class GooglePublicSource private constructor() : WordDataSource {
                         }
 
                         val rawLanguage = jsonArray.last().asJsonArray[0].asJsonArray[0].toString()
-                        val language = if(rawLanguage == "\"iw\"") "he" else rawLanguage.substring(1, rawLanguage.length - 1)
+                        val detectedLanguage = if(rawLanguage == "\"iw\"") "he" else rawLanguage.substring(1, rawLanguage.length - 1)
 
                         val translation = sentences.joinToString(separator = "")
-                        callback?.onWordLoaded(Words(wordText, language, translation))
+                        callback?.onWordLoaded(Words(wordText, detectedLanguage, translation))
                     }else{
                         callback?.onDataNotAvailable()
                     }

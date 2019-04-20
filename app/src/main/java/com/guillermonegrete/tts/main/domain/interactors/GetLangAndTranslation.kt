@@ -7,23 +7,28 @@ import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.db.Words
 
-class GetLangAndTranslation(
+class GetLangAndTranslation @JvmOverloads constructor(
     executor: Executor,
     mainThread: MainThread,
     private val wordRepository: WordRepository,
     private val text: String,
+    private val languageTo: String = "en",
     private val callback: Callback
 ) : AbstractInteractor(executor, mainThread){
 
     override fun run() {
-        wordRepository.getLanguageAndTranslation(text, object : WordRepositorySource.GetTranslationCallback{
-            override fun onTranslationAndLanguage(word: Words?) {
-                word?.let { callback.onTranslationAndLanguage(it) }
+        wordRepository.getLanguageAndTranslation(
+            text,
+            languageTo,
+            object : WordRepositorySource.GetTranslationCallback{
+                override fun onTranslationAndLanguage(word: Words?) {
+                    word?.let { callback.onTranslationAndLanguage(it) }
+                }
+
+                override fun onDataNotAvailable() {callback.onDataNotAvailable()}
+
             }
-
-            override fun onDataNotAvailable() {callback.onDataNotAvailable()}
-
-        })
+        )
     }
 
     interface Callback{

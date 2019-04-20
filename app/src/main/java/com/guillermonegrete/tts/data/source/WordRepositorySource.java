@@ -23,7 +23,11 @@ public interface WordRepositorySource {
 
     void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback);
 
+    void getWordLanguageInfo(String wordText, String language, GetWordRepositoryCallback callback);
+
     void getLanguageAndTranslation(String text, GetTranslationCallback callback);
+
+    void getLanguageAndTranslation(String text, String language, GetTranslationCallback callback);
 
     void deleteWord(String word);
 

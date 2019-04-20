@@ -16,7 +16,7 @@
         android:title="Text recognizer">
         <ListPreference
             android:title="Select recognizer service"
-            android:summary="Select service"
+            android:summary="%s"
             android:key="textRecognizerPref"
             android:entries="@array/textRecognizerArray"
             android:entryValues="@array/textRecognizerValues"

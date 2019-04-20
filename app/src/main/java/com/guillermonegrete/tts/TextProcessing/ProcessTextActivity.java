@@ -14,8 +14,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 
-import android.widget.ProgressBar;
-import android.widget.Toast;
+import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
@@ -31,8 +30,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.ImageButton;
-import android.widget.TextView;
 
 
 import com.google.android.material.tabs.TabLayout;
@@ -56,6 +53,7 @@ import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
 
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,6 +83,14 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private View playIconsContainer;
 
+    private SharedPreferences preferences;
+
+    private String[] languagesISO;
+    private int languagePreferenceIndex;
+    private String languagePreferenceISO;
+
+    private static final String LANGUAGE_PREFERENCE = "ProcessTextLangPreference";
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -94,6 +100,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mSelectedText = getSelectedText();
 
         mAutoTTS = getAutoTTSPreference();
+        languagePreferenceISO = getPreferenceISO();
 
         presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
@@ -106,7 +113,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         Words extraWord = getIntent().getParcelableExtra("Word");
         if(extraWord != null) presenter.start(extraWord);
         else {
-            presenter.start(getSelectedText());
+            presenter.start(getSelectedText(), languagePreferenceISO);
         }
     }
 
@@ -130,9 +137,14 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private boolean getAutoTTSPreference(){
-        SharedPreferences sharedPref =
-                PreferenceManager.getDefaultSharedPreferences(this);
-        return sharedPref.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        return preferences.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
+    }
+
+    private String getPreferenceISO(){
+        languagePreferenceIndex = preferences.getInt(LANGUAGE_PREFERENCE, 15);
+        languagesISO = getResources().getStringArray(R.array.googleTranslateLanguagesValue);
+        return languagesISO[languagePreferenceIndex];
     }
 
     private void setWordLayout(Words word){
@@ -212,6 +224,19 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         TextView textLanguage = findViewById(R.id.text_language_code);
         textLanguage.setText(word.lang);
         setPlayButton(text);
+
+        Spinner spinner = findViewById(R.id.translate_to_spinner);
+        setSpinnerPopUpHeight(spinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+
+        spinner.setSelection(languagePreferenceIndex, false);
+        spinner.setOnItemSelectedListener(new SpinnerListener());
+
         if(mAutoTTS) presenter.onClickReproduce(text);
     }
 
@@ -292,6 +317,12 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         playButton.setImageResource(R.drawable.ic_stop_black_24dp);
         playProgressBar.setVisibility(View.GONE);
         playButton.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void updateTranslation(String translation) {
+        TextView translationTextView = findViewById(R.id.text_translation);
+        translationTextView.setText(translation);
     }
 
 
@@ -376,6 +407,23 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         tabLayout.setupWithViewPager(pager, true);
     }
 
+    // Taken from: https://stackoverflow.com/questions/20597584/how-to-limit-the-height-of-spinner-drop-down-view-in-android
+    private void setSpinnerPopUpHeight(Spinner spinner){
+        try {
+            Field popup = Spinner.class.getDeclaredField("mPopup");
+            popup.setAccessible(true);
+
+            // Get private mPopup member variable and try cast to ListPopupWindow
+            android.widget.ListPopupWindow popupWindow = (android.widget.ListPopupWindow) popup.get(spinner);
+
+            // Set popupWindow height to 500px
+            popupWindow.setHeight(300);
+        }
+        catch (NoClassDefFoundError | ClassCastException | NoSuchFieldException | IllegalAccessException e) {
+            // silently fail...
+        }
+    }
+
     @Override
     public void onWordSaved(final Words word) {
         presenter.onClickSaveWord(word);
@@ -391,6 +439,23 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
             }
         });
+    }
+
+    private class SpinnerListener implements AdapterView.OnItemSelectedListener{
+
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            languagePreferenceISO = languagesISO[position];
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putInt(LANGUAGE_PREFERENCE, position);
+            editor.apply();
+            presenter.onLanguageSpinnerChange(languagePreferenceISO);
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+
+        }
     }
 
 

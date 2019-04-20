@@ -11,5 +11,5 @@ public interface WordDataSource {
         void onDataNotAvailable();
     }
 
-    void getWordLanguageInfo(String wordText, GetWordCallback callback);
+    void getWordLanguageInfo(String wordText, String language, GetWordCallback callback);
 }
