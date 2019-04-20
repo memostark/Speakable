@@ -30,7 +30,7 @@
             android:paddingEnd="10dp"
             android:textColor="#000000"
             android:textSize="20sp"
-            app:layout_constraintBottom_toTopOf="@+id/text_translation"
+            app:layout_constraintBottom_toTopOf="@+id/translate_to_spinner"
             app:layout_constraintEnd_toStartOf="@+id/text_language_code"
             app:layout_constraintHeight_min="40dp"
             app:layout_constraintStart_toStartOf="parent"
@@ -56,20 +56,20 @@
             android:id="@+id/play_icons_container"
             android:layout_width="24dp"
             android:layout_height="0dp"
-            android:background="#FFFFBB33"
             android:layout_marginTop="1dp"
             android:layout_marginEnd="1dp"
-            app:layout_constraintBottom_toTopOf="@+id/text_translation"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            android:background="#FFFFBB33"
+            app:layout_constraintBottom_toTopOf="@+id/translate_to_spinner"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <ImageButton
                 android:id="@+id/play_tts_icon"
-                android:padding="4dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="?android:selectableItemBackgroundBorderless"
                 android:contentDescription="@string/save_icon_description"
+                android:padding="4dp"
                 android:paddingStart="3dp"
                 android:paddingEnd="3dp"
                 android:src="@drawable/ic_volume_up_black_24dp"
@@ -84,6 +84,20 @@
                 tools:visibility="visible" />
         </FrameLayout>
 
+        <Spinner
+            android:id="@+id/translate_to_spinner"
+            style="@style/Base.Widget.AppCompat.Spinner.Underlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:dropDownVerticalOffset="-150dp"
+            android:spinnerMode="dropdown"
+            android:theme="@style/Theme.AppCompat.Light"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_tts" />
+
         <TextView
             android:id="@+id/text_translation"
             android:layout_width="match_parent"
@@ -91,9 +105,11 @@
             android:maxLines="15"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:scrollbars="vertical"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_tts"
+            app:layout_constraintTop_toBottomOf="@+id/translate_to_spinner"
             tools:text="Translated text" />
 
         <TextView

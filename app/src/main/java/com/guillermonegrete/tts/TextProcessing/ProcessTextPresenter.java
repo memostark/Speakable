@@ -20,6 +20,7 @@ import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
 
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -37,6 +38,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     private boolean isPlaying;
     private boolean isAvailable;
+
+    private String preferenceLanguage;
 
     public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
                                 WordRepository repository, DictionaryRepository dictRepository, ExternalLinksDataSource linksRepository, CustomTTS customTTS){
@@ -74,13 +77,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
-    public void start(String selectedText) {
+    public void start(String selectedText, String preferenceLanguage) {
         mView.startService();
-        getLayout(selectedText);
+        getLayout(selectedText, preferenceLanguage);
+
     }
 
     @Override
-    public void getLayout(String text) {
+    public void getLayout(String text, String preferenceLanguage) {
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
@@ -112,7 +116,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(word, items);
             }
-        }, mRepository, dictionaryRepository, text);
+        }, mRepository, dictionaryRepository, text, preferenceLanguage);
 
         interactor.execute();
 
@@ -197,6 +201,22 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void onClickEdit() {
 
+    }
+
+    @Override
+    public void onLanguageSpinnerChange(final String language) {
+        GetLangAndTranslation interactor = new GetLangAndTranslation(mExecutor, mMainThread, mRepository, foundWord.word, language, new GetLangAndTranslation.Callback() {
+            @Override
+            public void onTranslationAndLanguage(@NotNull Words word) {
+                mView.updateTranslation(word.definition);
+            }
+
+            @Override
+            public void onDataNotAvailable() {
+
+            }
+        });
+        interactor.execute();
     }
 
     @Override

@@ -20,6 +20,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private WordRepository mRepository;
     private DictionaryRepository dictionaryRepository;
     private String mText;
+    private String preferenceLanguage;
 
     private boolean insideDictionary;
     private boolean dictionaryRequestDone;
@@ -29,7 +30,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private List<WikiItem> items;
 
 
-    public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, DictionaryRepository dictRepository, String text){
+    public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, DictionaryRepository dictRepository, String text, String preferenceLanguage){
         super(threadExecutor, mainThread);
         mCallback = callback;
         mText = text;
@@ -39,6 +40,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         insideDictionary = false;
         dictionaryRequestDone = false;
         translationDone = false;
+        this.preferenceLanguage = preferenceLanguage;
     }
 
     @Override
@@ -47,7 +49,8 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
         if(splittedText.length > 1){
             // Get translation, wait for callback
-            mRepository.getLanguageAndTranslation(mText, new WordRepositorySource.GetTranslationCallback() {
+            System.out.println("Preference language: " + preferenceLanguage);
+            mRepository.getLanguageAndTranslation(mText, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
                 @Override
                 public void onTranslationAndLanguage(Words word) {
                     mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION);
@@ -84,9 +87,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
                 }
 
                 @Override
-                public void onDataNotAvailable() {
-
-                }
+                public void onDataNotAvailable() {}
             });
         }
 

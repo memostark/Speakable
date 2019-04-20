@@ -38,20 +38,21 @@ public interface ProcessTextContract {
         void showPlayIcon();
 
         void showStopIcon();
+
+        void updateTranslation(String translation);
     }
 
     interface Presenter extends BasePresenter{
 
         void addNewWord();
 
-
         void editWord();
 
         void start(Words word);
 
-        void start(String selectedText);
+        void start(String selectedText, String preferenceLanguage);
 
-        void getLayout(String text);
+        void getLayout(String text, String language);
 
         void getDictionaryEntry(Words word);
 
@@ -66,6 +67,8 @@ public interface ProcessTextContract {
         void onClickReproduce(String text);
 
         void onClickEdit();
+
+        void onLanguageSpinnerChange(String language);
 
     }
 }

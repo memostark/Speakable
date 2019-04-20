@@ -72,7 +72,7 @@ public class ProcessTextPresenterTest {
     @Test
     public void setSavedWordLayout(){
         String test_text = "Prueba";
-        presenter.getLayout(test_text);
+        presenter.getLayout(test_text, "en");
 
         verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Test");
@@ -84,7 +84,7 @@ public class ProcessTextPresenterTest {
     @Test
     public void setSentenceLayout(){
         String test_text = "Prueba oracion";
-        presenter.getLayout(test_text);
+        presenter.getLayout(test_text, "en");
 
         verify(wordRepository).getLanguageAndTranslation(eq(test_text), getTranslationCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Sentence test");
@@ -96,7 +96,7 @@ public class ProcessTextPresenterTest {
     @Test
     public void setTranslationLayout(){
         String test_text = "Prueba";
-        presenter.getLayout(test_text);
+        presenter.getLayout(test_text, "en");
 
         verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
@@ -115,7 +115,7 @@ public class ProcessTextPresenterTest {
     public void setExternalDictionaryLayout(){
         String test_text = "Prueba";
         System.out.println("setExternalDict:");
-        presenter.getLayout(test_text);
+        presenter.getLayout(test_text, "en");
 
         verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();

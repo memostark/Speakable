@@ -15,9 +15,9 @@ public class WordRepository implements WordRepositorySource {
     private final WordDataSource mWordLocalDataSource;
 
 
-    private WordRepository(WordDataSource wordMSTranslatorSource,
+    private WordRepository(WordDataSource remoteTranslatorSource,
                            WordDataSource wordLocalDataSource){
-        remoteTranslatorSource = checkNotNull(wordMSTranslatorSource);
+        this.remoteTranslatorSource = checkNotNull(remoteTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
     }
 
@@ -31,8 +31,13 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public void getWordLanguageInfo(final String wordText, final GetWordRepositoryCallback callback) {
-        mWordLocalDataSource.getWordLanguageInfo(wordText, new WordDataSource.GetWordCallback(){
+    public void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback) {
+        getWordLanguageInfo(wordText, "en", callback);
+    }
+
+    @Override
+    public void getWordLanguageInfo(final String wordText, final String language, final GetWordRepositoryCallback callback) {
+        mWordLocalDataSource.getWordLanguageInfo(wordText, language, new WordDataSource.GetWordCallback(){
 
             @Override
             public void onWordLoaded(Words word) {
@@ -42,15 +47,20 @@ public class WordRepository implements WordRepositorySource {
             @Override
             public void onDataNotAvailable() {
                 callback.onLocalWordNotAvailable();
-                getRemoteWord(wordText, callback);
+                getRemoteWord(wordText, language, callback);
             }
         });
 
     }
 
     @Override
-    public void getLanguageAndTranslation(String text, final GetTranslationCallback callback) {
-        remoteTranslatorSource.getWordLanguageInfo(text, new WordDataSource.GetWordCallback() {
+    public void getLanguageAndTranslation(String text, GetTranslationCallback callback) {
+        getLanguageAndTranslation(text, "en", callback);
+    }
+
+    @Override
+    public void getLanguageAndTranslation(String text, String language, final GetTranslationCallback callback) {
+        remoteTranslatorSource.getWordLanguageInfo(text, language, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
                 callback.onTranslationAndLanguage(word);
@@ -77,8 +87,8 @@ public class WordRepository implements WordRepositorySource {
         wordSource.deleteWord(word);
     }
 
-    private void getRemoteWord(String wordText, final GetWordRepositoryCallback callback) {
-        remoteTranslatorSource.getWordLanguageInfo(wordText, new WordDataSource.GetWordCallback() {
+    private void getRemoteWord(String wordText, String language, final GetWordRepositoryCallback callback) {
+        remoteTranslatorSource.getWordLanguageInfo(wordText, language, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
                 callback.onRemoteWordLoaded(word);
