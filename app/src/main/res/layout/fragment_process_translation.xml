@@ -6,6 +6,51 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <Spinner
+        android:id="@+id/translate_to_spinner"
+        style="@style/Base.Widget.AppCompat.Spinner.Underlined"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/translation_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/translation_label"
+        android:textAppearance="@android:style/TextAppearance.Material.Large"
+        app:layout_constraintStart_toStartOf="@id/guideline_start"
+        app:layout_constraintTop_toBottomOf="@id/translate_to_spinner" />
+
+    <TextView
+        android:id="@+id/translation_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textAppearance="@android:style/TextAppearance.Material.Medium"
+        app:layout_constraintEnd_toStartOf="@id/copy_translation_button"
+        app:layout_constraintStart_toStartOf="@id/guideline_start"
+        app:layout_constraintTop_toBottomOf="@id/translation_label"
+        tools:text="Translation from external service" />
+
+    <ImageButton
+        android:id="@+id/copy_translation_button"
+        style="@style/SelectableItemBackground"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:contentDescription="@string/copy_translation_btn_description"
+        android:focusable="true"
+        android:padding="8dp"
+        android:src="@drawable/ic_content_copy_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@+id/translation_text"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
+        app:layout_constraintTop_toTopOf="@+id/translation_label" />
+
     <TextView
         android:id="@+id/saved_definition_label"
         android:layout_width="0dp"
@@ -15,8 +60,8 @@
         android:text="@string/definition_label"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
         app:layout_constraintEnd_toEndOf="@+id/saved_definition_text"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="@+id/guideline_start"
+        app:layout_constraintTop_toBottomOf="@id/translation_text" />
 
     <TextView
         android:id="@+id/saved_definition_text"
@@ -27,7 +72,7 @@
         android:maxLines="15"
         android:textAppearance="@android:style/TextAppearance.Material.Medium"
         app:layout_constraintEnd_toStartOf="@+id/copy_definition_button"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@+id/saved_definition_label"
         tools:text="Definition saved previously by the user" />
 
@@ -38,8 +83,8 @@
         android:maxLines="15"
         android:text="@string/notes_label"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
-        app:layout_constraintEnd_toStartOf="@+id/guideline2"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@+id/saved_definition_text" />
 
     <TextView
@@ -49,41 +94,56 @@
         android:layout_marginStart="8dp"
         android:maxLines="15"
         android:textAppearance="@android:style/TextAppearance.Material.Medium"
-        app:layout_constraintEnd_toStartOf="@+id/guideline2"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@+id/saved_notes_label"
         tools:text="Additional notes previously saved by the user" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline"
+        android:id="@+id/guideline_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_begin="8dp" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline2"
+        android:id="@+id/guideline_end"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_end="8dp" />
 
+
     <ImageButton
         android:id="@+id/copy_definition_button"
+        style="@style/SelectableItemBackground"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        style="@style/SelectableItemBackground"
         android:clickable="true"
-        android:focusable="true"
         android:contentDescription="@string/copy_definition_btn_description"
+        android:focusable="true"
+        android:padding="8dp"
+        android:src="@drawable/ic_content_copy_black_24dp"
         app:layout_constraintBottom_toBottomOf="@+id/saved_definition_text"
-        app:layout_constraintEnd_toStartOf="@+id/guideline2"
-        app:layout_constraintTop_toTopOf="@+id/saved_definition_label"
-        android:src="@drawable/ic_content_copy_black_24dp"/>
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
+        app:layout_constraintTop_toTopOf="@+id/saved_definition_label" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/translation_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="translation_label,translate_to_spinner,translation_text,copy_translation_button"
+        tools:visibility="visible" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/definition_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="saved_definition_label,copy_definition_button,saved_definition_text" />
 
     <TextView
             android:id="@+id/powered_by_label"
