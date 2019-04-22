@@ -51,6 +51,8 @@
     <string name="translate_description">translate</string>
     <string name="screenshot_description">screenshot</string>
     <string name="copy_definition_btn_description">Copy to clipboard</string>
+    <string name="translation_label">Translation</string>
+    <string name="copy_translation_btn_description">Copy translation to clipboard</string>
 
     <string-array name="language_code_arrays">
         <item>All</item>

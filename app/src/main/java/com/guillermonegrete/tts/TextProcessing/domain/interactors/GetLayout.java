@@ -63,7 +63,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             });
         }else{
             // Search in database
-            mRepository.getWordLanguageInfo(mText, new WordRepositorySource.GetWordRepositoryCallback() {
+            mRepository.getWordLanguageInfo(mText, preferenceLanguage, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(final Words word) {
                     mMainThread.post(new Runnable() {

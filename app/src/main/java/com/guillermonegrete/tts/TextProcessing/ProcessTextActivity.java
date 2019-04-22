@@ -77,6 +77,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     private ProcessTextContract.Presenter presenter;
 
     private ViewPager pager;
+    private MyPageAdapter adapter;
 
     private ImageButton playButton;
     private ProgressBar playProgressBar;
@@ -195,6 +196,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         createSmallViewPager();
 
         setSavedWordToolbar(word);
+        languagePreferenceIndex = -1; // Indicates spinner not visible
 
     }
 
@@ -202,6 +204,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     public void setDictWithSaveWordLayout(Words word, List<WikiItem> items) {
         setWiktionaryLayout(word, items);
         setSavedWordToolbar(word);
+        languagePreferenceIndex = -1; // Indicates spinner not visible
     }
 
     @Override
@@ -225,26 +228,18 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         textLanguage.setText(word.lang);
         setPlayButton(text);
 
-        Spinner spinner = findViewById(R.id.translate_to_spinner);
-        setSpinnerPopUpHeight(spinner);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        spinner.setAdapter(adapter);
-
-        spinner.setSelection(languagePreferenceIndex, false);
-        spinner.setOnItemSelectedListener(new SpinnerListener());
+        setSpinner();
 
         if(mAutoTTS) presenter.onClickReproduce(text);
     }
 
     @Override
     public void setExternalDictionary(List<ExternalLink> links) {
-        MyPageAdapter adapter = new MyPageAdapter(getSupportFragmentManager());
+        adapter = new MyPageAdapter(getSupportFragmentManager());
         if(mAdapter != null) adapter.addFragment(DefinitionFragment.newInstance(mAdapter));
-        adapter.addFragment(TranslationFragment.newInstance(mFoundWords));
+        TranslationFragment translationFragment = TranslationFragment.newInstance(mFoundWords, languagePreferenceIndex);
+        translationFragment.setListener(translationFragListener);
+        adapter.addFragment(translationFragment);
         adapter.addFragment(ExternalLinksFragment.newInstance(mSelectedText, (ArrayList<ExternalLink>) links));
         pager.setAdapter(adapter);
     }
@@ -321,8 +316,15 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     public void updateTranslation(String translation) {
-        TextView translationTextView = findViewById(R.id.text_translation);
-        translationTextView.setText(translation);
+
+        int fragIndex = pager.getCurrentItem();
+        Fragment fragment = adapter.getItem(fragIndex);
+        if(fragment instanceof TranslationFragment){
+            ((TranslationFragment) fragment).updateTranslation(translation);
+        }else {
+            TextView translationTextView = findViewById(R.id.text_translation);
+            translationTextView.setText(translation);
+        }
     }
 
 
@@ -383,7 +385,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // tts.speak(textString);
                 presenter.onClickReproduce(text);
             }
         });
@@ -405,6 +406,20 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         pager.setLayoutParams(params);
         TabLayout tabLayout = findViewById(R.id.pager_menu_dots);
         tabLayout.setupWithViewPager(pager, true);
+    }
+
+    private void setSpinner(){
+        Spinner spinner = findViewById(R.id.translate_to_spinner);
+        setSpinnerPopUpHeight(spinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+
+        spinner.setSelection(languagePreferenceIndex, false);
+        spinner.setOnItemSelectedListener(new SpinnerListener());
     }
 
     // Taken from: https://stackoverflow.com/questions/20597584/how-to-limit-the-height-of-spinner-drop-down-view-in-android
@@ -441,7 +456,18 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         });
     }
 
-    private class SpinnerListener implements AdapterView.OnItemSelectedListener{
+    private TranslationFragment.Listener translationFragListener = new TranslationFragment.Listener() {
+        @Override
+        public void onItemSelected(int position) {
+            languagePreferenceISO = languagesISO[position];
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putInt(LANGUAGE_PREFERENCE, position);
+            editor.apply();
+            presenter.onLanguageSpinnerChange(languagePreferenceISO);
+        }
+    };
+
+    class SpinnerListener implements AdapterView.OnItemSelectedListener{
 
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -453,9 +479,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         }
 
         @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-
-        }
+        public void onNothingSelected(AdapterView<?> parent) {}
     }
 
 
