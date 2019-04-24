@@ -30,6 +30,8 @@ class SnippingView : View {
     private var snipTop: Int = 0
     private var snipRight: Int = 0
     private var snipBottom: Int = 0
+
+    private var isDragging = false
     
     private var bitmaps = arrayOf(
         R.drawable.corner_topleft,
@@ -37,7 +39,7 @@ class SnippingView : View {
         R.drawable.corner_bottomright,
         R.drawable.corner_topright)
 
-    val posRectangle: Rect
+    val snipRectangle: Rect
         get() = Rect(snipLeft, snipTop, snipRight, snipBottom)
 
     constructor(context: Context) : super(context) {
@@ -58,11 +60,12 @@ class SnippingView : View {
         wParent = context.resources.displayMetrics.widthPixels
         hParent = context.resources.displayMetrics.heightPixels
 
-        snipRight = wParent
-        snipBottom = hParent
-
         val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
         val statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
+
+        snipTop = statusBarHeight
+        snipRight = wParent
+        snipBottom = hParent
 
         val firstBitmap = BitmapFactory.decodeResource(context.resources, bitmaps.first())
         val bitmapWidth = firstBitmap.width
@@ -83,10 +86,10 @@ class SnippingView : View {
 
     override fun onDraw(canvas: Canvas) {
 
-        snipLeft = colorBalls[0].left
+        /*snipLeft = colorBalls[0].left
         snipTop = colorBalls[0].top
         snipRight = colorBalls[2].right
-        snipBottom = colorBalls[2].bottom
+        snipBottom = colorBalls[2].bottom*/
 
         paint.apply {
             isAntiAlias = true
@@ -126,13 +129,11 @@ class SnippingView : View {
         }
     }
 
-    private fun drawCornerBorder(canvas: Canvas, rect: Rect){
-        val paint = Paint()
-        paint.color = Color.CYAN
-        paint.strokeWidth = 1.5f
-        paint.style = Paint.Style.STROKE
-        canvas.drawRect(rect, paint)
-    }
+    private var initialX: Int = 0
+    private var initialY: Int = 0
+
+    private var snipWidth = 0
+    private var snipHeight = 0
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -165,6 +166,15 @@ class SnippingView : View {
                     }
                     invalidate()
                 }
+
+                if(snipRectangle.contains(x, y)){
+                    isDragging = true
+                    initialX = x
+                    initialY = y
+
+                    snipWidth = snipRectangle.width()
+                    snipHeight = snipRectangle.height()
+                }
             }
 
             MotionEvent.ACTION_MOVE ->
@@ -176,33 +186,28 @@ class SnippingView : View {
                     val halfWidth = colorBall.width / 2
                     val halfHeight = colorBall.height / 2
 
-                    val minTop: Int
-                    val maxTop: Int
-
                     if(pressedBallID > 1){ // Right points
                         val minLeft = colorBalls[0].centerX
                         val maxLeft =  wParent - halfWidth
                         x = ensureRange(x, minLeft, maxLeft)
                         snipRight = x + halfWidth
                     }else{ // Left points
-                        val minLeft = halfWidth
                         val maxLeft = colorBalls[2].centerX
-                        x = ensureRange(x, minLeft, maxLeft)
+                        x = ensureRange(x, halfWidth, maxLeft)
                         snipLeft = x - halfWidth
                     }
 
                     when(pressedBallID){
                         0, 3 -> { // Top points
-                            minTop = halfHeight
-                            maxTop = colorBalls[1].centerY
-                            y = ensureRange(y, minTop, maxTop)
+                            val maxTop = colorBalls[1].centerY
+                            y = ensureRange(y, halfHeight, maxTop)
                             snipTop = y - halfHeight
                         }
                         else ->{ // Bottom points
-                            minTop = colorBalls[0].centerY
-                            maxTop = hParent - halfHeight
+                            val minTop = colorBalls[0].centerY
+                            val maxTop = hParent - halfHeight
                             y = ensureRange(y, minTop, maxTop)
-                            snipTop = y + halfHeight
+                            snipBottom = y + halfHeight
                         }
                     }
 
@@ -224,9 +229,30 @@ class SnippingView : View {
                     }
 
                     invalidate()
+                } else if (isDragging){
+                    val deltaX = x - initialX
+                    val deltaY = y - initialY
+                    initialX = x
+                    initialY = y
+
+                    snipLeft = ensureRange(snipLeft + deltaX, 0, wParent - snipWidth)
+                    snipRight = snipLeft + snipWidth
+                    snipTop = ensureRange(snipTop + deltaY, 0, hParent - snipHeight)
+                    snipBottom = snipTop + snipHeight
+
+                    colorBalls[0].left = snipLeft
+                    colorBalls[0].top = snipTop
+                    colorBalls[1].left = snipLeft
+                    colorBalls[1].top = snipBottom - colorBalls[1].height
+                    colorBalls[2].left = snipRight - colorBalls[2].width
+                    colorBalls[2].top = snipBottom - colorBalls[2].height
+                    colorBalls[3].left = snipRight - colorBalls[3].width
+                    colorBalls[3].top = snipTop
+
+                    invalidate()
                 }
 
-            MotionEvent.ACTION_UP -> {}
+            MotionEvent.ACTION_UP -> {isDragging = false}
         }
         invalidate()
         return true
