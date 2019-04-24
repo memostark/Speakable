@@ -50,7 +50,7 @@ import com.guillermonegrete.tts.imageprocessing.FirebaseCloudTextProcessor;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.CustomViews.BubbleView;
-import com.guillermonegrete.tts.CustomViews.DrawView;
+import com.guillermonegrete.tts.CustomViews.SnippingView;
 import com.guillermonegrete.tts.CustomViews.TrashView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.main.SettingsFragment;
@@ -82,7 +82,7 @@ public class ScreenTextService extends Service {
     private static Intent permissionIntent = null;
 
     private static DisplayMetrics mMetrics;
-    private DrawView snipView;
+    private SnippingView snipView;
     private BubbleView bubble;
     private ImageButton playButton;
     private ImageButton translateButton;
