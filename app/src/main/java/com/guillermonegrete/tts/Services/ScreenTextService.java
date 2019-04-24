@@ -164,8 +164,6 @@ public class ScreenTextService extends Service {
             private int initialY;
             private float initialTouchX;
             private float initialTouchY;
-            private float touchX;
-            private float touchY;
             int xByTouch;
             int yByTouch;
 
@@ -191,8 +189,6 @@ public class ScreenTextService extends Service {
                             initialY = windowParams.y;
                             initialTouchX = event.getRawX();
                             initialTouchY = event.getRawY();
-                            touchX = event.getX();
-                            touchY = event.getY();
                             //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
                             return true;
 
@@ -214,6 +210,8 @@ public class ScreenTextService extends Service {
                         case MotionEvent.ACTION_MOVE:
                             xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
                             yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
+                            System.out.println("x0: " + initialX + " y0: " + initialY);
+                            System.out.println("x: " + xByTouch + " y: " + yByTouch);
                             final boolean isIntersecting = isIntersectingWithTrash();
                             final boolean isIntersect = state == STATE_INTERSECTING;
                             if (isIntersecting) {
@@ -221,8 +219,8 @@ public class ScreenTextService extends Service {
                                 windowParams.x= (int) trash_layout.getTrashIconCenterX();
                                 windowParams.y = (int) trash_layout.getTrashIconCenterY();
                             }else{
-                                windowParams.x = initialX + (int) (event.getRawX() - initialTouchX);
-                                windowParams.y = initialY + (int) (event.getRawY() - initialTouchY);
+                                windowParams.x = xByTouch;
+                                windowParams.y = yByTouch;
                             }
                             if(isIntersecting && !isIntersect){
                                 bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
@@ -328,7 +326,7 @@ public class ScreenTextService extends Service {
 
     private void detectText(final ImageProcessingSource.Callback callback){
         ScreenImageCaptor screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
-        screenImageCaptor.getImage(snipView.getPosRectangle(), new ScreenImageCaptor.Callback() {
+        screenImageCaptor.getImage(snipView.getSnipRectangle(), new ScreenImageCaptor.Callback() {
             @Override
             public void onImageCaptured(@NotNull final Bitmap image) {
 
