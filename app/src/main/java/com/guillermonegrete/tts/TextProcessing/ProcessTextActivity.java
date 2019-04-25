@@ -317,10 +317,11 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     public void updateTranslation(String translation) {
 
-        int fragIndex = pager.getCurrentItem();
-        Fragment fragment = adapter.getItem(fragIndex);
-        if(fragment instanceof TranslationFragment){
-            ((TranslationFragment) fragment).updateTranslation(translation);
+
+        if(pager != null){
+            int fragIndex = pager.getCurrentItem();
+            TranslationFragment fragment = (TranslationFragment) adapter.getItem(fragIndex);
+            fragment.updateTranslation(translation);
         }else {
             TextView translationTextView = findViewById(R.id.text_translation);
             translationTextView.setText(translation);
