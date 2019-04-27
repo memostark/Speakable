@@ -77,14 +77,14 @@ public class MainActivity extends AppCompatActivity {
                 switch (menuItem.getItemId()){
                     case R.id.nav_item_main:
 
-                        actionbar.setTitle("Cognitive TTS");
+                        actionbar.setTitle(getString(R.string.main));
                         TextToSpeechFragment TTSFragment = new TextToSpeechFragment();
                         fragmentTransaction.replace(R.id.main_tts_fragment_container, TTSFragment);
                         fragmentTransaction.commit();
                         break;
                     case R.id.nav_item_saved:
 
-                        actionbar.setTitle("Saved words");
+                        actionbar.setTitle(getString(R.string.saved));
                         SavedWordsFragment savedWordsFragment  = new SavedWordsFragment();
                         fragmentTransaction.replace(R.id.main_tts_fragment_container, savedWordsFragment);
                         fragmentTransaction.commit();
@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         actionbar = getSupportActionBar();
         actionbar.setDisplayHomeAsUpEnabled(true);
+        actionbar.setTitle(getString(R.string.main));
         actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
     }
 
