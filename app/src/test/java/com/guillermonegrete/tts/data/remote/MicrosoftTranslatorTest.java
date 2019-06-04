@@ -21,7 +21,7 @@ public class MicrosoftTranslatorTest {
 
     @Test
     public void TranslatorTest(){
-        dataSource.getWordLanguageInfo("Prueba", new WordDataSource.GetWordCallback() {
+        dataSource.getWordLanguageInfo("Prueba","en", new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {
                 latch.countDown();
