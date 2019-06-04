@@ -8,7 +8,7 @@ import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLangHeader
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import retrofit2.Call;
@@ -80,26 +80,31 @@ public class WiktionarySource implements DictionaryDataSource {
     public static class WiktionaryParser{
 
         public static List<WikiItem> parse(String text){
-            List<String> LanguageSections = getLanguages(text);
-
-            String[] separated;
+            List<String> languageSections = getLanguages(text);
             List<WikiItem> items = new ArrayList<>();
 
-            for (int i=1; i<LanguageSections.size(); i++){
-                separated = LanguageSections.get(i).split("\n=== ");
+            for (String languageSection: languageSections){
+                String[] separated = languageSection.split("\n=== ");
                 String lang = separated[0].split(" ")[0];
 
                 items.add(new WiktionaryLangHeader(lang));
 
-                int j;
-                //Log.i(TAG,"--------------"+lang+"---------------");
-                for (j=1; j<separated.length;j++){
-                    String[] subheaders = separated[j].split(" ===\n");
-                    //Log.i(TAG,"----Subheader " + j +": "+subheaders[0]);
-                    //Log.i(TAG,subheaders[1]);
-                    String[] subsubheader = subheaders[1].split("\n==== ");
-                    for(int k=0; k<subsubheader.length; k++){
-                        items.add(new WiktionaryItem(subsubheader[k].replace("====\n",""), subheaders[0]));
+                List<String> langSubHeaders = new ArrayList<>(Arrays.asList(separated));
+                langSubHeaders.remove(0);
+
+                for (String langSubHeader: langSubHeaders){
+                    String[] subHeaders = langSubHeader.split(" ===\n");
+                    String subHeader = subHeaders[0];
+
+                    if(subHeaders.length > 1) {
+                        String subHeaderContent = subHeaders[1];
+                        /*String[] subsubheader = subHeaders[1].split("\n==== ");
+                        for (String subsub : subsubheader) {
+                            items.add(new WiktionaryItem(subsub.replace("====\n", ""), subHeader));
+                        }*/
+                        items.add(new WiktionaryItem(subHeaderContent.replace("====", ""), subHeader));
+                    } else {
+                        items.add(new WiktionaryItem("", subHeader.replace("===", "")));
                     }
                 }
             }
@@ -109,8 +114,8 @@ public class WiktionarySource implements DictionaryDataSource {
 
         public static List<String> getLanguages(String extract){
             String[] separated = extract.split("\n== ");
-            List<String> langs = new ArrayList<>();
-            Collections.addAll(langs, separated);
+            List<String> langs = new ArrayList<>(Arrays.asList(separated));
+            langs.remove(0);
             return langs;
         }
     }
