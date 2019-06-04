@@ -5,7 +5,6 @@ import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TestThreadExecutor;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
-import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -72,9 +71,10 @@ public class ProcessTextPresenterTest {
     @Test
     public void setSavedWordLayout(){
         String test_text = "Prueba";
-        presenter.getLayout(test_text, "en");
+        String languageCode = "en";
+        presenter.getLayout(test_text, languageCode);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageCode), getWordCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Test");
         getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
 
@@ -84,9 +84,10 @@ public class ProcessTextPresenterTest {
     @Test
     public void setSentenceLayout(){
         String test_text = "Prueba oracion";
-        presenter.getLayout(test_text, "en");
+        String languageCode = "en";
+        presenter.getLayout(test_text, languageCode);
 
-        verify(wordRepository).getLanguageAndTranslation(eq(test_text), getTranslationCallbackCaptor.capture());
+        verify(wordRepository).getLanguageAndTranslation(eq(test_text), eq(languageCode), getTranslationCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Sentence test");
         getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(return_word);
 
@@ -96,9 +97,10 @@ public class ProcessTextPresenterTest {
     @Test
     public void setTranslationLayout(){
         String test_text = "Prueba";
-        presenter.getLayout(test_text, "en");
+        String languageCode = "en";
+        presenter.getLayout(test_text, languageCode);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageCode), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
 
         Words return_word = new Words(test_text,"ES", "Test");
@@ -114,10 +116,11 @@ public class ProcessTextPresenterTest {
     @Test
     public void setExternalDictionaryLayout(){
         String test_text = "Prueba";
+        String languageCode = "en";
         System.out.println("setExternalDict:");
-        presenter.getLayout(test_text, "en");
+        presenter.getLayout(test_text, languageCode);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageCode), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
 
         Words return_word = new Words(test_text,"ES", "Sentence test");
