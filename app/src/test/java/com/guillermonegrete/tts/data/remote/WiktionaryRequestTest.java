@@ -29,7 +29,7 @@ public class WiktionaryRequestTest {
                 "\n== Norwegian Nynorsk ==\n\n\n=== Noun ===\nhola f\n\ndefinite singular of hole\n\n" +
                 "\n== Spanish ==\n\n\n=== Etymology ===\n\nUnknown. Hola is etymologically unrelated to the Germanic expressions hello in English and hallo in German";
         List<String> result = WiktionarySource.WiktionaryParser.getLanguages(input);
-        int expectedSize = 13;
+        int expectedSize = 12;
         assertEquals(expectedSize, result.size());
     }
 
