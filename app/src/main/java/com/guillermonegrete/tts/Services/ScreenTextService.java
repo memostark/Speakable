@@ -40,10 +40,13 @@ import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.google.firebase.ml.vision.FirebaseVision;
+import com.guillermonegrete.tts.BuildConfig;
 import com.guillermonegrete.tts.ThreadExecutor;
+import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
+import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.imageprocessing.FirebaseCloudTextProcessor;
@@ -59,6 +62,7 @@ import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor;
 import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource;
 
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
+import com.guillermonegrete.tts.main.TranslatorType;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
 import org.jetbrains.annotations.NotNull;
@@ -297,7 +301,7 @@ public class ScreenTextService extends Service {
                         GetLangAndTranslation interactor = new GetLangAndTranslation(
                                 ThreadExecutor.getInstance(),
                                 MainThreadImpl.getInstance(),
-                                WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
+                                WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                                 text,
                                 new GetLangAndTranslation.Callback(){
                                     @Override
@@ -403,6 +407,20 @@ public class ScreenTextService extends Service {
                 break;
             default:
                 break;
+        }
+    }
+
+    private WordDataSource getTranslatorSource(){
+        int translatorPreference = Integer.parseInt(sharedPreferences.getString(TranslatorType.PREFERENCE_KEY, ""));
+        TranslatorType translatorType = TranslatorType.Companion.valueOf(translatorPreference);
+
+        switch (translatorType){
+            case GOOGLE_PUBLIC:
+                return GooglePublicSource.Companion.getInstance();
+            case MICROSOFT:
+                return MSTranslatorSource.getInstance(BuildConfig.TranslatorApiKey);
+            default:
+                return GooglePublicSource.Companion.getInstance();
         }
     }
 

@@ -23,8 +23,10 @@ import android.view.inputmethod.InputMethodManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
+import androidx.preference.PreferenceManager
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.guillermonegrete.tts.BuildConfig
 import com.guillermonegrete.tts.CustomTTS.CustomTTS
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.Services.ScreenTextService
@@ -33,9 +35,11 @@ import com.guillermonegrete.tts.threading.MainThreadImpl
 
 import com.guillermonegrete.tts.Services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.Services.ScreenTextService.NO_FLOATING_ICON_SERVICE
+import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
+import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import com.guillermonegrete.tts.db.WordsDatabase
 
 
@@ -74,7 +78,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
                 ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
                 this,
-                WordRepository.getInstance(GooglePublicSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
+                WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
                 CustomTTS.getInstance(activity?.applicationContext)
         )
     }
@@ -168,7 +172,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
-            if (resultCode == AppCompatActivity.RESULT_OK) {
+            if (resultCode == AppCompatActivity.RESULT_OK && data != null) {
                 val intent = Intent(activity, ScreenTextService::class.java)
                 intent.action = NORMAL_SERVICE
                 intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode)
@@ -224,6 +228,17 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
         playButton.visibility = View.VISIBLE
     }
 
+
+    private fun getTranslatorSource(): WordDataSource{
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val translatorPreference = preferences.getString(TranslatorType.PREFERENCE_KEY, "")
+        val translatorType = translatorPreference?.toInt() ?: TranslatorType.GOOGLE_PUBLIC.value
+
+        return when(TranslatorType.valueOf(translatorType)){
+            TranslatorType.GOOGLE_PUBLIC -> GooglePublicSource.getInstance()
+            TranslatorType.MICROSOFT -> MSTranslatorSource.getInstance(BuildConfig.TranslatorApiKey)
+        }
+    }
 
     private fun hideKeyboard() {
         val context = activity

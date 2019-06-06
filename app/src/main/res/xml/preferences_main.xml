@@ -23,4 +23,15 @@
             android:defaultValue="0"/>
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="Translation">
+        <ListPreference
+            android:title="Select translation service"
+            android:summary="%s"
+            android:key="translator_pref_key"
+            android:entries="@array/translatorArray"
+            android:entryValues="@array/translatorValues"
+            android:defaultValue="10"/>
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

@@ -33,10 +33,13 @@ import android.view.WindowManager;
 
 
 import com.google.android.material.tabs.TabLayout;
+import com.guillermonegrete.tts.BuildConfig;
 import com.guillermonegrete.tts.CustomTTS.CustomTTS;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.Services.ScreenTextService;
+import com.guillermonegrete.tts.data.source.WordDataSource;
+import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.ThreadExecutor;
@@ -50,6 +53,7 @@ import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.ExternalLinksDatabase;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.main.TranslatorType;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
 
 
@@ -106,7 +110,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
                 this,
-                WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
+                WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
                 ExternalLinksDataSource.getInstance(ExternalLinksDatabase.getDatabase(getApplicationContext()).externalLinksDAO()),
                 CustomTTS.getInstance(getApplicationContext()));
@@ -146,6 +150,20 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         languagePreferenceIndex = preferences.getInt(LANGUAGE_PREFERENCE, 15);
         languagesISO = getResources().getStringArray(R.array.googleTranslateLanguagesValue);
         return languagesISO[languagePreferenceIndex];
+    }
+
+    private WordDataSource getTranslatorSource(){
+        int translatorPreference = Integer.parseInt(preferences.getString(TranslatorType.PREFERENCE_KEY, ""));
+        TranslatorType translatorType = TranslatorType.Companion.valueOf(translatorPreference);
+
+        switch (translatorType){
+            case GOOGLE_PUBLIC:
+                return GooglePublicSource.Companion.getInstance();
+            case MICROSOFT:
+                return MSTranslatorSource.getInstance(BuildConfig.TranslatorApiKey);
+            default:
+                return GooglePublicSource.Companion.getInstance();
+        }
     }
 
     private void setWordLayout(Words word){
