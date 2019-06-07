@@ -77,14 +77,13 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
-    public void start(String selectedText, String preferenceLanguage) {
+    public void start(String selectedText, String languageFrom, String languageTo) {
         mView.startService();
-        getLayout(selectedText, preferenceLanguage);
-
+        getLayout(selectedText, languageFrom, languageTo);
     }
 
     @Override
-    public void getLayout(String text, String preferenceLanguage) {
+    public void getLayout(String text, String languageFrom, String languageTo) {
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
@@ -116,7 +115,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(word, items);
             }
-        }, mRepository, dictionaryRepository, text, preferenceLanguage);
+        }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
 
         interactor.execute();
 
@@ -204,8 +203,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
-    public void onLanguageSpinnerChange(final String language) {
-        GetLangAndTranslation interactor = new GetLangAndTranslation(mExecutor, mMainThread, mRepository, foundWord.word, language, new GetLangAndTranslation.Callback() {
+    public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
+        GetLangAndTranslation interactor = new GetLangAndTranslation(mExecutor, mMainThread, mRepository, foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
                 mView.updateTranslation(word.definition);

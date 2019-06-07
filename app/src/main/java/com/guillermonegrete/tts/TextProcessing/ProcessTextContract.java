@@ -50,9 +50,9 @@ public interface ProcessTextContract {
 
         void start(Words word);
 
-        void start(String selectedText, String preferenceLanguage);
+        void start(String selectedText, String languageFrom, String languageTo);
 
-        void getLayout(String text, String language);
+        void getLayout(String text, String languageFrom, String languageTo);
 
         void getDictionaryEntry(Words word);
 
@@ -68,7 +68,7 @@ public interface ProcessTextContract {
 
         void onClickEdit();
 
-        void onLanguageSpinnerChange(String language);
+        void onLanguageSpinnerChange(String languageFrom, String languageTo);
 
     }
 }

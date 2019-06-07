@@ -26,7 +26,7 @@ public class WordLocalDataSource implements WordDataSource {
     }
 
     @Override
-    public void getWordLanguageInfo(String wordText, String language, GetWordCallback callback) {
+    public void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordCallback callback) {
         Words retrieved_word = mWordDAO.findWord(wordText);
         if(retrieved_word == null){
             callback.onDataNotAvailable();

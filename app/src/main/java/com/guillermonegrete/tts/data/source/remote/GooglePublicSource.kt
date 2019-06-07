@@ -42,6 +42,14 @@ import retrofit2.converter.gson.GsonConverterFactory
        ]
     ]
 
+    With auto detect:
+    [[["disappointment of that poor","decepción de ese pobre",null,null,3]],null,"es",null,null,null,0.97732538,null,[["es"],null,[0.97732538],["es"]]]
+
+    With language selected:
+    [[["disappointment of that poor","decepción de ese pobre",null,null,3]],null,"es"]
+
+
+
     Because response JSON cannot be converted to POJO we have to parse it manually.
 */
 
@@ -60,9 +68,14 @@ class GooglePublicSource private constructor() : WordDataSource {
         googlePublicAPI = retrofit.create(GooglePublicAPI::class.java)
     }
 
-    override fun getWordLanguageInfo(wordText: String?, language: String?, callback: WordDataSource.GetWordCallback?) {
-        if (wordText != null && language!= null) {
-            googlePublicAPI?.getWord(wordText, language)?.enqueue(object : Callback<ResponseBody>{
+    override fun getWordLanguageInfo(
+        wordText: String?,
+        languageFrom: String?,
+        languageTo: String?,
+        callback: WordDataSource.GetWordCallback?
+    ) {
+        if (wordText != null && languageTo!= null && languageFrom != null) {
+            googlePublicAPI?.getWord(wordText, languageFrom, languageTo)?.enqueue(object : Callback<ResponseBody>{
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     callback?.onDataNotAvailable()
                 }
@@ -78,8 +91,9 @@ class GooglePublicSource private constructor() : WordDataSource {
                             sentences.add(jsonSentences[i].asJsonArray[0].asString)
                         }
 
-                        val rawLanguage = jsonArray.last().asJsonArray[0].asJsonArray[0].toString()
-                        val detectedLanguage = if(rawLanguage == "\"iw\"") "he" else rawLanguage.substring(1, rawLanguage.length - 1)
+                        val lastElement = jsonArray.last()
+                        val rawLanguage = if(lastElement is JsonArray) lastElement.asJsonArray[0].asJsonArray[0].asString else lastElement.asString
+                        val detectedLanguage = if(rawLanguage == "\"iw\"") "he" else rawLanguage
 
                         val translation = sentences.joinToString(separator = "")
                         callback?.onWordLoaded(Words(wordText, detectedLanguage, translation))

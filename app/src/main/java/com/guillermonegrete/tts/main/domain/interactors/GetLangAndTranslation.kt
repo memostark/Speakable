@@ -12,6 +12,7 @@ class GetLangAndTranslation @JvmOverloads constructor(
     mainThread: MainThread,
     private val wordRepository: WordRepository,
     private val text: String,
+    private val languageFrom: String = "auto",
     private val languageTo: String = "en",
     private val callback: Callback
 ) : AbstractInteractor(executor, mainThread){
@@ -19,6 +20,7 @@ class GetLangAndTranslation @JvmOverloads constructor(
     override fun run() {
         wordRepository.getLanguageAndTranslation(
             text,
+            languageFrom,
             languageTo,
             object : WordRepositorySource.GetTranslationCallback{
                 override fun onTranslationAndLanguage(word: Words?) {

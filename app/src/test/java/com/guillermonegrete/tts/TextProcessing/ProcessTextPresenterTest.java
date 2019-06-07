@@ -72,9 +72,9 @@ public class ProcessTextPresenterTest {
     public void setSavedWordLayout(){
         String test_text = "Prueba";
         String languageCode = "en";
-        presenter.getLayout(test_text, languageCode);
+        presenter.getLayout(test_text, , languageCode);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageCode), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), , eq(languageCode), getWordCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Test");
         getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
 
@@ -85,9 +85,9 @@ public class ProcessTextPresenterTest {
     public void setSentenceLayout(){
         String test_text = "Prueba oracion";
         String languageCode = "en";
-        presenter.getLayout(test_text, languageCode);
+        presenter.getLayout(test_text, , languageCode);
 
-        verify(wordRepository).getLanguageAndTranslation(eq(test_text), eq(languageCode), getTranslationCallbackCaptor.capture());
+        verify(wordRepository).getLanguageAndTranslation(eq(test_text), , eq(languageCode), getTranslationCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Sentence test");
         getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(return_word);
 
@@ -98,9 +98,9 @@ public class ProcessTextPresenterTest {
     public void setTranslationLayout(){
         String test_text = "Prueba";
         String languageCode = "en";
-        presenter.getLayout(test_text, languageCode);
+        presenter.getLayout(test_text, , languageCode);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageCode), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), , eq(languageCode), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
 
         Words return_word = new Words(test_text,"ES", "Test");
@@ -118,9 +118,9 @@ public class ProcessTextPresenterTest {
         String test_text = "Prueba";
         String languageCode = "en";
         System.out.println("setExternalDict:");
-        presenter.getLayout(test_text, languageCode);
+        presenter.getLayout(test_text, , languageCode);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageCode), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), , eq(languageCode), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
 
         Words return_word = new Words(test_text,"ES", "Sentence test");

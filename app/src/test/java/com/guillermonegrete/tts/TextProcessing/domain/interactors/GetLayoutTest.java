@@ -29,7 +29,7 @@ public class GetLayoutTest {
 
         String word = "Test";
         System.out.print("Running my tests...");
-        GetLayout interactor = new GetLayout(executor, mainThread, callback, repository, dictionaryRepository, word, "");
+        GetLayout interactor = new GetLayout(executor, mainThread, callback, repository, dictionaryRepository, word, , "");
         interactor.run();
 
         //Assert that onLocalWordLoaded is called.

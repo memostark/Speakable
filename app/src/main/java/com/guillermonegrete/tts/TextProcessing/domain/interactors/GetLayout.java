@@ -20,6 +20,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private WordRepository mRepository;
     private DictionaryRepository dictionaryRepository;
     private String mText;
+    private String languageFrom;
     private String preferenceLanguage;
 
     private boolean insideDictionary;
@@ -30,7 +31,11 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private List<WikiItem> items;
 
 
-    public GetLayout(Executor threadExecutor, MainThread mainThread, Callback callback, WordRepository repository, DictionaryRepository dictRepository, String text, String preferenceLanguage){
+    public GetLayout(Executor threadExecutor, MainThread mainThread,
+                     Callback callback, WordRepository repository,
+                     DictionaryRepository dictRepository, String text,
+                     String languageFrom,
+                     String preferenceLanguage){
         super(threadExecutor, mainThread);
         mCallback = callback;
         mText = text;
@@ -40,6 +45,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         insideDictionary = false;
         dictionaryRequestDone = false;
         translationDone = false;
+        this.languageFrom = languageFrom;
         this.preferenceLanguage = preferenceLanguage;
     }
 
@@ -50,7 +56,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         if(splittedText.length > 1){
             // Get translation, wait for callback
             System.out.println("Preference language: " + preferenceLanguage);
-            mRepository.getLanguageAndTranslation(mText, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
+            mRepository.getLanguageAndTranslation(mText, languageFrom, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
                 @Override
                 public void onTranslationAndLanguage(Words word) {
                     mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION);
@@ -63,7 +69,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             });
         }else{
             // Search in database
-            mRepository.getWordLanguageInfo(mText, preferenceLanguage, new WordRepositorySource.GetWordRepositoryCallback() {
+            mRepository.getWordLanguageInfo(mText, languageFrom , preferenceLanguage, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(final Words word) {
                     mMainThread.post(new Runnable() {
