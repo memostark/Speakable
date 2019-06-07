@@ -88,6 +88,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private String[] languagesISO;
     private int languagePreferenceIndex;
+    private String languageFrom;
     private String languagePreferenceISO;
 
     private static final String LANGUAGE_PREFERENCE = "ProcessTextLangPreference";
@@ -100,8 +101,10 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         mSelectedText = getSelectedText();
 
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
         mAutoTTS = getAutoTTSPreference();
         languagePreferenceISO = getPreferenceISO();
+        languageFrom = getLanguageFromPreference();
 
         presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
@@ -114,7 +117,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         Words extraWord = getIntent().getParcelableExtra("Word");
         if(extraWord != null) presenter.start(extraWord);
         else {
-            presenter.start(getSelectedText(), languagePreferenceISO);
+            presenter.start(getSelectedText(), languageFrom, languagePreferenceISO);
         }
     }
 
@@ -138,8 +141,11 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private boolean getAutoTTSPreference(){
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
         return preferences.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
+    }
+
+    private String getLanguageFromPreference(){
+        return  preferences.getString(SettingsFragment.PREF_LANGUAGE_FROM, "auto");
     }
 
     private String getPreferenceISO(){
@@ -457,6 +463,9 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         });
     }
 
+    /**
+     *  Listener for translation fragment when using ViewPager
+     */
     private TranslationFragment.Listener translationFragListener = new TranslationFragment.Listener() {
         @Override
         public void onItemSelected(int position) {
@@ -464,10 +473,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
             SharedPreferences.Editor editor = preferences.edit();
             editor.putInt(LANGUAGE_PREFERENCE, position);
             editor.apply();
-            presenter.onLanguageSpinnerChange(languagePreferenceISO);
+            presenter.onLanguageSpinnerChange(languageFrom, languagePreferenceISO);
         }
     };
 
+    /**
+     *  Listener when layout is for a sentence
+     */
     class SpinnerListener implements AdapterView.OnItemSelectedListener{
 
         @Override
@@ -476,7 +488,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
             SharedPreferences.Editor editor = preferences.edit();
             editor.putInt(LANGUAGE_PREFERENCE, position);
             editor.apply();
-            presenter.onLanguageSpinnerChange(languagePreferenceISO);
+            presenter.onLanguageSpinnerChange(languageFrom, languagePreferenceISO);
         }
 
         @Override

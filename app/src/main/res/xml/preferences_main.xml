@@ -12,4 +12,16 @@
         android:summary="Show dialog when text is copied to clipboard"
         />
 
+    <PreferenceCategory
+        android:title="Translation">
+
+        <ListPreference
+            android:title="Default from language"
+            android:summary="Language you want to translate from, select auto if you want to detect the language"
+            android:key="translate_from_pref_key"
+            android:entries="@array/googleTranslateLangsWithAutoArray"
+            android:entryValues="@array/googleTranslateLangsWithAutoValue"
+            android:defaultValue="auto"/>
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>
