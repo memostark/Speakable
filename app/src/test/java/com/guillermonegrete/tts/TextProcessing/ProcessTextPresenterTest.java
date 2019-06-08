@@ -13,6 +13,7 @@ import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.threading.TestMainThread;
 
+import org.intellij.lang.annotations.Language;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -46,6 +47,9 @@ public class ProcessTextPresenterTest {
 
     private ProcessTextPresenter presenter;
 
+    private static final String languageFrom = "auto";
+    private static final String languageTo = "en";
+
     @Before
     public void setupPresenter(){
         MockitoAnnotations.initMocks(this);
@@ -71,10 +75,10 @@ public class ProcessTextPresenterTest {
     @Test
     public void setSavedWordLayout(){
         String test_text = "Prueba";
-        String languageCode = "en";
-        presenter.getLayout(test_text, , languageCode);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), , eq(languageCode), getWordCallbackCaptor.capture());
+        presenter.getLayout(test_text, languageFrom, languageTo);
+
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Test");
         getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
 
@@ -84,10 +88,9 @@ public class ProcessTextPresenterTest {
     @Test
     public void setSentenceLayout(){
         String test_text = "Prueba oracion";
-        String languageCode = "en";
-        presenter.getLayout(test_text, , languageCode);
+        presenter.getLayout(test_text, languageFrom, languageTo);
 
-        verify(wordRepository).getLanguageAndTranslation(eq(test_text), , eq(languageCode), getTranslationCallbackCaptor.capture());
+        verify(wordRepository).getLanguageAndTranslation(eq(test_text), eq(languageFrom), eq(languageTo), getTranslationCallbackCaptor.capture());
         Words return_word = new Words(test_text,"ES", "Sentence test");
         getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(return_word);
 
@@ -97,10 +100,9 @@ public class ProcessTextPresenterTest {
     @Test
     public void setTranslationLayout(){
         String test_text = "Prueba";
-        String languageCode = "en";
-        presenter.getLayout(test_text, , languageCode);
+        presenter.getLayout(test_text, languageFrom, languageTo);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), , eq(languageCode), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
 
         Words return_word = new Words(test_text,"ES", "Test");
@@ -116,11 +118,10 @@ public class ProcessTextPresenterTest {
     @Test
     public void setExternalDictionaryLayout(){
         String test_text = "Prueba";
-        String languageCode = "en";
         System.out.println("setExternalDict:");
-        presenter.getLayout(test_text, , languageCode);
+        presenter.getLayout(test_text, languageFrom, languageTo);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), , eq(languageCode), getWordCallbackCaptor.capture());
+        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
         getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
 
         Words return_word = new Words(test_text,"ES", "Sentence test");

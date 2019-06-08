@@ -17,7 +17,7 @@ class GooglePublicRequestTest {
 
     @Test
     fun translatorTest(){
-        dataSource.getWordLanguageInfo("prueba", "en", object: WordDataSource.GetWordCallback{
+        dataSource.getWordLanguageInfo("prueba", "auto", "en", object: WordDataSource.GetWordCallback{
             override fun onWordLoaded(word: Words?) {
                 latch.countDown()
             }
