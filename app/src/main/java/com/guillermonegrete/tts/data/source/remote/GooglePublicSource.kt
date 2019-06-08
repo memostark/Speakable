@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.source.remote
 
+import androidx.annotation.VisibleForTesting
 import com.google.gson.*
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
@@ -84,19 +85,8 @@ class GooglePublicSource private constructor() : WordDataSource {
 
                     val body = response.body()
                     if(response.isSuccessful && body != null){
-                        val jsonArray  = gson.fromJson(body.string(), JsonArray::class.java)
-                        val jsonSentences = jsonArray[0].asJsonArray
-                        val sentences = arrayListOf<String>()
-                        for(i in 0 until  jsonSentences.size()){
-                            sentences.add(jsonSentences[i].asJsonArray[0].asString)
-                        }
-
-                        val lastElement = jsonArray.last()
-                        val rawLanguage = if(lastElement is JsonArray) lastElement.asJsonArray[0].asJsonArray[0].asString else lastElement.asString
-                        val detectedLanguage = if(rawLanguage == "\"iw\"") "he" else rawLanguage
-
-                        val translation = sentences.joinToString(separator = "")
-                        callback?.onWordLoaded(Words(wordText, detectedLanguage, translation))
+                        val parsedWord = processText(body.string(), wordText)
+                        callback?.onWordLoaded(parsedWord)
                     }else{
                         callback?.onDataNotAvailable()
                     }
@@ -104,6 +94,23 @@ class GooglePublicSource private constructor() : WordDataSource {
 
             })
         }
+    }
+
+    @VisibleForTesting
+    fun processText(bodyText: String, wordText: String): Words{
+        val jsonArray  = gson.fromJson(bodyText, JsonArray::class.java)
+        val jsonSentences = jsonArray[0].asJsonArray
+        val sentences = arrayListOf<String>()
+        for(i in 0 until  jsonSentences.size()){
+            sentences.add(jsonSentences[i].asJsonArray[0].asString)
+        }
+
+        val lastElement = jsonArray.last()
+        val rawLanguage = if(lastElement is JsonArray) lastElement.asJsonArray[0].asJsonArray[0].asString else lastElement.asString
+        val detectedLanguage = if(rawLanguage == "\"iw\"") "he" else rawLanguage
+
+        val translation = sentences.joinToString(separator = "")
+        return Words(wordText, detectedLanguage, translation)
     }
 
     companion object {
