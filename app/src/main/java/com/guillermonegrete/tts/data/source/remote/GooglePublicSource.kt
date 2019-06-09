@@ -76,7 +76,10 @@ class GooglePublicSource private constructor() : WordDataSource {
         callback: WordDataSource.GetWordCallback?
     ) {
         if (wordText != null && languageTo!= null && languageFrom != null) {
-            googlePublicAPI?.getWord(wordText, languageFrom, languageTo)?.enqueue(object : Callback<ResponseBody>{
+
+            val rawLanguageFrom = if(languageFrom == "he") "iw" else languageFrom
+
+            googlePublicAPI?.getWord(wordText, rawLanguageFrom, languageTo)?.enqueue(object : Callback<ResponseBody>{
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     callback?.onDataNotAvailable()
                 }
@@ -107,7 +110,7 @@ class GooglePublicSource private constructor() : WordDataSource {
 
         val lastElement = jsonArray.last()
         val rawLanguage = if(lastElement is JsonArray) lastElement.asJsonArray[0].asJsonArray[0].asString else lastElement.asString
-        val detectedLanguage = if(rawLanguage == "\"iw\"") "he" else rawLanguage
+        val detectedLanguage = if(rawLanguage == "iw") "he" else rawLanguage
 
         val translation = sentences.joinToString(separator = "")
         return Words(wordText, detectedLanguage, translation)

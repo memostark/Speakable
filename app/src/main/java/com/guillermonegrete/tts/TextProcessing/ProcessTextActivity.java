@@ -430,7 +430,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         Spinner spinner = findViewById(R.id.spinner_language_from_code);
         setSpinnerPopUpHeight(spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.googleTranslateLangsWithAutoValue, android.R.layout.simple_spinner_item);
+                R.array.googleTranslateLangsWithAutoValue, R.layout.spinner_layout_end);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
 
