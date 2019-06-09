@@ -59,6 +59,7 @@ import com.guillermonegrete.tts.threading.MainThreadImpl;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.guillermonegrete.tts.SavedWords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD;
@@ -91,6 +92,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     private SharedPreferences preferences;
 
     private String[] languagesISO;
+    private int languageFromIndex;
     private int languagePreferenceIndex;
     private String languageFrom;
     private String languagePreferenceISO;
@@ -149,11 +151,15 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private String getLanguageFromPreference(){
-        return  preferences.getString(SettingsFragment.PREF_LANGUAGE_FROM, "auto");
+        String preference = preferences.getString(SettingsFragment.PREF_LANGUAGE_FROM, "auto");
+        languageFromIndex = Arrays.asList(languagesISO).indexOf(preference);
+        languageFromIndex++; // Increment because the list we searched is missing one element "auto"
+        return  preference;
     }
 
     private String getPreferenceISO(){
-        languagePreferenceIndex = preferences.getInt(LANGUAGE_PREFERENCE, 15);
+        int englishIndex = 15;
+        languagePreferenceIndex = preferences.getInt(LANGUAGE_PREFERENCE, englishIndex);
         languagesISO = getResources().getStringArray(R.array.googleTranslateLanguagesValue);
         return languagesISO[languagePreferenceIndex];
     }
@@ -180,9 +186,11 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         mTextTTS.setText(textString);
 
         TextView textViewLanguage = findViewById(R.id.text_language_code);
+        if(languageFrom.equals("auto")) textViewLanguage.setVisibility(View.VISIBLE); else textViewLanguage.setVisibility(View.GONE);
         textViewLanguage.setText(word.lang);
 
         setPlayButton(textString);
+        setLanguageFromSpinner();
 
         findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -249,9 +257,11 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         TextView mTextTranslation = findViewById(R.id.text_translation);
         mTextTranslation.setText(word.definition);
         TextView textLanguage = findViewById(R.id.text_language_code);
+        if(languageFrom.equals("auto")) textLanguage.setVisibility(View.VISIBLE); else textLanguage.setVisibility(View.GONE);
         textLanguage.setText(word.lang);
         setPlayButton(text);
 
+        setLanguageFromSpinner();
         setSpinner();
 
         if(mAutoTTS) presenter.onClickReproduce(text);
@@ -340,12 +350,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     public void updateTranslation(String translation) {
-
+        TextView textLanguage = findViewById(R.id.text_language_code);
+        if(languageFrom.equals("auto")) textLanguage.setVisibility(View.VISIBLE); else textLanguage.setVisibility(View.GONE);
 
         if(pager != null){
             int fragIndex = pager.getCurrentItem();
-            TranslationFragment fragment = (TranslationFragment) adapter.getItem(fragIndex);
-            fragment.updateTranslation(translation);
+            Fragment fragment = adapter.getItem(fragIndex);
+            if(fragment instanceof TranslationFragment) ((TranslationFragment)fragment).updateTranslation(translation);
         }else {
             TextView translationTextView = findViewById(R.id.text_translation);
             translationTextView.setText(translation);
@@ -433,6 +444,18 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         tabLayout.setupWithViewPager(pager, true);
     }
 
+    private void setLanguageFromSpinner(){
+        Spinner spinner = findViewById(R.id.spinner_language_from_code);
+        setSpinnerPopUpHeight(spinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.googleTranslateLangsWithAutoValue, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+
+        spinner.setSelection(languageFromIndex, false);
+        spinner.setOnItemSelectedListener(new SpinnerListener());
+    }
+
     private void setSpinner(){
         Spinner spinner = findViewById(R.id.translate_to_spinner);
         setSpinnerPopUpHeight(spinner);
@@ -502,11 +525,25 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            languagePreferenceISO = languagesISO[position];
+
             SharedPreferences.Editor editor = preferences.edit();
-            editor.putInt(LANGUAGE_PREFERENCE, position);
-            editor.apply();
-            presenter.onLanguageSpinnerChange(languageFrom, languagePreferenceISO);
+            switch (parent.getId()){
+                case R.id.spinner_language_from_code:
+                    if(position == 0) languageFrom = "auto";
+                    else languageFrom = languagesISO[position - 1];
+                    editor.putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom);
+                    editor.apply();
+                    presenter.onLanguageSpinnerChange(languageFrom, languagePreferenceISO);
+                    break;
+                case R.id.translate_to_spinner:
+                    languagePreferenceISO = languagesISO[position];
+                    editor.putInt(LANGUAGE_PREFERENCE, position);
+                    editor.apply();
+                    presenter.onLanguageSpinnerChange(languageFrom, languagePreferenceISO);
+                    break;
+                default:
+                    break;
+            }
         }
 
         @Override
