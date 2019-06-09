@@ -207,6 +207,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         GetLangAndTranslation interactor = new GetLangAndTranslation(mExecutor, mMainThread, mRepository, foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
+                boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
+                if(!isInitialized) customTTS.initializeTTS(word.lang);
                 mView.updateTranslation(word.definition);
             }
 
