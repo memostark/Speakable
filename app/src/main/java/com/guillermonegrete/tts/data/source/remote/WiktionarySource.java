@@ -2,9 +2,9 @@ package com.guillermonegrete.tts.data.source.remote;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryItem;
-import com.guillermonegrete.tts.TextProcessing.domain.model.WiktionaryLangHeader;
+import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
+import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
+import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryLangHeader;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 
 import java.util.ArrayList;

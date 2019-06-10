@@ -13,9 +13,9 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 
-import com.guillermonegrete.tts.Services.ScreenTextService
+import com.guillermonegrete.tts.services.ScreenTextService
 
-import com.guillermonegrete.tts.Services.ScreenTextService.NORMAL_SERVICE
+import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 
 
 class AcquireScreenshotPermission : Activity() {

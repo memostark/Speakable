@@ -37,7 +37,7 @@ import android.app.AlertDialog;
 import android.os.Bundle;
 import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.SavedWords.SavedWordsFragment;
+import com.guillermonegrete.tts.savedwords.SavedWordsFragment;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -103,21 +103,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (getString(R.string.api_key).startsWith("Please")) {
-            new AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.add_subscription_key_tip_title))
-                    .setMessage(getString(R.string.add_subscription_key_tip))
-                    .setCancelable(false)
-                    .show();
-        } else {
 
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            TextToSpeechFragment fragment = new TextToSpeechFragment();
-            fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
-            fragmentTransaction.commit();
-
-        }
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        TextToSpeechFragment fragment = new TextToSpeechFragment();
+        fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
+        fragmentTransaction.commit();
     }
 
     private void setActionBar(){

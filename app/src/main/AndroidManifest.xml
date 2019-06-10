@@ -23,7 +23,7 @@
                 android:resource="@xml/shortcuts"/>
         </activity>
         <activity
-            android:name="com.guillermonegrete.tts.TextProcessing.ProcessTextActivity"
+            android:name="com.guillermonegrete.tts.textprocessing.ProcessTextActivity"
             android:label="@string/process_text_action_name"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
@@ -43,8 +43,8 @@
             android:excludeFromRecents="true"
             android:launchMode="singleInstance">
         </activity>
-        <service android:name="com.guillermonegrete.tts.Services.ScreenTextService"/>
-        <receiver android:name="com.guillermonegrete.tts.Services.Receiver"
+        <service android:name="com.guillermonegrete.tts.services.ScreenTextService"/>
+        <receiver android:name="com.guillermonegrete.tts.services.Receiver"
             android:enabled="true"
             android:process=":remote"/>
         <meta-data
