@@ -2,8 +2,8 @@
 package com.guillermonegrete.tts.main;
 
 import com.guillermonegrete.tts.AbstractPresenter;
-import com.guillermonegrete.tts.CustomTTS.CustomTTS;
-import com.guillermonegrete.tts.CustomTTS.interactors.PlayTTS;
+import com.guillermonegrete.tts.customtts.CustomTTS;
+import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.WordRepository;

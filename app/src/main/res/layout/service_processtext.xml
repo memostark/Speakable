@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:padding="0dp"
     android:layout_margin="0dp">
-    <com.guillermonegrete.tts.CustomViews.SnippingView
+    <com.guillermonegrete.tts.customviews.SnippingView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
@@ -18,7 +18,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal">
 
-        <com.guillermonegrete.tts.CustomViews.BubbleView
+        <com.guillermonegrete.tts.customviews.BubbleView
             android:id="@+id/image_bubble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

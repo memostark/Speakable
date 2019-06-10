@@ -36,7 +36,7 @@ package com.guillermonegrete.tts.main;
 import android.os.Bundle;
 import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.SavedWords.SavedWordsFragment;
+import com.guillermonegrete.tts.savedwords.SavedWordsFragment;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;

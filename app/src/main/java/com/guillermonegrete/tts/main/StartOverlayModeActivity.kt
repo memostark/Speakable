@@ -3,7 +3,7 @@ package com.guillermonegrete.tts.main
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import com.guillermonegrete.tts.Services.ScreenTextService
+import com.guillermonegrete.tts.services.ScreenTextService
 
 class StartOverlayModeActivity: Activity() {
 

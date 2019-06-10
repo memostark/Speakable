@@ -29,14 +29,14 @@ import androidx.preference.PreferenceManager
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.BuildConfig
-import com.guillermonegrete.tts.CustomTTS.CustomTTS
+import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.Services.ScreenTextService
+import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.ThreadExecutor
 import com.guillermonegrete.tts.threading.MainThreadImpl
 
-import com.guillermonegrete.tts.Services.ScreenTextService.NORMAL_SERVICE
-import com.guillermonegrete.tts.Services.ScreenTextService.NO_FLOATING_ICON_SERVICE
+import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
+import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource

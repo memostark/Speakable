@@ -1,6 +1,6 @@
 package com.guillermonegrete.tts.data.source;
 
-import com.guillermonegrete.tts.TextProcessing.domain.model.WikiItem;
+import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 
 import java.util.List;
 
