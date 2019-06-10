@@ -54,6 +54,15 @@
     <string name="translation_label">Translation</string>
     <string name="copy_translation_btn_description">Copy translation to clipboard</string>
 
+    <string name="clipboard_shortcut_short_label">Clipboard</string>
+    <string name="clipboard_shortcut_long_label">Activate clipboard mode</string>
+    <string name="clipboard_shortcut_disabled_message">Clipboard mode unavailable</string>
+
+    <string name="overlay_shortcut_short_label">Overlay</string>
+    <string name="overlay_shortcut_long_label">Activate overlay mode</string>
+    <string name="overlay_shortcut_disabled_message">Overlay mode unavailable</string>
+
+
     <string-array name="language_code_arrays">
         <item>All</item>
         <item>EN</item>

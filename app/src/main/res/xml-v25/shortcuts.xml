@@ -1,0 +1,28 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="clipboard_mode"
+        android:enabled="true"
+        android:icon="@drawable/ic_content_copy_black_24dp"
+        android:shortcutShortLabel="@string/clipboard_shortcut_short_label"
+        android:shortcutLongLabel="@string/clipboard_shortcut_long_label"
+        android:shortcutDisabledMessage="@string/clipboard_shortcut_disabled_message">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.guillermonegrete.tts.main.StartOverlayModeActivity"
+            android:targetPackage="com.guillermonegrete.tts"/>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="overlay_mode"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/overlay_shortcut_short_label"
+        android:shortcutLongLabel="@string/overlay_shortcut_long_label"
+        android:shortcutDisabledMessage="@string/overlay_shortcut_disabled_message">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.guillermonegrete.tts.main.AcquireScreenshotPermission"
+            android:targetPackage="com.guillermonegrete.tts"/>
+    </shortcut>
+
+</shortcuts>
