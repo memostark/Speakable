@@ -7,7 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.fragment.app.Fragment
 import androidx.appcompat.app.AppCompatActivity
 import tourguide.tourguide.TourGuide
@@ -95,26 +98,26 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val fragment_layout = inflater.inflate(R.layout.fragment_main_tts, container, false)
+        val fragmentLayout = inflater.inflate(R.layout.fragment_main_tts, container, false)
 
-        val bottomSheet = fragment_layout.findViewById<LinearLayout>(R.id.bottom_sheet)
+        val bottomSheet = fragmentLayout.findViewById<LinearLayout>(R.id.bottom_sheet)
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
-        languageTextView = fragment_layout.findViewById(R.id.text_language_code)
+        languageTextView = fragmentLayout.findViewById(R.id.text_language_code)
 
-        with(fragment_layout){
+        with(fragmentLayout){
             playButton = findViewById(R.id.play_btn)
             ttsProgressBar = findViewById(R.id.play_loading_icon)
         }
 
-        val browseBtn = fragment_layout.findViewById<ImageButton>(R.id.browse_btn)
-        val pasteBtn = fragment_layout.findViewById<ImageButton>(R.id.paste_btn)
+        val browseBtn = fragmentLayout.findViewById<ImageButton>(R.id.browse_btn)
+        val pasteBtn = fragmentLayout.findViewById<ImageButton>(R.id.paste_btn)
 
-        editText = fragment_layout.findViewById(R.id.tts_ev)
+        editText = fragmentLayout.findViewById(R.id.tts_ev)
         editText.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus -> if (hasFocus) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN }
 
-        webview = fragment_layout.findViewById(R.id.webview_wiktionary)
+        webview = fragmentLayout.findViewById(R.id.webview_wiktionary)
         webview.setOnTouchListener { view, _ ->
             view.parent.requestDisallowInterceptTouchEvent(true)
             false
@@ -138,15 +141,15 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
 
 
-        overlayButton = fragment_layout.findViewById<Button>(R.id.startBubble_btn).apply {
+        overlayButton = fragmentLayout.findViewById<Button>(R.id.startBubble_btn).apply {
             setOnClickListener { presenter?.onStartOverlayMode() }
         }
 
-        clipboardButton = fragment_layout.findViewById<Button>(R.id.clipboard_btn).apply {
+        clipboardButton = fragmentLayout.findViewById<Button>(R.id.clipboard_btn).apply {
             setOnClickListener { presenter?.onStartClipboardMode() }
         }
 
-        return fragment_layout
+        return fragmentLayout
     }
 
     override fun onStart() {
@@ -166,14 +169,21 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE_SCREEN_CAPTURE) {
-            if (resultCode == AppCompatActivity.RESULT_OK) {
-                val intent = Intent(activity, ScreenTextService::class.java)
-                intent.action = NORMAL_SERVICE
-                intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode)
-                intent.putExtras(data)
-                activity?.startService(intent)
-                activity?.finish()
+        if (resultCode == AppCompatActivity.RESULT_OK && data != null) {
+            when(requestCode) {
+                REQUEST_CODE_SCREEN_CAPTURE -> {
+                    val intent = Intent(activity, ScreenTextService::class.java)
+                    intent.action = NORMAL_SERVICE
+                    intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode)
+                    intent.putExtras(data)
+                    activity?.startService(intent)
+                    activity?.finish()
+                }
+                REQUEST_CODE_DRAW_OVERLAY -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if (Settings.canDrawOverlays(context)) getScreenCaptureIntent()
+                    }
+                }
             }
         }
     }
@@ -189,10 +199,19 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
     override fun startClipboardService() {
         val intent = Intent(activity, ScreenTextService::class.java)
         intent.action = NO_FLOATING_ICON_SERVICE
-        activity!!.startService(intent)
+        activity?.startService(intent)
     }
 
     override fun startOverlayService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context?.packageName))
+            startActivityForResult(intent, REQUEST_CODE_DRAW_OVERLAY)
+        } else {
+            getScreenCaptureIntent()
+        }
+    }
+
+    private fun getScreenCaptureIntent(){
         val manager = activity?.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val permissionIntent = manager.createScreenCaptureIntent()
         startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE)
@@ -250,7 +269,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
                 }
             }
 
-            val guide: TourGuide? = TourGuide.create(it){
+            TourGuide.create(it){
                 toolTip {
                     title{"Enable clipboard mode"}
                     description { "Shows dialog with translation whenever text is copied to clipboard" }
@@ -278,5 +297,6 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
     companion object {
 
         const val REQUEST_CODE_SCREEN_CAPTURE = 100
+        const val REQUEST_CODE_DRAW_OVERLAY = 300
     }
 }
