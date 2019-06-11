@@ -38,4 +38,7 @@ public interface WordsDAO {
 
     @Query("SELECT * FROM words")
     LiveData<List<Words>> getAllWords();
+
+    @Query("SELECT DISTINCT LOWER(lang) FROM words")
+    LiveData<List<String>> getLanguagesISO();
 }

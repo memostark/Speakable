@@ -12,6 +12,7 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         debug{
@@ -89,6 +90,11 @@ dependencies {
 
     // Database visualizer
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.6'
+
+    // Instrumental testing
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation "androidx.arch.core:core-testing:2.1.0-beta01"
 
     // How to use app library
     implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {

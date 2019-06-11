@@ -41,6 +41,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     private SavedWordListAdapter wordListAdapter;
     private WordsViewModel wordsViewModel;
     private RecyclerView mRecyclerView;
+    private Spinner spinnerLang;
     private Context context;
 
     private String language_filter;
@@ -54,13 +55,6 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         wordListAdapter = new SavedWordListAdapter(context);
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        initData();
-    }
-
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
@@ -73,12 +67,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
         setUpItemTouchHelper();
 
-        Spinner spinner = fragment_layout.findViewById(R.id.select_language_spinner);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
-                R.array.language_code_arrays, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setOnItemSelectedListener(this);
-        spinner.setAdapter(adapter);
+        spinnerLang = fragment_layout.findViewById(R.id.select_language_spinner);
 
         fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -86,15 +75,26 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
                 showSaveDialog();
             }
         });
+        initData();
         return fragment_layout;
     }
 
     private void initData(){
         wordsViewModel = ViewModelProviders.of(this).get(WordsViewModel.class);
+        wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), new Observer<List<String>>() {
+            @Override
+            public void onChanged(List<String> languages) {
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, languages);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerLang.setOnItemSelectedListener(SavedWordsFragment.this);
+                spinnerLang.setAdapter(adapter);
+            }
+        });
+
         wordsViewModel.getWordsList().observe(this, new Observer<List<Words>>() {
             @Override
-            public void onChanged(@Nullable List<Words> movies) {
-                words = movies;
+            public void onChanged(@Nullable List<Words> wordsList) {
+                words = wordsList;
                 filterWords();
 
             }
@@ -204,7 +204,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
             List<Words> filtered_word = new ArrayList<>();
             for (Words word : words) {
-                if (language_filter.equals(word.lang.toUpperCase())) {
+                if (language_filter.equals(word.lang.toLowerCase())) {
                     filtered_word.add(word);
                 }
             }
