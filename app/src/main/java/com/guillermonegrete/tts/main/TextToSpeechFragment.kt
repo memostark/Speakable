@@ -250,7 +250,7 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
     private fun getTranslatorSource(): WordDataSource{
         val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val translatorPreference = preferences.getString(TranslatorType.PREFERENCE_KEY, "")
-        val translatorType = translatorPreference?.toInt() ?: TranslatorType.GOOGLE_PUBLIC.value
+        val translatorType = if(translatorPreference.isNullOrEmpty()) TranslatorType.GOOGLE_PUBLIC.value else translatorPreference.toInt()
 
         return when(TranslatorType.valueOf(translatorType)){
             TranslatorType.GOOGLE_PUBLIC -> GooglePublicSource.getInstance()

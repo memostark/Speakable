@@ -1,0 +1,52 @@
+[
+  {
+    "siteName": "Diccionaris",
+    "link": "https://www.diccionaris.cat/?diccionario=74&palabra={q}",
+    "language": "ca"
+  },
+  {
+    "siteName": "Glosbe",
+    "link": "https://en.glosbe.com/ca/en/{q}",
+    "language": "ca"
+  },
+  {
+    "siteName": "Verbs",
+    "link": "https://www.verbs.cat/ca/conjugacio.html?infinitive={q}",
+    "language": "ca"
+  },
+  {
+    "siteName": "Dict.cc",
+    "link": "https://m.dict.cc/deen/?s={q}",
+    "language": "de"
+  },
+  {
+    "siteName": "PONS",
+    "link": "https://en.pons.com/translate?l=deen&q={q}",
+    "language": "de"
+  },
+  {
+    "siteName": "Reverso Conjugator",
+    "link": "http://conjugator.reverso.net/conjugation-german-verb-{q}.html",
+    "language": "de"
+  },
+  {
+    "siteName": "Reverso Conjugator",
+    "link": "http://conjugator.reverso.net/conjugation-hebrew-verb-{q}.html",
+    "language": "he"
+  },
+  {
+    "siteName": "Pealim",
+    "link": "https://www.pealim.com/search/?q={q}",
+    "language": "he"
+  },
+  {
+    "siteName": "Wiktionary",
+    "link": "https://en.wiktionary.org/wiki/{q}",
+    "language": "he"
+  },
+  {
+    "siteName": "Cambridge Dictionary",
+    "link": "https://dictionary.cambridge.org/dictionary/english/{q}",
+    "language": "en"
+  }
+]

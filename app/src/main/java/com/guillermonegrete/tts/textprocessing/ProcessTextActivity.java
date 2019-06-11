@@ -36,6 +36,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.guillermonegrete.tts.BuildConfig;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource;
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.services.ScreenTextService;
 import com.guillermonegrete.tts.data.source.WordDataSource;
@@ -45,12 +46,10 @@ import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
-import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
 import com.guillermonegrete.tts.db.ExternalLink;
-import com.guillermonegrete.tts.db.ExternalLinksDatabase;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.main.TranslatorType;
@@ -117,7 +116,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 this,
                 WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
-                ExternalLinksDataSource.getInstance(ExternalLinksDatabase.getDatabase(getApplicationContext()).externalLinksDAO()),
+                AssetsExternalLinksSource.Companion.getInstance(getApplication()),
                 CustomTTS.getInstance(getApplicationContext()));
 
         Words extraWord = getIntent().getParcelableExtra("Word");
@@ -165,7 +164,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private WordDataSource getTranslatorSource(){
-        int translatorPreference = Integer.parseInt(preferences.getString(TranslatorType.PREFERENCE_KEY, ""));
+        int value = TranslatorType.GOOGLE_PUBLIC.getValue();
+        int translatorPreference = Integer.parseInt(preferences.getString(TranslatorType.PREFERENCE_KEY, String.valueOf(value)));
         TranslatorType translatorType = TranslatorType.Companion.valueOf(translatorPreference);
 
         switch (translatorType){
