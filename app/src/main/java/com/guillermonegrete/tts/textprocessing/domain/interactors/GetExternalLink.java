@@ -3,8 +3,9 @@ package com.guillermonegrete.tts.textprocessing.domain.interactors;
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
-import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
+import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -27,11 +28,11 @@ public class GetExternalLink extends AbstractInteractor implements GetExternalLi
     public void run() {
         dataSource.getLanguageLinks(language, new ExternalLinksDataSource.Callback() {
             @Override
-            public void onLinksRetrieved(final List<ExternalLink> links) {
+            public void onLinksRetrieved(@NotNull final List<? extends ExternalLink> links) {
                 mMainThread.post(new Runnable() {
                     @Override
                     public void run() {
-                        callback.onExternalLinksRetrieved(links);
+                        callback.onExternalLinksRetrieved((List<ExternalLink>) links);
                     }
                 });
             }

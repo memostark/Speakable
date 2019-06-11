@@ -35,6 +35,7 @@ import android.view.WindowManager;
 import com.google.android.material.tabs.TabLayout;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource;
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.services.ScreenTextService;
 import com.guillermonegrete.tts.main.SettingsFragment;
@@ -42,12 +43,10 @@ import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
-import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
 import com.guillermonegrete.tts.db.ExternalLink;
-import com.guillermonegrete.tts.db.ExternalLinksDatabase;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
@@ -113,7 +112,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
                 this,
                 WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 DictionaryRepository.getInstance(WiktionarySource.getInstance()),
-                ExternalLinksDataSource.getInstance(ExternalLinksDatabase.getDatabase(getApplicationContext()).externalLinksDAO()),
+                AssetsExternalLinksSource.Companion.getInstance(getApplication()),
                 CustomTTS.getInstance(getApplicationContext()));
 
         Words extraWord = getIntent().getParcelableExtra("Word");

@@ -6,6 +6,7 @@ import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntry;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntryInteractor;
@@ -16,7 +17,6 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInter
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
-import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
 

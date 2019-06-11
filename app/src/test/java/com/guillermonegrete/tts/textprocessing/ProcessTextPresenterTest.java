@@ -9,7 +9,7 @@ import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
-import com.guillermonegrete.tts.data.source.local.ExternalLinksDataSource;
+import com.guillermonegrete.tts.data.source.local.DatabaseExternalLinksSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.threading.TestMainThread;
 
@@ -32,7 +32,7 @@ public class ProcessTextPresenterTest {
     @Mock private ProcessTextContract.View view;
     @Mock private WordRepository wordRepository;
     @Mock private DictionaryRepository dictionaryRepository;
-    @Mock private ExternalLinksDataSource linksRepository;
+    @Mock private DatabaseExternalLinksSource linksRepository;
     @Mock private CustomTTS customTTS;
 
     @Captor
