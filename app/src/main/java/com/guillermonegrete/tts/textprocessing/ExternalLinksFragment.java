@@ -1,7 +1,9 @@
 package com.guillermonegrete.tts.textprocessing;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,10 +31,7 @@ public class ExternalLinksFragment extends Fragment {
     private static final String WORD_TEXT = "word_text";
     private static final String LINKS_LIST = "links";
 
-
-    private final static String ReversoConjugationBaseURL = "http://conjugator.reverso.net/conjugation-hebrew-verb-";
-
-    public static ExternalLinksFragment newInstance(String word, ArrayList<ExternalLink> links){
+    static ExternalLinksFragment newInstance(String word, ArrayList<ExternalLink> links){
         ExternalLinksFragment fragment = new ExternalLinksFragment();
 
         Bundle args = new Bundle();
@@ -61,21 +60,19 @@ public class ExternalLinksFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.external_links_grid, container, false);
-        /*fragment_layout.findViewById(R.id.external_link_btn_1).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-                CustomTabsIntent customTabsIntent = builder.build();
-                customTabsIntent.launchUrl(mContext, Uri.parse(
-                        ReversoConjugationBaseURL + wordExtra  + ".html"
-                ));
-            }
-        });*/
         RecyclerView recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
 
-        ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, wordExtra, links);
+        DefaultWebBrowser browser = getDefaultWebBrowser();
+        ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, wordExtra, links, browser);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new GridLayoutManager(mContext, 2));
         return fragment_layout;
     }
+
+    private DefaultWebBrowser getDefaultWebBrowser(){
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        String preference = preferences.getString(DefaultWebBrowser.PREFERENCE_KEY, "");
+        return DefaultWebBrowser.Companion.get(preference);
+    }
+
 }
