@@ -43,6 +43,10 @@
             android:excludeFromRecents="true"
             android:launchMode="singleInstance">
         </activity>
+        <activity android:name="com.guillermonegrete.tts.ui.webview.ChromeCustomTabsActivity"
+            android:theme="@style/Theme.Transparent"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"/>
         <service android:name="com.guillermonegrete.tts.services.ScreenTextService"/>
         <receiver android:name="com.guillermonegrete.tts.services.Receiver"
             android:enabled="true"

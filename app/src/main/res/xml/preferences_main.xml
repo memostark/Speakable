@@ -42,4 +42,15 @@
             android:defaultValue="auto"/>
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="External links browser">
+        <ListPreference
+            android:title="Default browser"
+            android:summary="%s"
+            android:key="default_browser_pref_key"
+            android:entries="@array/defaultBrowserArray"
+            android:entryValues="@array/defaultBrowserValues"
+            android:defaultValue="default"/>
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

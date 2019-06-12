@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.textprocessing;
 
 import android.content.Context;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +12,6 @@ import com.guillermonegrete.tts.db.ExternalLink;
 import java.util.List;
 
 import androidx.annotation.NonNull;
-import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdapter.ViewHolder> {
@@ -22,12 +20,13 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     private String word;
     private LayoutInflater inflater;
 
-    private Context context;
 
-    public ExternalLinksAdapter(Context context, String word, List<ExternalLink> links){
+    private DefaultWebBrowser defaultWebBrowser;
+
+    ExternalLinksAdapter(Context context, String word, List<ExternalLink> links, DefaultWebBrowser defaultWebBrowser){
         this.links = links;
         this.word = word;
-        this.context = context;
+        this.defaultWebBrowser = defaultWebBrowser;
         inflater = LayoutInflater.from(context);
     }
 
@@ -36,23 +35,14 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = inflater.inflate(R.layout.external_link_item, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(view, defaultWebBrowser);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.linkButton.setText(links.get(position).siteName);
         final String base_url = links.get(position).link;
-        holder.linkButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-                CustomTabsIntent customTabsIntent = builder.build();
-                customTabsIntent.launchUrl(context, Uri.parse(
-                        base_url.replace("{q}", word)
-                ));
-            }
-        });
+        holder.url = base_url.replace("{q}", word);
     }
 
     @Override
@@ -63,10 +53,19 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     class ViewHolder extends RecyclerView.ViewHolder{
 
         Button linkButton;
+        String url;
 
-        ViewHolder(@NonNull View itemView) {
+        ViewHolder(@NonNull final View itemView, final DefaultWebBrowser defaultWebBrowser) {
             super(itemView);
+            url = "";
             linkButton = itemView.findViewById(R.id.external_link_btn);
+            linkButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Context context = itemView.getContext();
+                    context.startActivity(defaultWebBrowser.intentForUrl(context, url));
+                }
+            });
         }
     }
 }
