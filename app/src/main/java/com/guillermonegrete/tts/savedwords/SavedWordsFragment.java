@@ -48,6 +48,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private List<Words> words;
 
+    private static final String ALL_OPTION = "All";
+
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
@@ -84,6 +86,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), new Observer<List<String>>() {
             @Override
             public void onChanged(List<String> languages) {
+                languages.add(0, ALL_OPTION);
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, languages);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerLang.setOnItemSelectedListener(SavedWordsFragment.this);
@@ -197,7 +200,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     // TODO filter in worker thread
     private void filterWords(){
-        if(language_filter == null || language_filter.equals("All")) {
+        if(language_filter == null || language_filter.equals(ALL_OPTION)) {
             wordListAdapter.setWordsList(words);
 
         }else {
