@@ -49,10 +49,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
-    public void setListener(Listener listener) {
-        this.listener = listener;
-    }
-
     public void speak(String text){
         if(usinglocalTTS){
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -66,6 +62,11 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             }
             mSynth.speakLocalAudio();
         }
+    }
+
+    public void speak(String text, Listener listener){
+        this.listener = listener;
+        speak(text);
     }
 
     public void stop(){
