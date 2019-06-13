@@ -35,7 +35,7 @@
 
         <ListPreference
             android:title="Default from language"
-            android:summary="Language you want to translate from, select auto if you want to detect the language"
+            android:summary="Language you want to translate from, select auto if you want to detect the language. %s"
             android:key="translate_from_pref_key"
             android:entries="@array/googleTranslateLangsWithAutoArray"
             android:entryValues="@array/googleTranslateLangsWithAutoValue"

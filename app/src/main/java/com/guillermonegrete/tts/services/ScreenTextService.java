@@ -102,6 +102,7 @@ public class ScreenTextService extends Service {
 
     private ClipboardManager clipboard;
     private SharedPreferences sharedPreferences;
+    private String languageToPreference;
 
     private ImageProcessingSource textProcessor;
 
@@ -322,11 +323,14 @@ public class ScreenTextService extends Service {
     }
 
     private void detectLanguageAndTranslate(String text){
+        languageToPreference = getLanguageToPreference();
         GetLangAndTranslation interactor = new GetLangAndTranslation(
                 ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
                 WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
                 text,
+                "auto",
+                languageToPreference,
                 new GetLangAndTranslation.Callback(){
                     @Override
                     public void onDataNotAvailable() { }
@@ -423,6 +427,13 @@ public class ScreenTextService extends Service {
         }
     }
 
+    private String getLanguageToPreference(){
+        int englishIndex = 15;
+        int languagePreferenceIndex = sharedPreferences.getInt(SettingsFragment.PREF_LANGUAGE_TO, englishIndex);
+        String[] languagesISO = getResources().getStringArray(R.array.googleTranslateLanguagesValue);
+        return languagesISO[languagePreferenceIndex];
+    }
+
 
     private void defaultSnippingView(){
         windowParams.x = 0;
@@ -506,7 +517,7 @@ public class ScreenTextService extends Service {
         TextView languageFrom = layout.findViewById(R.id.language_from_text);
         languageFrom.setText(word.lang);
         TextView languageTo = layout.findViewById(R.id.language_to_text);
-        languageTo.setText("en");
+        languageTo.setText(languageToPreference);
         PopupWindow popupWindow = new PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         popupWindow.setFocusable(true);
