@@ -306,7 +306,7 @@ public class ScreenTextService extends Service {
                             @Override
                             public void onTextDetected(@NotNull String text, @NotNull String language) {
                                 System.out.println("detected text: " + text);
-                                detectLanguage(text);
+                                detectLanguageAndTranslate(text);
                             }
                         }
                 );
@@ -316,12 +316,12 @@ public class ScreenTextService extends Service {
 
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        setTextRegognizer();
+        setTextRecognizer();
         setClipboardCallback();
 
     }
 
-    private void detectLanguage(String text){
+    private void detectLanguageAndTranslate(String text){
         GetLangAndTranslation interactor = new GetLangAndTranslation(
                 ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
@@ -333,7 +333,7 @@ public class ScreenTextService extends Service {
 
                     @Override
                     public void onTranslationAndLanguage(@NotNull Words word) {
-                        showPopUpTranslation(word.definition);
+                        showPopUpTranslation(word);
                     }
                 });
         interactor.execute();
@@ -389,7 +389,7 @@ public class ScreenTextService extends Service {
         FIREBASE_LOCAL, FIREBASE_CLOUD
     }
 
-    private void setTextRegognizer(){
+    private void setTextRecognizer(){
         int recognizerPreference = Integer.parseInt(sharedPreferences.getString("textRecognizerPref", "0"));
         System.out.println("Recognizer preference " + recognizerPreference);
 
@@ -499,10 +499,14 @@ public class ScreenTextService extends Service {
         translateButton.setVisibility(View.GONE);
     }
 
-    private void showPopUpTranslation(String text){
+    private void showPopUpTranslation(Words word){
         View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, (ViewGroup) service_layout, false);
-        TextView textView = layout.findViewById(R.id.text_view_popup_translation);
-        textView.setText(text);
+        TextView translationTextView = layout.findViewById(R.id.text_view_popup_translation);
+        translationTextView.setText(word.definition);
+        TextView languageFrom = layout.findViewById(R.id.language_from_text);
+        languageFrom.setText(word.lang);
+        TextView languageTo = layout.findViewById(R.id.language_to_text);
+        languageTo.setText("en");
         PopupWindow popupWindow = new PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         popupWindow.setFocusable(true);
