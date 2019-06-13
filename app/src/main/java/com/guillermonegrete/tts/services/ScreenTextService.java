@@ -19,7 +19,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
-import android.net.Uri;
 import android.os.IBinder;
 import android.widget.*;
 import androidx.annotation.Nullable;
@@ -45,6 +44,7 @@ import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customviews.BubbleView;
@@ -54,14 +54,11 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor;
-import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource;
 
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
 
 public class ScreenTextService extends Service {
 
@@ -74,7 +71,6 @@ public class ScreenTextService extends Service {
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
     private static boolean hasPermission;
-    private String TAG = this.getClass().getSimpleName();
 
     private static int resultCode;
     private static Intent permissionIntent = null;
@@ -95,7 +91,7 @@ public class ScreenTextService extends Service {
 
     static final int STATE_NORMAL = 0;
     static final int STATE_INTERSECTING = 1;
-    static final int STATE_FINISHING = 2;
+//    static final int STATE_FINISHING = 2;
 
     private ClipboardManager clipboard;
 
@@ -265,21 +261,25 @@ public class ScreenTextService extends Service {
                     isAvailable = true;
                     playLoadingIcon.setVisibility(View.VISIBLE);
                     playButton.setVisibility(View.GONE);
-                    detectText(new ImageProcessingSource.Callback() {
-                        @Override
-                        public void onTextDetected(@NotNull String text, @NotNull String language) {
-                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                            // TODO should probably move this condition to the custom tts class
-                            tts.setListener(ttsListener);
-                            boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                            if (!isInitialized) tts.initializeTTS(language);
-                            if(isAvailable) tts.speak(text);
-                        }
-
-                        @Override
-                        public void onFailure() {
-                        }
-                    });
+                    DetectTextFromScreen interactor = new DetectTextFromScreen(
+                            ThreadExecutor.getInstance(),
+                            MainThreadImpl.getInstance(),
+                            new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
+                            textProcessor,
+                            snipView.getSnipRectangle(),
+                            new DetectTextFromScreen.Callback() {
+                                @Override
+                                public void onTextDetected(@NotNull String text, @NotNull String language) {
+                                    Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                                    // TODO should probably move this condition to the custom tts class
+                                    tts.setListener(ttsListener);
+                                    boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                                    if (!isInitialized) tts.initializeTTS(language);
+                                    if(isAvailable) tts.speak(text);
+                                }
+                            }
+                    );
+                    interactor.run();
                 }
 
             }
@@ -288,30 +288,22 @@ public class ScreenTextService extends Service {
         translateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                detectText(new ImageProcessingSource.Callback() {
-                    @Override
-                    public void onTextDetected(@NotNull final String text, @NotNull String language) {
-                        System.out.println("detected text: " + text);
-                        GetLangAndTranslation interactor = new GetLangAndTranslation(
-                                ThreadExecutor.getInstance(),
-                                MainThreadImpl.getInstance(),
-                                WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
-                                text,
-                                new GetLangAndTranslation.Callback(){
-                                    @Override
-                                    public void onDataNotAvailable() { }
 
-                                    @Override
-                                    public void onTranslationAndLanguage(@NotNull Words word) {
-                                        showPopUpTranslation(word.definition);
-                                    }
-                                });
-                        interactor.execute();
-                    }
-
-                    @Override
-                    public void onFailure() {}
-                });
+                DetectTextFromScreen interactor = new DetectTextFromScreen(
+                        ThreadExecutor.getInstance(),
+                        MainThreadImpl.getInstance(),
+                        new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
+                        textProcessor,
+                        snipView.getSnipRectangle(),
+                        new DetectTextFromScreen.Callback() {
+                            @Override
+                            public void onTextDetected(@NotNull String text, @NotNull String language) {
+                                System.out.println("detected text: " + text);
+                                detectLanguage(text);
+                            }
+                        }
+                );
+                interactor.run();
             }
         });
 
@@ -320,15 +312,22 @@ public class ScreenTextService extends Service {
 
     }
 
-    private void detectText(final ImageProcessingSource.Callback callback){
-        ScreenImageCaptor screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent);
-        screenImageCaptor.getImage(snipView.getSnipRectangle(), new ScreenImageCaptor.Callback() {
-            @Override
-            public void onImageCaptured(@NotNull final Bitmap image) {
-                textProcessor.detectText(image, callback);
-                image.recycle();
-            }
-        });
+    private void detectLanguage(String text){
+        GetLangAndTranslation interactor = new GetLangAndTranslation(
+                ThreadExecutor.getInstance(),
+                MainThreadImpl.getInstance(),
+                WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
+                text,
+                new GetLangAndTranslation.Callback(){
+                    @Override
+                    public void onDataNotAvailable() { }
+
+                    @Override
+                    public void onTranslationAndLanguage(@NotNull Words word) {
+                        showPopUpTranslation(word.definition);
+                    }
+                });
+        interactor.execute();
     }
 
     private void setTrashViewVerticalPosition(){
@@ -456,7 +455,7 @@ public class ScreenTextService extends Service {
     }
 
     private void showPopUpTranslation(String text){
-        View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, null);
+        View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, (ViewGroup) service_layout, false);
         TextView textView = layout.findViewById(R.id.text_view_popup_translation);
         textView.setText(text);
         PopupWindow popupWindow = new PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -466,16 +465,6 @@ public class ScreenTextService extends Service {
         popupWindow.setAnimationStyle(R.style.PopUpWindowAnimation);
         popupWindow.showAtLocation(icon_container, Gravity.BOTTOM, 0, 24);
     }
-
-    private void openScreenshot(File imageFile) {
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_VIEW);
-        Uri uri = Uri.fromFile(imageFile);
-        intent.setDataAndType(uri, "image/*");
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-    }
-
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -514,7 +503,7 @@ public class ScreenTextService extends Service {
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
 
         String CHANNEL_IMPORTANCE = "service_notification";
-        Notification notification = new NotificationCompat.Builder(this)
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_IMPORTANCE)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Clipboard translation is activated")
                 .setContentText("Tap to start")
