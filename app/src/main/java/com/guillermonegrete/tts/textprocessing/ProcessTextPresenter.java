@@ -39,9 +39,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean isPlaying;
     private boolean isAvailable;
 
-    private String preferenceLanguage;
-
-    public ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
+    ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
                                 WordRepository repository, DictionaryRepository dictRepository, ExternalLinksDataSource linksRepository, CustomTTS customTTS){
         super(executor, mainThread);
         mView = view;
@@ -49,7 +47,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         dictionaryRepository = dictRepository;
         this.linksRepository = linksRepository;
         this.customTTS = customTTS;
-        this.customTTS.setListener(ttsListener);
 
         insideLocalDatabase = false;
         isPlaying = false;
@@ -192,7 +189,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             mView.showPlayIcon();
         }else if(isAvailable){
             mView.showLoadingTTS();
-            PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, text);
+            PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, ttsListener, text);
             interactor.execute();
         }
     }

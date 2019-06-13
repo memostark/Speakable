@@ -23,7 +23,6 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         super(executor, mainThread);
         this.view = view;
         this.tts = tts;
-        this.tts.setListener(ttsListener);
         this.wordRepository = wordRepository;
         isPlaying = false;
     }
@@ -47,7 +46,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
                     if (!isInitialized) tts.initializeTTS(language);
                     view.showDetectedLanguage(language);
                     if(isAvailable) {
-                        PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, text);
+                        PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, ttsListener, text);
                         interactor.execute();
                     }
                 }

@@ -42,16 +42,17 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
-    public void setListener(Listener listener) {
-        this.listener = listener;
-    }
-
     public void speak(String text){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
         } else {
             localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, map);
         }
+    }
+
+    public void speak(String text, Listener listener){
+        this.listener = listener;
+        speak(text);
     }
 
     public void stop(){
