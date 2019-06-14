@@ -65,6 +65,8 @@
     <string name="overlay_shortcut_disabled_message">Overlay mode unavailable</string>
     <string name="from_label">From:</string>
     <string name="to_label">To:</string>
+    <string name="small_label">Small</string>
+    <string name="large_label">Large</string>
 
 
     <string-array name="language_code_arrays">

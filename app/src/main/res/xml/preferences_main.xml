@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <SwitchPreferenceCompat
         android:key="auto_tts_switch"
         android:title="TTS automatically"
@@ -34,5 +33,11 @@
             android:entryValues="@array/defaultBrowserValues"
             android:defaultValue="default"/>
     </PreferenceCategory>
+
+    <com.guillermonegrete.tts.customviews.ButtonsPreference
+        android:key="window_size"
+        android:title="Pop up window size"
+        android:summary="Small or large"
+        android:defaultValue="true" />
 
 </androidx.preference.PreferenceScreen>
