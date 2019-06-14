@@ -34,6 +34,7 @@
 package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
+import androidx.preference.PreferenceManager;
 import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.savedwords.SavedWordsFragment;
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
         mDrawerLayout = findViewById(R.id.main_drawer_layout);
         setActionBar();
 

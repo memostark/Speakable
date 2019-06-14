@@ -36,6 +36,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.guillermonegrete.tts.BuildConfig;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.customviews.ButtonsPreference;
 import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource;
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.services.ScreenTextService;
@@ -207,14 +208,14 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     public void setWiktionaryLayout(Words word, List<WikiItem> items) {
-
-        setCenterDialog();
+        boolean isLargeWindow = preferences.getBoolean(SettingsFragment.PREF_WINDOW_SIZE, ButtonsPreference.DEFAULT_VALUE);
+        if(isLargeWindow) setCenterDialog(); else  setBottomDialog();
         setWordLayout(word);
         mAdapter = new WiktionaryAdapter(this, items);
 
         mFoundWords = word;
 
-        createViewPager();
+        if(isLargeWindow) createViewPager(); else createSmallViewPager();
     }
 
 
