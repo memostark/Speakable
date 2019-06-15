@@ -34,9 +34,12 @@
 package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.importtext.ImportTextFragment;
 import com.guillermonegrete.tts.savedwords.SavedWordsFragment;
 
 import androidx.fragment.app.FragmentManager;
@@ -69,36 +72,41 @@ public class MainActivity extends AppCompatActivity {
         nav_view.setCheckedItem(R.id.nav_item_main);
         nav_view.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
-            public boolean onNavigationItemSelected(MenuItem menuItem) {
+            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 menuItem.setChecked(true);
                 mDrawerLayout.closeDrawers();
 
                 FragmentManager fragmentManager = getSupportFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                Fragment newFragment;
+                String title;
 
                 switch (menuItem.getItemId()){
                     case R.id.nav_item_main:
-
-                        actionbar.setTitle(getString(R.string.main));
-                        TextToSpeechFragment TTSFragment = new TextToSpeechFragment();
-                        fragmentTransaction.replace(R.id.main_tts_fragment_container, TTSFragment);
-                        fragmentTransaction.commit();
+                        title = getString(R.string.main);
+                        newFragment = new TextToSpeechFragment();
                         break;
                     case R.id.nav_item_saved:
-
-                        actionbar.setTitle(getString(R.string.saved));
-                        SavedWordsFragment savedWordsFragment  = new SavedWordsFragment();
-                        fragmentTransaction.replace(R.id.main_tts_fragment_container, savedWordsFragment);
-                        fragmentTransaction.commit();
+                        title = getString(R.string.saved);
+                        newFragment  = new SavedWordsFragment();
+                        break;
+                    case R.id.nav_item_import:
+                        title = getString(R.string.import_text);
+                        newFragment = new ImportTextFragment();
                         break;
                     case  R.id.nav_item_settings:
-
-                        actionbar.setTitle("");
-                        SettingsFragment settingsFragment  = new SettingsFragment();
-                        fragmentTransaction.replace(R.id.main_tts_fragment_container, settingsFragment);
-                        fragmentTransaction.commit();
+                        title = "";
+                        newFragment  = new SettingsFragment();
+                        break;
+                    default:
+                        title = getString(R.string.main);
+                        newFragment = new TextToSpeechFragment();
                         break;
                 }
+
+                actionbar.setTitle(title);
+                fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
+                fragmentTransaction.commit();
 
                 return true;
             }
@@ -115,17 +123,18 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         actionbar = getSupportActionBar();
-        actionbar.setDisplayHomeAsUpEnabled(true);
-        actionbar.setTitle(getString(R.string.main));
-        actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
+        if(actionbar != null) {
+            actionbar.setDisplayHomeAsUpEnabled(true);
+            actionbar.setTitle(getString(R.string.main));
+            actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
+        }
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                mDrawerLayout.openDrawer(GravityCompat.START);
-                return true;
+        if (item.getItemId() == android.R.id.home) {
+            mDrawerLayout.openDrawer(GravityCompat.START);
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }

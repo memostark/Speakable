@@ -22,6 +22,7 @@
 
     <string name="main">Text to speech</string>
     <string name="saved">Saved words</string>
+    <string name="import_text">Import text</string>
     <string name="settings">Settings</string>
 
     <string name="dialog_new_word_title">New word</string>
@@ -65,6 +66,9 @@
     <string name="to_label">To:</string>
     <string name="small_label">Small</string>
     <string name="large_label">Large</string>
+    <string name="import_text_hint">Enter text to import</string>
+    <string name="visualize_label">Visualize</string>
+
 
 
     <string-array name="language_code_arrays">
