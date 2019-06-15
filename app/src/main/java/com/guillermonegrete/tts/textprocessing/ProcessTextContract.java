@@ -50,7 +50,7 @@ public interface ProcessTextContract {
 
         void start(Words word);
 
-        void start(String selectedText, String languageFrom, String languageTo);
+        void startWithService(String selectedText, String languageFrom, String languageTo);
 
         void getLayout(String text, String languageFrom, String languageTo);
 

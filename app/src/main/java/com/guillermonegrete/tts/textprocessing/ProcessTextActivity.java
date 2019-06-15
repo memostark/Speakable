@@ -94,6 +94,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     private String languagePreferenceISO;
 
     private static final String LANGUAGE_PREFERENCE = "ProcessTextLangPreference";
+    public static final String NO_SERVICE = "no_service";
 
 
     @Override
@@ -119,7 +120,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         Words extraWord = getIntent().getParcelableExtra("Word");
         if(extraWord != null) presenter.start(extraWord);
         else {
-            presenter.start(getSelectedText(), languageFrom, languagePreferenceISO);
+            if(NO_SERVICE.equals(getIntent().getAction())) presenter.getLayout(getSelectedText(), languageFrom, languagePreferenceISO);
+            else presenter.startWithService(getSelectedText(), languageFrom, languagePreferenceISO);
         }
     }
 

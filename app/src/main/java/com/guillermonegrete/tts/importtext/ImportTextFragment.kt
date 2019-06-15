@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.importtext
 
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,6 +29,11 @@ class ImportTextFragment: Fragment() {
         pasteButton.setOnClickListener { editText.text = getClipboardText() }
 
         val visualizeButton: Button = root.findViewById(R.id.visualize_btn)
+        visualizeButton.setOnClickListener {
+            val intent = Intent(context, VisualizeTextActivity::class.java)
+            intent.putExtra(VisualizeTextActivity.IMPORTED_TEXT, editText.text.toString())
+            startActivity(intent)
+        }
 
         return root
     }

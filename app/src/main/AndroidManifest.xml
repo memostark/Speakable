@@ -34,6 +34,8 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <activity android:name="com.guillermonegrete.tts.importtext.VisualizeTextActivity"
+            android:label="@string/visualize_label"/>
         <activity android:name="com.guillermonegrete.tts.main.AcquireScreenshotPermission"
             android:theme="@style/Theme.Transparent"
             android:excludeFromRecents="true"
