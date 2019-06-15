@@ -74,7 +74,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
-    public void start(String selectedText, String languageFrom, String languageTo) {
+    public void startWithService(String selectedText, String languageFrom, String languageTo) {
         mView.startService();
         getLayout(selectedText, languageFrom, languageTo);
     }
