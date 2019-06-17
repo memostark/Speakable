@@ -12,7 +12,7 @@ import com.guillermonegrete.tts.R
 import java.text.BreakIterator
 import java.util.*
 
-class VisualizerAdapter(private val pages: List<String>): RecyclerView.Adapter<VisualizerAdapter.PageViewHolder>() {
+class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Adapter<VisualizerAdapter.PageViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(R.layout.visualizer_page_item, parent, false)
@@ -28,13 +28,11 @@ class VisualizerAdapter(private val pages: List<String>): RecyclerView.Adapter<V
     class PageViewHolder(view: View): RecyclerView.ViewHolder(view){
         private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
-        fun bind(text: String){
-
+        fun bind(text: CharSequence){
             pageTextView.movementMethod = LinkMovementMethod.getInstance()
             pageTextView.setText(SpannableString(text), TextView.BufferType.SPANNABLE)
-            setSpannables(pageTextView, text)
+            setSpannables(pageTextView, text.toString())
 
-            println("Calling on bind")
         }
 
         // Based on: https://stackoverflow.com/questions/8612652/select-a-word-on-a-tap-in-textview-edittext
