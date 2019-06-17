@@ -4,4 +4,10 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
 
     <dimen name="external_link_item_vpadding">10dp</dimen>
+
+    <dimen name="visualize_page_text_line_spacing_extra">8dp</dimen>
+
+    <dimen name="text_size_small">14sp</dimen>
+    <dimen name="text_size_medium">18sp</dimen>
+    <dimen name="text_size_large">22sp</dimen>
 </resources>
