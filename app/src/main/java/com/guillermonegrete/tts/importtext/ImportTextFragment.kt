@@ -1,16 +1,25 @@
 package com.guillermonegrete.tts.importtext
 
+import android.Manifest
+import android.app.Activity.RESULT_OK
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.R
+import java.io.*
+import java.lang.StringBuilder
+
 
 class ImportTextFragment: Fragment() {
 
@@ -30,13 +39,99 @@ class ImportTextFragment: Fragment() {
 
         val visualizeButton: Button = root.findViewById(R.id.visualize_btn)
         visualizeButton.setOnClickListener {
-            val intent = Intent(context, VisualizeTextActivity::class.java)
-            intent.putExtra(VisualizeTextActivity.IMPORTED_TEXT, editText.text.toString())
-            startActivity(intent)
+            visualizeText(editText.text.toString())
+        }
+
+        root.findViewById<Button>(R.id.pick_file_btn).apply {
+            setOnClickListener { checkPermissions() }
         }
 
         return root
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(data != null && resultCode == RESULT_OK){
+            when(requestCode){
+                REQUEST_PICK_FILE -> {
+                    val uri = data.data
+                    if(uri != null) readTextFile(uri)
+                }
+            }
+        }
+    }
+
+    private fun checkPermissions(){
+
+        context?.let{
+
+            if (ContextCompat.checkSelfPermission(it, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+                // Permission is not granted
+                requestPermissions(
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    READ_STORAGE_PERMISSION_REQUEST)
+            } else {
+                pickFile()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            READ_STORAGE_PERMISSION_REQUEST -> {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    pickFile()
+                }else {
+                    Toast.makeText(context, "Read storage permission is necessary to load images", Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+            else -> {}
+        }
+    }
+
+    private fun pickFile() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).setType("text/plain")
+        startActivityForResult(intent, REQUEST_PICK_FILE)
+    }
+
+    // TODO execute in background thread
+    private fun readTextFile(uri: Uri){
+
+        val text = StringBuilder()
+        var br: BufferedReader? = null
+        var inputStream: InputStream? = null
+
+        try {
+            inputStream = context?.contentResolver?.openInputStream(uri)
+            br = BufferedReader(InputStreamReader(inputStream))
+            var line = br.readLine()
+
+            while (line != null) {
+                text.append(line)
+                text.append('\n')
+                line = br.readLine()
+            }
+
+        } catch (e: IOException) {
+            //You'll need to add proper error handling here
+        } finally {
+            br?.close()
+            inputStream?.close()
+        }
+
+        if(text.isNotBlank()) visualizeText(text.toString())
+    }
+
+    private fun visualizeText(text: String){
+        val intent = Intent(context, VisualizeTextActivity::class.java)
+        intent.putExtra(VisualizeTextActivity.IMPORTED_TEXT, text)
+        startActivity(intent)
+    }
+
+
 
     private fun getClipboardText(): String{
 
@@ -44,6 +139,11 @@ class ImportTextFragment: Fragment() {
         if (clip.itemCount <= 0) return ""
         val pasteData = clip.getItemAt(0).text
         return pasteData?.toString() ?: ""
+    }
+
+    companion object{
+        private const val REQUEST_PICK_FILE = 112
+        private const val READ_STORAGE_PERMISSION_REQUEST = 113
     }
 
 }
