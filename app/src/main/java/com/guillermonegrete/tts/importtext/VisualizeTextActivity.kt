@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.importtext
 
 import android.os.Bundle
 import android.text.TextPaint
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
@@ -16,6 +17,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         val text = intent?.extras?.getString(IMPORTED_TEXT) ?: "No text"
 
+        val currentPageLabel: TextView = findViewById(R.id.reader_current_page)
+
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
             val pageTextPaint = createTextPaint()
@@ -25,7 +28,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             pageSplitter.split(pageTextPaint)
             val pages = pageSplitter.getPages()
 
+            currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
             viewPager.adapter = VisualizerAdapter(pages)
+            viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
+                override fun onPageSelected(position: Int) {
+                    val pageNumber = position + 1
+                    currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, pages.size)
+                }
+            })
         }
 
     }

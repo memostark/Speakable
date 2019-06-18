@@ -68,8 +68,10 @@
     <string name="to_label">To:</string>
     <string name="small_label">Small</string>
     <string name="large_label">Large</string>
+
     <string name="import_text_hint">Enter text to import</string>
     <string name="visualize_label">Visualize</string>
+    <string name="reader_current_page_label">%1$d of %2$d</string>
 
 
 
