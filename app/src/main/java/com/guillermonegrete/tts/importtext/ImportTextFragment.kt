@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Xml
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +18,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.R
+import org.xmlpull.v1.XmlPullParser
 import java.io.*
 import java.lang.StringBuilder
 
@@ -24,6 +26,7 @@ import java.lang.StringBuilder
 class ImportTextFragment: Fragment() {
 
     private lateinit var clipboardManager: ClipboardManager
+    private var fileType = ImportedFileType.TXT
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -42,8 +45,18 @@ class ImportTextFragment: Fragment() {
             visualizeText(editText.text.toString())
         }
 
-        root.findViewById<Button>(R.id.pick_file_btn).apply {
-            setOnClickListener { checkPermissions() }
+        root.findViewById<Button>(R.id.pick_txt_file_btn).apply {
+            setOnClickListener {
+                fileType = ImportedFileType.TXT
+                checkPermissions()
+            }
+        }
+
+        root.findViewById<Button>(R.id.pick_epub_file_btn).apply {
+            setOnClickListener {
+                fileType = ImportedFileType.EPUB
+                checkPermissions()
+            }
         }
 
         return root
@@ -55,7 +68,12 @@ class ImportTextFragment: Fragment() {
             when(requestCode){
                 REQUEST_PICK_FILE -> {
                     val uri = data.data
-                    if(uri != null) readTextFile(uri)
+                    if(uri != null) {
+                        when(fileType){
+                            ImportedFileType.EPUB -> readEpubFile(uri)
+                            ImportedFileType.TXT -> readTextFile(uri)
+                        }
+                    }
                 }
             }
         }
@@ -93,7 +111,7 @@ class ImportTextFragment: Fragment() {
     }
 
     private fun pickFile() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).setType("text/plain")
+        val intent = Intent(Intent.ACTION_GET_CONTENT).setType(fileType.mimeType)
         startActivityForResult(intent, REQUEST_PICK_FILE)
     }
 
@@ -123,6 +141,26 @@ class ImportTextFragment: Fragment() {
         }
 
         if(text.isNotBlank()) visualizeText(text.toString())
+    }
+
+    private fun readEpubFile(uri: Uri) {
+        println("Epub selected $uri, path: ${uri.path}")
+        val path = uri.path
+        if(path != null) {
+            context?.let {
+//                book.fetchFromZip(uri, it)
+
+                val rootStream = it.contentResolver.openInputStream(uri)
+                val parser: XmlPullParser = Xml.newPullParser()
+                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+
+                val epubParser = EpubParser()
+
+                val book = epubParser.parseBook(parser, rootStream)
+                println("Chapter html: \n${book.chapters.first()}")
+                visualizeText(book.chapters.first())
+            }
+        }
     }
 
     private fun visualizeText(text: String){
