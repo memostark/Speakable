@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext
 
+import androidx.annotation.VisibleForTesting
 import org.apache.commons.io.IOUtils
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
@@ -227,23 +228,31 @@ class EpubParser {
      *  Get tags, attributes and text inside a tag
      *  Taken from: https://stackoverflow.com/questions/16069425/xmlpullparser-get-inner-text-including-xml-tags
      */
+    @VisibleForTesting
     @Throws(XmlPullParserException::class, IOException::class)
     fun getInnerXml(parser: XmlPullParser):String {
         val sb = StringBuilder()
         var depth = 1
+        var lastTagWasStart = false
         while (depth != 0) {
             when (parser.next()) {
                 XmlPullParser.END_TAG -> {
                     depth--
-                    if (depth > 0) sb.append("</" + parser.name + ">")
-
+                    if (depth > 0) {
+                        if(lastTagWasStart) sb.append("/>") else sb.append("</" + parser.name + ">")
+                    }
+                    lastTagWasStart = false
                 }
                 XmlPullParser.START_TAG -> {
+                    if(lastTagWasStart) sb.append(">")
+                    lastTagWasStart = true
                     depth++
-                    sb.append("<" + parser.name + ">")
+                    sb.append("<" + parser.name)
                 }
                 else -> {
+                    if(lastTagWasStart) sb.append(">")
                     sb.append(parser.text)
+                    lastTagWasStart = false
                 }
             }
         }
