@@ -89,6 +89,9 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
+    // Apache IO utils
+    implementation 'org.apache.directory.studio:org.apache.commons.io:2.4'
+
     // Database visualizer
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.6'
 
