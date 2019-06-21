@@ -46,11 +46,6 @@ class EpubParser {
             val firstChapterPath = manifest[spine[1]]
             if(firstChapterPath != null) {
                 val fullPath = "$basePath/$firstChapterPath"
-                println("Fisrt chapter path: $fullPath")
-
-                byteStream.reset()
-                val stream = getFileStreamFromZip(fullPath, byteStream)
-                if(stream != null) println(readZipEntry(stream))
 
                 byteStream.reset()
                 val chapterStream = getFileStreamFromZip(fullPath, byteStream)

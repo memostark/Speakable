@@ -1,14 +1,11 @@
 package com.guillermonegrete.tts.importtext
 
 import android.os.Build
-import android.text.Layout
-import android.text.SpannableStringBuilder
-import android.text.StaticLayout
-import android.text.TextPaint
+import android.text.*
 
 /**
  *  Taken from: https://stackoverflow.com/a/30468884/10244759
- *  Also useful: https://stackoverflow.com/a/20204349/10244759
+ *  More precise version although slower, should implement: https://stackoverflow.com/questions/31837840/paginating-text-in-android
  *
  */
 class PageSplitter(
@@ -25,15 +22,16 @@ class PageSplitter(
     }
 
     fun split(textPaint: TextPaint) {
+        val formattedText = formatHtml(mSpannableStringBuilder)
         val staticLayout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            StaticLayout.Builder.obtain(mSpannableStringBuilder, 0, mSpannableStringBuilder.length, textPaint, pageWidth)
+            StaticLayout.Builder.obtain(formattedText, 0, formattedText.length, textPaint, pageWidth)
                 .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                 .setLineSpacing(lineSpacingExtra, lineSpacingMultiplier)
                 .setIncludePad(false)
                 .build()
         } else {
             StaticLayout(
-                mSpannableStringBuilder,
+                formattedText,
                 textPaint,
                 pageWidth,
                 Layout.Alignment.ALIGN_NORMAL,
@@ -54,8 +52,16 @@ class PageSplitter(
                 else endLine
             val startOffset = staticLayout.getLineStart(startLine)
             val endOffset = staticLayout.getLineEnd(lastFullyVisibleLine)
-            pages.add(mSpannableStringBuilder.subSequence(startOffset, endOffset))
+            pages.add(formattedText.subSequence(startOffset, endOffset))
             startLine = lastFullyVisibleLine + 1
+        }
+    }
+
+    private fun formatHtml(text: CharSequence): Spanned {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT)
+        } else {
+            Html.fromHtml(text.toString())
         }
     }
 

@@ -30,20 +30,20 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
 
         fun bind(text: CharSequence){
             pageTextView.movementMethod = LinkMovementMethod.getInstance()
-            pageTextView.setText(SpannableString(text), TextView.BufferType.SPANNABLE)
-            setSpannables(pageTextView, text.toString())
 
+            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
+            setSpannables(pageTextView)
         }
 
         // Based on: https://stackoverflow.com/questions/8612652/select-a-word-on-a-tap-in-textview-edittext
-        private fun setSpannables(view: TextView, text: String){
+        private fun setSpannables(view: TextView){
             val spans = view.text as SpannableString
             val iterator = BreakIterator.getWordInstance(Locale.US)
-            iterator.setText(text)
+            iterator.setText(spans.toString())
             var start = iterator.first()
             var end = iterator.next()
             while (end != BreakIterator.DONE) {
-                val possibleWord = text.substring(start, end)
+                val possibleWord = spans.substring(start, end)
                 if (Character.isLetterOrDigit(possibleWord.first())) {
                     val clickSpan = ImportedClickableSpan(possibleWord)
                     spans.setSpan(
