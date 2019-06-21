@@ -157,7 +157,6 @@ class ImportTextFragment: Fragment() {
                 val epubParser = EpubParser()
 
                 val book = epubParser.parseBook(parser, rootStream)
-                println("Chapter html: \n${book.chapters.first()}")
                 visualizeText(book.chapters.first())
             }
         }
