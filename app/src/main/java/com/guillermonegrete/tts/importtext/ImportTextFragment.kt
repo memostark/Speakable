@@ -70,7 +70,7 @@ class ImportTextFragment: Fragment() {
                     val uri = data.data
                     if(uri != null) {
                         when(fileType){
-                            ImportedFileType.EPUB -> readEpubFile(uri)
+                            ImportedFileType.EPUB -> visualizeEpub(uri)
                             ImportedFileType.TXT -> readTextFile(uri)
                         }
                     }
@@ -143,28 +143,16 @@ class ImportTextFragment: Fragment() {
         if(text.isNotBlank()) visualizeText(text.toString())
     }
 
-    private fun readEpubFile(uri: Uri) {
-        println("Epub selected $uri, path: ${uri.path}")
-        val path = uri.path
-        if(path != null) {
-            context?.let {
-//                book.fetchFromZip(uri, it)
-
-                val rootStream = it.contentResolver.openInputStream(uri)
-                val parser: XmlPullParser = Xml.newPullParser()
-                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-
-                val epubParser = EpubParser()
-
-                val book = epubParser.parseBook(parser, rootStream)
-                visualizeText(book.chapters.first())
-            }
-        }
-    }
-
     private fun visualizeText(text: String){
         val intent = Intent(context, VisualizeTextActivity::class.java)
         intent.putExtra(VisualizeTextActivity.IMPORTED_TEXT, text)
+        startActivity(intent)
+    }
+
+    private fun visualizeEpub(uri: Uri){
+        val intent = Intent(context, VisualizeTextActivity::class.java)
+        intent.action = VisualizeTextActivity.SHOW_EPUB
+        intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
         startActivity(intent)
     }
 
