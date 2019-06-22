@@ -42,6 +42,9 @@ class EpubParserTest {
         val result = epubParser.parseTableOfContents(xmlParser)
         val expected = TableOfContents(listOf(
             NavPoint("Volume 1", "volume1.html"),
+            NavPoint("Chapter 1", "volume1/chapter001.html"),
+            NavPoint("Chapter 2", "volume1/chapter002.html"),
+            NavPoint("Section 1", "volume1/chapter002.html#Section_1"),
             NavPoint("Volume 2", "volume2.html")
         ))
 

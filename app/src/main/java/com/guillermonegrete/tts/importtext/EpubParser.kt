@@ -246,31 +246,32 @@ class EpubParser {
 
     private fun readPoint(parser: XmlPullParser){
         parser.require(XmlPullParser.START_TAG, ns, "navPoint")
-        var label = ""
-        var content = ""
+
+        parser.nextTag()
+        val label = readLabel(parser)
+        parser.nextTag()
+        parser.require(XmlPullParser.START_TAG, ns, "content")
+        val content = parser.getAttributeValue(null, "src")
+        parser.nextTag()
+        parser.require(XmlPullParser.END_TAG, ns, "content")
+        navPoints.add(NavPoint(label, content))
+
         while (parser.next() != XmlPullParser.END_TAG){
             if (parser.eventType != XmlPullParser.START_TAG) continue
             when(parser.name){
-                "navLabel" -> {
-                    label = readLabel(parser)
-                }
-                "content" -> {
-                    content = parser.getAttributeValue(null, "src")
-                    parser.nextTag()
-                }
+                "navPoint" -> readPoint(parser)
                 else -> skip(parser) // Don't read nested nav points, implement later
             }
         }
-        navPoints.add(NavPoint(label, content))
+
         parser.require(XmlPullParser.END_TAG, ns, "navPoint")
     }
 
     private fun readLabel(parser: XmlPullParser): String{
-        var result = ""
         parser.require(XmlPullParser.START_TAG, ns, "navLabel")
         parser.nextTag()
         parser.require(XmlPullParser.START_TAG, ns, "text")
-        result = readText(parser)
+        val result = readText(parser)
         parser.require(XmlPullParser.END_TAG, ns, "text")
         parser.nextTag()
         parser.require(XmlPullParser.END_TAG, ns, "navLabel")
