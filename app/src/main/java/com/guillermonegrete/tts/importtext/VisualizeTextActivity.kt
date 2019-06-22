@@ -20,6 +20,9 @@ import org.xmlpull.v1.XmlPullParser
 class VisualizeTextActivity: AppCompatActivity() {
 
     private lateinit var viewPager: ViewPager2
+    private lateinit var currentPageLabel: TextView
+
+    private val epubParser = EpubParser()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,25 +36,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             intent?.extras?.getString(IMPORTED_TEXT) ?: "No text"
         }
 
-        val currentPageLabel: TextView = findViewById(R.id.reader_current_page)
+        currentPageLabel= findViewById(R.id.reader_current_page)
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
-            val pageTextPaint = createTextPaint()
 
-            val pageSplitter =  createPageSplitter()
-            pageSplitter.append(text)
-            pageSplitter.split(pageTextPaint)
-            val pages = pageSplitter.getPages()
+            val pages = splitTextToPages(text)
+            setUpPagerAndIndexLabel(pages)
 
-            currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
-            viewPager.adapter = VisualizerAdapter(pages)
-            viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
-                override fun onPageSelected(position: Int) {
-                    val pageNumber = position + 1
-                    currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, pages.size)
-                }
-            })
         }
 
         val showTOCBtn = findViewById<ImageButton>(R.id.show_toc_btn)
@@ -65,18 +57,49 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     }
 
+    private fun splitTextToPages(text: String): List<CharSequence>{
+        val pageTextPaint = createTextPaint()
+
+        val pageSplitter =  createPageSplitter()
+        pageSplitter.append(text)
+        pageSplitter.split(pageTextPaint)
+        return pageSplitter.getPages()
+    }
+
+    private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
+        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
+        viewPager.adapter = VisualizerAdapter(pages)
+        viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
+            override fun onPageSelected(position: Int) {
+                val pageNumber = position + 1
+                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, pages.size)
+            }
+        })
+    }
+
     private fun readEpubFile(): Book {
         val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-//        Toast.makeText(this, "Uri $uri", Toast.LENGTH_SHORT).show()
 
         val rootStream = contentResolver.openInputStream(uri)
         val parser: XmlPullParser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
 
-        val epubParser = EpubParser()
-
         return epubParser.parseBook(parser, rootStream)
-//        visualizeText(book.chapters.first())
+    }
+
+    private fun changeChapter(path: String){
+        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+
+        val rootStream = contentResolver.openInputStream(uri)
+        if(rootStream != null) {
+            val parser: XmlPullParser = Xml.newPullParser()
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+
+            val newText = epubParser.getChapterBodyTextFromPath(path, parser, rootStream)
+            val pages = splitTextToPages(newText)
+
+            setUpPagerAndIndexLabel(pages)
+        }
     }
 
     private fun createPageSplitter(): PageSplitter{
@@ -96,7 +119,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun showTableOfContents(navPoints: List<NavPoint>){
 
-        val filePaths = navPoints.map { it.content }
+        val filePaths = navPoints.map { it.getContentWithoutTag() }
         val titles = navPoints.map { it.navLabel }
 
         val adapter = ArrayAdapter<String>(this, android.R.layout.select_dialog_item, titles)
@@ -105,8 +128,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             .setTitle("Table of contents")
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setAdapter(adapter) { _, i ->
-                val path = filePaths[i]
-                Toast.makeText(this@VisualizeTextActivity, "Selected $path", Toast.LENGTH_SHORT).show()
+                changeChapter(filePaths[i])
             }
             .create()
         dialog.show()

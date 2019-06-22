@@ -20,7 +20,7 @@ class EpubParser {
     private val manifest = mutableMapOf<String, String>()
     private var tocPath = ""
 
-    private var chapters = mutableListOf<String>()
+    private var currentChapter = ""
 
     private val navPoints = mutableListOf<NavPoint>()
 
@@ -66,11 +66,19 @@ class EpubParser {
                 parseChapterHtml(parser)
             }
         }
-        return Book("Placeholder title", chapters, toc)
+        return Book("Placeholder title", listOf(currentChapter), toc)
+    }
+
+    fun getChapterBodyTextFromPath(path: String, parser: XmlPullParser, inputStream: InputStream): String{
+        val chapterStream = getFileStreamFromZip("$basePath/$path", inputStream)
+        parser.setInput(chapterStream, null)
+        parser.nextTag()
+        parseChapterHtml(parser)
+        return currentChapter
     }
 
 
-    fun printContentsFromZip(inputStream: InputStream?){
+    fun printContentsFromZip(inputStream: InputStream){
         var zipStream: ZipInputStream? = null
 
         val textBuilder = StringBuilder()
@@ -95,7 +103,7 @@ class EpubParser {
 
     }
 
-    private fun getFileStreamFromZip(fileName: String, inputStream: InputStream?): InputStream?{
+    private fun getFileStreamFromZip(fileName: String, inputStream: InputStream): InputStream?{
         val zipStream: ZipInputStream?
 
         try {
@@ -214,7 +222,7 @@ class EpubParser {
     }
 
     private fun readBodyTag(parser: XmlPullParser) {
-        chapters.add(getInnerXml(parser))
+        currentChapter = getInnerXml(parser)
     }
 
 
