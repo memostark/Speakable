@@ -1,11 +1,21 @@
 package com.guillermonegrete.tts.importtext
 
+import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
+import android.util.Xml
+import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.epub.NavPoint
+import org.xmlpull.v1.XmlPullParser
 
 class VisualizeTextActivity: AppCompatActivity() {
 
@@ -15,7 +25,13 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
-        val text = intent?.extras?.getString(IMPORTED_TEXT) ?: "No text"
+        var book: Book? = null
+        val text = if(SHOW_EPUB == intent.action) {
+            book = readEpubFile()
+            book.chapters.first()
+        } else {
+            intent?.extras?.getString(IMPORTED_TEXT) ?: "No text"
+        }
 
         val currentPageLabel: TextView = findViewById(R.id.reader_current_page)
 
@@ -38,6 +54,29 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
         }
 
+        val showTOCBtn = findViewById<ImageButton>(R.id.show_toc_btn)
+        val navPoints = book?.tableOfContents?.navPoints
+
+        if(navPoints == null || navPoints.isEmpty()){
+            showTOCBtn.visibility = View.GONE
+        }else{
+            showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
+        }
+
+    }
+
+    private fun readEpubFile(): Book {
+        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+//        Toast.makeText(this, "Uri $uri", Toast.LENGTH_SHORT).show()
+
+        val rootStream = contentResolver.openInputStream(uri)
+        val parser: XmlPullParser = Xml.newPullParser()
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+
+        val epubParser = EpubParser()
+
+        return epubParser.parseBook(parser, rootStream)
+//        visualizeText(book.chapters.first())
     }
 
     private fun createPageSplitter(): PageSplitter{
@@ -55,7 +94,28 @@ class VisualizeTextActivity: AppCompatActivity() {
         return pageTextPaint
     }
 
+    private fun showTableOfContents(navPoints: List<NavPoint>){
+
+        val filePaths = navPoints.map { it.content }
+        val titles = navPoints.map { it.navLabel }
+
+        val adapter = ArrayAdapter<String>(this, android.R.layout.select_dialog_item, titles)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Table of contents")
+            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
+            .setAdapter(adapter) { _, i ->
+                val path = filePaths[i]
+                Toast.makeText(this@VisualizeTextActivity, "Selected $path", Toast.LENGTH_SHORT).show()
+            }
+            .create()
+        dialog.show()
+    }
+
     companion object{
         const val IMPORTED_TEXT = "imported_text"
+        const val EPUB_URI = "epub_uri"
+
+        const val SHOW_EPUB = "epub"
     }
 }
