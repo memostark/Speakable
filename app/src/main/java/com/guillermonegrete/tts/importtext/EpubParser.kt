@@ -1,6 +1,9 @@
 package com.guillermonegrete.tts.importtext
 
 import androidx.annotation.VisibleForTesting
+import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import org.apache.commons.io.IOUtils
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
@@ -15,13 +18,15 @@ class EpubParser {
     private var opfPath = ""
     private var spine = mutableListOf<String>()
     private val manifest = mutableMapOf<String, String>()
-    private var tocName = ""
+    private var tocPath = ""
 
     private var chapters = mutableListOf<String>()
 
+    private val navPoints = mutableListOf<NavPoint>()
+
     private val ns: String? = null
 
-    fun parseBook(parser: XmlPullParser, inputStream: InputStream?): Book{
+    fun parseBook(parser: XmlPullParser, inputStream: InputStream?): Book {
         // Create input stream that supports reset, so we can use it multiple times.
         val baos = ByteArrayOutputStream()
         IOUtils.copy(inputStream, baos)
@@ -42,6 +47,13 @@ class EpubParser {
         parseOpfFile(parser)
 
 
+        byteStream.reset()
+        val tocStream = getFileStreamFromZip("$basePath/$tocPath", byteStream)
+        parser.setInput(tocStream, null)
+        parser.nextTag()
+        val toc = parseTableOfContents(parser)
+
+
         if(spine.isNotEmpty()){
             val firstChapterPath = manifest[spine[1]]
             if(firstChapterPath != null) {
@@ -54,7 +66,7 @@ class EpubParser {
                 parseChapterHtml(parser)
             }
         }
-        return Book("Placeholder title", chapters)
+        return Book("Placeholder title", chapters, toc)
     }
 
 
@@ -169,7 +181,8 @@ class EpubParser {
 
     private fun readSpine(parser: XmlPullParser) {
         parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_SPINE)
-        tocName = parser.getAttributeValue(null, XML_ATTRIBUTE_TOC)
+        val tocId = parser.getAttributeValue(null, XML_ATTRIBUTE_TOC)
+        tocPath = manifest[tocId] ?: ""
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             if(parser.name == XML_ELEMENT_ITEMREF) readSpineItem(parser)
@@ -201,9 +214,79 @@ class EpubParser {
     }
 
     private fun readBodyTag(parser: XmlPullParser) {
-        println("Parsing body tag")
         chapters.add(getInnerXml(parser))
     }
+
+
+    @VisibleForTesting
+    @Throws(XmlPullParserException::class, IOException::class)
+    fun parseTableOfContents(parser: XmlPullParser): TableOfContents{
+        navPoints.clear()
+
+        parser.require(XmlPullParser.START_TAG, ns, "ncx")
+        while (parser.next() != XmlPullParser.END_TAG){
+            if (parser.eventType != XmlPullParser.START_TAG) continue
+            if(parser.name == "navMap") readMapTag(parser)
+            else skip(parser)
+        }
+        return TableOfContents(navPoints)
+    }
+
+    private fun readMapTag(parser: XmlPullParser){
+        parser.require(XmlPullParser.START_TAG, ns, "navMap")
+        while (parser.next() != XmlPullParser.END_TAG){
+            if (parser.eventType != XmlPullParser.START_TAG) continue
+            when(parser.name){
+                "navPoint" -> readPoint(parser)
+                else -> skip(parser)
+            }
+        }
+        parser.require(XmlPullParser.END_TAG, ns, "navMap")
+    }
+
+    private fun readPoint(parser: XmlPullParser){
+        parser.require(XmlPullParser.START_TAG, ns, "navPoint")
+        var label = ""
+        var content = ""
+        while (parser.next() != XmlPullParser.END_TAG){
+            if (parser.eventType != XmlPullParser.START_TAG) continue
+            when(parser.name){
+                "navLabel" -> {
+                    label = readLabel(parser)
+                }
+                "content" -> {
+                    content = parser.getAttributeValue(null, "src")
+                    parser.nextTag()
+                }
+                else -> skip(parser) // Don't read nested nav points, implement later
+            }
+        }
+        navPoints.add(NavPoint(label, content))
+        parser.require(XmlPullParser.END_TAG, ns, "navPoint")
+    }
+
+    private fun readLabel(parser: XmlPullParser): String{
+        var result = ""
+        parser.require(XmlPullParser.START_TAG, ns, "navLabel")
+        parser.nextTag()
+        parser.require(XmlPullParser.START_TAG, ns, "text")
+        result = readText(parser)
+        parser.require(XmlPullParser.END_TAG, ns, "text")
+        parser.nextTag()
+        parser.require(XmlPullParser.END_TAG, ns, "navLabel")
+        return result
+    }
+
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readText(parser: XmlPullParser): String {
+        var result = ""
+        if (parser.next() == XmlPullParser.TEXT) {
+            result = parser.text
+            parser.nextTag()
+        }
+        return result
+    }
+
 
     @Throws(XmlPullParserException::class, IOException::class)
     private fun skip(parser: XmlPullParser) {
