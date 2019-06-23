@@ -2,26 +2,62 @@ package com.guillermonegrete.tts.importtext
 
 import android.util.Xml
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.`when`
+import org.mockito.MockitoAnnotations
 import org.xmlpull.v1.XmlPullParser
+import java.io.ByteArrayInputStream
 import java.io.StringReader
 
 @RunWith(AndroidJUnit4::class)
 class EpubParserTest {
 
     private val xmlParser: XmlPullParser = Xml.newPullParser()
+    @Mock private lateinit var zipFileReader: ZipFileReader
+
     private lateinit var epubParser: EpubParser
 
     @Before
     fun setUp(){
+        MockitoAnnotations.initMocks(this)
+
         epubParser = EpubParser()
 
         xmlParser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+    }
+
+    @Test
+    fun creates_book_object(){
+        val contentStream = ByteArrayInputStream(CONTAINER_FILE_XML.toByteArray())
+        `when`(zipFileReader.getFileStream(EpubParser.CONTAINER_FILE_PATH)).thenReturn(contentStream)
+
+        val opfStream = ByteArrayInputStream(OPF_FILE_XML.toByteArray())
+        `when`(zipFileReader.getFileStream(opfPath)).thenReturn(opfStream)
+
+        val tocStream = ByteArrayInputStream(TABLE_OF_CONTENTS_XML.toByteArray())
+        `when`(zipFileReader.getFileStream("$basePath/$tocPath")).thenReturn(tocStream)
+
+        val chapterStream = ByteArrayInputStream(CHAPTER_FILE_XML.toByteArray())
+        `when`(zipFileReader.getFileStream(chapterPath)).thenReturn(chapterStream)
+
+        val book = epubParser.parseBook(xmlParser, zipFileReader)
+        println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
+
+        val expectedBook = Book("Placeholder title", listOf("Test text"), TableOfContents(listOf(
+            NavPoint("Volume 1", "volume1.html"),
+            NavPoint("Chapter 1", "volume1/chapter001.html"),
+            NavPoint("Chapter 2", "volume1/chapter002.html"),
+            NavPoint("Section 1", "volume1/chapter002.html#Section_1"),
+            NavPoint("Volume 2", "volume2.html")
+        )))
+        assertBook(expectedBook, book)
     }
 
     @Test
@@ -53,11 +89,18 @@ class EpubParserTest {
 
     }
 
+    private fun assertBook(expected: Book, actual: Book){
+        assertEquals(expected.title, actual.title)
+        assertEquals(expected.chapters, actual.chapters)
+        assertTOC(expected.tableOfContents, actual.tableOfContents)
+    }
+
     private fun assertTOC(expected: TableOfContents, actual: TableOfContents){
         assertEquals(expected.navPoints, actual.navPoints)
     }
 
     companion object{
+        const val basePath = "18291"
         const val TABLE_OF_CONTENTS_XML =
                 """<ncx>
                         <head>
@@ -91,5 +134,78 @@ class EpubParserTest {
                             </navPoint>
                         </navMap>
                     </ncx>"""
+
+        const val opfPath = "18291/content.opf"
+        const val CONTAINER_FILE_XML =
+            """<?xml version="1.0" encoding="UTF-8" ?>
+                <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+                  <rootfiles>
+                    <rootfile full-path="$opfPath" media-type="application/oebps-package+xml"/>
+                  </rootfiles>
+                </container>"""
+        const val tocPath = "toc.ncx"
+        const val OPF_FILE_XML =
+            """<package xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id">
+                  <metadata>
+                    <dc:publisher>Project Gutenberg</dc:publisher>
+                    <dc:rights>Public Domain in the USA.</dc:rights>
+                    <dc:identifier id="id" opf:scheme="URI">http://www.gutenberg.org/ebooks/18291</dc:identifier>
+                    <dc:creator opf:file-as="Hamsun, Knut">Knut Hamsun</dc:creator>
+                    <dc:title>Hunger: Book One</dc:title>
+                    <dc:language xsi:type="dcterms:RFC4646">en</dc:language>
+                    <dc:date opf:event="conversion">2018-10-19T08:31:38.121210+00:00</dc:date>
+                    <dc:source>18291-h/18291-h.htm</dc:source>
+                    <meta content="item13" name="cover"/>
+                  </metadata>
+                  <manifest>
+                    <item href="pgepub.css" id="item1" media-type="text/css"/>
+                    <item href="0.css" id="item2" media-type="text/css"/>
+                    <item href="1.css" id="item3" media-type="text/css"/>
+                    <item href="18291-h@18291-h-0.htm.html" id="item4" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-1.htm.html" id="item5" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-2.htm.html" id="item6" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-3.htm.html" id="item7" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-4.htm.html" id="item8" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-5.htm.html" id="item9" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-6.htm.html" id="item10" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-7.htm.html" id="item11" media-type="application/xhtml+xml"/>
+                    <item href="18291-h@18291-h-8.htm.html" id="item12" media-type="application/xhtml+xml"/>
+                    <item href="$tocPath" id="ncx" media-type="application/x-dtbncx+xml"/>
+                    <item href="cover.png" id="item13" media-type="image/png"/>
+                    <item href="wrap0000.html" id="coverpage-wrapper" media-type="application/xhtml+xml"/>
+                  <opf:item href="about_gitenberg.html" id="id_75ee4" media-type="application/xhtml+xml"/></manifest>
+                  <spine toc="ncx">
+                    <itemref idref="coverpage-wrapper" linear="no"/>
+                    <opf:itemref idref="id_75ee4" linear="yes"/><itemref idref="item4" linear="yes"/>
+                    <itemref idref="item5" linear="yes"/>
+                    <itemref idref="item6" linear="yes"/>
+                    <itemref idref="item7" linear="yes"/>
+                    <itemref idref="item8" linear="yes"/>
+                    <itemref idref="item9" linear="yes"/>
+                    <itemref idref="item10" linear="yes"/>
+                    <itemref idref="item11" linear="yes"/>
+                    <itemref idref="item12" linear="yes"/>
+                  </spine>
+                  <guide>
+                    <reference href="wrap0000.html" type="cover" title="Cover"/>
+                  </guide>
+                </package>"""
+        const val chapterPath = "18291/18291-h@18291-h-0.htm.html"
+        const val CHAPTER_FILE_XML =
+            """<?xml version='1.0' encoding='utf-8'?>
+                <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.1//EN' 'http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd'>
+                <html xmlns="http://www.w3.org/1999/xhtml">
+                <head>
+                    <meta name="generator" content="HTML Tidy for HTML5 for Linux version 5.2.0"/>
+                    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
+                    <title>The Project Gutenberg eBook of רעב (חלק ראשון)‏, by קנוט המסון.</title>
+                    
+                    
+                    <link href="0.css" type="text/css" rel="stylesheet"/>
+                    <link href="1.css" type="text/css" rel="stylesheet"/>
+                    <link href="pgepub.css" type="text/css" rel="stylesheet"/>
+                    <meta content="EpubMaker 0.3.26 &lt;https://github.com/gitenberg-dev/pg-epubmaker&gt;" name="generator"/>
+                </head>
+                <body dir="rtl" xml:lang="he">Test text</body></html>"""
     }
 }

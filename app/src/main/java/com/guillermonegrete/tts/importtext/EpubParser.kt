@@ -4,7 +4,6 @@ import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
-import org.apache.commons.io.IOUtils
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.*
@@ -26,29 +25,26 @@ class EpubParser {
 
     private val ns: String? = null
 
-    fun parseBook(parser: XmlPullParser, inputStream: InputStream?): Book {
+    fun parseBook(
+        parser: XmlPullParser,
+        zipFileReader: ZipFileReader
+    ): Book {
         // Create input stream that supports reset, so we can use it multiple times.
-        val baos = ByteArrayOutputStream()
-        IOUtils.copy(inputStream, baos)
-        val bytes = baos.toByteArray()
-        val byteStream = ByteArrayInputStream(bytes)
 
-        val containerStream = getFileStreamFromZip(CONTAINER_FILE_PATH, byteStream)
+        val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
         parser.setInput(containerStream, null)
         parser.nextTag()
         opfPath = parseContainerFile(parser)
         basePath = opfPath.split("/").first()
 
 
-        byteStream.reset()
-        val opfStream = getFileStreamFromZip(opfPath, byteStream)
+        val opfStream = zipFileReader.getFileStream(opfPath)
         parser.setInput(opfStream, null)
         parser.nextTag()
         parseOpfFile(parser)
 
-
-        byteStream.reset()
-        val tocStream = getFileStreamFromZip("$basePath/$tocPath", byteStream)
+        val fullTocPath = "$basePath/$tocPath"
+        val tocStream = zipFileReader.getFileStream(fullTocPath)
         parser.setInput(tocStream, null)
         parser.nextTag()
         val toc = parseTableOfContents(parser)
@@ -59,8 +55,7 @@ class EpubParser {
             if(firstChapterPath != null) {
                 val fullPath = "$basePath/$firstChapterPath"
 
-                byteStream.reset()
-                val chapterStream = getFileStreamFromZip(fullPath, byteStream)
+                val chapterStream = zipFileReader.getFileStream(fullPath)
                 parser.setInput(chapterStream, null)
                 parser.nextTag()
                 parseChapterHtml(parser)
