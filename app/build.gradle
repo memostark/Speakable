@@ -12,7 +12,7 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "com.guillermonegrete.tts.DexOpenerAndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
@@ -20,6 +20,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -34,6 +38,8 @@ repositories {
     maven() {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
+    jcenter()
+    maven { url 'https://jitpack.io' }
 }
 
 ext {
@@ -48,6 +54,10 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     //  Mockito framework
     testImplementation 'org.mockito:mockito-core:2.19.0'
+    testImplementation group: 'com.nhaarman', name: 'mockito-kotlin', version: '1.5.0'
+    androidTestImplementation "org.mockito:mockito-android:2.19.0"
+    // Allows to use mock with instrumentation tests with kotlin
+    androidTestImplementation 'com.github.tmurakami:dexopener:2.0.2'
 
     implementation 'androidx.preference:preference:1.1.0-beta01'
     implementation 'androidx.appcompat:appcompat:1.1.0-beta01'

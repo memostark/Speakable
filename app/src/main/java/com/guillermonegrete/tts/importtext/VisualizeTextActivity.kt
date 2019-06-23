@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -84,7 +83,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         val parser: XmlPullParser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
 
-        return epubParser.parseBook(parser, rootStream)
+        val zipReader = ZipFileReader(rootStream)
+
+        return epubParser.parseBook(parser, zipReader)
     }
 
     private fun changeChapter(path: String){
