@@ -51,7 +51,7 @@ class EpubParser {
 
 
         if(spine.isNotEmpty()){
-            val firstChapterPath = manifest[spine[1]]
+            val firstChapterPath = manifest[spine.first()]
             if(firstChapterPath != null) {
                 val fullPath = "$basePath/$firstChapterPath"
 
@@ -61,7 +61,7 @@ class EpubParser {
                 parseChapterHtml(parser)
             }
         }
-        return Book("Placeholder title", listOf(currentChapter), toc)
+        return Book("Placeholder title", currentChapter, spine, manifest, toc)
     }
 
     fun getChapterBodyTextFromPath(path: String, parser: XmlPullParser, inputStream: InputStream): String{

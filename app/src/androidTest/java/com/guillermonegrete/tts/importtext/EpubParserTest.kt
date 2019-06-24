@@ -50,7 +50,10 @@ class EpubParserTest {
         val book = epubParser.parseBook(xmlParser, zipFileReader)
         println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
 
-        val expectedBook = Book("Placeholder title", listOf("Test text"), TableOfContents(listOf(
+        val expectedBook = Book("Placeholder title", "Test text",
+            listOf("coverpage-wrapper", "item4", "item5"),
+            mapOf("item1" to "pgepub.css", "item2" to "0.css", "item3" to "1.css", "item4" to "18291-h@18291-h-0.htm.html", "item5" to "18291-h@18291-h-1.htm.html", "ncx" to "toc.ncx", "item13" to "cover.png", "coverpage-wrapper" to "wrap0000.html"),
+            TableOfContents(listOf(
             NavPoint("Volume 1", "volume1.html"),
             NavPoint("Chapter 1", "volume1/chapter001.html"),
             NavPoint("Chapter 2", "volume1/chapter002.html"),
@@ -91,7 +94,9 @@ class EpubParserTest {
 
     private fun assertBook(expected: Book, actual: Book){
         assertEquals(expected.title, actual.title)
-        assertEquals(expected.chapters, actual.chapters)
+        assertEquals(expected.currentChapter, actual.currentChapter)
+        assertEquals(expected.spine, actual.spine)
+        assertEquals(expected.manifest, actual.manifest)
         assertTOC(expected.tableOfContents, actual.tableOfContents)
     }
 
@@ -163,34 +168,20 @@ class EpubParserTest {
                     <item href="1.css" id="item3" media-type="text/css"/>
                     <item href="18291-h@18291-h-0.htm.html" id="item4" media-type="application/xhtml+xml"/>
                     <item href="18291-h@18291-h-1.htm.html" id="item5" media-type="application/xhtml+xml"/>
-                    <item href="18291-h@18291-h-2.htm.html" id="item6" media-type="application/xhtml+xml"/>
-                    <item href="18291-h@18291-h-3.htm.html" id="item7" media-type="application/xhtml+xml"/>
-                    <item href="18291-h@18291-h-4.htm.html" id="item8" media-type="application/xhtml+xml"/>
-                    <item href="18291-h@18291-h-5.htm.html" id="item9" media-type="application/xhtml+xml"/>
-                    <item href="18291-h@18291-h-6.htm.html" id="item10" media-type="application/xhtml+xml"/>
-                    <item href="18291-h@18291-h-7.htm.html" id="item11" media-type="application/xhtml+xml"/>
-                    <item href="18291-h@18291-h-8.htm.html" id="item12" media-type="application/xhtml+xml"/>
                     <item href="$tocPath" id="ncx" media-type="application/x-dtbncx+xml"/>
                     <item href="cover.png" id="item13" media-type="image/png"/>
                     <item href="wrap0000.html" id="coverpage-wrapper" media-type="application/xhtml+xml"/>
-                  <opf:item href="about_gitenberg.html" id="id_75ee4" media-type="application/xhtml+xml"/></manifest>
+                  </manifest>
                   <spine toc="ncx">
                     <itemref idref="coverpage-wrapper" linear="no"/>
                     <opf:itemref idref="id_75ee4" linear="yes"/><itemref idref="item4" linear="yes"/>
                     <itemref idref="item5" linear="yes"/>
-                    <itemref idref="item6" linear="yes"/>
-                    <itemref idref="item7" linear="yes"/>
-                    <itemref idref="item8" linear="yes"/>
-                    <itemref idref="item9" linear="yes"/>
-                    <itemref idref="item10" linear="yes"/>
-                    <itemref idref="item11" linear="yes"/>
-                    <itemref idref="item12" linear="yes"/>
                   </spine>
                   <guide>
                     <reference href="wrap0000.html" type="cover" title="Cover"/>
                   </guide>
                 </package>"""
-        const val chapterPath = "18291/18291-h@18291-h-0.htm.html"
+        const val chapterPath = "18291/wrap0000.html"
         const val CHAPTER_FILE_XML =
             """<?xml version='1.0' encoding='utf-8'?>
                 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.1//EN' 'http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd'>
