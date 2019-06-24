@@ -71,7 +71,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         val pageSplitter =  createPageSplitter()
         pageSplitter.append(text)
         pageSplitter.split(pageTextPaint)
-        return pageSplitter.getPages()
+        val mutablePages = pageSplitter.getPages().toMutableList()
+        if (mutablePages.size == 1 && book != null) mutablePages.add("") // Don't allow one page chapters because you can't swipe to other chapters.
+        return mutablePages
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
