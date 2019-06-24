@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -20,28 +21,34 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private lateinit var viewPager: ViewPager2
     private lateinit var currentPageLabel: TextView
+    private lateinit var currentChapterLabel: TextView
 
     private val epubParser = EpubParser()
+
+    private var book: Book? = null
+    private var currentChapter = 0
+    private var pagesSize = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
-        var book: Book? = null
         val text = if(SHOW_EPUB == intent.action) {
             book = readEpubFile()
-            book.chapters.first()
+            book?.currentChapter ?: "No text"
         } else {
             intent?.extras?.getString(IMPORTED_TEXT) ?: "No text"
         }
 
         currentPageLabel= findViewById(R.id.reader_current_page)
+        currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
 
             val pages = splitTextToPages(text)
             setUpPagerAndIndexLabel(pages)
+            addPagerCallback()
 
         }
 
@@ -53,6 +60,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         }else{
             showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
         }
+
+        updateCurrentChapterLabel(book?.spine)
 
     }
 
@@ -68,10 +77,36 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
         currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
         viewPager.adapter = VisualizerAdapter(pages)
+        pagesSize = pages.size
+    }
+
+    private fun addPagerCallback(){
+        var swipeFirst = false
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
             override fun onPageSelected(position: Int) {
                 val pageNumber = position + 1
-                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, pages.size)
+                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, pagesSize)
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                super.onPageScrollStateChanged(state)
+                if(state == ViewPager2.SCROLL_STATE_DRAGGING) swipeFirst = true
+            }
+
+            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+
+                if(positionOffset > 0){
+                    swipeFirst = false
+                }else{
+                    if(swipeFirst) {
+                        swipeFirst = false
+                        if(position == 0) {
+                            book?.let { swipeChapter(it, currentChapter - 1) }
+                        } else if(position == pagesSize - 1) {
+                            book?.let { swipeChapter(it, currentChapter + 1) }
+                        }
+                    }
+                }
             }
         })
     }
@@ -123,7 +158,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val filePaths = navPoints.map { it.getContentWithoutTag() }
         val titles = navPoints.map { it.navLabel }
 
-        val adapter = ArrayAdapter<String>(this, android.R.layout.select_dialog_item, titles)
+        val adapter = ArrayAdapter(this, android.R.layout.select_dialog_item, titles)
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Table of contents")
@@ -133,6 +168,32 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
             .create()
         dialog.show()
+    }
+
+    private fun swipeChapter(book: Book, position: Int){
+        val spineSize = book.spine.size
+        if(position in 0 until spineSize){
+            val spineItem = book.spine[position]
+            val newChapterPath = book.manifest[spineItem]
+            Toast.makeText(this@VisualizeTextActivity, "Swiped to: $newChapterPath", Toast.LENGTH_SHORT).show()
+            if(newChapterPath != null) {
+
+                currentChapter = position
+                updateCurrentChapterLabel(book.spine)
+
+                changeChapter(newChapterPath)
+            }
+        }
+    }
+
+    private fun updateCurrentChapterLabel(spine: List<String>?){
+        if(spine == null || spine.isEmpty()){
+            currentChapterLabel.visibility = View.GONE
+        }else{
+            currentChapterLabel.text = resources.getString(R.string.reader_current_chapter_label, currentChapter + 1, spine.size)
+            currentChapterLabel.visibility = View.VISIBLE
+
+        }
     }
 
     companion object{
