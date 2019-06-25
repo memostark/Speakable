@@ -174,7 +174,16 @@ class VisualizeTextActivity: AppCompatActivity() {
             .setTitle("Table of contents")
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setAdapter(adapter) { _, i ->
-                changeChapter(filePaths[i])
+                val path = filePaths[i]
+                changeChapter(path)
+                book?.let {
+                    val key = it.manifest.filterValues { value -> value == path }.keys.first()
+                    val index = it.spine.indexOf(key)
+                    if(index != -1) {
+                        currentChapter = index
+                        updateCurrentChapterLabel(it.spine)
+                    }
+                }
             }
             .create()
         dialog.show()
