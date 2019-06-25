@@ -65,11 +65,11 @@ class EpubParserTest {
 
     @Test
     fun gets_inner_html_with_self_closing_tags(){
-        xmlParser.setInput(StringReader("<body><div><br/>Text input<br/></div></body>"))
+        xmlParser.setInput(StringReader("<body><div src=\"path.jpg\"><br/><img src=\"path.jpg\"/>Text input<br/></div></body>"))
         xmlParser.nextTag()
 
         val result = epubParser.getInnerXml(xmlParser)
-        val expected = "<div><br/>Text input<br/></div>"
+        val expected = "<div><br/><img src=\"path.jpg\" />Text input<br/></div>"
         assertEquals(expected, result)
     }
 

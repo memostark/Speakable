@@ -12,7 +12,8 @@ import java.util.zip.ZipInputStream
 
 class EpubParser {
 
-    private var basePath = ""
+    var basePath = ""
+        private set
 
     private var opfPath = ""
     private var spine = mutableListOf<String>()
@@ -329,7 +330,17 @@ class EpubParser {
                     if(lastTagWasStart) sb.append(">")
                     lastTagWasStart = true
                     depth++
-                    sb.append("<" + parser.name)
+                    val attrs = StringBuilder()
+                    if(parser.name == "img"){
+                        attrs.append(" ")
+                        for (i in 0 until parser.attributeCount){
+                            attrs.append(
+                                parser.getAttributeName(i) + "=\""
+                                + parser.getAttributeValue(i) + "\" "
+                            )
+                        }
+                    }
+                    sb.append("<" + parser.name + attrs.toString())
                 }
                 else -> {
                     if(lastTagWasStart) sb.append(">")

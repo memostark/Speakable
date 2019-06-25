@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -145,7 +144,16 @@ class VisualizeTextActivity: AppCompatActivity() {
         val lineSpacingMultiplier = 1f
         val pageItemPadding = (80 * resources.displayMetrics.density + 0.5f).toInt() // Convert dp to px, 0.5 is for rounding to closest integer
 
-        return PageSplitter(viewPager.width - pageItemPadding, viewPager.height - pageItemPadding, lineSpacingMultiplier, lineSpacingExtra)
+        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+        val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
+
+        return PageSplitter(
+            viewPager.width - pageItemPadding,
+            viewPager.height - pageItemPadding,
+            lineSpacingMultiplier,
+            lineSpacingExtra,
+            InputStreamImageGetter(epubParser.basePath, this, zipReader)
+        )
     }
 
     private fun createTextPaint(): TextPaint{
@@ -177,7 +185,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(position in 0 until spineSize){
             val spineItem = book.spine[position]
             val newChapterPath = book.manifest[spineItem]
-            Toast.makeText(this@VisualizeTextActivity, "Swiped to: $newChapterPath", Toast.LENGTH_SHORT).show()
             if(newChapterPath != null) {
 
                 currentChapter = position

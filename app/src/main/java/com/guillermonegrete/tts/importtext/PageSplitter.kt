@@ -12,7 +12,8 @@ class PageSplitter(
     private val pageWidth: Int,
     private val pageHeight: Int,
     private val lineSpacingMultiplier: Float,
-    private val lineSpacingExtra: Float
+    private val lineSpacingExtra: Float,
+    private val imageGetter: Html.ImageGetter
 ) {
     private val pages = ArrayList<CharSequence>()
     private val mSpannableStringBuilder = SpannableStringBuilder()
@@ -59,9 +60,10 @@ class PageSplitter(
 
     private fun formatHtml(text: CharSequence): Spanned {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT)
+            println("text before formatting: $text")
+            Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT, imageGetter, null)
         } else {
-            Html.fromHtml(text.toString())
+            Html.fromHtml(text.toString(), imageGetter, null)
         }
     }
 
