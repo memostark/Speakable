@@ -36,7 +36,7 @@ class EpubParser {
         parser.setInput(containerStream, null)
         parser.nextTag()
         opfPath = parseContainerFile(parser)
-        basePath = opfPath.split("/").first()
+        extractBasePath(opfPath)
 
 
         val opfStream = zipFileReader.getFileStream(opfPath)
@@ -44,7 +44,7 @@ class EpubParser {
         parser.nextTag()
         parseOpfFile(parser)
 
-        val fullTocPath = "$basePath/$tocPath"
+        val fullTocPath = if(basePath.isEmpty()) tocPath else "$basePath/$tocPath"
         val tocStream = zipFileReader.getFileStream(fullTocPath)
         parser.setInput(tocStream, null)
         parser.nextTag()
@@ -54,7 +54,8 @@ class EpubParser {
         if(spine.isNotEmpty()){
             val firstChapterPath = manifest[spine.first()]
             if(firstChapterPath != null) {
-                val fullPath = "$basePath/$firstChapterPath"
+                val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
+                println("Chapter path: $fullPath")
 
                 val chapterStream = zipFileReader.getFileStream(fullPath)
                 parser.setInput(chapterStream, null)
@@ -66,37 +67,17 @@ class EpubParser {
     }
 
     fun getChapterBodyTextFromPath(path: String, parser: XmlPullParser, inputStream: InputStream): String{
-        val chapterStream = getFileStreamFromZip("$basePath/$path", inputStream)
+        val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
+        val chapterStream = getFileStreamFromZip(fullPath, inputStream)
         parser.setInput(chapterStream, null)
         parser.nextTag()
         parseChapterHtml(parser)
         return currentChapter
     }
 
-
-    fun printContentsFromZip(inputStream: InputStream){
-        var zipStream: ZipInputStream? = null
-
-        val textBuilder = StringBuilder()
-        try {
-            zipStream = ZipInputStream(BufferedInputStream(inputStream))
-            var zipEntry = zipStream.nextEntry
-
-            while (zipEntry != null){
-                textBuilder.append(zipEntry.name)
-                textBuilder.append("\n")
-
-                zipStream.closeEntry()
-                zipEntry = zipStream.nextEntry
-            }
-        }catch (e: IOException){
-            println("Error opening file: $e")
-        }finally {
-            zipStream?.close()
-        }
-
-        println(textBuilder.toString())
-
+    private fun extractBasePath(fullPath: String){
+        val segments = fullPath.split("/")
+        basePath = if(segments.size > 1) segments.first() else "" // No base path, files are in root directory
     }
 
     private fun getFileStreamFromZip(fileName: String, inputStream: InputStream): InputStream?{
@@ -116,19 +97,6 @@ class EpubParser {
             println("Error opening file $fileName: $e")
         }
         return null
-    }
-
-    // Taken from: https://stackoverflow.com/a/36310757/10244759
-    private fun readZipEntry(zipInputStream: InputStream): String{
-        val stringBuilder = StringBuilder()
-        val buffer = ByteArray(1024)
-        var read = zipInputStream.read(buffer, 0, buffer.size)
-        while (read != -1){
-            stringBuilder.append(String(buffer, 0, read))
-            read = zipInputStream.read(buffer, 0, buffer.size)
-
-        }
-        return stringBuilder.toString()
     }
 
     /**
