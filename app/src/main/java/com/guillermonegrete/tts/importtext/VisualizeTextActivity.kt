@@ -144,15 +144,18 @@ class VisualizeTextActivity: AppCompatActivity() {
         val lineSpacingMultiplier = 1f
         val pageItemPadding = (80 * resources.displayMetrics.density + 0.5f).toInt() // Convert dp to px, 0.5 is for rounding to closest integer
 
-        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-        val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
+        val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
+        val imageGetter = if(uri != null) {
+            val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
+            InputStreamImageGetter(epubParser.basePath, this, zipReader)
+        } else null
 
         return PageSplitter(
             viewPager.width - pageItemPadding,
             viewPager.height - pageItemPadding,
             lineSpacingMultiplier,
             lineSpacingExtra,
-            InputStreamImageGetter(epubParser.basePath, this, zipReader)
+            imageGetter
         )
     }
 
