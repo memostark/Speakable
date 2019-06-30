@@ -1,4 +1,4 @@
-package com.guillermonegrete.encuestas.util
+package com.guillermonegrete.tts.util
 
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
