@@ -10,10 +10,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Chapter: 1 of 5"/>
+        tools:text="Chapter: 1 of 5"
+        tools:visibility="visible"/>
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/text_reader_viewpager"
@@ -45,9 +47,11 @@
         android:layout_marginEnd="16dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/table_of_contents"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page"
-        app:srcCompat="@drawable/ic_list_grey_24dp" />
+        app:srcCompat="@drawable/ic_list_grey_24dp"
+        tools:visibility="visible"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

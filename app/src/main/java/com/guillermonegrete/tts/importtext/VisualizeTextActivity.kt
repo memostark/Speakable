@@ -27,23 +27,30 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
 
+    private lateinit var fileReader: ZipFileReader
+    private lateinit var parser: XmlPullParser
+
     private val epubParser = EpubParser()
 
-    private var book: Book? = null
-    private var currentChapter = 0
     private var pagesSize = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
+        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+        val rootStream = contentResolver.openInputStream(uri)
+        fileReader = ZipFileReader(rootStream)
+
+        parser = Xml.newPullParser()
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+
         createViewModel()
 
-        val text = if(SHOW_EPUB == intent.action) {
-            book = readEpubFile()
-            book?.currentChapter ?: "No text"
+        if(SHOW_EPUB == intent.action) {
+            viewModel.parseEpub(parser, fileReader)
         } else {
-            intent?.extras?.getString(IMPORTED_TEXT) ?: "No text"
+            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
 
         currentPageLabel= findViewById(R.id.reader_current_page)
@@ -51,41 +58,45 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
-            viewModel.splitToPages(text, createPageSplitter(), createTextPaint())
+            viewModel.splitToPages(createPageSplitter(), createTextPaint())
+            addPagerCallback()
         }
-
-        val showTOCBtn = findViewById<ImageButton>(R.id.show_toc_btn)
-        val navPoints = book?.tableOfContents?.navPoints
-
-        if(navPoints == null || navPoints.isEmpty()){
-            showTOCBtn.visibility = View.GONE
-        }else{
-            showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
-        }
-
-        updateCurrentChapterLabel(book?.spine)
-
     }
 
     private fun createViewModel() {
         val factory = ViewModelFactory.getInstance(application)
         viewModel = ViewModelProviders.of(this, factory).get(VisualizeTextViewModel::class.java).apply {
             pages.observe(this@VisualizeTextActivity, Observer {
+                println("Pages observer")
                 setUpPagerAndIndexLabel(it)
-                addPagerCallback()
+            })
+
+            book.observe(this@VisualizeTextActivity, Observer {
+                println("Book observer")
+                if(it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
+                else{
+                    updateCurrentChapterLabel()
+                    currentChapterLabel.visibility = View.VISIBLE
+                }
+
+                val showTOCBtn = findViewById<ImageButton>(R.id.show_toc_btn)
+                val navPoints = it.tableOfContents.navPoints
+                if(navPoints.isEmpty()){
+                    showTOCBtn.visibility = View.GONE
+                }else{
+                    showTOCBtn.visibility = View.VISIBLE
+                    showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
+                }
+            })
+
+            chapterPath.observe(this@VisualizeTextActivity, Observer {
+                println("Path observer")
+                viewModel.changeEpubChapter(it, parser, fileReader)
+                viewModel.splitToPages(createPageSplitter(), createTextPaint())
+
+                updateCurrentChapterLabel()
             })
         }
-    }
-
-    private fun splitTextToPages(text: String): List<CharSequence>{
-        val pageTextPaint = createTextPaint()
-
-        val pageSplitter =  createPageSplitter()
-        pageSplitter.append(text)
-        pageSplitter.split(pageTextPaint)
-        val mutablePages = pageSplitter.getPages().toMutableList()
-        if (mutablePages.size == 1 && book != null) mutablePages.add("") // Don't allow one page chapters because you can't swipe to other chapters.
-        return mutablePages
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
@@ -115,46 +126,14 @@ class VisualizeTextActivity: AppCompatActivity() {
                     if(swipeFirst) {
                         swipeFirst = false
                         if(position == 0) {
-                            book?.let { swipeChapter(it, currentChapter - 1) }
+                            viewModel.swipeChapterLeft()
                         } else if(position == pagesSize - 1) {
-                            book?.let { swipeChapter(it, currentChapter + 1) }
+                            viewModel.swipeChapterRight()
                         }
                     }
                 }
             }
         })
-    }
-
-    private fun readEpubFile(): Book {
-        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-
-        val rootStream = contentResolver.openInputStream(uri)
-        val zipReader = ZipFileReader(rootStream)
-
-        val parser: XmlPullParser = Xml.newPullParser()
-        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-
-        viewModel.parseEpub(parser, zipReader)
-
-        val rootStream2 = contentResolver.openInputStream(uri)
-        val zipReader2 = ZipFileReader(rootStream2)
-
-        return epubParser.parseBook(parser, zipReader2)
-    }
-
-    private fun changeChapter(path: String){
-        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-
-        val rootStream = contentResolver.openInputStream(uri)
-        if(rootStream != null) {
-            val parser: XmlPullParser = Xml.newPullParser()
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-
-            val newText = epubParser.getChapterBodyTextFromPath(path, parser, rootStream)
-            val pages = splitTextToPages(newText)
-
-            setUpPagerAndIndexLabel(pages)
-        }
     }
 
     private fun createPageSplitter(): PageSplitter{
@@ -196,43 +175,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setAdapter(adapter) { _, i ->
                 val path = filePaths[i]
-                changeChapter(path)
-                book?.let {
-                    val key = it.manifest.filterValues { value -> value == path }.keys.first()
-                    val index = it.spine.indexOf(key)
-                    if(index != -1) {
-                        currentChapter = index
-                        updateCurrentChapterLabel(it.spine)
-                    }
-                }
+                viewModel.jumpToChapter(path)
             }
             .create()
         dialog.show()
     }
 
-    private fun swipeChapter(book: Book, position: Int){
-        val spineSize = book.spine.size
-        if(position in 0 until spineSize){
-            val spineItem = book.spine[position]
-            val newChapterPath = book.manifest[spineItem]
-            if(newChapterPath != null) {
-
-                currentChapter = position
-                updateCurrentChapterLabel(book.spine)
-
-                changeChapter(newChapterPath)
-            }
-        }
-    }
-
-    private fun updateCurrentChapterLabel(spine: List<String>?){
-        if(spine == null || spine.isEmpty()){
-            currentChapterLabel.visibility = View.GONE
-        }else{
-            currentChapterLabel.text = resources.getString(R.string.reader_current_chapter_label, currentChapter + 1, spine.size)
-            currentChapterLabel.visibility = View.VISIBLE
-
-        }
+    private fun updateCurrentChapterLabel(){
+        currentChapterLabel.text = resources.getString(R.string.reader_current_chapter_label, viewModel.currentChapter + 1, viewModel.spineSize)
     }
 
     companion object{
