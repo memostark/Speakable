@@ -66,9 +66,9 @@ class EpubParser {
         return Book("Placeholder title", currentChapter, spine, manifest, toc)
     }
 
-    fun getChapterBodyTextFromPath(path: String, parser: XmlPullParser, inputStream: InputStream): String{
+    fun getChapterBodyTextFromPath(path: String, parser: XmlPullParser, zipFileReader: ZipFileReader): String{
         val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
-        val chapterStream = getFileStreamFromZip(fullPath, inputStream)
+        val chapterStream = zipFileReader.getFileStream(fullPath)
         parser.setInput(chapterStream, null)
         parser.nextTag()
         parseChapterHtml(parser)
