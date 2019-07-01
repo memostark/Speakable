@@ -72,6 +72,7 @@
     <string name="reader_current_page_label">%1$d of %2$d</string>
     <string name="reader_current_chapter_label">Chapter: %1$d of %2$d</string>
     <string name="table_of_contents">Table of contents</string>
+    <string name="brightness_settings">Brightness settings</string>
 
 
     <string-array name="language_code_arrays">

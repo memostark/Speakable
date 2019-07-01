@@ -4,10 +4,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
 import android.util.Xml
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.ImageButton
-import android.widget.TextView
+import android.view.ViewGroup
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
@@ -15,7 +16,6 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ViewModelFactory
-import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import org.xmlpull.v1.XmlPullParser
 
@@ -55,6 +55,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         currentPageLabel= findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
+
+        val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
+        brightnessButton.setOnClickListener { showBrightnessSettings(it) }
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
@@ -103,6 +106,30 @@ class VisualizeTextActivity: AppCompatActivity() {
         currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
         viewPager.adapter = VisualizerAdapter(pages)
         pagesSize = pages.size
+    }
+
+    private fun showBrightnessSettings(view: View) {
+        val layout = LayoutInflater.from(this).inflate(R.layout.pop_up_brightness_settings, view.rootView as ViewGroup, false)
+        val whiteBtn: Button = layout.findViewById(R.id.white_bg_btn)
+        val beigeBtn: Button = layout.findViewById(R.id.beige_bg_btn)
+        val blackBtn: Button = layout.findViewById(R.id.black_bg_btn)
+        whiteBtn.setOnClickListener {setBackgroundColor("white")}
+        beigeBtn.setOnClickListener {setBackgroundColor("beige")}
+        blackBtn.setOnClickListener {setBackgroundColor("black")}
+
+        PopupWindow(
+            layout,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            isFocusable = true
+            elevation = 8f
+            showAtLocation(view, Gravity.START or Gravity.BOTTOM, 24, 24)
+        }
+    }
+
+    private fun setBackgroundColor(text: String){
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     }
 
     private fun addPagerCallback(){

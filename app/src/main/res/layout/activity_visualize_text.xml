@@ -54,4 +54,16 @@
         app:srcCompat="@drawable/ic_list_grey_24dp"
         tools:visibility="visible"/>
 
+    <ImageButton
+        android:id="@+id/brightness_settings_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/brightness_settings"
+        app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/reader_current_page"
+        app:srcCompat="@drawable/ic_settings_brightness_grey_24dp" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
