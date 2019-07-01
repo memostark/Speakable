@@ -52,6 +52,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page"
         app:srcCompat="@drawable/ic_list_grey_24dp"
+        android:tint="?attr/iconTintColor"
         tools:visibility="visible"/>
 
     <ImageButton
@@ -64,6 +65,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page"
-        app:srcCompat="@drawable/ic_settings_brightness_grey_24dp" />
+        app:srcCompat="@drawable/ic_settings_brightness_grey_24dp"
+        android:tint="?attr/iconTintColor"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -3,4 +3,11 @@
     <color name="transparentBG">#8000ff00</color>
     <color name="transparentBlueBG">#800000ff</color>
     <color name="indicatorSelected">#95979b</color>
+
+    <color name="black">#000</color>
+    <color name="beige">#ffedbf</color>
+    <color name="white">#FFF</color>
+
+    <color name="grey">#484848</color>
+    <color name="DarkerGrey">#2C2C2C</color>
 </resources>

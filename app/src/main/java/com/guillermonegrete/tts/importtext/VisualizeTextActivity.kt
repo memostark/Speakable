@@ -35,6 +35,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private var pagesSize = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setPreferenceTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
@@ -63,6 +64,17 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.post{
             viewModel.splitToPages(createPageSplitter(), createTextPaint())
             addPagerCallback()
+        }
+    }
+
+
+    // Change activity theme at runtime: https://stackoverflow.com/a/6390025/10244759
+    private fun setPreferenceTheme() {
+        when(intent.getStringExtra(BRIGHTNESS_THEME)){
+            "White" -> setTheme(R.style.AppMaterialTheme_White)
+            "Beige" -> setTheme(R.style.AppMaterialTheme_Beige)
+            "Black" -> setTheme(R.style.AppMaterialTheme_Black)
+            else -> setTheme(R.style.AppMaterialTheme_White)
         }
     }
 
@@ -113,9 +125,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         val whiteBtn: Button = layout.findViewById(R.id.white_bg_btn)
         val beigeBtn: Button = layout.findViewById(R.id.beige_bg_btn)
         val blackBtn: Button = layout.findViewById(R.id.black_bg_btn)
-        whiteBtn.setOnClickListener {setBackgroundColor("white")}
-        beigeBtn.setOnClickListener {setBackgroundColor("beige")}
-        blackBtn.setOnClickListener {setBackgroundColor("black")}
+        whiteBtn.setOnClickListener {setBackgroundColor("White")}
+        beigeBtn.setOnClickListener {setBackgroundColor("Beige")}
+        blackBtn.setOnClickListener {setBackgroundColor("Black")}
 
         PopupWindow(
             layout,
@@ -130,6 +142,10 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun setBackgroundColor(text: String){
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+        val intent = intent
+        intent.putExtra(BRIGHTNESS_THEME, text)
+        finish()
+        startActivity(intent)
     }
 
     private fun addPagerCallback(){
@@ -217,5 +233,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val EPUB_URI = "epub_uri"
 
         const val SHOW_EPUB = "epub"
+
+        private const val BRIGHTNESS_THEME = "theme"
     }
 }
