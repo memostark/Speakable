@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 28
@@ -50,6 +51,10 @@ repositories {
 
 ext {
     supportLibVersion = '26.1.0'
+}
+
+kapt {
+    generateStubs = true
 }
 
 dependencies {
@@ -104,6 +109,14 @@ dependencies {
 
     // Database visualizer
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.6'
+
+    // Dagger 2
+    implementation 'com.google.dagger:dagger:2.15'
+    implementation 'com.google.dagger:dagger-android:2.15'
+    kapt 'com.google.dagger:dagger-android-processor:2.15'
+    kapt 'com.google.dagger:dagger-compiler:2.15'
+    annotationProcessor 'com.google.dagger:dagger-android-processor:2.15'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.15'
 
     // Instrumental testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
