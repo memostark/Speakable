@@ -10,6 +10,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Inject
 
 /*  Expected JSON response scheme:
     [
@@ -54,7 +55,7 @@ import retrofit2.converter.gson.GsonConverterFactory
     Because response JSON cannot be converted to POJO we have to parse it manually.
 */
 
-class GooglePublicSource private constructor() : WordDataSource {
+class GooglePublicSource: WordDataSource {
 
     private var googlePublicAPI: GooglePublicAPI? = null
     private val gson: Gson = GsonBuilder()
