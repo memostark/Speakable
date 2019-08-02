@@ -8,13 +8,23 @@ import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.db.WordsDatabase
 import dagger.Module
 import dagger.Provides
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @Module
 object ApplicationModule {
 
+    @Qualifier
+    @Retention(AnnotationRetention.RUNTIME)
+    annotation class GooglePublicDataSource
+
+    @Qualifier
+    @Retention(AnnotationRetention.RUNTIME)
+    annotation class WordsLocalDataSource
+
     @JvmStatic
     @Singleton
+    @WordsLocalDataSource
     @Provides
     fun provideLocalSource(database: WordsDatabase): WordDataSource = WordLocalDataSource(database.wordsDAO())
 
@@ -31,6 +41,7 @@ object ApplicationModule {
 
     @JvmStatic
     @Singleton
+    @GooglePublicDataSource
     @Provides
     fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
 }

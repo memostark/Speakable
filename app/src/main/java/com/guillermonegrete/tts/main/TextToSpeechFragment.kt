@@ -39,10 +39,10 @@ import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.data.source.WordRepository
-import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
-import com.guillermonegrete.tts.db.WordsDatabase
+import dagger.android.support.AndroidSupportInjection
+import javax.inject.Inject
 
 
 class TextToSpeechFragment : Fragment(), MainTTSContract.View {
@@ -61,6 +61,9 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
     private lateinit var languageTextView: TextView
 
+    @Inject
+    lateinit var wordRepository: WordRepository
+
     private val clipText: String
         get() {
             val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -73,6 +76,11 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
             return pasteData?.toString() ?: ""
         }
 
+    override fun onAttach(context: Context) {
+        AndroidSupportInjection.inject(this)
+        super.onAttach(context)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -80,8 +88,9 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
                 ThreadExecutor.getInstance(),
                 MainThreadImpl.getInstance(),
                 this,
-                WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
-                CustomTTS.getInstance(activity?.applicationContext)
+//                WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
+            wordRepository,
+            CustomTTS.getInstance(activity?.applicationContext)
         )
     }
 
