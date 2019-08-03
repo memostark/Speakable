@@ -24,9 +24,8 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private boolean isAvailable;
 
     @Inject
-    public MainTTSPresenter(Executor executor, MainThread mainThread, MainTTSContract.View view, WordRepository wordRepository, CustomTTS tts) {
+    public MainTTSPresenter(Executor executor, MainThread mainThread, WordRepository wordRepository, CustomTTS tts) {
         super(executor, mainThread);
-        this.view = view;
         this.tts = tts;
         this.wordRepository = wordRepository;
         isPlaying = false;
@@ -94,29 +93,23 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         public void onSpeakStart() {
             isPlaying = true;
             // TODO move main thread code to interactor
-            mMainThread.post(new Runnable() {
-                @Override
-                public void run() {
-                    view.showStopIcon();
-                }
-            });
+            mMainThread.post(() -> view.showStopIcon());
         }
 
         @Override
         public void onSpeakDone() {
             isPlaying = false;
-            mMainThread.post(new Runnable() {
-                @Override
-                public void run() {
-                    view.showPlayIcon();
-                }
-            });
+            mMainThread.post(() -> view.showPlayIcon());
         }
     };
 
     @Override
-    public void start() {
-        view.showPlayIcon();
+    public void start() {}
+
+    @Override
+    public void setView(MainTTSContract.View view) {
+        this.view = view;
+        this.view.showPlayIcon();
     }
 
     @Override

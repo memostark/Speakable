@@ -218,6 +218,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
+    public void setView(ProcessTextContract.View view) {
+
+    }
+
+    @Override
     public void start() {
 
     }

@@ -2,16 +2,23 @@ package com.guillermonegrete.tts.di
 
 import android.content.Context
 import androidx.room.Room
+import com.guillermonegrete.tts.Executor
+import com.guillermonegrete.tts.MainThread
+import com.guillermonegrete.tts.ThreadExecutor
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.db.WordsDatabase
+import com.guillermonegrete.tts.threading.MainThreadImpl
 import dagger.Module
 import dagger.Provides
 import javax.inject.Qualifier
 import javax.inject.Singleton
+import dagger.Binds
 
-@Module
+
+
+@Module(includes = [ApplicationModuleBinds::class])
 object ApplicationModule {
 
     @Qualifier
@@ -44,4 +51,14 @@ object ApplicationModule {
     @GooglePublicDataSource
     @Provides
     fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
+}
+
+@Module
+abstract class ApplicationModuleBinds {
+
+    @Binds
+    abstract fun bindExecutor(executor: ThreadExecutor): Executor
+
+    @Binds
+    abstract fun bindThread(executor: MainThreadImpl): MainThread
 }

@@ -29,25 +29,21 @@ import androidx.preference.PreferenceManager
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.BuildConfig
-import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.services.ScreenTextService
-import com.guillermonegrete.tts.ThreadExecutor
-import com.guillermonegrete.tts.threading.MainThreadImpl
 
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.data.source.WordDataSource
-import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 
 
-class TextToSpeechFragment: Fragment(), MainTTSContract.View {
+class TextToSpeechFragment @Inject constructor() : Fragment(), MainTTSContract.View {
 
-    private var presenter: MainTTSPresenter? = null
+    @Inject lateinit var presenter: MainTTSPresenter
 
     private lateinit var editText: EditText
     private lateinit var webview: WebView
@@ -60,11 +56,6 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
     private lateinit var overlayButton: Button
 
     private lateinit var languageTextView: TextView
-
-    @Inject lateinit var wordRepository: WordRepository
-    @Inject lateinit var threadExecutor: ThreadExecutor
-    @Inject lateinit var mainThread: MainThreadImpl
-    @Inject lateinit var tts: CustomTTS
 
     private val clipText: String
         get() {
@@ -86,13 +77,11 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        presenter = MainTTSPresenter(
-            threadExecutor,
-            mainThread,
-            this,
-            wordRepository,
-            tts
-        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        presenter.setView(this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -141,26 +130,26 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
 
         playButton.setOnClickListener {
             val text = editText.text.toString()
-            presenter?.onClickReproduce(text)
+            presenter.onClickReproduce(text)
         }
 
         browseBtn.setOnClickListener {
             hideKeyboard()
             val text = editText.text.toString()
-            presenter?.onClickShowBrowser(text)
+            presenter.onClickShowBrowser(text)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
         }
 
-        pasteBtn.setOnClickListener { presenter!!.onClickPaste(clipText) }
+        pasteBtn.setOnClickListener { presenter.onClickPaste(clipText) }
 
 
 
         overlayButton = fragmentLayout.findViewById<Button>(R.id.startBubble_btn).apply {
-            setOnClickListener { presenter?.onStartOverlayMode() }
+            setOnClickListener { presenter.onStartOverlayMode() }
         }
 
         clipboardButton = fragmentLayout.findViewById<Button>(R.id.clipboard_btn).apply {
-            setOnClickListener { presenter?.onStartClipboardMode() }
+            setOnClickListener { presenter.onStartClipboardMode() }
         }
 
         return fragmentLayout
@@ -168,17 +157,17 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
 
     override fun onStart() {
         super.onStart()
-        presenter?.start()
+        presenter.start()
     }
 
     override fun onStop() {
         super.onStop()
-        presenter?.stop()
+        presenter.stop()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        presenter?.destroy()
+        presenter.destroy()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

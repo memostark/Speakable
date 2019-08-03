@@ -42,7 +42,7 @@ public interface ProcessTextContract {
         void updateTranslation(String translation);
     }
 
-    interface Presenter extends BasePresenter{
+    interface Presenter extends BasePresenter<View>{
 
         void addNewWord();
 
