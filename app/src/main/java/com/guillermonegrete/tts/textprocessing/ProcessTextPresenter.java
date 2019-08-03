@@ -23,8 +23,11 @@ import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.List;
 
+@Singleton
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
     private ProcessTextContract.View mView;
@@ -39,10 +42,15 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean isPlaying;
     private boolean isAvailable;
 
-    ProcessTextPresenter(Executor executor, MainThread mainThread, ProcessTextContract.View view,
-                                WordRepository repository, DictionaryRepository dictRepository, ExternalLinksDataSource linksRepository, CustomTTS customTTS){
+    @Inject
+    ProcessTextPresenter(
+            Executor executor,
+            MainThread mainThread,
+            WordRepository repository,
+            DictionaryRepository dictRepository,
+            ExternalLinksDataSource linksRepository,
+            CustomTTS customTTS){
         super(executor, mainThread);
-        mView = view;
         mRepository = repository;
         dictionaryRepository = dictRepository;
         this.linksRepository = linksRepository;
@@ -51,7 +59,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         insideLocalDatabase = false;
         isPlaying = false;
         isAvailable = true;
-        mView.setPresenter(this);
     }
 
 
@@ -219,7 +226,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void setView(ProcessTextContract.View view) {
-
+        mView = view;
     }
 
     @Override
@@ -254,35 +261,20 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         public void onLanguageUnavailable() {
             isPlaying = false;
             isAvailable = false;
-            mMainThread.post(new Runnable() {
-                @Override
-                public void run() {
-                    mView.showLanguageNotAvailable();
-                }
-            });
+            mMainThread.post(() -> mView.showLanguageNotAvailable());
         }
 
         @Override
         public void onSpeakStart() {
             isPlaying = true;
             // TODO move main thread code to interactor
-            mMainThread.post(new Runnable() {
-                @Override
-                public void run() {
-                    mView.showStopIcon();
-                }
-            });
+            mMainThread.post(() -> mView.showStopIcon());
         }
 
         @Override
         public void onSpeakDone() {
             isPlaying = false;
-            mMainThread.post(new Runnable() {
-                @Override
-                public void run() {
-                    mView.showPlayIcon();
-                }
-            });
+            mMainThread.post(() -> mView.showPlayIcon());
         }
     };
 }

@@ -1,13 +1,18 @@
 package com.guillermonegrete.tts.di
 
+import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.ThreadExecutor
+import com.guillermonegrete.tts.data.source.DictionaryDataSource
+import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.data.source.WordDataSource
+import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
+import com.guillermonegrete.tts.data.source.remote.WiktionarySource
 import com.guillermonegrete.tts.db.WordsDatabase
 import com.guillermonegrete.tts.threading.MainThreadImpl
 import dagger.Module
@@ -20,6 +25,11 @@ import dagger.Binds
 
 @Module(includes = [ApplicationModuleBinds::class])
 object ApplicationModule {
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideAppContext(app: Application): Context = app.applicationContext
 
     @Qualifier
     @Retention(AnnotationRetention.RUNTIME)
@@ -51,6 +61,16 @@ object ApplicationModule {
     @GooglePublicDataSource
     @Provides
     fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideExternalLinksSource(app: Application): ExternalLinksDataSource = AssetsExternalLinksSource(app)
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideWiktionarySource(): DictionaryDataSource = WiktionarySource()
 }
 
 @Module

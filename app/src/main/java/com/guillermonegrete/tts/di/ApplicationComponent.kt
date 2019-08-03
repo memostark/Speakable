@@ -1,6 +1,6 @@
 package com.guillermonegrete.tts.di
 
-import android.content.Context
+import android.app.Application
 import com.guillermonegrete.tts.SpeakableApplication
 import dagger.BindsInstance
 import dagger.Component
@@ -13,12 +13,13 @@ import javax.inject.Singleton
     modules = [
         AndroidSupportInjectionModule::class,
         ApplicationModule::class,
-        MainModule::class
+        MainModule::class,
+        ProcessTextModule::class
     ])
 interface ApplicationComponent: AndroidInjector<SpeakableApplication>{
 
     @Component.Factory
     interface Factory {
-        fun create(@BindsInstance applicationContext: Context): ApplicationComponent
+        fun create(@BindsInstance app: Application): ApplicationComponent
     }
 }
