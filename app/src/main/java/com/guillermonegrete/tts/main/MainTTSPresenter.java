@@ -24,7 +24,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private boolean isAvailable;
 
     @Inject
-    public MainTTSPresenter(Executor executor, MainThread mainThread, WordRepository wordRepository, CustomTTS tts) {
+    MainTTSPresenter(Executor executor, MainThread mainThread, WordRepository wordRepository, CustomTTS tts) {
         super(executor, mainThread);
         this.tts = tts;
         this.wordRepository = wordRepository;
