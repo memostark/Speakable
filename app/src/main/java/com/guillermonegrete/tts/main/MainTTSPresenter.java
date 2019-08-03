@@ -10,6 +10,10 @@ import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
 
     private CustomTTS tts;
@@ -19,6 +23,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private boolean isPlaying;
     private boolean isAvailable;
 
+    @Inject
     public MainTTSPresenter(Executor executor, MainThread mainThread, MainTTSContract.View view, WordRepository wordRepository, CustomTTS tts) {
         super(executor, mainThread);
         this.view = view;

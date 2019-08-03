@@ -5,13 +5,18 @@ import android.os.Looper;
 
 import com.guillermonegrete.tts.MainThread;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class MainThreadImpl implements MainThread {
 
     private static MainThread mainThread;
 
     private Handler handler;
 
-    private MainThreadImpl(){handler = new Handler(Looper.getMainLooper());}
+    @Inject
+    public MainThreadImpl(){handler = new Handler(Looper.getMainLooper());}
 
     @Override
     public void post(Runnable runnable) {

@@ -45,7 +45,7 @@ import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 
 
-class TextToSpeechFragment : Fragment(), MainTTSContract.View {
+class TextToSpeechFragment: Fragment(), MainTTSContract.View {
 
     private var presenter: MainTTSPresenter? = null
 
@@ -61,8 +61,10 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
     private lateinit var languageTextView: TextView
 
-    @Inject
-    lateinit var wordRepository: WordRepository
+    @Inject lateinit var wordRepository: WordRepository
+    @Inject lateinit var threadExecutor: ThreadExecutor
+    @Inject lateinit var mainThread: MainThreadImpl
+    @Inject lateinit var tts: CustomTTS
 
     private val clipText: String
         get() {
@@ -85,12 +87,11 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
         presenter = MainTTSPresenter(
-                ThreadExecutor.getInstance(),
-                MainThreadImpl.getInstance(),
-                this,
-//                WordRepository.getInstance(getTranslatorSource(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
+            threadExecutor,
+            mainThread,
+            this,
             wordRepository,
-            CustomTTS.getInstance(activity?.applicationContext)
+            tts
         )
     }
 

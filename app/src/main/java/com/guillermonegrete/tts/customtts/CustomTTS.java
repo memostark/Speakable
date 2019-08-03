@@ -10,10 +10,13 @@ import com.guillermonegrete.speech.tts.Synthesizer;
 import com.guillermonegrete.speech.tts.Voice;
 import com.guillermonegrete.tts.BuildConfig;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.Locale;
 
 
+@Singleton
 public class CustomTTS implements TextToSpeech.OnInitListener{
     private static CustomTTS INSTANCE;
 
@@ -40,7 +43,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return INSTANCE;
     }
 
-    private CustomTTS(Context context){
+    @Inject
+    public CustomTTS(Context context){
         localTTS = new TextToSpeech(context, this);
         mSynth = new Synthesizer(BuildConfig.TTSApiKey, synthCallback);
         isInitialized = false;
