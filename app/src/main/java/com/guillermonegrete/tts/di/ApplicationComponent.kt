@@ -14,7 +14,8 @@ import javax.inject.Singleton
         AndroidSupportInjectionModule::class,
         ApplicationModule::class,
         MainModule::class,
-        ProcessTextModule::class
+        ProcessTextModule::class,
+        ScreenTextModule::class
     ])
 interface ApplicationComponent: AndroidInjector<SpeakableApplication>{
 

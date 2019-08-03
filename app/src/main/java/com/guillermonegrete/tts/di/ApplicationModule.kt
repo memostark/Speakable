@@ -14,6 +14,8 @@ import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource
 import com.guillermonegrete.tts.db.WordsDatabase
+import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor
+import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource
 import com.guillermonegrete.tts.threading.MainThreadImpl
 import dagger.Module
 import dagger.Provides
@@ -71,6 +73,11 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideWiktionarySource(): DictionaryDataSource = WiktionarySource()
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideTextDetectorSource(): ImageProcessingSource = FirebaseTextProcessor()
 }
 
 @Module

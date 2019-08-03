@@ -65,7 +65,10 @@ import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
 import com.guillermonegrete.tts.main.TranslatorType;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
+import dagger.android.AndroidInjection;
 import org.jetbrains.annotations.NotNull;
+
+import javax.inject.Inject;
 
 public class ScreenTextService extends Service {
 
@@ -74,7 +77,7 @@ public class ScreenTextService extends Service {
     private View service_layout;
     private TrashView trash_layout;
     private GestureDetector gestureDetector;
-    private CustomTTS tts;
+    @Inject CustomTTS tts;
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
     private static boolean hasPermission;
@@ -104,7 +107,7 @@ public class ScreenTextService extends Service {
     private SharedPreferences sharedPreferences;
     private String languageToPreference;
 
-    private ImageProcessingSource textProcessor;
+    @Inject ImageProcessingSource textProcessor;
 
     /*
     *  Type of service
@@ -128,6 +131,7 @@ public class ScreenTextService extends Service {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate() {
+        AndroidInjection.inject(this);
         super.onCreate();
 
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
@@ -138,7 +142,6 @@ public class ScreenTextService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        tts = CustomTTS.getInstance(getApplicationContext());
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         bubble = service_layout.findViewById(R.id.image_bubble);
@@ -258,65 +261,53 @@ public class ScreenTextService extends Service {
             }
         });
 
-        playButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(isPlaying) {
-                    tts.stop();
-                    isPlaying = false;
-                    playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
-                }else {
-                    isAvailable = true;
-                    playLoadingIcon.setVisibility(View.VISIBLE);
-                    playButton.setVisibility(View.GONE);
-                    DetectTextFromScreen interactor = new DetectTextFromScreen(
-                            ThreadExecutor.getInstance(),
-                            MainThreadImpl.getInstance(),
-                            new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
-                            textProcessor,
-                            snipView.getSnipRectangle(),
-                            new DetectTextFromScreen.Callback() {
-                                @Override
-                                public void onTextDetected(@NotNull String text, @NotNull String language) {
-                                    Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                                    // TODO should probably move this condition to the custom tts class
-                                    boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                                    if (!isInitialized) tts.initializeTTS(language);
-                                    if(isAvailable) tts.speak(text, ttsListener);
-                                }
-                            }
-                    );
-                    interactor.run();
-                }
-
-            }
-        });
-
-        translateButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
+        playButton.setOnClickListener(view -> {
+            if(isPlaying) {
+                tts.stop();
+                isPlaying = false;
+                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+            }else {
+                isAvailable = true;
+                playLoadingIcon.setVisibility(View.VISIBLE);
+                playButton.setVisibility(View.GONE);
                 DetectTextFromScreen interactor = new DetectTextFromScreen(
                         ThreadExecutor.getInstance(),
                         MainThreadImpl.getInstance(),
                         new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
                         textProcessor,
                         snipView.getSnipRectangle(),
-                        new DetectTextFromScreen.Callback() {
-                            @Override
-                            public void onTextDetected(@NotNull String text, @NotNull String language) {
-                                System.out.println("detected text: " + text);
-                                detectLanguageAndTranslate(text);
-                            }
+                        (text, language) -> {
+                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                            // TODO should probably move this condition to the custom tts class
+                            boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                            if (!isInitialized) tts.initializeTTS(language);
+                            if(isAvailable) tts.speak(text, ttsListener);
                         }
                 );
                 interactor.run();
             }
+
+        });
+
+        translateButton.setOnClickListener(v -> {
+
+            DetectTextFromScreen interactor = new DetectTextFromScreen(
+                    ThreadExecutor.getInstance(),
+                    MainThreadImpl.getInstance(),
+                    new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
+                    textProcessor,
+                    snipView.getSnipRectangle(),
+                    (text, language) -> {
+                        System.out.println("detected text: " + text);
+                        detectLanguageAndTranslate(text);
+                    }
+            );
+            interactor.run();
         });
 
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        setTextRecognizer();
+//        setTextRecognizer();
         setClipboardCallback();
 
     }
@@ -483,12 +474,7 @@ public class ScreenTextService extends Service {
 
         defaultSnippingView();
         windowManager.updateViewLayout(service_layout, windowParams);
-        icon_container.post(new Runnable() {
-            @Override
-            public void run() {
-                animateToEdge();
-            }
-        });
+        icon_container.post(this::animateToEdge);
     }
 
     private void setContainerBackground(){
@@ -580,12 +566,7 @@ public class ScreenTextService extends Service {
         if(service_layout.getWindowToken() == null) {
             windowManager.addView(service_layout, windowParams);
             // Runs after the view has been drawn
-            icon_container.post(new Runnable() {
-                @Override
-                public void run() {
-                    animateToEdge();
-                }
-            });
+            icon_container.post(this::animateToEdge);
         }
         if(trash_layout.getWindowToken() == null) windowManager.addView(trash_layout, mParamsTrash);
     }
@@ -603,12 +584,9 @@ public class ScreenTextService extends Service {
         ani = ValueAnimator.ofInt(currentX, toPosition);
         //windowParams.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
 
-        ani.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                windowParams.x = (Integer) animation.getAnimatedValue();
-                windowManager.updateViewLayout(service_layout, windowParams);
-            }
+        ani.addUpdateListener(animation -> {
+            windowParams.x = (Integer) animation.getAnimatedValue();
+            windowManager.updateViewLayout(service_layout, windowParams);
         });
         ani.setDuration(350L);
         ani.setInterpolator(new AccelerateDecelerateInterpolator());
@@ -652,14 +630,11 @@ public class ScreenTextService extends Service {
         @Override
         public void onSpeakStart() {
             // TODO Should create a presenter or view model for this main thread stuff
-            MainThreadImpl.getInstance().post(new Runnable() {
-                @Override
-                public void run() {
-                    playLoadingIcon.setVisibility(View.GONE);
-                    isPlaying = true;
-                    playButton.setImageResource(R.drawable.ic_stop_black_24dp);
-                    playButton.setVisibility(View.VISIBLE);
-                }
+            MainThreadImpl.getInstance().post(() -> {
+                playLoadingIcon.setVisibility(View.GONE);
+                isPlaying = true;
+                playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+                playButton.setVisibility(View.VISIBLE);
             });
         }
 
@@ -667,12 +642,9 @@ public class ScreenTextService extends Service {
         public void onSpeakDone() {
             // For some reason I need to use main thread here even though I'm not using other threads
             // Should find out why this is necessary
-            MainThreadImpl.getInstance().post(new Runnable() {
-                @Override
-                public void run() {
-                    isPlaying = false;
-                    playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
-                }
+            MainThreadImpl.getInstance().post(() -> {
+                isPlaying = false;
+                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
             });
         }
     };
