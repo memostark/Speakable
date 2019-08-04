@@ -17,11 +17,13 @@ import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ViewModelFactory
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import dagger.android.AndroidInjection
 import org.xmlpull.v1.XmlPullParser
+import javax.inject.Inject
 
 class VisualizeTextActivity: AppCompatActivity() {
 
-    private lateinit var viewModel: VisualizeTextViewModel
+    @Inject lateinit var viewModel: VisualizeTextViewModel
 
     private lateinit var viewPager: ViewPager2
     private lateinit var currentPageLabel: TextView
@@ -35,6 +37,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private var pagesSize = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AndroidInjection.inject(this)
         setPreferenceTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
@@ -80,7 +83,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun createViewModel() {
         val factory = ViewModelFactory.getInstance(application)
-        viewModel = ViewModelProviders.of(this, factory).get(VisualizeTextViewModel::class.java).apply {
+//        viewModel = ViewModelProviders.of(this, factory).get(VisualizeTextViewModel::class.java).apply {
+          viewModel.apply {
             pages.observe(this@VisualizeTextActivity, Observer {
                 println("Pages observer")
                 setUpPagerAndIndexLabel(it)

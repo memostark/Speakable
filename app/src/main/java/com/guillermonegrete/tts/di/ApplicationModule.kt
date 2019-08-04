@@ -13,6 +13,7 @@ import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource
+import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.db.WordsDatabase
 import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor
 import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource
@@ -57,6 +58,11 @@ object ApplicationModule {
             "words.db"
         ).build()
     }
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideWordsDAO(database: WordsDatabase): WordsDAO = database.wordsDAO()
 
     @JvmStatic
     @Singleton

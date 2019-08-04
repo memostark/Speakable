@@ -6,8 +6,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.guillermonegrete.tts.importtext.epub.Book
 import org.xmlpull.v1.XmlPullParser
+import javax.inject.Inject
 
-class VisualizeTextViewModel(private val epubParser: EpubParser): ViewModel() {
+class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubParser): ViewModel() {
 
     private var text = ""
     var currentChapter = 0

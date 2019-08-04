@@ -32,14 +32,16 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import dagger.android.support.AndroidSupportInjection;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener {
 
     private SavedWordListAdapter wordListAdapter;
-    private WordsViewModel wordsViewModel;
+    @Inject SavedWordsViewModel wordsViewModel;
     private RecyclerView mRecyclerView;
     private Spinner spinnerLang;
     private Context context;
@@ -52,6 +54,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     @Override
     public void onAttach(@NonNull Context context) {
+        AndroidSupportInjection.inject(this);
         super.onAttach(context);
         this.context = context;
         wordListAdapter = new SavedWordListAdapter(context);
@@ -82,7 +85,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     }
 
     private void initData(){
-        wordsViewModel = ViewModelProviders.of(this).get(WordsViewModel.class);
+//        wordsViewModel = ViewModelProviders.of(this).get(SavedWordsViewModel.class);
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), new Observer<List<String>>() {
             @Override
             public void onChanged(List<String> languages) {
