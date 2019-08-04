@@ -41,7 +41,7 @@ import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 
 
-class TextToSpeechFragment @Inject constructor() : Fragment(), MainTTSContract.View {
+class TextToSpeechFragment: Fragment(), MainTTSContract.View {
 
     @Inject lateinit var presenter: MainTTSPresenter
 

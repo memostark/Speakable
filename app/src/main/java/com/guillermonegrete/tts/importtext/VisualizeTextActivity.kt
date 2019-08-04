@@ -12,10 +12,10 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.ViewModelFactory
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import dagger.android.AndroidInjection
 import org.xmlpull.v1.XmlPullParser
@@ -23,7 +23,10 @@ import javax.inject.Inject
 
 class VisualizeTextActivity: AppCompatActivity() {
 
-    @Inject lateinit var viewModel: VisualizeTextViewModel
+    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
+    private val viewModel by lazy {
+        ViewModelProviders.of(this, viewModelFactory).get(VisualizeTextViewModel::class.java)
+    }
 
     private lateinit var viewPager: ViewPager2
     private lateinit var currentPageLabel: TextView
@@ -82,8 +85,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun createViewModel() {
-        val factory = ViewModelFactory.getInstance(application)
-//        viewModel = ViewModelProviders.of(this, factory).get(VisualizeTextViewModel::class.java).apply {
+
           viewModel.apply {
             pages.observe(this@VisualizeTextActivity, Observer {
                 println("Pages observer")
