@@ -33,7 +33,7 @@ public class WiktionarySource implements DictionaryDataSource {
         return INSTANCE;
     }
 
-    private WiktionarySource(){
+    public WiktionarySource(){
         Gson gson = new GsonBuilder()
                 .setLenient()
                 .create();

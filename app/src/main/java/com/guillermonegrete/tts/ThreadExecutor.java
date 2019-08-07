@@ -1,10 +1,13 @@
 package com.guillermonegrete.tts;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class ThreadExecutor implements Executor {
 
     private static volatile ThreadExecutor sThreadExecutor;
@@ -17,7 +20,8 @@ public class ThreadExecutor implements Executor {
 
     private ThreadPoolExecutor mThreadPoolExecutor;
 
-    private ThreadExecutor(){
+    @Inject
+    public ThreadExecutor(){
         mThreadPoolExecutor = new ThreadPoolExecutor(
                 CORE_POOL_SIZE,
                 MAX_POOL_SIZE,
@@ -29,14 +33,11 @@ public class ThreadExecutor implements Executor {
 
     @Override
     public void execute(final AbstractInteractor interactor) {
-        mThreadPoolExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                interactor.run();
+        mThreadPoolExecutor.submit(() -> {
+            interactor.run();
 
-                interactor.onFinished();
+            interactor.onFinished();
 
-            }
         });
 
     }

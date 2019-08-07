@@ -39,11 +39,13 @@ import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.db.WordsDatabase
+import dagger.android.support.AndroidSupportInjection
+import javax.inject.Inject
 
 
-class TextToSpeechFragment : Fragment(), MainTTSContract.View {
+class TextToSpeechFragment: Fragment(), MainTTSContract.View {
 
-    private var presenter: MainTTSPresenter? = null
+    @Inject lateinit var presenter: MainTTSPresenter
 
     private lateinit var editText: EditText
     private lateinit var webview: WebView
@@ -69,16 +71,19 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
             return pasteData?.toString() ?: ""
         }
 
+    override fun onAttach(context: Context) {
+        AndroidSupportInjection.inject(this)
+        super.onAttach(context)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        presenter = MainTTSPresenter(
-                ThreadExecutor.getInstance(),
-                MainThreadImpl.getInstance(),
-                this,
-                WordRepository.getInstance(GooglePublicSource.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(activity?.applicationContext).wordsDAO())),
-                CustomTTS.getInstance(activity?.applicationContext)
-        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        presenter.setView(this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -127,26 +132,26 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
         playButton.setOnClickListener {
             val text = editText.text.toString()
-            presenter?.onClickReproduce(text)
+            presenter.onClickReproduce(text)
         }
 
         browseBtn.setOnClickListener {
             hideKeyboard()
             val text = editText.text.toString()
-            presenter?.onClickShowBrowser(text)
+            presenter.onClickShowBrowser(text)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
         }
 
-        pasteBtn.setOnClickListener { presenter!!.onClickPaste(clipText) }
+        pasteBtn.setOnClickListener { presenter.onClickPaste(clipText) }
 
 
 
         overlayButton = fragmentLayout.findViewById<Button>(R.id.startBubble_btn).apply {
-            setOnClickListener { presenter?.onStartOverlayMode() }
+            setOnClickListener { presenter.onStartOverlayMode() }
         }
 
         clipboardButton = fragmentLayout.findViewById<Button>(R.id.clipboard_btn).apply {
-            setOnClickListener { presenter?.onStartClipboardMode() }
+            setOnClickListener { presenter.onStartClipboardMode() }
         }
 
         return fragmentLayout
@@ -154,17 +159,17 @@ class TextToSpeechFragment : Fragment(), MainTTSContract.View {
 
     override fun onStart() {
         super.onStart()
-        presenter?.start()
+        presenter.start()
     }
 
     override fun onStop() {
         super.onStop()
-        presenter?.stop()
+        presenter.stop()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        presenter?.destroy()
+        presenter.destroy()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

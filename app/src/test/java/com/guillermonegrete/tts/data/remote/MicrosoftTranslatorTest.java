@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.remote;
 
+import com.guillermonegrete.tts.BuildConfig;
 import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.db.Words;

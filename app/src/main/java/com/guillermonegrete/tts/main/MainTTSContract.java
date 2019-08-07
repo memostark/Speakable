@@ -24,7 +24,7 @@ public interface MainTTSContract {
 
     }
 
-    interface Presenter extends BasePresenter {
+    interface Presenter extends BasePresenter<View> {
         void onClickReproduce(String text);
 
         void onClickShowBrowser(String text);

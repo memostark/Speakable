@@ -3,8 +3,6 @@
          Free: https://www.microsoft.com/cognitive-services/en-us/subscriptions?productId=/products/Bing.Speech.Preview
         Paid: https://portal.azure.com/#create/Microsoft.CognitiveServices/apitype/Bing.Speech/pricingtier/S0 -->
     <!-- If you have one api key, you can add it here to use the service -->
-    <string name="api_key">Add your key here</string>
-    <string name="translator_api_key">Add your key here</string>
 
     <string name="add_subscription_key_tip_title">Subscription Key is Needed</string>
     <string name="add_subscription_key_tip">Please put your subscription key to source file \"app/res/values/strings.xml\" to enable Face API calls.</string>
@@ -74,6 +72,7 @@
     <string name="reader_current_page_label">%1$d of %2$d</string>
     <string name="reader_current_chapter_label">Chapter: %1$d of %2$d</string>
     <string name="table_of_contents">Table of contents</string>
+    <string name="brightness_settings">Brightness settings</string>
 
 
     <string-array name="language_code_arrays">

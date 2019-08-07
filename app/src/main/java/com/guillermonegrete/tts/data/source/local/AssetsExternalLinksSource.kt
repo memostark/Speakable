@@ -8,7 +8,7 @@ import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.db.ExternalLink
 import java.lang.Exception
 
-class AssetsExternalLinksSource private constructor(private val appContext: Application): ExternalLinksDataSource {
+class AssetsExternalLinksSource constructor(private val appContext: Application): ExternalLinksDataSource {
 
     override fun getLanguageLinks(language: String, callback: ExternalLinksDataSource.Callback) {
         val linkType = object : TypeToken<List<ExternalLink>>() {}.type

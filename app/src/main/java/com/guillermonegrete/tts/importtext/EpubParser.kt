@@ -9,8 +9,9 @@ import org.xmlpull.v1.XmlPullParserException
 import java.io.*
 import java.lang.StringBuilder
 import java.util.zip.ZipInputStream
+import javax.inject.Inject
 
-class EpubParser {
+class EpubParser @Inject constructor() {
 
     var basePath = ""
         private set

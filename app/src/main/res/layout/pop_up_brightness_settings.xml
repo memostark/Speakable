@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp">
+    <LinearLayout
+        android:background="?attr/popUpBackground"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/white_bg_btn"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#ffff"
+            android:layout_margin="8dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#484848"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/beige_bg_btn"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#ffedbf"
+            android:layout_margin="8dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#484848"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/black_bg_btn"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#000"
+            android:layout_margin="8dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#484848"/>
+    </LinearLayout>
+
+
+</androidx.cardview.widget.CardView>

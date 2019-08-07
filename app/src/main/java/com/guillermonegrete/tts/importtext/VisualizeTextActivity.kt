@@ -4,24 +4,31 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
 import android.util.Xml
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.ImageButton
-import android.widget.TextView
+import android.view.ViewGroup
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ViewModelFactory
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import dagger.android.AndroidInjection
 import org.xmlpull.v1.XmlPullParser
+import javax.inject.Inject
 
 class VisualizeTextActivity: AppCompatActivity() {
 
-    private lateinit var viewModel: VisualizeTextViewModel
+    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
+    private val viewModel by lazy {
+        ViewModelProviders.of(this, viewModelFactory).get(VisualizeTextViewModel::class.java)
+    }
 
     private lateinit var viewPager: ViewPager2
     private lateinit var currentPageLabel: TextView
@@ -35,6 +42,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     private var pagesSize = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AndroidInjection.inject(this)
+        setPreferenceTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
@@ -56,6 +65,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         currentPageLabel= findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
+        val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
+        brightnessButton.setOnClickListener { showBrightnessSettings(it) }
+
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
             viewModel.splitToPages(createPageSplitter(), createTextPaint())
@@ -63,9 +75,20 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
     }
 
+
+    // Change activity theme at runtime: https://stackoverflow.com/a/6390025/10244759
+    private fun setPreferenceTheme() {
+        when(intent.getStringExtra(BRIGHTNESS_THEME)){
+            "White" -> setTheme(R.style.AppMaterialTheme_White)
+            "Beige" -> setTheme(R.style.AppMaterialTheme_Beige)
+            "Black" -> setTheme(R.style.AppMaterialTheme_Black)
+            else -> setTheme(R.style.AppMaterialTheme_White)
+        }
+    }
+
     private fun createViewModel() {
-        val factory = ViewModelFactory.getInstance(application)
-        viewModel = ViewModelProviders.of(this, factory).get(VisualizeTextViewModel::class.java).apply {
+
+        viewModel.apply {
             pages.observe(this@VisualizeTextActivity, Observer {
                 println("Pages observer")
                 setUpPagerAndIndexLabel(it)
@@ -103,6 +126,34 @@ class VisualizeTextActivity: AppCompatActivity() {
         currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
         viewPager.adapter = VisualizerAdapter(pages)
         pagesSize = pages.size
+    }
+
+    private fun showBrightnessSettings(view: View) {
+        val layout = LayoutInflater.from(this).inflate(R.layout.pop_up_brightness_settings, view.rootView as ViewGroup, false)
+        val whiteBtn: Button = layout.findViewById(R.id.white_bg_btn)
+        val beigeBtn: Button = layout.findViewById(R.id.beige_bg_btn)
+        val blackBtn: Button = layout.findViewById(R.id.black_bg_btn)
+        whiteBtn.setOnClickListener {setBackgroundColor("White")}
+        beigeBtn.setOnClickListener {setBackgroundColor("Beige")}
+        blackBtn.setOnClickListener {setBackgroundColor("Black")}
+
+        PopupWindow(
+            layout,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            isFocusable = true
+            elevation = 8f
+            showAtLocation(view, Gravity.START or Gravity.BOTTOM, 24, 24)
+        }
+    }
+
+    private fun setBackgroundColor(text: String){
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+        val intent = intent
+        intent.putExtra(BRIGHTNESS_THEME, text)
+        finish()
+        startActivity(intent)
     }
 
     private fun addPagerCallback(){
@@ -190,5 +241,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val EPUB_URI = "epub_uri"
 
         const val SHOW_EPUB = "epub"
+
+        private const val BRIGHTNESS_THEME = "theme"
     }
 }

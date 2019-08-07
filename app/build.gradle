@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 28
@@ -46,6 +47,10 @@ ext {
     supportLibVersion = '26.1.0'
 }
 
+kapt {
+    generateStubs = true
+}
+
 dependencies {
     releaseImplementation(name: 'speechsdk', ext: 'aar')
     debugImplementation project(path: ':speechsdk')
@@ -81,6 +86,7 @@ dependencies {
     // Room
     implementation 'androidx.room:room-runtime:2.1.0-rc01'
     annotationProcessor 'androidx.room:room-compiler:2.1.0-rc01'
+    kapt 'androidx.room:room-compiler:2.1.0-rc01'
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
@@ -98,6 +104,14 @@ dependencies {
 
     // Database visualizer
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.6'
+
+    // Dagger 2
+    implementation 'com.google.dagger:dagger:2.23.2'
+    implementation 'com.google.dagger:dagger-android-support:2.23.2'
+    kapt 'com.google.dagger:dagger-android-processor:2.23.2'
+    kapt 'com.google.dagger:dagger-compiler:2.23.2'
+//    annotationProcessor 'com.google.dagger:dagger-android-processor:2.15'
+//    annotationProcessor 'com.google.dagger:dagger-compiler:2.15'
 
     // Instrumental testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'

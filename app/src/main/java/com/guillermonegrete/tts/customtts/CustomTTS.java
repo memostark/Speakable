@@ -7,10 +7,13 @@ import android.speech.tts.TextToSpeech;
 
 import android.speech.tts.UtteranceProgressListener;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.Locale;
 
 
+@Singleton
 public class CustomTTS implements TextToSpeech.OnInitListener{
     private static CustomTTS INSTANCE;
 
@@ -35,7 +38,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return INSTANCE;
     }
 
-    private CustomTTS(Context context){
+    @Inject
+    public CustomTTS(Context context){
         localTTS = new TextToSpeech(context, this);
         isInitialized = false;
         map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CustomTTSID");

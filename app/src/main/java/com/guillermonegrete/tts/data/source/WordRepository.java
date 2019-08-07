@@ -2,7 +2,10 @@ package com.guillermonegrete.tts.data.source;
 
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.di.ApplicationModule;
 
+
+import javax.inject.Inject;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
@@ -15,8 +18,9 @@ public class WordRepository implements WordRepositorySource {
     private final WordDataSource mWordLocalDataSource;
 
 
-    private WordRepository(WordDataSource remoteTranslatorSource,
-                           WordDataSource wordLocalDataSource){
+    @Inject
+    public WordRepository(@ApplicationModule.GooglePublicDataSource WordDataSource remoteTranslatorSource,
+                          @ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource){
         this.remoteTranslatorSource = checkNotNull(remoteTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
     }

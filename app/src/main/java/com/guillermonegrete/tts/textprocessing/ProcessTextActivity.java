@@ -8,7 +8,6 @@
 package com.guillermonegrete.tts.textprocessing;
 
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -33,26 +32,18 @@ import android.view.WindowManager;
 
 
 import com.google.android.material.tabs.TabLayout;
-import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.customviews.ButtonsPreference;
-import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource;
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.services.ScreenTextService;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
-import com.guillermonegrete.tts.ThreadExecutor;
-import com.guillermonegrete.tts.data.source.DictionaryRepository;
-import com.guillermonegrete.tts.data.source.WordRepository;
-import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
-import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
-import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
-import com.guillermonegrete.tts.db.WordsDatabase;
-import com.guillermonegrete.tts.threading.MainThreadImpl;
+import dagger.android.AndroidInjection;
 
 
+import javax.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,7 +66,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private Words mFoundWords;
 
-    private ProcessTextContract.Presenter presenter;
+    @Inject ProcessTextContract.Presenter presenter;
 
     private ViewPager pager;
     private MyPageAdapter adapter;
@@ -99,6 +90,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        AndroidInjection.inject(this);
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -109,14 +101,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         languagePreferenceISO = getPreferenceISO();
         languageFrom = getLanguageFromPreference();
 
-        presenter = new ProcessTextPresenter(ThreadExecutor.getInstance(),
-                MainThreadImpl.getInstance(),
-                this,
-                WordRepository.getInstance(GooglePublicSource.Companion.getInstance(), WordLocalDataSource.getInstance(WordsDatabase.getDatabase(getApplicationContext()).wordsDAO())),
-                DictionaryRepository.getInstance(WiktionarySource.getInstance()),
-                AssetsExternalLinksSource.Companion.getInstance(getApplication()),
-                CustomTTS.getInstance(getApplicationContext()));
-
+        presenter.setView(this);
         Words extraWord = getIntent().getParcelableExtra("Word");
         if(extraWord != null) presenter.start(extraWord);
         else {
@@ -176,13 +161,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         setPlayButton(textString);
         setLanguageFromSpinner();
 
-        findViewById(R.id.save_icon).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                presenter.onClickBookmark();
-
-            }
-        });
+        findViewById(R.id.save_icon).setOnClickListener(view -> presenter.onClickBookmark());
 
         if(mAutoTTS) presenter.onClickReproduce(textString);
     }
@@ -274,18 +253,12 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Do you want to delete this word?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        presenter.onClickDeleteWord(word);
-                        dialog.dismiss();
+                .setPositiveButton("Yes", (dialog, id) -> {
+                    presenter.onClickDeleteWord(word);
+                    dialog.dismiss();
 
-                    }
                 })
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.dismiss();
-                    }
-                });
+                .setNegativeButton(R.string.cancel, (dialog, id) -> dialog.dismiss());
 
         builder.create().show();
     }
@@ -390,24 +363,16 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         ImageButton editIcon = findViewById(R.id.edit_icon);
         editIcon.setVisibility(View.VISIBLE);
-        editIcon.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(word);
-                dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
-            }
+        editIcon.setOnClickListener(view -> {
+            DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(word);
+            dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
         });
 
     }
 
     private void setPlayButton(final String text){
         playButton = findViewById(R.id.play_tts_icon);
-        playButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                presenter.onClickReproduce(text);
-            }
-        });
+        playButton.setOnClickListener(view -> presenter.onClickReproduce(text));
 
         playProgressBar = findViewById(R.id.play_loading_icon);
         playIconsContainer = findViewById(R.id.play_icons_container);
@@ -479,12 +444,9 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         ImageButton editIcon = findViewById(R.id.edit_icon);
         editIcon.setVisibility(View.VISIBLE);
-        editIcon.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(word);
-                dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
-            }
+        editIcon.setOnClickListener(view -> {
+            DialogFragment dialogFragment = SaveWordDialogFragment.newInstance(word);
+            dialogFragment.show(getSupportFragmentManager(), TAG_DIALOG_UPDATE_WORD);
         });
     }
 

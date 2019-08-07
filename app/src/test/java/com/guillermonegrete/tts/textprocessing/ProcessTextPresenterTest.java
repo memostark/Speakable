@@ -58,16 +58,9 @@ public class ProcessTextPresenterTest {
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
         Executor executor = new TestThreadExecutor();
-        return new ProcessTextPresenter(executor, mainThread, view, wordRepository, dictionaryRepository, linksRepository, customTTS);
-    }
-
-    @Test
-    public void createPresenter_setsThePresenterToView() {
-        // Get a reference to the class under test
-        presenter = givenPresenter();
-
-        // Then the presenter is set to the view
-        verify(view).setPresenter(presenter);
+        ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, customTTS);
+        presenter.setView(view);
+        return presenter;
     }
 
 

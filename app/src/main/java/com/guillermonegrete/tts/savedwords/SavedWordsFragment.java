@@ -2,7 +2,7 @@ package com.guillermonegrete.tts.savedwords;
 
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -32,17 +32,19 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import dagger.android.support.AndroidSupportInjection;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener {
 
     private SavedWordListAdapter wordListAdapter;
-    private WordsViewModel wordsViewModel;
+    @Inject ViewModelProvider.Factory viewModelFactory;
+    private SavedWordsViewModel wordsViewModel;
     private RecyclerView mRecyclerView;
     private Spinner spinnerLang;
-    private Context context;
 
     private String language_filter;
 
@@ -52,8 +54,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     @Override
     public void onAttach(@NonNull Context context) {
+        AndroidSupportInjection.inject(this);
         super.onAttach(context);
-        this.context = context;
         wordListAdapter = new SavedWordListAdapter(context);
     }
 
@@ -64,43 +66,32 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
         mRecyclerView = fragment_layout.findViewById(R.id.recyclerview_saved_words);
         mRecyclerView.setAdapter(wordListAdapter);
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(context));
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(requireActivity(), DividerItemDecoration.VERTICAL));
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         setUpItemTouchHelper();
 
         spinnerLang = fragment_layout.findViewById(R.id.select_language_spinner);
 
-        fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showSaveDialog();
-            }
-        });
+        fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(view -> showSaveDialog());
         initData();
         return fragment_layout;
     }
 
     private void initData(){
-        wordsViewModel = ViewModelProviders.of(this).get(WordsViewModel.class);
-        wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), new Observer<List<String>>() {
-            @Override
-            public void onChanged(List<String> languages) {
-                languages.add(0, ALL_OPTION);
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, languages);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spinnerLang.setOnItemSelectedListener(SavedWordsFragment.this);
-                spinnerLang.setAdapter(adapter);
-            }
+        wordsViewModel = ViewModelProviders.of(this, viewModelFactory).get(SavedWordsViewModel.class);
+        wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
+            languages.add(0, ALL_OPTION);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, languages);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerLang.setOnItemSelectedListener(SavedWordsFragment.this);
+            spinnerLang.setAdapter(adapter);
         });
 
-        wordsViewModel.getWordsList().observe(this, new Observer<List<Words>>() {
-            @Override
-            public void onChanged(@Nullable List<Words> wordsList) {
-                words = wordsList;
-                filterWords();
+        wordsViewModel.getWordsList().observe(this, wordsList -> {
+            words = wordsList;
+            filterWords();
 
-            }
         });
     }
 
@@ -113,7 +104,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     private void showSaveDialog() {
         DialogFragment dialogFragment;
         dialogFragment = SaveWordDialogFragment.newInstance(null);
-        dialogFragment.show(getActivity().getSupportFragmentManager(), "New word");
+        dialogFragment.show(requireActivity().getSupportFragmentManager(), "New word");
     }
 
     private void setUpItemTouchHelper(){
@@ -128,7 +119,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
             private void init() {
                 backgroundColor = new ColorDrawable(Color.RED);
-                deleteIcon  = ContextCompat.getDrawable(context, R.drawable.ic_delete_black_24dp);
+                deleteIcon  = ContextCompat.getDrawable(requireContext(), R.drawable.ic_delete_black_24dp);
                 deleteIcon .setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
                 // xMarkMargin = (int) MainActivity.this.getResources().getDimension(R.dimen.ic_clear_margin);
                 intrinsicWidth = deleteIcon.getIntrinsicWidth();
@@ -145,9 +136,9 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 TextView saved_word_text = viewHolder.itemView.findViewById(R.id.saved_word_text);
                 String word_text = saved_word_text.getText().toString();
-                Toast.makeText(context, "Swiped word: " + word_text, Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "Swiped word: " + word_text, Toast.LENGTH_SHORT).show();
 
-                WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
+                WordsDAO wordsDAO = WordsDatabase.getDatabase(requireContext()).wordsDAO();
                 wordsDAO.deleteWord(word_text);
 
             }

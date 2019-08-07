@@ -10,7 +10,7 @@ public class WordLocalDataSource implements WordDataSource {
 
     private WordsDAO mWordDAO;
 
-    private WordLocalDataSource(WordsDAO wordsDAO){
+    public WordLocalDataSource(WordsDAO wordsDAO){
         mWordDAO = wordsDAO;
     }
 

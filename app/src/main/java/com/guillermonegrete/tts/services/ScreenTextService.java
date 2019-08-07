@@ -44,6 +44,7 @@ import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource;
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.customtts.CustomTTS;
@@ -58,7 +59,10 @@ import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor;
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
+import dagger.android.AndroidInjection;
 import org.jetbrains.annotations.NotNull;
+
+import javax.inject.Inject;
 
 public class ScreenTextService extends Service {
 
@@ -67,7 +71,7 @@ public class ScreenTextService extends Service {
     private View service_layout;
     private TrashView trash_layout;
     private GestureDetector gestureDetector;
-    private CustomTTS tts;
+    @Inject CustomTTS tts;
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
     private static boolean hasPermission;
@@ -97,7 +101,7 @@ public class ScreenTextService extends Service {
     private SharedPreferences sharedPreferences;
     private String languageToPreference;
 
-    private FirebaseTextProcessor textProcessor;
+    @Inject ImageProcessingSource textProcessor;
 
     /*
     *  Type of service
@@ -121,6 +125,7 @@ public class ScreenTextService extends Service {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate() {
+        AndroidInjection.inject(this);
         super.onCreate();
 
         service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
@@ -131,8 +136,6 @@ public class ScreenTextService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
         mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        textProcessor = FirebaseTextProcessor.Companion.getInstance();
-        tts = CustomTTS.getInstance(getApplicationContext());
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         bubble = service_layout.findViewById(R.id.image_bubble);
