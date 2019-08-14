@@ -11,7 +11,6 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntry;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntryInteractor;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink;
-import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLinksInteractor;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInteractor;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
@@ -91,9 +90,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
-                boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
-                if(!isInitialized) customTTS.initializeTTS(word.lang);
+                checkTTSInitialization();
 
                 switch (layoutType){
                     case WORD_TRANSLATION:
@@ -113,9 +111,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
             @Override
             public void onDictionaryLayoutDetermined(Words word, List<WikiItem> items) {
-                boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
                 foundWord = word;
-                if(!isInitialized) customTTS.initializeTTS(word.lang);
+                checkTTSInitialization();
                 getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(word, items);
             }
@@ -127,9 +124,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void getDictionaryEntry(final Words word) {
-        boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
         foundWord = word;
-        if(!isInitialized) customTTS.initializeTTS(word.lang);
+        checkTTSInitialization();
+
         GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
 
             @Override
@@ -250,6 +247,13 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             customTTS.stop();
             isPlaying = false;
         }
+    }
+
+    private void checkTTSInitialization(){
+        isAvailable = true;
+        String lang = foundWord.lang;
+        boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(lang);
+        if(!isInitialized) customTTS.initializeTTS(lang);
     }
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {

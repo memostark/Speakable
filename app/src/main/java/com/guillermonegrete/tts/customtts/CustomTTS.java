@@ -70,7 +70,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     public void speak(String text, Listener listener){
         this.listener = listener;
-        speak(text);
+        if(isInitialized) speak(text);
+        else listener.onLanguageUnavailable();
     }
 
     public void stop(){

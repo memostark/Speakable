@@ -301,7 +301,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     @Override
     public void showLanguageNotAvailable() {
-        if(playIconsContainer != null) {
+        if(playIconsContainer != null) { // Why do you need to check this?
             playIconsContainer.setVisibility(View.GONE);
             Toast.makeText(this, "Language not available for TTS", Toast.LENGTH_SHORT).show();
         }

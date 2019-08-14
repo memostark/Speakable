@@ -23,9 +23,9 @@ import org.mockito.MockitoAnnotations;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class ProcessTextPresenterTest {
 
@@ -43,6 +43,9 @@ public class ProcessTextPresenterTest {
 
     @Captor
     private ArgumentCaptor<DictionaryDataSource.GetDefinitionCallback> getDefinitionCallbacCaptor;
+
+    @Captor
+    private ArgumentCaptor<CustomTTS.Listener> ttsListenerCaptor;
 
     private ProcessTextPresenter presenter;
 
@@ -110,7 +113,6 @@ public class ProcessTextPresenterTest {
     @Test
     public void setExternalDictionaryLayout(){
         String test_text = "Prueba";
-        System.out.println("setExternalDict:");
         presenter.getLayout(test_text, languageFrom, languageTo);
 
         verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
@@ -126,6 +128,62 @@ public class ProcessTextPresenterTest {
 
         verify(view, never()).setTranslationLayout(return_word);
 //        verify(view).setWiktionaryLayout(wiktionaryLanguages);
+
+    }
+
+    @Test
+    public void showLanguageNotAvailable(){
+        String inputText = "desconocido";
+        String languageFrom = "ES";
+
+        // Gets saved word layout
+        presenter.getLayout(inputText, languageFrom, languageTo);
+        verify(wordRepository).getWordLanguageInfo(eq(inputText), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
+
+        Words return_word = new Words(inputText, languageFrom, "unknown");
+        getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
+
+        // Reproduce tts
+        presenter.onClickReproduce(inputText);
+        verify(customTTS).speak(eq(inputText), ttsListenerCaptor.capture());
+        ttsListenerCaptor.getValue().onLanguageUnavailable();
+
+        verify(view).showLanguageNotAvailable();
+    }
+
+    @Test
+    public void new_language_available_and_previous_not_available(){
+        String inputText = "desconocido";
+        String unknownLanguageFrom = "ES";
+
+        // Gets saved word layout
+        presenter.getLayout(inputText, unknownLanguageFrom, languageTo);
+        verify(wordRepository).getWordLanguageInfo(eq(inputText), eq(unknownLanguageFrom), eq(languageTo), getWordCallbackCaptor.capture());
+
+        Words unknowWord = new Words(inputText, unknownLanguageFrom, "desconocido");
+        getWordCallbackCaptor.getValue().onLocalWordLoaded(unknowWord);
+
+        // Tts returns language not available
+        presenter.onClickReproduce(inputText);
+        verify(customTTS).speak(eq(inputText), ttsListenerCaptor.capture());
+        ttsListenerCaptor.getValue().onLanguageUnavailable();
+        verify(view).showLanguageNotAvailable();
+
+        inputText = "correct";
+        String languageFrom = "EN";
+
+        when(customTTS.getLanguage()).thenReturn(unknownLanguageFrom);
+
+        // Gets saved word layout
+        presenter.getLayout(inputText, languageFrom, languageTo);
+        verify(wordRepository).getWordLanguageInfo(eq(inputText), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
+
+        Words return_word = new Words(inputText, languageFrom, "correct");
+        getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
+
+        // Reproduce tts
+        presenter.onClickReproduce(inputText);
+        verify(customTTS).speak(eq(inputText), any());
 
     }
 
