@@ -76,11 +76,13 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void start(Words word) {
+        insideLocalDatabase = false;
         getDictionaryEntry(word);
     }
 
     @Override
     public void startWithService(String selectedText, String languageFrom, String languageTo) {
+        insideLocalDatabase = false;
         mView.startService();
         getLayout(selectedText, languageFrom, languageTo);
     }
