@@ -19,7 +19,7 @@ public class WordRepository implements WordRepositorySource {
 
 
     @Inject
-    public WordRepository(@ApplicationModule.GooglePublicDataSource WordDataSource remoteTranslatorSource,
+    public WordRepository(@ApplicationModule.RemoteTranslationDataSource WordDataSource remoteTranslatorSource,
                           @ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource){
         this.remoteTranslatorSource = checkNotNull(remoteTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);

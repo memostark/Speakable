@@ -29,7 +29,7 @@ public class MSTranslatorSource implements WordDataSource {
         return INSTANCE;
     }
 
-    private MSTranslatorSource(String apiKey){
+    public MSTranslatorSource(String apiKey){
         Gson gson = new GsonBuilder()
                 .setLenient()
                 .create();

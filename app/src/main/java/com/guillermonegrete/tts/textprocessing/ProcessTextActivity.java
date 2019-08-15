@@ -11,7 +11,6 @@ package com.guillermonegrete.tts.textprocessing;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 
 import android.widget.*;
 import androidx.annotation.NonNull;
@@ -32,19 +31,14 @@ import android.view.WindowManager;
 
 
 import com.google.android.material.tabs.TabLayout;
-import com.guillermonegrete.tts.BuildConfig;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.customviews.ButtonsPreference;
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment;
 import com.guillermonegrete.tts.services.ScreenTextService;
-import com.guillermonegrete.tts.data.source.WordDataSource;
-import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
-import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
-import com.guillermonegrete.tts.main.TranslatorType;
 import dagger.android.AndroidInjection;
 
 
@@ -81,7 +75,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private View playIconsContainer;
 
-    private SharedPreferences preferences;
+    @Inject SharedPreferences preferences;
 
     private String[] languagesISO;
     private int languageFromIndex;
@@ -101,7 +95,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         mSelectedText = getSelectedText();
 
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
         mAutoTTS = getAutoTTSPreference();
         languagePreferenceISO = getPreferenceISO();
         languageFrom = getLanguageFromPreference();
@@ -150,21 +143,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         languagePreferenceIndex = preferences.getInt(LANGUAGE_PREFERENCE, englishIndex);
         languagesISO = getResources().getStringArray(R.array.googleTranslateLanguagesValue);
         return languagesISO[languagePreferenceIndex];
-    }
-
-    private WordDataSource getTranslatorSource(){
-        int value = TranslatorType.GOOGLE_PUBLIC.getValue();
-        int translatorPreference = Integer.parseInt(preferences.getString(TranslatorType.PREFERENCE_KEY, String.valueOf(value)));
-        TranslatorType translatorType = TranslatorType.Companion.valueOf(translatorPreference);
-
-        switch (translatorType){
-            case GOOGLE_PUBLIC:
-                return GooglePublicSource.Companion.getInstance();
-            case MICROSOFT:
-                return MSTranslatorSource.getInstance(BuildConfig.TranslatorApiKey);
-            default:
-                return GooglePublicSource.Companion.getInstance();
-        }
     }
 
     private void setWordLayout(Words word){
