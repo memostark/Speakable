@@ -90,7 +90,6 @@ object ApplicationModule {
     fun provideWordsDAO(database: WordsDatabase): WordsDAO = database.wordsDAO()
 
     @JvmStatic
-    @Singleton
     @RemoteTranslationDataSource
     @Provides
     fun provideRemoteTranslationSource(type: TranslatorType, map: @JvmSuppressWildcards Map<TranslatorType, WordDataSource>): WordDataSource{
@@ -131,6 +130,7 @@ abstract class ApplicationModuleBinds {
 @Module
 class GoogleSourceModule{
     @Provides
+    @Singleton
     @IntoMap
     @TranslatorEnumKey(TranslatorType.GOOGLE_PUBLIC)
     fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
@@ -139,6 +139,7 @@ class GoogleSourceModule{
 @Module
 class MicrosoftSourceModule{
     @Provides
+    @Singleton
     @IntoMap
     @TranslatorEnumKey(TranslatorType.MICROSOFT)
     fun provideMicrosoftSource(): WordDataSource = MSTranslatorSource(BuildConfig.TranslatorApiKey)

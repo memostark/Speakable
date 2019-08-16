@@ -23,10 +23,8 @@ import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.List;
 
-@Singleton
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
     private ProcessTextContract.View mView;

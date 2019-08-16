@@ -13,6 +13,9 @@ import retrofit2.Callback;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import javax.inject.Singleton;
+
+@Singleton
 public class MSTranslatorSource implements WordDataSource {
 
     private static MSTranslatorSource INSTANCE;

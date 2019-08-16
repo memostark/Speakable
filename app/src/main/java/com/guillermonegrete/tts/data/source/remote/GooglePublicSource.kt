@@ -10,7 +10,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Inject
+import javax.inject.Singleton
 
 /*  Expected JSON response scheme:
     [
@@ -54,7 +54,7 @@ import javax.inject.Inject
 
     Because response JSON cannot be converted to POJO we have to parse it manually.
 */
-
+@Singleton
 class GooglePublicSource: WordDataSource {
 
     private var googlePublicAPI: GooglePublicAPI? = null
