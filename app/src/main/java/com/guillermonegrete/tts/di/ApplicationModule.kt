@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import androidx.room.Room
+import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
 import com.guillermonegrete.tts.BuildConfig
 import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
@@ -19,8 +21,7 @@ import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource
 import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.db.WordsDatabase
-import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor
-import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource
+import com.guillermonegrete.tts.imageprocessing.*
 import com.guillermonegrete.tts.main.TranslatorEnumKey
 import com.guillermonegrete.tts.main.TranslatorType
 import com.guillermonegrete.tts.threading.MainThreadImpl
@@ -36,7 +37,9 @@ import dagger.multibindings.IntoMap
     includes = [
         ApplicationModuleBinds::class,
         GoogleSourceModule::class,
-        MicrosoftSourceModule::class
+        MicrosoftSourceModule::class,
+        FirebaseLocalModule::class,
+        FirebaseCloudModule::class
     ])
 object ApplicationModule {
 
@@ -65,6 +68,15 @@ object ApplicationModule {
         val translatorPreference =
             Integer.parseInt(preferences.getString(TranslatorType.PREFERENCE_KEY, value.toString())!!)
         return TranslatorType.valueOf(translatorPreference)
+    }
+
+    @JvmStatic
+    @Provides
+    fun provideRecognizerEnum(preferences: SharedPreferences): TextRecognizerType{
+        val defaultType = TextRecognizerType.FIREBASE_LOCAL.value
+        val recognizerPreference =
+            Integer.parseInt(preferences.getString(TextRecognizerType.PREFERENCE_KEY, defaultType.toString())!!)
+        return TextRecognizerType.valueOf(recognizerPreference)
     }
 
     @JvmStatic
@@ -107,9 +119,13 @@ object ApplicationModule {
     fun provideWiktionarySource(): DictionaryDataSource = WiktionarySource()
 
     @JvmStatic
-    @Singleton
     @Provides
-    fun provideTextDetectorSource(): ImageProcessingSource = FirebaseTextProcessor()
+    fun provideTextDetectorSource(
+        type: TextRecognizerType,
+        map: @JvmSuppressWildcards Map<TextRecognizerType, ImageProcessingSource>
+    ): ImageProcessingSource {
+        return map[type] ?: FirebaseTextProcessor()
+    }
 }
 
 @Module
@@ -143,4 +159,26 @@ class MicrosoftSourceModule{
     @IntoMap
     @TranslatorEnumKey(TranslatorType.MICROSOFT)
     fun provideMicrosoftSource(): WordDataSource = MSTranslatorSource(BuildConfig.TranslatorApiKey)
+}
+
+@Module
+class FirebaseLocalModule{
+    @Provides
+    @Singleton
+    @IntoMap
+    @TextRecognizerEnumKey(TextRecognizerType.FIREBASE_LOCAL)
+    fun provideLocalTextRecognizer(): ImageProcessingSource = FirebaseTextProcessor()
+}
+
+@Module
+class FirebaseCloudModule{
+    @Provides
+    @Singleton
+    fun providesVisionRecognizer(): FirebaseVisionTextRecognizer = FirebaseVision.getInstance().cloudTextRecognizer
+
+    @Provides
+    @Singleton
+    @IntoMap
+    @TextRecognizerEnumKey(TextRecognizerType.FIREBASE_CLOUD)
+    fun provideCloudTextRecognizer(visionRecognizer: FirebaseVisionTextRecognizer): ImageProcessingSource = FirebaseCloudTextProcessor(visionRecognizer)
 }

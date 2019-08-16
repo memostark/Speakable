@@ -48,8 +48,7 @@ import com.guillermonegrete.tts.data.source.remote.GooglePublicSource;
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDatabase;
-import com.guillermonegrete.tts.imageprocessing.FirebaseCloudTextProcessor;
-import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource;
+import com.guillermonegrete.tts.imageprocessing.*;
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.customtts.CustomTTS;
@@ -59,9 +58,7 @@ import com.guillermonegrete.tts.customviews.TrashView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
-import com.guillermonegrete.tts.imageprocessing.FirebaseTextProcessor;
 
-import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
 import com.guillermonegrete.tts.main.TranslatorType;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
@@ -377,10 +374,6 @@ public class ScreenTextService extends Service {
 
     private void setClipboardCallback(){
         if(clipboard != null) clipboard.addPrimaryClipChangedListener(clipboardListener);
-    }
-
-    enum TextRecognizerType{
-        FIREBASE_LOCAL, FIREBASE_CLOUD
     }
 
     private void setTextRecognizer(){
