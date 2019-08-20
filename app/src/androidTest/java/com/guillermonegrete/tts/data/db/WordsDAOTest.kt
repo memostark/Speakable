@@ -42,7 +42,7 @@ class WordsDAOTest {
     fun get_unique_languages_iso(){
         dao.insert(*initialWords.toTypedArray())
 
-        val languages = getLiveDataValue(dao.languagesISO)
+        val languages = getLiveDataValue(dao.languagesISOLiveData)
 
         val expectedLanguages = listOf("es", "de", "ca")
         println("expected: $expectedLanguages, actual: $languages")
