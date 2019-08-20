@@ -37,8 +37,11 @@ public interface WordsDAO {
     void deleteAll();
 
     @Query("SELECT * FROM words")
-    LiveData<List<Words>> getAllWords();
+    List<Words> getAllWords();
 
     @Query("SELECT DISTINCT LOWER(lang) FROM words")
-    LiveData<List<String>> getLanguagesISO();
+    LiveData<List<String>> getLanguagesISOLiveData();
+
+    @Query("SELECT DISTINCT LOWER(lang) FROM words")
+    List<String> getLanguagesISO();
 }
