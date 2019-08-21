@@ -1,7 +1,6 @@
-package com.guillermonegrete.tts.data.remote
+package com.guillermonegrete.tts.data.source.remote
 
 import com.guillermonegrete.tts.data.source.WordDataSource
-import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.db.Words
 import org.junit.Assert.assertEquals
 import org.junit.Test
