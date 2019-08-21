@@ -43,6 +43,19 @@ public class MSTranslatorSource implements WordDataSource {
     }
 
     @Override
+    public List<Words> getWords() {
+        return null;
+    }
+
+    @Override
+    public List<String> getLanguagesISO() {
+        return null;
+    }
+
+    @Override
+    public void insertWords(Words... words) {}
+
+    @Override
     public void getWordLanguageInfo(final String wordText, String languageFrom, String languageTo, final GetWordCallback callback) {
         // final JSONArray body = createRequestBody(wordText);
 

@@ -100,12 +100,6 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         });
     }
 
-    public void removeData() {
-        if (wordListAdapter != null) {
-            wordsViewModel.deleteAll();
-        }
-    }
-
     private void showSaveDialog() {
         DialogFragment dialogFragment;
         dialogFragment = SaveWordDialogFragment.newInstance(null);
