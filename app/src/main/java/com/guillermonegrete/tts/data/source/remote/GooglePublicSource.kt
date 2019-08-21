@@ -70,6 +70,15 @@ class GooglePublicSource: WordDataSource {
         googlePublicAPI = retrofit.create(GooglePublicAPI::class.java)
     }
 
+    /**
+     *  These three functions should not be used for this implementation
+     */
+    override fun getWords(): MutableList<Words> = mutableListOf()
+
+    override fun getLanguagesISO(): MutableList<String> = mutableListOf()
+
+    override fun insertWords(vararg words: Words?) {}
+
     override fun getWordLanguageInfo(
         wordText: String?,
         languageFrom: String?,

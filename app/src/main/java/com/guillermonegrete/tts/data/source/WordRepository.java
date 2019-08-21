@@ -7,6 +7,8 @@ import com.guillermonegrete.tts.di.ApplicationModule;
 
 import javax.inject.Inject;
 
+import java.util.List;
+
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
 public class WordRepository implements WordRepositorySource {
@@ -32,6 +34,16 @@ public class WordRepository implements WordRepositorySource {
         }
 
         return INSTANCE;
+    }
+
+    @Override
+    public List<Words> getWords() {
+        return null;
+    }
+
+    @Override
+    public List<String> getLanguagesISO() {
+        return null;
     }
 
     @Override
@@ -89,6 +101,11 @@ public class WordRepository implements WordRepositorySource {
     public void deleteWord(Words word) {
         WordLocalDataSource wordSource = (WordLocalDataSource) mWordLocalDataSource;
         wordSource.deleteWord(word);
+    }
+
+    @Override
+    public void insert(Words... words) {
+        mWordLocalDataSource.insertWords(words);
     }
 
     private void getRemoteWord(String wordText, String languageFrom, String languageTo, final GetWordRepositoryCallback callback) {

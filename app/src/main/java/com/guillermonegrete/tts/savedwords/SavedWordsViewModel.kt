@@ -4,15 +4,15 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guillermonegrete.tts.data.source.WordRepository
 
 import com.guillermonegrete.tts.db.Words
-import com.guillermonegrete.tts.db.WordsDAO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class SavedWordsViewModel @Inject constructor(private val wordsDAO: WordsDAO) : ViewModel() {
+class SavedWordsViewModel @Inject constructor(private val wordRepository: WordRepository) : ViewModel() {
 
     private val _wordsList = MutableLiveData<List<Words>>().apply { value = emptyList() }
     val wordsList: LiveData<List<Words>> = _wordsList
@@ -38,27 +38,19 @@ class SavedWordsViewModel @Inject constructor(private val wordsDAO: WordsDAO) : 
     fun getLanguages(){
         viewModelScope.launch {
             val languages = withContext(Dispatchers.IO){
-                return@withContext wordsDAO.languagesISO
+                return@withContext wordRepository.languagesISO
             }
             _languagesList.value = languages
         }
     }
 
     fun insert(vararg words: Words) {
-        wordsDAO.insert(*words)
-    }
-
-    fun update(word: Words) {
-        wordsDAO.update(word)
-    }
-
-    fun deleteAll() {
-        wordsDAO.deleteAll()
+        wordRepository.insert(*words)
     }
 
     private suspend fun getAsyncWords(): List<Words>{
         return withContext(Dispatchers.IO) {
-            return@withContext wordsDAO.allWords
+            return@withContext wordRepository.words
         }
     }
 }

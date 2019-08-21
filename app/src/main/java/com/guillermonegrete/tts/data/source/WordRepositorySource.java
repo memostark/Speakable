@@ -2,6 +2,8 @@ package com.guillermonegrete.tts.data.source;
 
 import com.guillermonegrete.tts.db.Words;
 
+import java.util.List;
+
 public interface WordRepositorySource {
 
     interface GetWordRepositoryCallback{
@@ -21,6 +23,10 @@ public interface WordRepositorySource {
         void onDataNotAvailable();
     }
 
+    List<Words> getWords();
+
+    List<String> getLanguagesISO();
+
     void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback);
 
     void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordRepositoryCallback callback);
@@ -32,4 +38,6 @@ public interface WordRepositorySource {
     void deleteWord(String word);
 
     void deleteWord(Words word);
+
+    void insert(Words... words);
 }
