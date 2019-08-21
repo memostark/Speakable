@@ -1,10 +1,9 @@
-package com.guillermonegrete.tts.data.remote;
+package com.guillermonegrete.tts.data.source.remote;
 
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryLangHeader;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
-import com.guillermonegrete.tts.data.source.remote.WiktionarySource;
 
 import org.junit.Before;
 import org.junit.Test;

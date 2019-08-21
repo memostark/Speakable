@@ -36,7 +36,6 @@ import dagger.android.support.AndroidSupportInjection;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener {
