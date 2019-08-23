@@ -38,12 +38,12 @@ public class WordRepository implements WordRepositorySource {
 
     @Override
     public List<Words> getWords() {
-        return null;
+        return mWordLocalDataSource.getWords();
     }
 
     @Override
     public List<String> getLanguagesISO() {
-        return null;
+        return mWordLocalDataSource.getLanguagesISO();
     }
 
     @Override
