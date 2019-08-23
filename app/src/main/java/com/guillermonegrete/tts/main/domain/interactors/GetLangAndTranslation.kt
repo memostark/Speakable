@@ -6,16 +6,32 @@ import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.db.Words
+import javax.inject.Inject
 
-class GetLangAndTranslation @JvmOverloads constructor(
+class GetLangAndTranslation @Inject constructor(
     executor: Executor,
     mainThread: MainThread,
-    private val wordRepository: WordRepository,
-    private val text: String,
-    private val languageFrom: String = "auto",
-    private val languageTo: String = "en",
-    private val callback: Callback
+    private val wordRepository: WordRepository
 ) : AbstractInteractor(executor, mainThread){
+
+    private var text = ""
+    private var languageFrom = ""
+    private var languageTo = ""
+    private var callback: Callback? = null
+
+    @JvmOverloads
+    operator fun invoke(
+        text: String,
+        languageFrom: String = "auto",
+        languageTo: String = "en",
+        callback: Callback
+    ){
+        this.text = text
+        this.languageFrom = languageFrom
+        this.languageTo = languageTo
+        this.callback = callback
+        run()
+    }
 
     override fun run() {
         wordRepository.getLanguageAndTranslation(
@@ -24,10 +40,10 @@ class GetLangAndTranslation @JvmOverloads constructor(
             languageTo,
             object : WordRepositorySource.GetTranslationCallback{
                 override fun onTranslationAndLanguage(word: Words?) {
-                    word?.let { callback.onTranslationAndLanguage(it) }
+                    word?.let { callback?.onTranslationAndLanguage(it) }
                 }
 
-                override fun onDataNotAvailable() {callback.onDataNotAvailable()}
+                override fun onDataNotAvailable() {callback?.onDataNotAvailable()}
 
             }
         )
