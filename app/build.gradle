@@ -110,6 +110,9 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1"
 
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.2.1"
+
     // Apache IO utils
     implementation 'org.apache.directory.studio:org.apache.commons.io:2.4'
 

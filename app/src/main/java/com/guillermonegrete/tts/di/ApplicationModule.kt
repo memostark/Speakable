@@ -11,9 +11,7 @@ import com.guillermonegrete.tts.BuildConfig
 import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.ThreadExecutor
-import com.guillermonegrete.tts.data.source.DictionaryDataSource
-import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
-import com.guillermonegrete.tts.data.source.WordDataSource
+import com.guillermonegrete.tts.data.source.*
 import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
@@ -31,6 +29,7 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 import dagger.Binds
 import dagger.multibindings.IntoMap
+import kotlinx.coroutines.Dispatchers
 
 
 @Module(
@@ -126,6 +125,11 @@ object ApplicationModule {
     ): ImageProcessingSource {
         return map[type] ?: FirebaseTextProcessor()
     }
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideIoDispatcher() = Dispatchers.IO
 }
 
 @Module
@@ -136,6 +140,9 @@ abstract class ApplicationModuleBinds {
 
     @Binds
     abstract fun bindThread(executor: MainThreadImpl): MainThread
+
+    @Binds
+    abstract fun bindRepository(repository: WordRepository): WordRepositorySource
 }
 
 /**

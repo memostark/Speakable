@@ -4,15 +4,20 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.guillermonegrete.tts.data.source.WordRepository
+import com.guillermonegrete.tts.data.source.WordRepositorySource
 
 import com.guillermonegrete.tts.db.Words
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import javax.inject.Inject
 
-class SavedWordsViewModel @Inject constructor(private val wordRepository: WordRepository) : ViewModel() {
+/**
+ * Production dispatcher is always Dispatchers.IO, we only inject the dispatcher when testing
+ * The official docs recommend to inject Dispatchers.Unconfined when testing code using withContext()
+ */
+class SavedWordsViewModel @Inject constructor(
+    private val wordRepository: WordRepositorySource,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) : ViewModel() {
 
     private val _wordsList = MutableLiveData<List<Words>>().apply { value = emptyList() }
     val wordsList: LiveData<List<Words>> = _wordsList
@@ -27,7 +32,7 @@ class SavedWordsViewModel @Inject constructor(private val wordRepository: WordRe
      */
     fun getWords(){
         viewModelScope.launch {
-            val words = getAsyncWords()
+            val words =  getWordsAsync()
             _wordsList.value = words
         }
     }
@@ -37,7 +42,7 @@ class SavedWordsViewModel @Inject constructor(private val wordRepository: WordRe
      */
     fun getLanguages(){
         viewModelScope.launch {
-            val languages = withContext(Dispatchers.IO){
+            val languages = withContext(ioDispatcher){
                 return@withContext wordRepository.languagesISO
             }
             _languagesList.value = languages
@@ -48,9 +53,9 @@ class SavedWordsViewModel @Inject constructor(private val wordRepository: WordRe
         wordRepository.insert(*words)
     }
 
-    private suspend fun getAsyncWords(): List<Words>{
-        return withContext(Dispatchers.IO) {
-            return@withContext wordRepository.words
+    private suspend fun getWordsAsync(): List<Words>{
+        return withContext(ioDispatcher) {
+            return@withContext  wordRepository.words
         }
     }
 }
