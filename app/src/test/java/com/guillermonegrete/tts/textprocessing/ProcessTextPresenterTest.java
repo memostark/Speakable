@@ -4,6 +4,7 @@ import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TestThreadExecutor;
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
@@ -34,6 +35,7 @@ public class ProcessTextPresenterTest {
     @Mock private DictionaryRepository dictionaryRepository;
     @Mock private DatabaseExternalLinksSource linksRepository;
     @Mock private CustomTTS customTTS;
+    @Mock private GetLangAndTranslation getTranslationInteractor;
 
     @Captor
     private ArgumentCaptor<WordRepositorySource.GetWordRepositoryCallback> getWordCallbackCaptor;
@@ -61,7 +63,7 @@ public class ProcessTextPresenterTest {
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
         Executor executor = new TestThreadExecutor();
-        ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, customTTS);
+        ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, customTTS, getTranslationInteractor);
         presenter.setView(view);
         return presenter;
     }

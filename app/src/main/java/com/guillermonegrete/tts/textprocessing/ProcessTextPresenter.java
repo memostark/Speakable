@@ -34,6 +34,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private DictionaryRepository dictionaryRepository;
     private ExternalLinksDataSource linksRepository;
     private CustomTTS customTTS;
+    private GetLangAndTranslation getTranslationInteractor;
 
     private boolean insideLocalDatabase;
     private Words foundWord;
@@ -48,12 +49,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             WordRepository repository,
             DictionaryRepository dictRepository,
             ExternalLinksDataSource linksRepository,
-            CustomTTS customTTS){
+            CustomTTS customTTS,
+            GetLangAndTranslation getTranslationInteractor){
         super(executor, mainThread);
         mRepository = repository;
         dictionaryRepository = dictRepository;
         this.linksRepository = linksRepository;
         this.customTTS = customTTS;
+        this.getTranslationInteractor = getTranslationInteractor;
 
         insideLocalDatabase = false;
         isPlaying = false;
@@ -203,7 +206,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
-        GetLangAndTranslation interactor = new GetLangAndTranslation(mExecutor, mMainThread, mRepository, foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
+        getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
                 boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
@@ -216,7 +219,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
             }
         });
-        interactor.execute();
     }
 
     @Override

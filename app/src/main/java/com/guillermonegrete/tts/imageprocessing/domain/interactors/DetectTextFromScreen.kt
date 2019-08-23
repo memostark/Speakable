@@ -7,27 +7,40 @@ import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor
+import javax.inject.Inject
 
-class DetectTextFromScreen (
+class DetectTextFromScreen @Inject constructor (
     executor: Executor,
     mainThread: MainThread,
-    private val screenCaptor: ScreenImageCaptor,
-    private val imageProcessor: ImageProcessingSource,
-    private val areaRect: Rect,
-    private val callback: Callback
+    private val imageProcessor: ImageProcessingSource
 ): AbstractInteractor(executor, mainThread) {
 
+    private var screenCaptor: ScreenImageCaptor? = null
+    private var areaRect = Rect()
+    private var callback: Callback? = null
+
+    operator fun invoke(
+        screenCaptor: ScreenImageCaptor,
+        areaRect: Rect,
+        callback: Callback
+    ){
+        this.screenCaptor = screenCaptor
+        this.areaRect = areaRect
+        this.callback = callback
+        run()
+    }
+
     override fun run() {
-        screenCaptor.getImage(areaRect, object : ScreenImageCaptor.Callback{
+        screenCaptor?.getImage(areaRect, object : ScreenImageCaptor.Callback{
             override fun onImageCaptured(image: Bitmap) {
                 imageProcessor.detectText(image, imageProcessorCallback)
             }
         })
     }
 
-    private val imageProcessorCallback= object: ImageProcessingSource.Callback{
+    private val imageProcessorCallback = object: ImageProcessingSource.Callback{
         override fun onTextDetected(text: String, language: String) {
-            mMainThread.post{callback.onTextDetected(text, language)}
+            mMainThread.post{callback?.onTextDetected(text, language)}
         }
 
         override fun onFailure() {}
