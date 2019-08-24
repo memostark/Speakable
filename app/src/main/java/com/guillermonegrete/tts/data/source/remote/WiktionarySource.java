@@ -19,19 +19,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class WiktionarySource implements DictionaryDataSource {
 
-    private static WiktionarySource INSTANCE;
     private static final String BASE_URL = "https://en.wiktionary.org/w/";
 
     private WiktionaryAPI wiktionaryAPI;
-
-
-    public static WiktionarySource getInstance(){
-        if(INSTANCE == null){
-            INSTANCE = new WiktionarySource();
-        }
-
-        return INSTANCE;
-    }
 
     public WiktionarySource(){
         Gson gson = new GsonBuilder()

@@ -9,23 +9,12 @@ import java.util.List;
 @Singleton
 public class DictionaryRepository implements DictionaryDataSource{
 
-    private static DictionaryRepository INSTANCE;
-
     private final DictionaryDataSource mWiktionaryDataSource;
 
     @Inject
     public DictionaryRepository(DictionaryDataSource wiktionaryDataSource){
         mWiktionaryDataSource = wiktionaryDataSource;
     }
-
-    public static DictionaryRepository getInstance(DictionaryDataSource wiktionaryDataSource){
-        if(INSTANCE == null){
-            INSTANCE = new DictionaryRepository(wiktionaryDataSource);
-        }
-
-        return INSTANCE;
-    }
-
 
 
     @Override

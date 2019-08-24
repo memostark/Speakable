@@ -15,13 +15,10 @@ import java.util.Locale;
 
 @Singleton
 public class CustomTTS implements TextToSpeech.OnInitListener{
-    private static CustomTTS INSTANCE;
 
     private TextToSpeech localTTS;
 
     private Boolean isInitialized;
-
-    private String TAG = this.getClass().getSimpleName();
 
     private String language;
 
@@ -29,14 +26,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private HashMap<String, String> map = new HashMap<>();
     private Bundle params = new Bundle();
-
-    public static CustomTTS getInstance(Context context){
-        if(INSTANCE == null){
-            INSTANCE = new CustomTTS(context);
-        }
-
-        return INSTANCE;
-    }
 
     @Inject
     public CustomTTS(Context context){
@@ -122,7 +111,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             localTTS.stop();
             localTTS.shutdown();
         }
-        INSTANCE = null;
     }
 
     public interface Listener{

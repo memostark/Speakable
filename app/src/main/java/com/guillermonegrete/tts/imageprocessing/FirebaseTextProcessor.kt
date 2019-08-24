@@ -33,13 +33,4 @@ class FirebaseTextProcessor: ImageProcessingSource{
                     callback.onFailure()
                 }
     }
-
-    companion object {
-        @Volatile private var instance: FirebaseTextProcessor? = null
-
-        fun getInstance() =
-            instance ?: synchronized(this){
-                instance ?: FirebaseTextProcessor().also { instance = it }
-            }
-    }
 }

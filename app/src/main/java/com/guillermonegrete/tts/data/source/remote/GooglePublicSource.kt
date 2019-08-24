@@ -128,11 +128,5 @@ class GooglePublicSource: WordDataSource {
 
     companion object {
         const val BASE_URL = "https://translate.google.com/translate_a/"
-        private var INSTANCE : GooglePublicSource? = null
-
-        fun getInstance() =
-            INSTANCE ?: synchronized(this){
-                INSTANCE ?: GooglePublicSource()
-            }
     }
 }

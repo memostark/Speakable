@@ -21,7 +21,7 @@ public class WiktionaryTest {
 
     @Before
     public void setDataSource(){
-        dataSource = WiktionarySource.getInstance();
+        dataSource = new WiktionarySource();
     }
 
     public void TranslatorTest(){
