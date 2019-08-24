@@ -29,14 +29,6 @@ class AssetsExternalLinksSource constructor(private val appContext: Application)
 
     companion object{
         const val EXTERNAL_LINKS_DATA_FILENAME = "external_links.json"
-
-        @Volatile
-        private var INSTANCE: AssetsExternalLinksSource? = null
-
-        fun getInstance(appContext: Application) =
-            INSTANCE ?: synchronized(this) {
-                INSTANCE ?: AssetsExternalLinksSource(appContext)
-            }
     }
 
 

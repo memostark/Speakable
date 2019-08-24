@@ -18,15 +18,12 @@ import java.util.Locale;
 
 @Singleton
 public class CustomTTS implements TextToSpeech.OnInitListener{
-    private static CustomTTS INSTANCE;
 
     private TextToSpeech localTTS;
     private Synthesizer mSynth;
 
     private Boolean isInitialized;
     private Boolean usinglocalTTS;
-
-    private String TAG = this.getClass().getSimpleName();
 
     private String language;
 
@@ -35,17 +32,24 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private HashMap<String, String> map = new HashMap<>();
     private Bundle params = new Bundle();
 
-    public static CustomTTS getInstance(Context context){
-        if(INSTANCE == null){
-            INSTANCE = new CustomTTS(context);
-        }
-
-        return INSTANCE;
-    }
-
     @Inject
     public CustomTTS(Context context){
         localTTS = new TextToSpeech(context, this);
+        Synthesizer.Callback synthCallback = new Synthesizer.Callback() {
+            @Override
+            public void onStart() {
+                listener.onSpeakStart();
+            }
+
+            @Override
+            public void onStop() {
+                listener.onSpeakDone();
+            }
+
+            @Override
+            public void onError() {
+            }
+        };
         mSynth = new Synthesizer(BuildConfig.TTSApiKey, synthCallback);
         isInitialized = false;
         usinglocalTTS = false;
@@ -53,7 +57,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
-    public void speak(String text){
+    private void speak(String text){
         if(usinglocalTTS){
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
@@ -135,17 +139,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         public void onError(String utteranceId) {listener.onLanguageUnavailable();}
     }
 
-    private Synthesizer.Callback synthCallback = new Synthesizer.Callback() {
-        @Override
-        public void onStart() {listener.onSpeakStart();}
-
-        @Override
-        public void onStop() { listener.onSpeakDone();}
-
-        @Override
-        public void onError() { }
-    };
-
     public Boolean getInitialized() {
         return isInitialized;
     }
@@ -161,7 +154,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             localTTS.stop();
             localTTS.shutdown();
         }
-        INSTANCE = null;
     }
 
     public interface Listener{

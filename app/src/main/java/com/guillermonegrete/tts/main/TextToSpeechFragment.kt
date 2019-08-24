@@ -245,18 +245,6 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
         playButton.visibility = View.VISIBLE
     }
 
-
-    private fun getTranslatorSource(): WordDataSource{
-        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val translatorPreference = preferences.getString(TranslatorType.PREFERENCE_KEY, "")
-        val translatorType = if(translatorPreference.isNullOrEmpty()) TranslatorType.GOOGLE_PUBLIC.value else translatorPreference.toInt()
-
-        return when(TranslatorType.valueOf(translatorType)){
-            TranslatorType.GOOGLE_PUBLIC -> GooglePublicSource.getInstance()
-            TranslatorType.MICROSOFT -> MSTranslatorSource.getInstance(BuildConfig.TranslatorApiKey)
-        }
-    }
-
     private fun hideKeyboard() {
         val context = activity
         if (context != null) {

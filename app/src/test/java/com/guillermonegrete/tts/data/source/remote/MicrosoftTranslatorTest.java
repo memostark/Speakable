@@ -16,7 +16,7 @@ public class MicrosoftTranslatorTest {
 
     @Before
     public void setDataSource(){
-        dataSource = MSTranslatorSource.getInstance(BuildConfig.TTSApiKey);
+        dataSource = new MSTranslatorSource(BuildConfig.TTSApiKey);
     }
 
     @Test

@@ -8,7 +8,7 @@ import java.util.concurrent.CountDownLatch
 
 class GooglePublicSourceTest {
 
-    private val dataSource: GooglePublicSource = GooglePublicSource.getInstance()
+    private val dataSource: GooglePublicSource = GooglePublicSource()
     private val latch = CountDownLatch(1)
 
     fun translatorTest(){

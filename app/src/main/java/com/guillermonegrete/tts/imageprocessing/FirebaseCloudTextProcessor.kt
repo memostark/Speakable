@@ -75,14 +75,4 @@ class FirebaseCloudTextProcessor(private val detector: FirebaseVisionTextRecogni
             return reversedWords.joinToString(separator = " ")
         }
     }
-
-
-    companion object {
-        @Volatile private var instance: FirebaseCloudTextProcessor? = null
-
-        fun getInstance(detector: FirebaseVisionTextRecognizer) =
-            instance ?: synchronized(this){
-                instance ?: FirebaseCloudTextProcessor(detector).also { instance = it }
-            }
-    }
 }

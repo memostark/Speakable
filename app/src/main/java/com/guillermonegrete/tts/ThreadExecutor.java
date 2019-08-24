@@ -10,8 +10,6 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 public class ThreadExecutor implements Executor {
 
-    private static volatile ThreadExecutor sThreadExecutor;
-
     private static final int CORE_POOL_SIZE = 3;
     private static final int MAX_POOL_SIZE = 5;
     private static final int KEEP_ALIVE_TIME = 120;
@@ -21,7 +19,7 @@ public class ThreadExecutor implements Executor {
     private ThreadPoolExecutor mThreadPoolExecutor;
 
     @Inject
-    public ThreadExecutor(){
+    ThreadExecutor(){
         mThreadPoolExecutor = new ThreadPoolExecutor(
                 CORE_POOL_SIZE,
                 MAX_POOL_SIZE,
@@ -40,13 +38,5 @@ public class ThreadExecutor implements Executor {
 
         });
 
-    }
-
-    public static Executor getInstance(){
-        if (sThreadExecutor == null){
-            sThreadExecutor = new ThreadExecutor();
-        }
-
-        return sThreadExecutor;
     }
 }

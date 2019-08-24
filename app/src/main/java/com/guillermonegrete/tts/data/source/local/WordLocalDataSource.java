@@ -8,23 +8,10 @@ import java.util.List;
 
 public class WordLocalDataSource implements WordDataSource {
 
-    private static volatile WordLocalDataSource INSTANCE;
-
     private WordsDAO mWordDAO;
 
     public WordLocalDataSource(WordsDAO wordsDAO){
         mWordDAO = wordsDAO;
-    }
-
-    public static WordLocalDataSource getInstance(WordsDAO wordsDAO){
-        if(INSTANCE == null){
-            synchronized (WordLocalDataSource.class){
-                if (INSTANCE == null)
-                    INSTANCE = new WordLocalDataSource(wordsDAO);
-            }
-        }
-        return INSTANCE;
-
     }
 
     @Override
