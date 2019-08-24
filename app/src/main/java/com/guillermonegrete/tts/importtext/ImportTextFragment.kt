@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.util.Xml
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,8 +16,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
-import org.xmlpull.v1.XmlPullParser
+import com.guillermonegrete.tts.db.BookFile
 import java.io.*
 import java.lang.StringBuilder
 
@@ -58,6 +59,17 @@ class ImportTextFragment: Fragment() {
                 checkPermissions()
             }
         }
+
+        val recentFilesList: RecyclerView = root.findViewById(R.id.recent_files_list)
+        val dummyFiles = listOf(
+            BookFile(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"), "Title 4", 192390),
+            BookFile(Uri.EMPTY, "Tale of cities", 192390),
+            BookFile(Uri.EMPTY, "Never mind land", 192390),
+            BookFile(Uri.EMPTY, "Don Sancho", 192390)
+        )
+        val adapter = RecentFilesAdapter(dummyFiles)
+        recentFilesList.adapter = adapter
+        recentFilesList.layoutManager = LinearLayoutManager(context)
 
         return root
     }
@@ -153,6 +165,7 @@ class ImportTextFragment: Fragment() {
         val intent = Intent(context, VisualizeTextActivity::class.java)
         intent.action = VisualizeTextActivity.SHOW_EPUB
         intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
+        println("Epub uri: $uri")
         startActivity(intent)
     }
 
