@@ -8,23 +8,34 @@ import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.db.BookFile
 
-class RecentFilesAdapter(private val files: List<BookFile>): RecyclerView.Adapter<RecentFilesAdapter.ViewHolder>() {
+class RecentFilesAdapter(
+    private val files: List<BookFile>,
+    private val viewModel: ImportTextViewModel
+): RecyclerView.Adapter<RecentFilesAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(R.layout.recent_file_item, parent, false)
-        return ViewHolder(layout)
+        return ViewHolder(viewModel, layout)
     }
 
     override fun getItemCount() = files.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val file =  files[position]
-        holder.title.text = file.title
-        holder.lastRead.text = file.lastRead.toString()
+        holder.bind(file)
     }
 
-    class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
-        val title: TextView = itemView.findViewById(R.id.book_title)
-        val lastRead: TextView = itemView.findViewById(R.id.last_read)
+    class ViewHolder(
+        private val viewModel: ImportTextViewModel,
+        itemView: View
+    ): RecyclerView.ViewHolder(itemView){
+        private val title: TextView = itemView.findViewById(R.id.book_title)
+        private val lastRead: TextView = itemView.findViewById(R.id.last_read)
+
+        fun bind(file: BookFile){
+            title.text = file.title
+            lastRead.text = file.lastRead.toString()
+            itemView.setOnClickListener { viewModel.openVisualizer(file.uri) }
+        }
     }
 }

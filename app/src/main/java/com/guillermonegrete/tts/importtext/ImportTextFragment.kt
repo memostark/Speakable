@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +17,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
@@ -28,6 +31,8 @@ class ImportTextFragment: Fragment() {
 
     private lateinit var clipboardManager: ClipboardManager
     private var fileType = ImportedFileType.TXT
+
+    private lateinit var viewModel: ImportTextViewModel
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -60,6 +65,8 @@ class ImportTextFragment: Fragment() {
             }
         }
 
+        setViewModel()
+
         val recentFilesList: RecyclerView = root.findViewById(R.id.recent_files_list)
         val dummyFiles = listOf(
             BookFile(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"), "Title 4", 192390),
@@ -67,7 +74,7 @@ class ImportTextFragment: Fragment() {
             BookFile(Uri.EMPTY, "Never mind land", 192390),
             BookFile(Uri.EMPTY, "Don Sancho", 192390)
         )
-        val adapter = RecentFilesAdapter(dummyFiles)
+        val adapter = RecentFilesAdapter(dummyFiles, viewModel)
         recentFilesList.adapter = adapter
         recentFilesList.layoutManager = LinearLayoutManager(context)
 
@@ -89,6 +96,13 @@ class ImportTextFragment: Fragment() {
                 }
             }
         }
+    }
+
+    private fun setViewModel(){
+        viewModel = ViewModelProviders.of(this).get(ImportTextViewModel::class.java)
+        viewModel.openTextVisualizer.observe(viewLifecycleOwner, Observer {
+            visualizeEpub(it)
+        })
     }
 
     private fun checkPermissions(){
@@ -122,8 +136,16 @@ class ImportTextFragment: Fragment() {
         }
     }
 
+    /**
+     * How to persist uri access permission: https://stackoverflow.com/questions/25414352/how-to-persist-permission-in-android-api-19-kitkat
+     */
     private fun pickFile() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).setType(fileType.mimeType)
+        // Have to use Intent.ACTION_OPEN_DOCUMENT otherwise the acces to file permission is revoked after the activity is destroyed
+        // More info here: Intent.ACTION_OPEN_DOCUMENT
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+        intent.type = fileType.mimeType
         startActivityForResult(intent, REQUEST_PICK_FILE)
     }
 
@@ -162,11 +184,16 @@ class ImportTextFragment: Fragment() {
     }
 
     private fun visualizeEpub(uri: Uri){
-        val intent = Intent(context, VisualizeTextActivity::class.java)
-        intent.action = VisualizeTextActivity.SHOW_EPUB
-        intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
-        println("Epub uri: $uri")
-        startActivity(intent)
+        // Check if file exits, this can be improved: https://stackoverflow.com/a/50143855/10244759
+        if (DocumentsContract.isDocumentUri(context, uri)) {
+            val intent = Intent(context, VisualizeTextActivity::class.java)
+            intent.action = VisualizeTextActivity.SHOW_EPUB
+            intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
+            println("Epub uri: $uri")
+            startActivity(intent)
+        }else{
+            Toast.makeText(context, "Couldn't open file", Toast.LENGTH_SHORT).show()
+        }
     }
 
 
