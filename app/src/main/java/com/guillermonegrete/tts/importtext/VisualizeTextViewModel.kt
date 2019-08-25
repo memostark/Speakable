@@ -17,6 +17,8 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
     var spineSize = 0
         private set
 
+    private var currentBook: Book? = null
+
     private val _book = MutableLiveData<Book>()
     val book: LiveData<Book>
         get() = _book
@@ -35,6 +37,7 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         val parsedBook = epubParser.parseBook(parser, fileReader)
         text = parsedBook.currentChapter
         spineSize = parsedBook.spine.size
+        currentBook = parsedBook
         _book.value = parsedBook
     }
 
@@ -75,6 +78,26 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
             if(index != -1) {
                 currentChapter = index
                 _chapterPath.value = path
+            }
+        }
+    }
+
+    fun jumpToChapter(index: Int){
+        currentBook?.let {book ->
+            val spine = book.spine
+            val manifest = book.manifest
+
+            println("Manifest: $manifest")
+            println("Spine: $spine")
+
+            val spineItem = spine[index]
+            val chapterPath = manifest[spineItem]
+
+            println(" Index: $index, Path: $chapterPath")
+
+            if(index != -1) {
+                currentChapter = index
+                _chapterPath.value = chapterPath
             }
         }
     }

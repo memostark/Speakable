@@ -45,6 +45,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
+        // TODO made this reader and parser view model dependencies
         val uri: Uri = intent.getParcelableExtra(EPUB_URI)
         val rootStream = contentResolver.openInputStream(uri)
         fileReader = ZipFileReader(rootStream)
@@ -68,7 +69,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
-            viewModel.splitToPages(createPageSplitter(), createTextPaint())
+            val chapterIndex = intent.getIntExtra(CHAPTER_INDEX, 0)
+            viewModel.jumpToChapter(chapterIndex)
+//            viewModel.splitToPages(createPageSplitter(), createTextPaint())
             addPagerCallback()
         }
     }
@@ -88,12 +91,10 @@ class VisualizeTextActivity: AppCompatActivity() {
 
           viewModel.apply {
             pages.observe(this@VisualizeTextActivity, Observer {
-                println("Pages observer")
                 setUpPagerAndIndexLabel(it)
             })
 
             book.observe(this@VisualizeTextActivity, Observer {
-                println("Book observer")
                 if(it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
                 else{
                     updateCurrentChapterLabel()
@@ -111,7 +112,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             chapterPath.observe(this@VisualizeTextActivity, Observer {
-                println("Path observer")
                 viewModel.changeEpubChapter(it, parser, fileReader)
                 viewModel.splitToPages(createPageSplitter(), createTextPaint())
 
@@ -239,6 +239,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val EPUB_URI = "epub_uri"
 
         const val SHOW_EPUB = "epub"
+
+        const val CHAPTER_INDEX = "chapter"
 
         private const val BRIGHTNESS_THEME = "theme"
     }

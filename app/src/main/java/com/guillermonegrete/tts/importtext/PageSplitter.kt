@@ -60,7 +60,6 @@ class PageSplitter(
 
     private fun formatHtml(text: CharSequence): Spanned {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            println("text before formatting: $text")
             Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT, imageGetter, null)
         } else {
             Html.fromHtml(text.toString(), imageGetter, null)

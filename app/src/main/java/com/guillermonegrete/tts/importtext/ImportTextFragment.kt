@@ -68,8 +68,9 @@ class ImportTextFragment: Fragment() {
         setViewModel()
 
         val recentFilesList: RecyclerView = root.findViewById(R.id.recent_files_list)
+        val testUri = "content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"
         val dummyFiles = listOf(
-            BookFile(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"), "Title 4", 192390),
+            BookFile(Uri.parse(testUri), "Title 4", 192390, 2, 3),
             BookFile(Uri.EMPTY, "Tale of cities", 192390),
             BookFile(Uri.EMPTY, "Never mind land", 192390),
             BookFile(Uri.EMPTY, "Don Sancho", 192390)
@@ -89,7 +90,7 @@ class ImportTextFragment: Fragment() {
                     val uri = data.data
                     if(uri != null) {
                         when(fileType){
-                            ImportedFileType.EPUB -> visualizeEpub(uri)
+                            ImportedFileType.EPUB -> visualizeEpub(uri, 0)
                             ImportedFileType.TXT -> readTextFile(uri)
                         }
                     }
@@ -101,7 +102,7 @@ class ImportTextFragment: Fragment() {
     private fun setViewModel(){
         viewModel = ViewModelProviders.of(this).get(ImportTextViewModel::class.java)
         viewModel.openTextVisualizer.observe(viewLifecycleOwner, Observer {
-            visualizeEpub(it)
+            visualizeEpub(it, 2)
         })
     }
 
@@ -183,12 +184,13 @@ class ImportTextFragment: Fragment() {
         startActivity(intent)
     }
 
-    private fun visualizeEpub(uri: Uri){
+    private fun visualizeEpub(uri: Uri, chapterIndex: Int = 0){
         // Check if file exits, this can be improved: https://stackoverflow.com/a/50143855/10244759
         if (DocumentsContract.isDocumentUri(context, uri)) {
             val intent = Intent(context, VisualizeTextActivity::class.java)
             intent.action = VisualizeTextActivity.SHOW_EPUB
             intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
+            intent.putExtra(VisualizeTextActivity.CHAPTER_INDEX, chapterIndex)
             println("Epub uri: $uri")
             startActivity(intent)
         }else{

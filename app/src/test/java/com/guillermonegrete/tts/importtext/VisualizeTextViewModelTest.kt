@@ -4,6 +4,7 @@ import android.text.TextPaint
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -97,6 +98,16 @@ class VisualizeTextViewModelTest {
         assertEquals("ch3.html", path2)
     }
 
+    @Test
+    fun jumps_to_existing_chapter_using_index(){
+        parse_book(THREE_CHAPTER_BOOK)
+
+        viewModel.jumpToChapter(2)
+        assertEquals(2, viewModel.currentChapter)
+        val path2 = getUnitLiveDataValue(viewModel.chapterPath)
+        assertEquals("ch3.html", path2)
+    }
+
     private fun parse_book(book: Book){
         `when`(epubParser.parseBook(parser, fileReader)).thenReturn(book)
         viewModel.parseEpub(parser, fileReader)
@@ -126,7 +137,11 @@ class VisualizeTextViewModelTest {
             DEFAULT_CHAPTER,
             listOf("chapter1", "chapter2", "chapter3"),
             mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html", "chapter3" to "ch3.html"),
-            TableOfContents(listOf())
+            TableOfContents(listOf(
+                NavPoint("chapter1", "ch1.html"),
+                NavPoint("chapter2", "ch2.html"),
+                NavPoint("chapter3", "ch3.html")
+            ))
         )
     }
 }
