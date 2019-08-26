@@ -18,6 +18,12 @@ class PageSplitter(
     private val pages = ArrayList<CharSequence>()
     private val mSpannableStringBuilder = SpannableStringBuilder()
 
+    fun setText(charSequence: CharSequence){
+        pages.clear()
+        mSpannableStringBuilder.clear()
+        append(charSequence)
+    }
+
     fun append(charSequence: CharSequence) {
         mSpannableStringBuilder.append(charSequence)
     }

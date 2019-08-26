@@ -11,7 +11,7 @@ import java.lang.StringBuilder
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
-class EpubParser @Inject constructor() {
+class EpubParser @Inject constructor(private val parser: XmlPullParser) {
 
     var basePath = ""
         private set
@@ -27,8 +27,11 @@ class EpubParser @Inject constructor() {
 
     private val ns: String? = null
 
+    init {
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+    }
+
     fun parseBook(
-        parser: XmlPullParser,
         zipFileReader: ZipFileReader
     ): Book {
         // Create input stream that supports reset, so we can use it multiple times.
@@ -67,7 +70,10 @@ class EpubParser @Inject constructor() {
         return Book("Placeholder title", currentChapter, spine, manifest, toc)
     }
 
-    fun getChapterBodyTextFromPath(path: String, parser: XmlPullParser, zipFileReader: ZipFileReader): String{
+    fun getChapterBodyTextFromPath(
+        path: String,
+        zipFileReader: ZipFileReader
+    ): String{
         val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
         val chapterStream = zipFileReader.getFileStream(fullPath)
         parser.setInput(chapterStream, null)

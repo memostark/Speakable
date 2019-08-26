@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
+import android.util.Xml
 import androidx.room.Room
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
@@ -30,6 +31,7 @@ import javax.inject.Singleton
 import dagger.Binds
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
+import org.xmlpull.v1.XmlPullParser
 
 
 @Module(
@@ -130,6 +132,11 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideIoDispatcher() = Dispatchers.IO
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideXmlParser(): XmlPullParser = Xml.newPullParser()
 }
 
 @Module

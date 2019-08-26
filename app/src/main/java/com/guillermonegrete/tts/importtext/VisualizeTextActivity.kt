@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.importtext
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
-import android.util.Xml
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -18,7 +17,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import dagger.android.AndroidInjection
-import org.xmlpull.v1.XmlPullParser
 import javax.inject.Inject
 
 class VisualizeTextActivity: AppCompatActivity() {
@@ -33,9 +31,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var currentChapterLabel: TextView
 
     private lateinit var fileReader: ZipFileReader
-    private lateinit var parser: XmlPullParser
-
-    private val epubParser = EpubParser()
+    private lateinit var pageSplitter: PageSplitter
 
     private var pagesSize = 0
 
@@ -47,18 +43,13 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
-        // TODO made this reader and parser view model dependencies
-        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-        val rootStream = contentResolver.openInputStream(uri)
-        fileReader = ZipFileReader(rootStream)
-
-        parser = Xml.newPullParser()
-        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-
         createViewModel()
 
         if(SHOW_EPUB == intent.action) {
-            viewModel.parseEpub(parser, fileReader)
+            val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+            val rootStream = contentResolver.openInputStream(uri)
+            fileReader = ZipFileReader(rootStream)
+            viewModel.parseEpub(fileReader)
         } else {
             viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
@@ -71,7 +62,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
+            pageSplitter = createPageSplitter()
             val chapterIndex = intent.getIntExtra(CHAPTER_INDEX, 0)
+            // TODO This only works for epub, add support for text files.
             viewModel.jumpToChapter(chapterIndex)
 //            viewModel.splitToPages(createPageSplitter(), createTextPaint())
             addPagerCallback()
@@ -114,8 +107,8 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             chapterPath.observe(this@VisualizeTextActivity, Observer {
-                viewModel.changeEpubChapter(it, parser, fileReader)
-                viewModel.splitToPages(createPageSplitter(), createTextPaint())
+                viewModel.changeEpubChapter(it, fileReader)
+                viewModel.splitToPages(pageSplitter, createTextPaint())
 
                 updateCurrentChapterLabel()
             })
@@ -203,7 +196,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
             val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
-            InputStreamImageGetter(epubParser.basePath, this, zipReader)
+            InputStreamImageGetter(viewModel.basePath, this, zipReader)
         } else null
 
         return PageSplitter(

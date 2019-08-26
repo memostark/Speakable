@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.guillermonegrete.tts.importtext.epub.Book
-import org.xmlpull.v1.XmlPullParser
 import javax.inject.Inject
 
 class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubParser): ViewModel() {
@@ -15,6 +14,9 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         private set
 
     var spineSize = 0
+        private set
+
+    var basePath = ""
         private set
 
     private var currentBook: Book? = null
@@ -32,17 +34,17 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         get() = _chapterPath
 
 
-    fun parseEpub(parser: XmlPullParser, fileReader: ZipFileReader){
-        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-        val parsedBook = epubParser.parseBook(parser, fileReader)
+    fun parseEpub(fileReader: ZipFileReader){
+        val parsedBook = epubParser.parseBook(fileReader)
+        basePath = epubParser.basePath
         text = parsedBook.currentChapter
         spineSize = parsedBook.spine.size
         currentBook = parsedBook
         _book.value = parsedBook
     }
 
-    fun changeEpubChapter(path: String, parser: XmlPullParser, fileReader: ZipFileReader){
-        text = epubParser.getChapterBodyTextFromPath(path, parser, fileReader)
+    fun changeEpubChapter(path: String, fileReader: ZipFileReader){
+        text = epubParser.getChapterBodyTextFromPath(path, fileReader)
     }
 
     fun parseSimpleText(text: String){
@@ -71,6 +73,9 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         }
     }
 
+    /**
+     * Used when you have the file path to the chapter e.g. changing chapters with the table of contents
+     */
     fun jumpToChapter(path: String){
         _book.value?.let{
             val key = it.manifest.filterValues { value -> value == path }.keys.first()
@@ -82,6 +87,9 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         }
     }
 
+    /**
+     * Used when you have the index, using the order defined in the spine. E.g. index saved from recent files list
+     */
     fun jumpToChapter(index: Int){
         currentBook?.let {book ->
             val spine = book.spine
@@ -103,7 +111,7 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
     }
 
     fun splitToPages(pageSplitter: PageSplitter, textPaint: TextPaint){
-        pageSplitter.append(text)
+        pageSplitter.setText(text)
         pageSplitter.split(textPaint)
         val mutablePages = pageSplitter.getPages().toMutableList()
         if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")

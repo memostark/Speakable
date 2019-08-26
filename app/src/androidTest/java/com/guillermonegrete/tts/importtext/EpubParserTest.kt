@@ -28,7 +28,7 @@ class EpubParserTest {
     fun setUp(){
         MockitoAnnotations.initMocks(this)
 
-        epubParser = EpubParser()
+        epubParser = EpubParser(xmlParser)
 
         xmlParser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
     }
@@ -47,7 +47,7 @@ class EpubParserTest {
         val chapterStream = ByteArrayInputStream(CHAPTER_FILE_XML.toByteArray())
         `when`(zipFileReader.getFileStream(chapterPath)).thenReturn(chapterStream)
 
-        val book = epubParser.parseBook(xmlParser, zipFileReader)
+        val book = epubParser.parseBook(zipFileReader)
         println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
 
         val expectedBook = Book("Placeholder title", "Test text",

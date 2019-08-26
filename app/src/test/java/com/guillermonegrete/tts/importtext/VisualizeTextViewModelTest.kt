@@ -25,7 +25,6 @@ class VisualizeTextViewModelTest {
 
     @Mock private lateinit var epubParser: EpubParser
     @Mock private lateinit var fileReader: ZipFileReader
-    @Mock private lateinit var parser: XmlPullParser
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
@@ -43,7 +42,7 @@ class VisualizeTextViewModelTest {
         val pages = listOf("This shouldn't be here", "This should be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
         viewModel.splitToPages(pageSplitter, TextPaint())
-        verify(pageSplitter).append(DEFAULT_CHAPTER)
+        verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
         val resultPages = getUnitLiveDataValue(viewModel.pages)
         assertEquals(pages, resultPages)
@@ -56,7 +55,7 @@ class VisualizeTextViewModelTest {
         val pages = listOf("This shouldn't be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
         viewModel.splitToPages(pageSplitter, TextPaint())
-        verify(pageSplitter).append(DEFAULT_CHAPTER)
+        verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
         val resultPages = getUnitLiveDataValue(viewModel.pages)
         val expectedPages = listOf("This shouldn't be here", "")
@@ -109,8 +108,8 @@ class VisualizeTextViewModelTest {
     }
 
     private fun parse_book(book: Book){
-        `when`(epubParser.parseBook(parser, fileReader)).thenReturn(book)
-        viewModel.parseEpub(parser, fileReader)
+        `when`(epubParser.parseBook(fileReader)).thenReturn(book)
+        viewModel.parseEpub(fileReader)
 
         val resultBook = getUnitLiveDataValue(viewModel.book)
         assertEquals(book, resultBook)
