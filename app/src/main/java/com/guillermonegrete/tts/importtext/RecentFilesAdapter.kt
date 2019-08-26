@@ -35,7 +35,7 @@ class RecentFilesAdapter(
         fun bind(file: BookFile){
             title.text = file.title
             lastRead.text = file.lastRead.toString()
-            itemView.setOnClickListener { viewModel.openVisualizer(file.uri) }
+            itemView.setOnClickListener { viewModel.openVisualizer(file) }
         }
     }
 }

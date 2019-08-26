@@ -70,10 +70,10 @@ class ImportTextFragment: Fragment() {
         val recentFilesList: RecyclerView = root.findViewById(R.id.recent_files_list)
         val testUri = "content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"
         val dummyFiles = listOf(
-            BookFile(Uri.parse(testUri), "Title 4", 192390, 2, 3),
-            BookFile(Uri.EMPTY, "Tale of cities", 192390),
-            BookFile(Uri.EMPTY, "Never mind land", 192390),
-            BookFile(Uri.EMPTY, "Don Sancho", 192390)
+            BookFile(Uri.parse(testUri), "Chapter 4", 192390, 2, 3),
+            BookFile(Uri.parse(testUri), "Chapter 1", 192390, 1, 0),
+            BookFile(Uri.parse(testUri), "Chapter 3", 192390, 5, 2),
+            BookFile(Uri.parse(testUri), "Chapter 2", 192390, 3, 1)
         )
         val adapter = RecentFilesAdapter(dummyFiles, viewModel)
         recentFilesList.adapter = adapter
@@ -90,7 +90,7 @@ class ImportTextFragment: Fragment() {
                     val uri = data.data
                     if(uri != null) {
                         when(fileType){
-                            ImportedFileType.EPUB -> visualizeEpub(uri, 0)
+                            ImportedFileType.EPUB -> visualizeEpub(uri, 0, 0)
                             ImportedFileType.TXT -> readTextFile(uri)
                         }
                     }
@@ -102,7 +102,7 @@ class ImportTextFragment: Fragment() {
     private fun setViewModel(){
         viewModel = ViewModelProviders.of(this).get(ImportTextViewModel::class.java)
         viewModel.openTextVisualizer.observe(viewLifecycleOwner, Observer {
-            visualizeEpub(it, 2)
+            visualizeEpub(it.uri, it.chapter, it.page)
         })
     }
 
@@ -141,7 +141,7 @@ class ImportTextFragment: Fragment() {
      * How to persist uri access permission: https://stackoverflow.com/questions/25414352/how-to-persist-permission-in-android-api-19-kitkat
      */
     private fun pickFile() {
-        // Have to use Intent.ACTION_OPEN_DOCUMENT otherwise the acces to file permission is revoked after the activity is destroyed
+        // Have to use Intent.ACTION_OPEN_DOCUMENT otherwise the access to file permission is revoked after the activity is destroyed
         // More info here: Intent.ACTION_OPEN_DOCUMENT
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -184,13 +184,14 @@ class ImportTextFragment: Fragment() {
         startActivity(intent)
     }
 
-    private fun visualizeEpub(uri: Uri, chapterIndex: Int = 0){
+    private fun visualizeEpub(uri: Uri, chapterIndex: Int = 0, pageIndex: Int){
         // Check if file exits, this can be improved: https://stackoverflow.com/a/50143855/10244759
         if (DocumentsContract.isDocumentUri(context, uri)) {
             val intent = Intent(context, VisualizeTextActivity::class.java)
             intent.action = VisualizeTextActivity.SHOW_EPUB
             intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
             intent.putExtra(VisualizeTextActivity.CHAPTER_INDEX, chapterIndex)
+            intent.putExtra(VisualizeTextActivity.PAGE_INDEX, pageIndex)
             println("Epub uri: $uri")
             startActivity(intent)
         }else{

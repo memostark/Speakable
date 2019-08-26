@@ -1,16 +1,16 @@
 package com.guillermonegrete.tts.importtext
 
-import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.guillermonegrete.tts.db.BookFile
 
 class ImportTextViewModel: ViewModel() {
 
-    private val _openTextVisualizer = MutableLiveData<Uri>()
-    val openTextVisualizer: LiveData<Uri> = _openTextVisualizer
+    private val _openTextVisualizer = MutableLiveData<BookFile>()
+    val openTextVisualizer: LiveData<BookFile> = _openTextVisualizer
 
-    fun openVisualizer(uri: Uri){
-        _openTextVisualizer.value = uri
+    fun openVisualizer(book: BookFile){
+        _openTextVisualizer.value = book
     }
 }

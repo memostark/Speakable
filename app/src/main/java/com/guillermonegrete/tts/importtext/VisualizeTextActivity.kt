@@ -39,6 +39,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private var pagesSize = 0
 
+    private var firstLoad = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         setPreferenceTheme()
@@ -121,9 +123,17 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
-        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
-        viewPager.adapter = VisualizerAdapter(pages)
+        // TODO move this logic to view model
         pagesSize = pages.size
+        val position = if(firstLoad) {
+            firstLoad = false
+            val indexValue = intent.getIntExtra(PAGE_INDEX, 0)
+            if (indexValue >= pagesSize) pagesSize - 1 else indexValue
+        } else 0
+        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pagesSize) // Example: 1 of 33
+        viewPager.adapter = VisualizerAdapter(pages)
+        viewPager.setCurrentItem(position, false)
+
     }
 
     private fun showBrightnessSettings(view: View) {
@@ -241,6 +251,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val SHOW_EPUB = "epub"
 
         const val CHAPTER_INDEX = "chapter"
+        const val PAGE_INDEX = "page"
 
         private const val BRIGHTNESS_THEME = "theme"
     }
