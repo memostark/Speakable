@@ -7,6 +7,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.db.BookFile
+import java.text.SimpleDateFormat
+import java.util.*
 
 class RecentFilesAdapter(
     private val files: List<BookFile>,
@@ -31,10 +33,17 @@ class RecentFilesAdapter(
     ): RecyclerView.ViewHolder(itemView){
         private val title: TextView = itemView.findViewById(R.id.book_title)
         private val lastRead: TextView = itemView.findViewById(R.id.last_read)
+        private val fileType: TextView = itemView.findViewById(R.id.file_type_text)
+        private val date: TextView = itemView.findViewById(R.id.last_read)
 
         fun bind(file: BookFile){
             title.text = file.title
             lastRead.text = file.lastRead.toString()
+            fileType.text = file.fileType.name
+
+            val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            date.text = dateFormatter.format(file.lastRead.time)
+
             itemView.setOnClickListener { viewModel.openVisualizer(file) }
         }
     }

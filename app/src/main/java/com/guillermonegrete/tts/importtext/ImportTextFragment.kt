@@ -25,6 +25,7 @@ import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.db.BookFile
 import java.io.*
 import java.lang.StringBuilder
+import java.util.*
 
 
 class ImportTextFragment: Fragment() {
@@ -70,10 +71,10 @@ class ImportTextFragment: Fragment() {
         val recentFilesList: RecyclerView = root.findViewById(R.id.recent_files_list)
         val testUri = "content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"
         val dummyFiles = listOf(
-            BookFile(Uri.parse(testUri), "Chapter 4", 192390, 2, 3),
-            BookFile(Uri.parse(testUri), "Chapter 1", 192390, 1, 0),
-            BookFile(Uri.parse(testUri), "Chapter 3", 192390, 5, 2),
-            BookFile(Uri.parse(testUri), "Chapter 2", 192390, 3, 1)
+            BookFile(Uri.parse(testUri), "Chapter 4", Calendar.getInstance(),"en", ImportedFileType.EPUB, 2, 3),
+            BookFile(Uri.parse(testUri), "Chapter 1", Calendar.getInstance(),"en", ImportedFileType.EPUB, 3, 0),
+            BookFile(Uri.parse(testUri), "Chapter 3", Calendar.getInstance(),"en", ImportedFileType.EPUB, 2, 2),
+            BookFile(Uri.parse(testUri), "Chapter 2", Calendar.getInstance(),"en", ImportedFileType.EPUB, 1, 1)
         )
         val adapter = RecentFilesAdapter(dummyFiles, viewModel)
         recentFilesList.adapter = adapter
