@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.importtext
 
-import android.text.TextPaint
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.epub.Book
@@ -14,7 +13,6 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
-import org.xmlpull.v1.XmlPullParser
 
 class VisualizeTextViewModelTest {
 
@@ -41,7 +39,7 @@ class VisualizeTextViewModelTest {
 
         val pages = listOf("This shouldn't be here", "This should be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter, TextPaint())
+        viewModel.splitToPages(pageSplitter)
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
         val resultPages = getUnitLiveDataValue(viewModel.pages)
@@ -54,7 +52,7 @@ class VisualizeTextViewModelTest {
 
         val pages = listOf("This shouldn't be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter, TextPaint())
+        viewModel.splitToPages(pageSplitter)
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
         val resultPages = getUnitLiveDataValue(viewModel.pages)
@@ -107,12 +105,80 @@ class VisualizeTextViewModelTest {
         assertEquals("ch3.html", path2)
     }
 
+    @Test
+    fun epub_first_load_set_predefined_page(){
+        // Set up
+        parse_book(DEFAULT_BOOK)
+        val pages =  Array(8) {""}.toList()
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+        viewModel.splitToPages(pageSplitter)
+
+        // Returns initial page in first load
+        val initialPage = 4
+        viewModel.initialPage = initialPage
+        val page = viewModel.getPage()
+        assertEquals(initialPage, page)
+
+        // Doesn't return initial page
+        val secondLoadPage = viewModel.getPage()
+        assertEquals(0, secondLoadPage)
+
+    }
+
+    @Test
+    fun when_changed_to_previous_chapter_set_last_page(){
+        // Set up
+        parse_book(DEFAULT_BOOK)
+        val pages = Array(3) {""}.toList()
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+        viewModel.splitToPages(pageSplitter)
+
+        // Returns initial page in first load
+        val initialPage = 2
+        viewModel.initialPage = initialPage
+        val page = viewModel.getPage()
+        assertEquals(initialPage, page)
+
+        // Second load
+        viewModel.swipeChapterLeft()
+        splitPages(5)
+        val secondLoadPage = viewModel.getPage()
+        assertEquals(5 - 1, secondLoadPage)
+    }
+
+    @Test
+    fun when_changed_to_next_chapter_set_first_page(){
+        // Set up
+        parse_book(DEFAULT_BOOK)
+        val pages = Array(3) {""}.toList()
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+        viewModel.splitToPages(pageSplitter)
+
+        // Returns initial page in first load
+        val initialPage = 2
+        viewModel.initialPage = initialPage
+        val page = viewModel.getPage()
+        assertEquals(initialPage, page)
+
+        // Second load
+        viewModel.swipeChapterRight()
+        splitPages(5)
+        val secondLoadPage = viewModel.getPage()
+        assertEquals(0, secondLoadPage)
+    }
+
     private fun parse_book(book: Book){
         `when`(epubParser.parseBook(fileReader)).thenReturn(book)
         viewModel.parseEpub(fileReader)
 
         val resultBook = getUnitLiveDataValue(viewModel.book)
         assertEquals(book, resultBook)
+    }
+
+    private fun splitPages(pagesSize: Int){
+        val pages = Array(pagesSize) {""}.toList()
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+        viewModel.splitToPages(pageSplitter)
     }
 
     companion object{

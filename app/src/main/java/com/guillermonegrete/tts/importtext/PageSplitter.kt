@@ -13,6 +13,7 @@ class PageSplitter(
     private val pageHeight: Int,
     private val lineSpacingMultiplier: Float,
     private val lineSpacingExtra: Float,
+    private val textPaint: TextPaint,
     private val imageGetter: Html.ImageGetter?
 ) {
     private val pages = ArrayList<CharSequence>()
@@ -28,7 +29,7 @@ class PageSplitter(
         mSpannableStringBuilder.append(charSequence)
     }
 
-    fun split(textPaint: TextPaint) {
+    fun split() {
         val formattedText = formatHtml(mSpannableStringBuilder)
         val staticLayout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             StaticLayout.Builder.obtain(formattedText, 0, formattedText.length, textPaint, pageWidth)

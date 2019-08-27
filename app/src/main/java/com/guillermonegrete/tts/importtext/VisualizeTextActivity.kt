@@ -33,10 +33,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var fileReader: ZipFileReader
     private lateinit var pageSplitter: PageSplitter
 
-    private var pagesSize = 0
-
-    private var firstLoad = true
-
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         setPreferenceTheme()
@@ -50,6 +46,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             val rootStream = contentResolver.openInputStream(uri)
             fileReader = ZipFileReader(rootStream)
             viewModel.parseEpub(fileReader)
+            viewModel.isEpub = true
         } else {
             viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
@@ -64,9 +61,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.post{
             pageSplitter = createPageSplitter()
             val chapterIndex = intent.getIntExtra(CHAPTER_INDEX, 0)
-            // TODO This only works for epub, add support for text files.
-            viewModel.jumpToChapter(chapterIndex)
-//            viewModel.splitToPages(createPageSplitter(), createTextPaint())
+            viewModel.setChapter(chapterIndex, pageSplitter)
             addPagerCallback()
         }
     }
@@ -83,8 +78,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun createViewModel() {
-
-          viewModel.apply {
+        viewModel.apply {
             pages.observe(this@VisualizeTextActivity, Observer {
                 setUpPagerAndIndexLabel(it)
             })
@@ -107,23 +101,21 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             chapterPath.observe(this@VisualizeTextActivity, Observer {
+                // TODO try to move this to view model class
                 viewModel.changeEpubChapter(it, fileReader)
-                viewModel.splitToPages(pageSplitter, createTextPaint())
+                viewModel.splitToPages(pageSplitter)
 
                 updateCurrentChapterLabel()
             })
+
+            initialChapter = intent.getIntExtra(CHAPTER_INDEX, 0)
+            initialPage = intent.getIntExtra(PAGE_INDEX, 0)
         }
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
-        // TODO move this logic to view model
-        pagesSize = pages.size
-        val position = if(firstLoad) {
-            firstLoad = false
-            val indexValue = intent.getIntExtra(PAGE_INDEX, 0)
-            if (indexValue >= pagesSize) pagesSize - 1 else indexValue
-        } else 0
-        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pagesSize) // Example: 1 of 33
+        val position = viewModel.getPage()
+        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 of 33
         viewPager.adapter = VisualizerAdapter(pages)
         viewPager.setCurrentItem(position, false)
 
@@ -162,7 +154,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
             override fun onPageSelected(position: Int) {
                 val pageNumber = position + 1
-                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, pagesSize)
+                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -179,7 +171,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                         swipeFirst = false
                         if(position == 0) {
                             viewModel.swipeChapterLeft()
-                        } else if(position == pagesSize - 1) {
+                        } else if(position == viewModel.pagesSize - 1) {
                             viewModel.swipeChapterRight()
                         }
                     }
@@ -204,6 +196,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             viewPager.height - pageItemPadding,
             lineSpacingMultiplier,
             lineSpacingExtra,
+            createTextPaint(),
             imageGetter
         )
     }

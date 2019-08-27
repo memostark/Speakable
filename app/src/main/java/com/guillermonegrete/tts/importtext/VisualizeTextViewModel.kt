@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.importtext
 
-import android.text.TextPaint
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,6 +7,17 @@ import com.guillermonegrete.tts.importtext.epub.Book
 import javax.inject.Inject
 
 class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubParser): ViewModel() {
+
+    var isEpub = false
+    private var firstLoad = true
+    private var leftSwipe = false
+
+    /**
+     * Initial index values
+     */
+    var initialChapter = 0
+
+    var initialPage = 0
 
     private var text = ""
     var currentChapter = 0
@@ -17,6 +27,9 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         private set
 
     var basePath = ""
+        private set
+
+    var pagesSize = 0
         private set
 
     private var currentBook: Book? = null
@@ -52,10 +65,12 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
     }
 
     fun swipeChapterRight(){
+        leftSwipe = false
         swipeChapter(currentChapter + 1)
     }
 
     fun swipeChapterLeft(){
+        leftSwipe = true
         swipeChapter(currentChapter - 1)
     }
 
@@ -70,6 +85,21 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
                     _chapterPath.value = newChapterPath
                 }
             }
+        }
+    }
+
+    fun getPage(): Int{
+        return if(firstLoad) {
+            firstLoad = false
+            if (initialPage >= pagesSize) pagesSize - 1 else initialPage
+        } else if(leftSwipe) pagesSize - 1 else 0
+    }
+
+    fun setChapter(chapterIndex: Int, pageSplitter: PageSplitter){
+        if(isEpub){
+            jumpToChapter(chapterIndex)
+        }else{
+            splitToPages(pageSplitter)
         }
     }
 
@@ -110,11 +140,12 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         }
     }
 
-    fun splitToPages(pageSplitter: PageSplitter, textPaint: TextPaint){
+    fun splitToPages(pageSplitter: PageSplitter){
         pageSplitter.setText(text)
-        pageSplitter.split(textPaint)
+        pageSplitter.split()
         val mutablePages = pageSplitter.getPages().toMutableList()
         if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
+        pagesSize = mutablePages.size
         _pages.value = mutablePages
     }
 
