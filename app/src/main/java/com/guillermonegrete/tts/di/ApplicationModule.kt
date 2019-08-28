@@ -150,6 +150,9 @@ abstract class ApplicationModuleBinds {
 
     @Binds
     abstract fun bindRepository(repository: WordRepository): WordRepositorySource
+
+    @Binds
+    abstract fun bindFileRepository(repository: DefaultFileRepository): FileRepository
 }
 
 /**

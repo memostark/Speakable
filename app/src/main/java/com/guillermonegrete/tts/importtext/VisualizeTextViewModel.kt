@@ -3,10 +3,16 @@ package com.guillermonegrete.tts.importtext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.guillermonegrete.tts.data.source.FileRepository
+import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.epub.Book
+import java.util.*
 import javax.inject.Inject
 
-class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubParser): ViewModel() {
+class VisualizeTextViewModel @Inject constructor(
+    private val epubParser: EpubParser,
+    private val fileRepository: FileRepository
+): ViewModel() {
 
     var isEpub = false
     private var firstLoad = true
@@ -32,7 +38,10 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
     var pagesSize = 0
         private set
 
+    var fileUri: String? = null
+
     private var currentBook: Book? = null
+    private var fileType = ImportedFileType.TXT
 
     private val _book = MutableLiveData<Book>()
     val book: LiveData<Book>
@@ -53,6 +62,7 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         text = parsedBook.currentChapter
         spineSize = parsedBook.spine.size
         currentBook = parsedBook
+        fileType = ImportedFileType.EPUB
         _book.value = parsedBook
     }
 
@@ -61,6 +71,7 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
     }
 
     fun parseSimpleText(text: String){
+        fileType = ImportedFileType.TXT
         this.text = text
     }
 
@@ -95,9 +106,9 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         } else if(leftSwipe) pagesSize - 1 else 0
     }
 
-    fun setChapter(chapterIndex: Int, pageSplitter: PageSplitter){
+    fun initPageSplit(pageSplitter: PageSplitter){
         if(isEpub){
-            jumpToChapter(chapterIndex)
+            jumpToChapter(initialChapter)
         }else{
             splitToPages(pageSplitter)
         }
@@ -147,6 +158,22 @@ class VisualizeTextViewModel @Inject constructor(private val epubParser: EpubPar
         if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
         pagesSize = mutablePages.size
         _pages.value = mutablePages
+    }
+
+    /**
+     * Called when view or application is about to be destroyed.
+     * The date is injected only when testing, function should be
+     * called without parameters.
+     */
+    fun onFinish(date: Calendar = Calendar.getInstance()){
+        saveBookFileData(date)
+    }
+
+    private fun saveBookFileData(date: Calendar){
+        fileUri?.let {
+            val bookFile = BookFile(it, "Title", fileType, "und", 0, currentChapter, date)
+            fileRepository.saveFile(bookFile)
+        }
     }
 
 }

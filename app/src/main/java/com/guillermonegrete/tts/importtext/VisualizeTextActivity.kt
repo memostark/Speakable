@@ -60,8 +60,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
             pageSplitter = createPageSplitter()
-            val chapterIndex = intent.getIntExtra(CHAPTER_INDEX, 0)
-            viewModel.setChapter(chapterIndex, pageSplitter)
+            viewModel.initPageSplit(pageSplitter)
             addPagerCallback()
         }
     }

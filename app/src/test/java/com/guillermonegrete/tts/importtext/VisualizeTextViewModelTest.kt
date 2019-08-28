@@ -1,6 +1,9 @@
 package com.guillermonegrete.tts.importtext
 
+import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.guillermonegrete.tts.data.source.FileRepository
+import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
@@ -13,6 +16,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
+import java.util.*
 
 class VisualizeTextViewModelTest {
 
@@ -23,6 +27,7 @@ class VisualizeTextViewModelTest {
 
     @Mock private lateinit var epubParser: EpubParser
     @Mock private lateinit var fileReader: ZipFileReader
+    @Mock private lateinit var fileRepository: FileRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
@@ -30,7 +35,7 @@ class VisualizeTextViewModelTest {
     fun setUp(){
         MockitoAnnotations.initMocks(this)
 
-        viewModel = VisualizeTextViewModel(epubParser)
+        viewModel = VisualizeTextViewModel(epubParser, fileRepository)
     }
 
     @Test
@@ -167,9 +172,44 @@ class VisualizeTextViewModelTest {
         assertEquals(0, secondLoadPage)
     }
 
+    @Test
+    fun saves_current_file_when_finishing(){
+        // Set up
+        val uri = "empty_uri"
+        parse_book(DEFAULT_BOOK)
+
+        // Initial state
+        val initialChapter = 2
+        viewModel.fileUri = uri
+        viewModel.initialChapter = initialChapter
+        viewModel.initPageSplit(pageSplitter)
+
+        val pages = Array(7) {""}.toList()
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+        viewModel.splitToPages(pageSplitter)
+
+        // Swipe to right
+        viewModel.swipeChapterRight()
+        val lastReadDate = Calendar.getInstance()
+        viewModel.onFinish(lastReadDate)
+
+        val expectedFile = BookFile(
+            uri,
+            "Title",
+            ImportedFileType.EPUB,
+            chapter = 3,
+            lastRead = lastReadDate
+        )
+        verify(fileRepository).saveFile(expectedFile)
+
+
+
+    }
+
     private fun parse_book(book: Book){
         `when`(epubParser.parseBook(fileReader)).thenReturn(book)
         viewModel.parseEpub(fileReader)
+        viewModel.isEpub = true
 
         val resultBook = getUnitLiveDataValue(viewModel.book)
         assertEquals(book, resultBook)
@@ -186,8 +226,8 @@ class VisualizeTextViewModelTest {
         private val DEFAULT_BOOK = Book(
             "title",
             DEFAULT_CHAPTER,
-            listOf(),
-            mapOf(),
+            Array(5){"$it"}.toList(),
+            mapOf("1" to "ch1.html", "2" to "ch2.html", "3" to "ch3.html", "4" to "ch4.html", "5" to "ch5.html"),
             TableOfContents(listOf())
         )
         private val TWO_CHAPTER_BOOK = Book(
