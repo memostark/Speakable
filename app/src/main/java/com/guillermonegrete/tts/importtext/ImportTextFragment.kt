@@ -18,14 +18,16 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.db.BookFile
+import dagger.android.support.AndroidSupportInjection
 import java.io.*
 import java.lang.StringBuilder
-import java.util.*
+import javax.inject.Inject
 
 
 class ImportTextFragment: Fragment() {
@@ -33,9 +35,13 @@ class ImportTextFragment: Fragment() {
     private lateinit var clipboardManager: ClipboardManager
     private var fileType = ImportedFileType.TXT
 
-    private lateinit var viewModel: ImportTextViewModel
+    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
+    private val viewModel by lazy {
+        ViewModelProviders.of(this, viewModelFactory).get(ImportTextViewModel::class.java)
+    }
 
     override fun onAttach(context: Context) {
+        AndroidSupportInjection.inject(this)
         super.onAttach(context)
         clipboardManager = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     }
@@ -101,10 +107,11 @@ class ImportTextFragment: Fragment() {
     }
 
     private fun setViewModel(){
-        viewModel = ViewModelProviders.of(this).get(ImportTextViewModel::class.java)
-        viewModel.openTextVisualizer.observe(viewLifecycleOwner, Observer {
-            visualizeEpub(Uri.parse(it.uri), it.chapter, it.page)
-        })
+        viewModel.apply {
+            openTextVisualizer.observe(viewLifecycleOwner, Observer {
+                visualizeEpub(Uri.parse(it.uri), it.chapter, it.page)
+            })
+        }
     }
 
     private fun checkPermissions(){

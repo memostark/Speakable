@@ -1,13 +1,15 @@
 package com.guillermonegrete.tts.importtext
 
-import android.net.Uri
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.example.android.architecture.blueprints.todoapp.MainCoroutineRule
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -22,6 +24,10 @@ class VisualizeTextViewModelTest {
 
     @get:Rule
     var mInstantTaskExecutorRule = InstantTaskExecutorRule()
+
+    @ExperimentalCoroutinesApi
+    @get:Rule
+    var mainCoroutineRule = MainCoroutineRule()
 
     private lateinit var viewModel: VisualizeTextViewModel
 
@@ -172,6 +178,7 @@ class VisualizeTextViewModelTest {
         assertEquals(0, secondLoadPage)
     }
 
+    @ExperimentalCoroutinesApi
     @Test
     fun saves_current_file_when_finishing(){
         // Set up
@@ -200,7 +207,7 @@ class VisualizeTextViewModelTest {
             chapter = 3,
             lastRead = lastReadDate
         )
-        verify(fileRepository).saveFile(expectedFile)
+        runBlockingTest { verify(fileRepository).saveFile(expectedFile) }
 
 
 
