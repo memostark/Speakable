@@ -3,11 +3,10 @@ package com.guillermonegrete.tts.importtext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.epub.Book
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.util.*
 import javax.inject.Inject
 
@@ -173,7 +172,8 @@ class VisualizeTextViewModel @Inject constructor(
 
     private fun saveBookFileData(date: Calendar){
         fileUri?.let {
-            viewModelScope.launch {
+            // This operation is intended to be synchronous
+            runBlocking{
                 val bookFile = BookFile(it, "Title", fileType, "und", 0, currentChapter, date)
                 fileRepository.saveFile(bookFile)
             }

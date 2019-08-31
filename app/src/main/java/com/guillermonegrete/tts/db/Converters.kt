@@ -13,7 +13,7 @@ class Converters {
 
     @TypeConverter
     fun stringToFileType(type: String): ImportedFileType{
-        return ImportedFileType.valueOf(type)
+        return ImportedFileType.get(type)
     }
 
     @TypeConverter

@@ -47,6 +47,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             fileReader = ZipFileReader(rootStream)
             viewModel.parseEpub(fileReader)
             viewModel.isEpub = true
+            viewModel.fileUri = uri.toString()
         } else {
             viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
@@ -63,6 +64,11 @@ class VisualizeTextActivity: AppCompatActivity() {
             viewModel.initPageSplit(pageSplitter)
             addPagerCallback()
         }
+    }
+
+    override fun onDestroy() {
+        viewModel.onFinish()
+        super.onDestroy()
     }
 
 

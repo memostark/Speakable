@@ -6,7 +6,7 @@ enum class ImportedFileType(val mimeType: String) {
 
     companion object{
 
-        fun valueOf(value: String): ImportedFileType{
+        fun get(value: String): ImportedFileType{
             return values().find { it.mimeType == value } ?: TXT
         }
     }

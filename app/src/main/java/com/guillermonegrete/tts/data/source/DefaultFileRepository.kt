@@ -16,6 +16,8 @@ class DefaultFileRepository @Inject constructor(private val fileDAO: FileDAO): F
     }
 
     override suspend fun saveFile(file: BookFile) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        withContext(Dispatchers.IO){
+            fileDAO.upsert(file)
+        }
     }
 }
