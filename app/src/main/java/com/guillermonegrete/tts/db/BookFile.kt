@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.db
 
 import androidx.room.ColumnInfo
+import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import java.util.*
@@ -8,6 +9,7 @@ import java.util.*
 /**
  * Value "und" for parameter language means language unknown
  */
+@Entity(tableName = "book_files")
 data class BookFile(
     val uri: String,
     val title: String,

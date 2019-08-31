@@ -18,6 +18,8 @@ import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource
+import com.guillermonegrete.tts.db.FileDAO
+import com.guillermonegrete.tts.db.FilesDatabase
 import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.db.WordsDatabase
 import com.guillermonegrete.tts.imageprocessing.*
@@ -101,6 +103,22 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideWordsDAO(database: WordsDatabase): WordsDAO = database.wordsDAO()
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideFilesDatabase(context: Context): FilesDatabase{
+        return Room.databaseBuilder(
+            context.applicationContext,
+            FilesDatabase::class.java,
+            "files.db"
+        ).build()
+    }
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun provideFileDAO(database: FilesDatabase): FileDAO = database.fileDao()
 
     @JvmStatic
     @RemoteTranslationDataSource

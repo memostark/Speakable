@@ -1,13 +1,18 @@
 package com.guillermonegrete.tts.data.source
 
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.FileDAO
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DefaultFileRepository @Inject constructor(): FileRepository{
+class DefaultFileRepository @Inject constructor(private val fileDAO: FileDAO): FileRepository{
     override suspend fun getRecentFiles(): List<BookFile> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return withContext(Dispatchers.IO){
+            return@withContext fileDAO.getRecentFiles()
+        }
     }
 
     override suspend fun saveFile(file: BookFile) {

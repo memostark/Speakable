@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -34,6 +35,11 @@ class ImportTextFragment: Fragment() {
 
     private lateinit var clipboardManager: ClipboardManager
     private var fileType = ImportedFileType.TXT
+
+    private lateinit var recentFilesList: RecyclerView
+    private lateinit var adapter: RecentFilesAdapter
+
+    private lateinit var progressBar: ProgressBar
 
     @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
     private val viewModel by lazy {
@@ -72,9 +78,11 @@ class ImportTextFragment: Fragment() {
             }
         }
 
+        progressBar = root.findViewById(R.id.recent_files_progress_bar)
+
         setViewModel()
 
-        val recentFilesList: RecyclerView = root.findViewById(R.id.recent_files_list)
+        recentFilesList = root.findViewById(R.id.recent_files_list)
         val testUri = "content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"
         val dummyFiles = listOf(
             BookFile(testUri, "Chapter 4",  ImportedFileType.EPUB, "en", 2, 3),
@@ -82,8 +90,7 @@ class ImportTextFragment: Fragment() {
             BookFile(testUri, "Chapter 3",  ImportedFileType.EPUB, "en", 2, 2),
             BookFile(testUri, "Chapter 2",  ImportedFileType.EPUB, "en", 1, 1)
         )
-        val adapter = RecentFilesAdapter(dummyFiles, viewModel)
-        recentFilesList.adapter = adapter
+
         recentFilesList.layoutManager = LinearLayoutManager(context)
 
         return root
@@ -110,6 +117,16 @@ class ImportTextFragment: Fragment() {
         viewModel.apply {
             openTextVisualizer.observe(viewLifecycleOwner, Observer {
                 visualizeEpub(Uri.parse(it.uri), it.chapter, it.page)
+            })
+
+            dataLoading.observe(viewLifecycleOwner, Observer {
+                progressBar.visibility = if(it) View.VISIBLE else View.GONE
+            })
+
+            loadRecentFiles()
+            files.observe(viewLifecycleOwner, Observer {
+                adapter = RecentFilesAdapter(it, viewModel)
+                recentFilesList.adapter = adapter
             })
         }
     }
