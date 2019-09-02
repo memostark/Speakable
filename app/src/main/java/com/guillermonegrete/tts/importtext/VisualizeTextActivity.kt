@@ -48,6 +48,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             viewModel.parseEpub(fileReader)
             viewModel.isEpub = true
             viewModel.fileUri = uri.toString()
+            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
         } else {
             viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
@@ -240,6 +241,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val EPUB_URI = "epub_uri"
 
         const val SHOW_EPUB = "epub"
+        const val FILE_ID = "fileId"
 
         const val CHAPTER_INDEX = "chapter"
         const val PAGE_INDEX = "page"

@@ -15,6 +15,12 @@ class DefaultFileRepository @Inject constructor(private val fileDAO: FileDAO): F
         }
     }
 
+    override suspend fun getFile(id: Int): BookFile? {
+        return withContext(Dispatchers.IO){
+            return@withContext fileDAO.getFile(id)
+        }
+    }
+
     override suspend fun saveFile(file: BookFile) {
         withContext(Dispatchers.IO){
             fileDAO.upsert(file)

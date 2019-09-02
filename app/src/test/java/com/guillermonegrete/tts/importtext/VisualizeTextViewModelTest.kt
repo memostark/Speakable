@@ -2,14 +2,13 @@ package com.guillermonegrete.tts.importtext
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.example.android.architecture.blueprints.todoapp.MainCoroutineRule
-import com.guillermonegrete.tts.data.source.FileRepository
+import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -33,14 +32,17 @@ class VisualizeTextViewModelTest {
 
     @Mock private lateinit var epubParser: EpubParser
     @Mock private lateinit var fileReader: ZipFileReader
-    @Mock private lateinit var fileRepository: FileRepository
+    private lateinit var fileRepository: FakeFileRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter
+
+    private val bookFile = BookFile("empty_uri", "Title", ImportedFileType.EPUB, id = 1)
 
     @Before
     fun setUp(){
         MockitoAnnotations.initMocks(this)
 
+        fileRepository = FakeFileRepository()
         viewModel = VisualizeTextViewModel(epubParser, fileRepository)
     }
 
@@ -178,7 +180,6 @@ class VisualizeTextViewModelTest {
         assertEquals(0, secondLoadPage)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saves_current_file_when_finishing(){
         // Set up
@@ -191,9 +192,7 @@ class VisualizeTextViewModelTest {
         viewModel.initialChapter = initialChapter
         viewModel.initPageSplit(pageSplitter)
 
-        val pages = Array(7) {""}.toList()
-        `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter)
+        splitPages(7)
 
         // Swipe to right
         viewModel.swipeChapterRight()
@@ -207,9 +206,43 @@ class VisualizeTextViewModelTest {
             chapter = 3,
             lastRead = lastReadDate
         )
-        runBlockingTest { verify(fileRepository).saveFile(expectedFile) }
+        val resultFile = fileRepository.filesServiceData.values.first()
+        assertEquals(1, fileRepository.filesServiceData.values.size)
+        assertEquals(expectedFile, resultFile)
 
+    }
 
+    @Test
+    fun updates_file(){
+        // Set up
+        fileRepository.addTasks(bookFile)
+        parse_book(DEFAULT_BOOK)
+
+        // Initial state
+        val initialChapter = 2
+        viewModel.initialChapter = initialChapter
+        viewModel.fileUri = bookFile.uri
+        viewModel.fileId = bookFile.id
+        viewModel.initPageSplit(pageSplitter)
+
+        splitPages(7)
+
+        // Swipe to right
+        viewModel.swipeChapterRight()
+        val lastReadDate = Calendar.getInstance()
+        viewModel.onFinish(lastReadDate)
+
+        val expectedFile = BookFile(
+            bookFile.uri,
+            bookFile.title,
+            bookFile.fileType,
+            id = bookFile.id,
+            chapter = 3,
+            lastRead = lastReadDate
+        )
+        val resultFile = fileRepository.filesServiceData.values.first()
+        assertEquals(1, fileRepository.filesServiceData.values.size)
+        assertEquals(expectedFile, resultFile)
 
     }
 

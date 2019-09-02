@@ -15,8 +15,8 @@ data class BookFile(
     val title: String,
     val fileType: ImportedFileType,
     val language: String = "und",
-    val page: Int = 0,
-    val chapter: Int = 0,
-    val lastRead: Calendar = Calendar.getInstance(),
+    var page: Int = 0,
+    var chapter: Int = 0,
+    var lastRead: Calendar = Calendar.getInstance(),
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "bookFileId") var id: Int = 0
 )

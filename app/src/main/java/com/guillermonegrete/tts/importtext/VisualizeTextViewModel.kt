@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.epub.Book
@@ -40,6 +41,8 @@ class VisualizeTextViewModel @Inject constructor(
         private set
 
     var fileUri: String? = null
+    var fileId: Int = -1
+    var databaseBookFile: BookFile? = null
 
     private var currentBook: Book? = null
     private var fileType = ImportedFileType.TXT
@@ -110,6 +113,7 @@ class VisualizeTextViewModel @Inject constructor(
     fun initPageSplit(pageSplitter: PageSplitter){
         if(isEpub){
             jumpToChapter(initialChapter)
+            viewModelScope.launch { databaseBookFile = fileRepository.getFile(fileId) }
         }else{
             splitToPages(pageSplitter)
         }
@@ -174,7 +178,12 @@ class VisualizeTextViewModel @Inject constructor(
         fileUri?.let {
             // This operation is intended to be synchronous
             runBlocking{
-                val bookFile = BookFile(it, "Title", fileType, "und", 0, currentChapter, date)
+                databaseBookFile?.apply {
+                    page = 0
+                    chapter = currentChapter
+                    lastRead = date
+                }
+                val bookFile = databaseBookFile ?: BookFile(it, "Title", fileType, "und", 0, currentChapter, date)
                 fileRepository.saveFile(bookFile)
             }
         }

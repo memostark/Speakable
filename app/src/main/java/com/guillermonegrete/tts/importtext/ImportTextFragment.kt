@@ -104,7 +104,7 @@ class ImportTextFragment: Fragment() {
                     val uri = data.data
                     if(uri != null) {
                         when(fileType){
-                            ImportedFileType.EPUB -> visualizeEpub(uri, 0, 0)
+                            ImportedFileType.EPUB -> visualizeEpub(uri, -1, 0, 0)
                             ImportedFileType.TXT -> readTextFile(uri)
                         }
                     }
@@ -116,7 +116,7 @@ class ImportTextFragment: Fragment() {
     private fun setViewModel(){
         viewModel.apply {
             openTextVisualizer.observe(viewLifecycleOwner, Observer {
-                visualizeEpub(Uri.parse(it.uri), it.chapter, it.page)
+                visualizeEpub(Uri.parse(it.uri), it.id, it.chapter, it.page)
             })
 
             dataLoading.observe(viewLifecycleOwner, Observer {
@@ -209,12 +209,18 @@ class ImportTextFragment: Fragment() {
         startActivity(intent)
     }
 
-    private fun visualizeEpub(uri: Uri, chapterIndex: Int = 0, pageIndex: Int){
+    private fun visualizeEpub(
+        uri: Uri,
+        fileId: Int,
+        chapterIndex: Int = 0,
+        pageIndex: Int
+    ){
         // Check if file exits, this can be improved: https://stackoverflow.com/a/50143855/10244759
         if (DocumentsContract.isDocumentUri(context, uri)) {
             val intent = Intent(context, VisualizeTextActivity::class.java)
             intent.action = VisualizeTextActivity.SHOW_EPUB
             intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
+            intent.putExtra(VisualizeTextActivity.FILE_ID, fileId)
             intent.putExtra(VisualizeTextActivity.CHAPTER_INDEX, chapterIndex)
             intent.putExtra(VisualizeTextActivity.PAGE_INDEX, pageIndex)
             println("Epub uri: $uri")

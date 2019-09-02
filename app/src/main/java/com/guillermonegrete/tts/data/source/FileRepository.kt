@@ -5,5 +5,7 @@ import com.guillermonegrete.tts.db.BookFile
 interface FileRepository{
     suspend fun getRecentFiles(): List<BookFile>
 
+    suspend fun getFile(id: Int): BookFile?
+
     suspend fun saveFile(file: BookFile)
 }
