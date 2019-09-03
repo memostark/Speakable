@@ -113,9 +113,6 @@ class VisualizeTextActivity: AppCompatActivity() {
 
                 updateCurrentChapterLabel()
             })
-
-            initialChapter = intent.getIntExtra(CHAPTER_INDEX, 0)
-            initialPage = intent.getIntExtra(PAGE_INDEX, 0)
         }
     }
 
@@ -159,6 +156,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         var swipeFirst = false
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
             override fun onPageSelected(position: Int) {
+                viewModel.currentPage = position
                 val pageNumber = position + 1
                 currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
             }
@@ -242,9 +240,6 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         const val SHOW_EPUB = "epub"
         const val FILE_ID = "fileId"
-
-        const val CHAPTER_INDEX = "chapter"
-        const val PAGE_INDEX = "page"
 
         private const val BRIGHTNESS_THEME = "theme"
     }

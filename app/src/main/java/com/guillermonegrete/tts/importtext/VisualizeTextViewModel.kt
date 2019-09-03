@@ -20,14 +20,8 @@ class VisualizeTextViewModel @Inject constructor(
     private var firstLoad = true
     private var leftSwipe = false
 
-    /**
-     * Initial index values
-     */
-    var initialChapter = 0
-
-    var initialPage = 0
-
     private var text = ""
+    var currentPage = 0
     var currentChapter = 0
         private set
 
@@ -104,16 +98,21 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun getPage(): Int{
-        return if(firstLoad) {
+        currentPage = if(firstLoad) {
             firstLoad = false
+            val initialPage = databaseBookFile?.page ?: 0
             if (initialPage >= pagesSize) pagesSize - 1 else initialPage
         } else if(leftSwipe) pagesSize - 1 else 0
+        return currentPage
     }
 
     fun initPageSplit(pageSplitter: PageSplitter){
         if(isEpub){
-            jumpToChapter(initialChapter)
-            viewModelScope.launch { databaseBookFile = fileRepository.getFile(fileId) }
+            viewModelScope.launch {
+                databaseBookFile = fileRepository.getFile(fileId)
+                val initialChapter = databaseBookFile?.chapter ?: 0
+                jumpToChapter(initialChapter)
+            }
         }else{
             splitToPages(pageSplitter)
         }
@@ -179,12 +178,12 @@ class VisualizeTextViewModel @Inject constructor(
             // This operation is intended to be synchronous
             runBlocking{
                 databaseBookFile?.apply {
-                    page = 0
+                    page = currentPage
                     chapter = currentChapter
                     lastRead = date
                 }
                 val title = currentBook?.title ?: ""
-                val bookFile = databaseBookFile ?: BookFile(it, title, fileType, "und", 0, currentChapter, date)
+                val bookFile = databaseBookFile ?: BookFile(it, title, fileType, "und", currentPage, currentChapter, date)
                 fileRepository.saveFile(bookFile)
             }
         }

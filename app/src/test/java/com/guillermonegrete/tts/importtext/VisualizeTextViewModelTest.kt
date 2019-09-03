@@ -44,6 +44,11 @@ class VisualizeTextViewModelTest {
 
         fileRepository = FakeFileRepository()
         viewModel = VisualizeTextViewModel(epubParser, fileRepository)
+
+        bookFile.apply {
+            chapter = 0
+            page = 0
+        }
     }
 
     @Test
@@ -104,8 +109,8 @@ class VisualizeTextViewModelTest {
 
         viewModel.jumpToChapter("ch3.html")
         assertEquals(2, viewModel.currentChapter)
-        val path2 = getUnitLiveDataValue(viewModel.chapterPath)
-        assertEquals("ch3.html", path2)
+        val path = getUnitLiveDataValue(viewModel.chapterPath)
+        assertEquals("ch3.html", path)
     }
 
     @Test
@@ -114,21 +119,23 @@ class VisualizeTextViewModelTest {
 
         viewModel.jumpToChapter(2)
         assertEquals(2, viewModel.currentChapter)
-        val path2 = getUnitLiveDataValue(viewModel.chapterPath)
-        assertEquals("ch3.html", path2)
+        val path = getUnitLiveDataValue(viewModel.chapterPath)
+        assertEquals("ch3.html", path)
     }
 
     @Test
     fun epub_first_load_set_predefined_page(){
         // Set up
+        val initialPage = 4
+        bookFile.page = initialPage
+        fileRepository.addTasks(bookFile)
+
         parse_book(DEFAULT_BOOK)
-        val pages =  Array(8) {""}.toList()
-        `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter)
+        viewModel.fileId = bookFile.id
+        viewModel.initPageSplit(pageSplitter)
+        splitPages(8)
 
         // Returns initial page in first load
-        val initialPage = 4
-        viewModel.initialPage = initialPage
         val page = viewModel.getPage()
         assertEquals(initialPage, page)
 
@@ -141,14 +148,16 @@ class VisualizeTextViewModelTest {
     @Test
     fun when_changed_to_previous_chapter_set_last_page(){
         // Set up
+        val initialPage = 2
+        bookFile.page = initialPage
+        fileRepository.addTasks(bookFile)
+
         parse_book(DEFAULT_BOOK)
-        val pages = Array(3) {""}.toList()
-        `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter)
+        viewModel.fileId = bookFile.id
+        viewModel.initPageSplit(pageSplitter)
+        splitPages(3)
 
         // Returns initial page in first load
-        val initialPage = 2
-        viewModel.initialPage = initialPage
         val page = viewModel.getPage()
         assertEquals(initialPage, page)
 
@@ -162,14 +171,16 @@ class VisualizeTextViewModelTest {
     @Test
     fun when_changed_to_next_chapter_set_first_page(){
         // Set up
+        val initialPage = 2
+        bookFile.page = initialPage
+        fileRepository.addTasks(bookFile)
+
         parse_book(DEFAULT_BOOK)
-        val pages = Array(3) {""}.toList()
-        `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter)
+        viewModel.fileId = bookFile.id
+        viewModel.initPageSplit(pageSplitter)
+        splitPages(3)
 
         // Returns initial page in first load
-        val initialPage = 2
-        viewModel.initialPage = initialPage
         val page = viewModel.getPage()
         assertEquals(initialPage, page)
 
@@ -187,15 +198,16 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         // Initial state
-        val initialChapter = 2
         viewModel.fileUri = uri
-        viewModel.initialChapter = initialChapter
         viewModel.initPageSplit(pageSplitter)
 
         splitPages(7)
 
-        // Swipe to right
+        // Swipe to right three times
         viewModel.swipeChapterRight()
+        viewModel.swipeChapterRight()
+        viewModel.swipeChapterRight()
+
         val lastReadDate = Calendar.getInstance()
         viewModel.onFinish(lastReadDate)
 
@@ -213,14 +225,14 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun updates_file(){
+    fun updates_book_file(){
         // Set up
+        val initialChapter = 2
+        bookFile.chapter = initialChapter
         fileRepository.addTasks(bookFile)
         parse_book(DEFAULT_BOOK)
 
         // Initial state
-        val initialChapter = 2
-        viewModel.initialChapter = initialChapter
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = bookFile.id
         viewModel.initPageSplit(pageSplitter)
@@ -237,7 +249,7 @@ class VisualizeTextViewModelTest {
             bookFile.title,
             bookFile.fileType,
             id = bookFile.id,
-            chapter = 3,
+            chapter = initialChapter + 1,
             lastRead = lastReadDate
         )
         val resultFile = fileRepository.filesServiceData.values.first()
