@@ -201,7 +201,7 @@ class VisualizeTextViewModelTest {
 
         val expectedFile = BookFile(
             uri,
-            "Title",
+            DEFAULT_BOOK.title,
             ImportedFileType.EPUB,
             chapter = 3,
             lastRead = lastReadDate
@@ -264,7 +264,7 @@ class VisualizeTextViewModelTest {
     companion object{
         const val DEFAULT_CHAPTER = "Chapter text"
         private val DEFAULT_BOOK = Book(
-            "title",
+            "Test title",
             DEFAULT_CHAPTER,
             Array(5){"$it"}.toList(),
             mapOf("1" to "ch1.html", "2" to "ch2.html", "3" to "ch3.html", "4" to "ch4.html", "5" to "ch5.html"),

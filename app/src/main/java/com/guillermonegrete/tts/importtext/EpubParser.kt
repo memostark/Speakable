@@ -11,6 +11,9 @@ import java.lang.StringBuilder
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
+/**
+ * Based on this project: https://www.codeproject.com/Articles/592909/EPUB-Viewer-for-Android-with-Text-to-Speech
+ */
 class EpubParser @Inject constructor(private val parser: XmlPullParser) {
 
     var basePath = ""
@@ -22,6 +25,8 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
     private var tocPath = ""
 
     private var currentChapter = ""
+
+    private var title = "Untitled file"
 
     private val navPoints = mutableListOf<NavPoint>()
 
@@ -67,7 +72,7 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
                 parseChapterHtml(parser)
             }
         }
-        return Book("Placeholder title", currentChapter, spine, manifest, toc)
+        return Book(title, currentChapter, spine, manifest, toc)
     }
 
     fun getChapterBodyTextFromPath(
@@ -124,8 +129,8 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
     /**
      *  Gets path of table of contents file, manifest items and spine
      *  Tag hierarchy:
-     *  package -> metadata
-     *             manifest -> item (id. href, media-type)
+     *  package -> metadata -> dc:title
+     *             manifest -> item (id, href, media-type)
      *             spine (toc) -> itemref (idref)
      */
     private fun parseOpfFile(parser: XmlPullParser){
@@ -133,11 +138,31 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             when(parser.name){
+                XML_ELEMENT_METADATA -> readMetadata()
                 XML_ELEMENT_MANIFEST -> readManifest(parser)
                 XML_ELEMENT_SPINE -> readSpine(parser)
                 else -> skip(parser)
             }
         }
+    }
+
+    private fun readMetadata() {
+        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_METADATA)
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.eventType != XmlPullParser.START_TAG) continue
+            if(parser.name == XML_ELEMENT_DCTITLE) readTitle()
+            else skip(parser)
+        }
+    }
+
+    /**
+     * Reads text inside dc:title tag
+     * Example tag: <dc:title>Hunger: Book One</dc:title>
+     */
+    private fun readTitle() {
+        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_DCTITLE)
+        title = readText(parser)
+        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_DCTITLE)
     }
 
     private fun readManifest(parser: XmlPullParser){
@@ -337,6 +362,8 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
 
         // .opf XML
         const val XML_ELEMENT_PACKAGE = "package"
+        const val XML_ELEMENT_METADATA = "metadata"
+        const val XML_ELEMENT_DCTITLE = "dc:title"
         const val XML_ELEMENT_MANIFEST = "manifest"
         const val XML_ELEMENT_MANIFESTITEM = "item"
         const val XML_ELEMENT_SPINE = "spine"

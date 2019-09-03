@@ -50,7 +50,7 @@ class EpubParserTest {
         val book = epubParser.parseBook(zipFileReader)
         println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
 
-        val expectedBook = Book("Placeholder title", "Test text",
+        val expectedBook = Book("Hunger: Book One", "Test text",
             listOf("coverpage-wrapper", "item4", "item5"),
             mapOf("item1" to "pgepub.css", "item2" to "0.css", "item3" to "1.css", "item4" to "18291-h@18291-h-0.htm.html", "item5" to "18291-h@18291-h-1.htm.html", "ncx" to "toc.ncx", "item13" to "cover.png", "coverpage-wrapper" to "wrap0000.html"),
             TableOfContents(listOf(
