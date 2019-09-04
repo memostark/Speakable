@@ -103,6 +103,10 @@ class ImportTextFragment: Fragment() {
                 REQUEST_PICK_FILE -> {
                     val uri = data.data
                     if(uri != null) {
+                        // Necessary for persisting URIs
+                        val takeFlags = data.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+
                         when(fileType){
                             ImportedFileType.EPUB -> visualizeEpub(uri, -1)
                             ImportedFileType.TXT -> readTextFile(uri)
@@ -168,10 +172,13 @@ class ImportTextFragment: Fragment() {
     private fun pickFile() {
         // Have to use Intent.ACTION_OPEN_DOCUMENT otherwise the access to file permission is revoked after the activity is destroyed
         // More info here: Intent.ACTION_OPEN_DOCUMENT
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
-        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-        intent.type = fileType.mimeType
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            type = fileType.mimeType
+        }
         startActivityForResult(intent, REQUEST_PICK_FILE)
     }
 
@@ -215,10 +222,11 @@ class ImportTextFragment: Fragment() {
     ){
         // Check if file exits, this can be improved: https://stackoverflow.com/a/50143855/10244759
         if (DocumentsContract.isDocumentUri(context, uri)) {
-            val intent = Intent(context, VisualizeTextActivity::class.java)
-            intent.action = VisualizeTextActivity.SHOW_EPUB
-            intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
-            intent.putExtra(VisualizeTextActivity.FILE_ID, fileId)
+            val intent = Intent(context, VisualizeTextActivity::class.java).apply {
+                action = VisualizeTextActivity.SHOW_EPUB
+                putExtra(VisualizeTextActivity.EPUB_URI, uri)
+                putExtra(VisualizeTextActivity.FILE_ID, fileId)
+            }
             println("Epub uri: $uri")
             startActivity(intent)
         }else{
