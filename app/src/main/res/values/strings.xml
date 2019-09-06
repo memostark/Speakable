@@ -73,6 +73,8 @@
     <string name="reader_current_chapter_label">Chapter: %1$d of %2$d</string>
     <string name="table_of_contents">Table of contents</string>
     <string name="brightness_settings">Brightness settings</string>
+    <string name="pick_txt_file">Pick TXT file</string>
+    <string name="pick_epub_file">PICK EPUB FILE</string>
 
 
     <string-array name="language_code_arrays">

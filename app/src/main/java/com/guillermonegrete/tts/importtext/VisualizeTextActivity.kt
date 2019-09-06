@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.importtext
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
-import android.util.Xml
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -16,11 +15,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.ViewModelFactory
-import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import dagger.android.AndroidInjection
-import org.xmlpull.v1.XmlPullParser
 import javax.inject.Inject
 
 class VisualizeTextActivity: AppCompatActivity() {
@@ -35,11 +31,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var currentChapterLabel: TextView
 
     private lateinit var fileReader: ZipFileReader
-    private lateinit var parser: XmlPullParser
-
-    private val epubParser = EpubParser()
-
-    private var pagesSize = 0
+    private lateinit var pageSplitter: PageSplitter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
@@ -47,17 +39,16 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
 
-        val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-        val rootStream = contentResolver.openInputStream(uri)
-        fileReader = ZipFileReader(rootStream)
-
-        parser = Xml.newPullParser()
-        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-
         createViewModel()
 
         if(SHOW_EPUB == intent.action) {
-            viewModel.parseEpub(parser, fileReader)
+            val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+            val rootStream = contentResolver.openInputStream(uri)
+            fileReader = ZipFileReader(rootStream)
+            viewModel.parseEpub(fileReader)
+            viewModel.isEpub = true
+            viewModel.fileUri = uri.toString()
+            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
         } else {
             viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
@@ -70,9 +61,15 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
-            viewModel.splitToPages(createPageSplitter(), createTextPaint())
+            pageSplitter = createPageSplitter()
+            viewModel.initPageSplit(pageSplitter)
             addPagerCallback()
         }
+    }
+
+    override fun onDestroy() {
+        viewModel.onFinish()
+        super.onDestroy()
     }
 
 
@@ -87,15 +84,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun createViewModel() {
-
         viewModel.apply {
             pages.observe(this@VisualizeTextActivity, Observer {
-                println("Pages observer")
                 setUpPagerAndIndexLabel(it)
             })
 
             book.observe(this@VisualizeTextActivity, Observer {
-                println("Book observer")
                 if(it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
                 else{
                     updateCurrentChapterLabel()
@@ -113,9 +107,9 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             chapterPath.observe(this@VisualizeTextActivity, Observer {
-                println("Path observer")
-                viewModel.changeEpubChapter(it, parser, fileReader)
-                viewModel.splitToPages(createPageSplitter(), createTextPaint())
+                // TODO try to move this to view model class
+                viewModel.changeEpubChapter(it, fileReader)
+                viewModel.splitToPages(pageSplitter)
 
                 updateCurrentChapterLabel()
             })
@@ -123,9 +117,11 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
-        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, 1, pages.size) // Example: 1 of 33
+        val position = viewModel.getPage()
+        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 of 33
         viewPager.adapter = VisualizerAdapter(pages)
-        pagesSize = pages.size
+        viewPager.setCurrentItem(position, false)
+
     }
 
     private fun showBrightnessSettings(view: View) {
@@ -160,8 +156,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         var swipeFirst = false
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
             override fun onPageSelected(position: Int) {
+                viewModel.currentPage = position
                 val pageNumber = position + 1
-                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, pagesSize)
+                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -178,7 +175,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                         swipeFirst = false
                         if(position == 0) {
                             viewModel.swipeChapterLeft()
-                        } else if(position == pagesSize - 1) {
+                        } else if(position == viewModel.pagesSize - 1) {
                             viewModel.swipeChapterRight()
                         }
                     }
@@ -195,7 +192,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
             val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
-            InputStreamImageGetter(epubParser.basePath, this, zipReader)
+            InputStreamImageGetter(viewModel.basePath, this, zipReader)
         } else null
 
         return PageSplitter(
@@ -203,6 +200,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             viewPager.height - pageItemPadding,
             lineSpacingMultiplier,
             lineSpacingExtra,
+            createTextPaint(),
             imageGetter
         )
     }
@@ -241,6 +239,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val EPUB_URI = "epub_uri"
 
         const val SHOW_EPUB = "epub"
+        const val FILE_ID = "fileId"
 
         private const val BRIGHTNESS_THEME = "theme"
     }

@@ -27,18 +27,11 @@ import android.webkit.WebViewClient
 import android.widget.*
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.services.ScreenTextService
-import com.guillermonegrete.tts.ThreadExecutor
-import com.guillermonegrete.tts.threading.MainThreadImpl
 
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
-import com.guillermonegrete.tts.data.source.WordRepository
-import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
-import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
-import com.guillermonegrete.tts.db.WordsDatabase
 import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 
@@ -246,7 +239,6 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
         ttsProgressBar.visibility = View.GONE
         playButton.visibility = View.VISIBLE
     }
-
 
     private fun hideKeyboard() {
         val context = activity

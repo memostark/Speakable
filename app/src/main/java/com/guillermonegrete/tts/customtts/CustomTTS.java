@@ -35,7 +35,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
-    public void speak(String text){
+    private void speak(String text){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
         } else {

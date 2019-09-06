@@ -40,6 +40,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.imageprocessing.*;
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.customtts.CustomTTS;

@@ -8,19 +8,27 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.util.Xml
+import android.provider.DocumentsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
-import org.xmlpull.v1.XmlPullParser
+import com.guillermonegrete.tts.db.BookFile
+import dagger.android.support.AndroidSupportInjection
 import java.io.*
 import java.lang.StringBuilder
+import javax.inject.Inject
 
 
 class ImportTextFragment: Fragment() {
@@ -28,7 +36,18 @@ class ImportTextFragment: Fragment() {
     private lateinit var clipboardManager: ClipboardManager
     private var fileType = ImportedFileType.TXT
 
+    private lateinit var recentFilesList: RecyclerView
+    private lateinit var adapter: RecentFilesAdapter
+
+    private lateinit var progressBar: ProgressBar
+
+    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
+    private val viewModel by lazy {
+        ViewModelProviders.of(this, viewModelFactory).get(ImportTextViewModel::class.java)
+    }
+
     override fun onAttach(context: Context) {
+        AndroidSupportInjection.inject(this)
         super.onAttach(context)
         clipboardManager = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     }
@@ -59,6 +78,21 @@ class ImportTextFragment: Fragment() {
             }
         }
 
+        progressBar = root.findViewById(R.id.recent_files_progress_bar)
+
+        setViewModel()
+
+        recentFilesList = root.findViewById(R.id.recent_files_list)
+        val testUri = "content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"
+        val dummyFiles = listOf(
+            BookFile(testUri, "Chapter 4",  ImportedFileType.EPUB, "en", 2, 3),
+            BookFile(testUri, "Chapter 1",  ImportedFileType.EPUB, "en", 3, 0),
+            BookFile(testUri, "Chapter 3",  ImportedFileType.EPUB, "en", 2, 2),
+            BookFile(testUri, "Chapter 2",  ImportedFileType.EPUB, "en", 1, 1)
+        )
+
+        recentFilesList.layoutManager = LinearLayoutManager(context)
+
         return root
     }
 
@@ -69,13 +103,35 @@ class ImportTextFragment: Fragment() {
                 REQUEST_PICK_FILE -> {
                     val uri = data.data
                     if(uri != null) {
+                        // Necessary for persisting URIs
+                        val takeFlags = data.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+
                         when(fileType){
-                            ImportedFileType.EPUB -> visualizeEpub(uri)
+                            ImportedFileType.EPUB -> visualizeEpub(uri, -1)
                             ImportedFileType.TXT -> readTextFile(uri)
                         }
                     }
                 }
             }
+        }
+    }
+
+    private fun setViewModel(){
+        viewModel.apply {
+            openTextVisualizer.observe(viewLifecycleOwner, Observer {
+                visualizeEpub(Uri.parse(it.uri), it.id)
+            })
+
+            dataLoading.observe(viewLifecycleOwner, Observer {
+                progressBar.visibility = if(it) View.VISIBLE else View.GONE
+            })
+
+            loadRecentFiles()
+            files.observe(viewLifecycleOwner, Observer {
+                adapter = RecentFilesAdapter(it, viewModel)
+                recentFilesList.adapter = adapter
+            })
         }
     }
 
@@ -110,8 +166,19 @@ class ImportTextFragment: Fragment() {
         }
     }
 
+    /**
+     * How to persist uri access permission: https://stackoverflow.com/questions/25414352/how-to-persist-permission-in-android-api-19-kitkat
+     */
     private fun pickFile() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).setType(fileType.mimeType)
+        // Have to use Intent.ACTION_OPEN_DOCUMENT otherwise the access to file permission is revoked after the activity is destroyed
+        // More info here: Intent.ACTION_OPEN_DOCUMENT
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            type = fileType.mimeType
+        }
         startActivityForResult(intent, REQUEST_PICK_FILE)
     }
 
@@ -149,11 +216,22 @@ class ImportTextFragment: Fragment() {
         startActivity(intent)
     }
 
-    private fun visualizeEpub(uri: Uri){
-        val intent = Intent(context, VisualizeTextActivity::class.java)
-        intent.action = VisualizeTextActivity.SHOW_EPUB
-        intent.putExtra(VisualizeTextActivity.EPUB_URI, uri)
-        startActivity(intent)
+    private fun visualizeEpub(
+        uri: Uri,
+        fileId: Int
+    ){
+        // Check if file exits, this can be improved: https://stackoverflow.com/a/50143855/10244759
+        if (DocumentsContract.isDocumentUri(context, uri)) {
+            val intent = Intent(context, VisualizeTextActivity::class.java).apply {
+                action = VisualizeTextActivity.SHOW_EPUB
+                putExtra(VisualizeTextActivity.EPUB_URI, uri)
+                putExtra(VisualizeTextActivity.FILE_ID, fileId)
+            }
+            println("Epub uri: $uri")
+            startActivity(intent)
+        }else{
+            Toast.makeText(context, "Couldn't open file", Toast.LENGTH_SHORT).show()
+        }
     }
 
 

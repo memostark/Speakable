@@ -11,7 +11,6 @@ package com.guillermonegrete.tts.textprocessing;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 
 import android.widget.*;
 import androidx.annotation.NonNull;
@@ -76,7 +75,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private View playIconsContainer;
 
-    private SharedPreferences preferences;
+    @Inject SharedPreferences preferences;
 
     private String[] languagesISO;
     private int languageFromIndex;
@@ -96,7 +95,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
         mSelectedText = getSelectedText();
 
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
         mAutoTTS = getAutoTTSPreference();
         languagePreferenceISO = getPreferenceISO();
         languageFrom = getLanguageFromPreference();
