@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
@@ -16,6 +17,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.ui.BrightnessTheme
 import dagger.android.AndroidInjection
 import javax.inject.Inject
 
@@ -32,6 +34,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private lateinit var fileReader: ZipFileReader
     private lateinit var pageSplitter: PageSplitter
+
+    @Inject lateinit var preferences: SharedPreferences
+    @Inject lateinit var brightnessTheme: BrightnessTheme
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
@@ -73,13 +78,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
 
-    // Change activity theme at runtime: https://stackoverflow.com/a/6390025/10244759
+    // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
     private fun setPreferenceTheme() {
-        when(intent.getStringExtra(BRIGHTNESS_THEME)){
-            "White" -> setTheme(R.style.AppMaterialTheme_White)
-            "Beige" -> setTheme(R.style.AppMaterialTheme_Beige)
-            "Black" -> setTheme(R.style.AppMaterialTheme_Black)
-            else -> setTheme(R.style.AppMaterialTheme_White)
+        when(brightnessTheme){
+            BrightnessTheme.WHITE -> setTheme(R.style.AppMaterialTheme_White)
+            BrightnessTheme.BEIGE -> setTheme(R.style.AppMaterialTheme_Beige)
+            BrightnessTheme.BLACK -> setTheme(R.style.AppMaterialTheme_Black)
         }
     }
 
@@ -129,9 +133,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         val whiteBtn: Button = layout.findViewById(R.id.white_bg_btn)
         val beigeBtn: Button = layout.findViewById(R.id.beige_bg_btn)
         val blackBtn: Button = layout.findViewById(R.id.black_bg_btn)
-        whiteBtn.setOnClickListener {setBackgroundColor("White")}
-        beigeBtn.setOnClickListener {setBackgroundColor("Beige")}
-        blackBtn.setOnClickListener {setBackgroundColor("Black")}
+        whiteBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.WHITE)}
+        beigeBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BEIGE)}
+        blackBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BLACK)}
 
         PopupWindow(
             layout,
@@ -144,12 +148,18 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
     }
 
-    private fun setBackgroundColor(text: String){
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+    private fun setBackgroundColor(theme: BrightnessTheme){
+        Toast.makeText(this, theme.value, Toast.LENGTH_SHORT).show()
+        saveBrightnessPreference(theme.value)
         val intent = intent
-        intent.putExtra(BRIGHTNESS_THEME, text)
         finish()
         startActivity(intent)
+    }
+
+    private fun saveBrightnessPreference(preference: String){
+        val editor = preferences.edit()
+        editor.putString(BrightnessTheme.PREFERENCE_KEY, preference)
+        editor.apply()
     }
 
     private fun addPagerCallback(){
@@ -241,7 +251,5 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         const val SHOW_EPUB = "epub"
         const val FILE_ID = "fileId"
-
-        private const val BRIGHTNESS_THEME = "theme"
     }
 }
