@@ -4,10 +4,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -228,7 +225,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val filePaths = navPoints.map { it.getContentWithoutTag() }
         val titles = navPoints.map { it.navLabel }
 
-        val adapter = ArrayAdapter(this, android.R.layout.select_dialog_item, titles)
+        val adapter = ArrayAdapter(this, R.layout.dialog_item, titles)
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Table of contents")
