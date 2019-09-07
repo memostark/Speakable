@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
 import android.text.Spannable
 import android.text.SpannableString

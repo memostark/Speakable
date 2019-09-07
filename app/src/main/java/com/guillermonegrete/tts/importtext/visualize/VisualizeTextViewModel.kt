@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import kotlinx.coroutines.*
 import java.util.*

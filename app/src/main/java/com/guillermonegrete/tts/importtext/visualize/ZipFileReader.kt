@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
 import org.apache.commons.io.IOUtils
 import java.io.*

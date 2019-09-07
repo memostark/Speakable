@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
 import android.net.Uri
 import android.os.Bundle
@@ -184,14 +184,15 @@ class VisualizeTextActivity: AppCompatActivity() {
         })
     }
 
-    private fun createPageSplitter(): PageSplitter{
+    private fun createPageSplitter(): PageSplitter {
         val lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
         val lineSpacingMultiplier = 1f
         val pageItemPadding = (80 * resources.displayMetrics.density + 0.5f).toInt() // Convert dp to px, 0.5 is for rounding to closest integer
 
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
-            val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
+            val zipReader =
+                ZipFileReader(contentResolver.openInputStream(uri))
             InputStreamImageGetter(viewModel.basePath, this, zipReader)
         } else null
 

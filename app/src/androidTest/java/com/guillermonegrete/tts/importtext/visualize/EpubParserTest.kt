@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
 import android.util.Xml
 import androidx.test.ext.junit.runners.AndroidJUnit4
