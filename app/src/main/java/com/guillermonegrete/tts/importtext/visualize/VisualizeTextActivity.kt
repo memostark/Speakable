@@ -146,11 +146,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setBackgroundColor(theme: BrightnessTheme){
-        Toast.makeText(this, theme.value, Toast.LENGTH_SHORT).show()
-        saveBrightnessPreference(theme.value)
-        val intent = intent
-        finish()
-        startActivity(intent)
+        if(theme != brightnessTheme) {
+            saveBrightnessPreference(theme.value)
+            viewModel.onFinish()
+            finish()
+            startActivity(intent)
+        }
     }
 
     private fun saveBrightnessPreference(preference: String){
