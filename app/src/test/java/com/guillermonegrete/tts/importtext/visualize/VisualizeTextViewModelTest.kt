@@ -10,6 +10,8 @@ import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -20,6 +22,7 @@ import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import java.util.*
 
+@ExperimentalCoroutinesApi
 class VisualizeTextViewModelTest {
 
     @get:Rule
@@ -53,24 +56,48 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun parse_epub_with_multiple_pages_chapter(){
-        parse_book(DEFAULT_BOOK)
+    fun parse_book_and_show_loading_icon(){
+        // Pause dispatcher so we can verify initial values
+        mainCoroutineRule.pauseDispatcher()
 
+        // Epub parsing
+        runBlockingTest {
+            `when`(epubParser.parseBook(fileReader)).thenReturn(DEFAULT_BOOK)
+            viewModel.parseEpub(fileReader, pageSplitter)
+            viewModel.isEpub = true
+        }
+
+        // Then progress indicator is shown
+        Assert.assertTrue(getUnitLiveDataValue(viewModel.dataLoading))
+
+        mainCoroutineRule.resumeDispatcher()
+
+        // Then progress indicator is hidden
+        Assert.assertFalse(getUnitLiveDataValue(viewModel.dataLoading))
+
+        val resultBook = getUnitLiveDataValue(viewModel.book)
+        assertEquals(DEFAULT_BOOK, resultBook)
+    }
+
+    @Test
+    fun parse_epub_with_multiple_pages_chapter(){
         val pages = listOf("This shouldn't be here", "This should be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter)
-        verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
+        parse_book(DEFAULT_BOOK)
+        viewModel.splitToPages(pageSplitter)
+
+        verify(pageSplitter).setText(DEFAULT_CHAPTER)
         val resultPages = getUnitLiveDataValue(viewModel.pages)
         assertEquals(pages, resultPages)
     }
 
     @Test
     fun parse_epub_with_one_page_chapter(){
-        parse_book(DEFAULT_BOOK)
-
         val pages = listOf("This shouldn't be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
+        parse_book(DEFAULT_BOOK)
+
         viewModel.splitToPages(pageSplitter)
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
@@ -131,10 +158,10 @@ class VisualizeTextViewModelTest {
         bookFile.page = initialPage
         fileRepository.addTasks(bookFile)
 
-        parse_book(DEFAULT_BOOK)
-        viewModel.fileId = bookFile.id
-        viewModel.initPageSplit(pageSplitter)
         splitPages(8)
+        viewModel.fileId = bookFile.id
+        parse_book(DEFAULT_BOOK)
+        viewModel.splitToPages(pageSplitter)
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -153,10 +180,10 @@ class VisualizeTextViewModelTest {
         bookFile.page = initialPage
         fileRepository.addTasks(bookFile)
 
+        splitPages(3)
         parse_book(DEFAULT_BOOK)
         viewModel.fileId = bookFile.id
         viewModel.initPageSplit(pageSplitter)
-        splitPages(3)
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -176,10 +203,10 @@ class VisualizeTextViewModelTest {
         bookFile.page = initialPage
         fileRepository.addTasks(bookFile)
 
+        splitPages(3)
         parse_book(DEFAULT_BOOK)
         viewModel.fileId = bookFile.id
         viewModel.initPageSplit(pageSplitter)
-        splitPages(3)
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -260,9 +287,10 @@ class VisualizeTextViewModelTest {
     }
 
     private fun parse_book(book: Book){
-        `when`(epubParser.parseBook(fileReader)).thenReturn(book)
-        viewModel.parseEpub(fileReader)
-        viewModel.isEpub = true
+        runBlockingTest {
+            `when`(epubParser.parseBook(fileReader)).thenReturn(book)
+            viewModel.parseEpub(fileReader, pageSplitter)
+        }
 
         val resultBook = getUnitLiveDataValue(viewModel.book)
         assertEquals(book, resultBook)

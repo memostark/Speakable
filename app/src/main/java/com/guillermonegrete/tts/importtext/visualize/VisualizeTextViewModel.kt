@@ -54,24 +54,37 @@ class VisualizeTextViewModel @Inject constructor(
     val chapterPath: LiveData<String>
         get() = _chapterPath
 
+    private val _dataLoading = MutableLiveData<Boolean>()
+    val dataLoading: LiveData<Boolean> = _dataLoading
 
-    fun parseEpub(fileReader: ZipFileReader){
-        val parsedBook = epubParser.parseBook(fileReader)
-        basePath = epubParser.basePath
-        text = parsedBook.currentChapter
-        spineSize = parsedBook.spine.size
-        currentBook = parsedBook
-        fileType = ImportedFileType.EPUB
-        _book.value = parsedBook
+
+    fun parseEpub(
+        fileReader: ZipFileReader,
+        pageSplitter: PageSplitter
+    ){
+        _dataLoading.value = true
+        viewModelScope.launch {
+            val parsedBook = epubParser.parseBook(fileReader)
+            basePath = epubParser.basePath
+            text = parsedBook.currentChapter
+            spineSize = parsedBook.spine.size
+            currentBook = parsedBook
+            fileType = ImportedFileType.EPUB
+            _dataLoading.value = false
+            _book.value = parsedBook
+            isEpub = true
+            initPageSplit(pageSplitter)
+        }
     }
 
     fun changeEpubChapter(path: String, fileReader: ZipFileReader){
         text = epubParser.getChapterBodyTextFromPath(path, fileReader)
     }
 
-    fun parseSimpleText(text: String){
+    fun parseSimpleText(text: String, pageSplitter: PageSplitter){
         fileType = ImportedFileType.TXT
         this.text = text
+        initPageSplit(pageSplitter)
     }
 
     fun swipeChapterRight(){

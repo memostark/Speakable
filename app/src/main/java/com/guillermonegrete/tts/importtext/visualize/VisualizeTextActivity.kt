@@ -26,6 +26,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private lateinit var viewPager: ViewPager2
+    private lateinit var progressBar: ProgressBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
 
@@ -40,20 +41,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         setPreferenceTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
+        progressBar = findViewById(R.id.visualizer_progress_bar)
 
         createViewModel()
-
-        if(SHOW_EPUB == intent.action) {
-            val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-            val rootStream = contentResolver.openInputStream(uri)
-            fileReader = ZipFileReader(rootStream)
-            viewModel.parseEpub(fileReader)
-            viewModel.isEpub = true
-            viewModel.fileUri = uri.toString()
-            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
-        } else {
-            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
-        }
 
         currentPageLabel= findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
@@ -64,7 +54,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
             pageSplitter = createPageSplitter()
-            viewModel.initPageSplit(pageSplitter)
+            initParse()
             addPagerCallback()
         }
     }
@@ -86,6 +76,10 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun createViewModel() {
         viewModel.apply {
+            dataLoading.observe(this@VisualizeTextActivity, Observer {
+                progressBar.visibility = if(it) View.VISIBLE else View.GONE
+            })
+
             pages.observe(this@VisualizeTextActivity, Observer {
                 setUpPagerAndIndexLabel(it)
             })
@@ -114,6 +108,19 @@ class VisualizeTextActivity: AppCompatActivity() {
 
                 updateCurrentChapterLabel()
             })
+        }
+    }
+
+    private fun initParse(){
+        if(SHOW_EPUB == intent.action) {
+            val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+            val rootStream = contentResolver.openInputStream(uri)
+            fileReader = ZipFileReader(rootStream)
+            viewModel.parseEpub(fileReader, pageSplitter)
+            viewModel.fileUri = uri.toString()
+            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
+        } else {
+            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text", pageSplitter)
         }
     }
 

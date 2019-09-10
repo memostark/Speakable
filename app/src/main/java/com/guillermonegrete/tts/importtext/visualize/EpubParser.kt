@@ -4,6 +4,8 @@ import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.*
@@ -36,43 +38,44 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
     }
 
-    fun parseBook(
+    suspend fun parseBook(
         zipFileReader: ZipFileReader
     ): Book {
         // Create input stream that supports reset, so we can use it multiple times.
-
-        val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
-        parser.setInput(containerStream, null)
-        parser.nextTag()
-        opfPath = parseContainerFile(parser)
-        extractBasePath(opfPath)
-
-
-        val opfStream = zipFileReader.getFileStream(opfPath)
-        parser.setInput(opfStream, null)
-        parser.nextTag()
-        parseOpfFile(parser)
-
-        val fullTocPath = if(basePath.isEmpty()) tocPath else "$basePath/$tocPath"
-        val tocStream = zipFileReader.getFileStream(fullTocPath)
-        parser.setInput(tocStream, null)
-        parser.nextTag()
-        val toc = parseTableOfContents(parser)
+        return withContext(Dispatchers.IO){
+            val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
+            parser.setInput(containerStream, null)
+            parser.nextTag()
+            opfPath = parseContainerFile(parser)
+            extractBasePath(opfPath)
 
 
-        if(spine.isNotEmpty()){
-            val firstChapterPath = manifest[spine.first()]
-            if(firstChapterPath != null) {
-                val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
-                println("Chapter path: $fullPath")
+            val opfStream = zipFileReader.getFileStream(opfPath)
+            parser.setInput(opfStream, null)
+            parser.nextTag()
+            parseOpfFile(parser)
 
-                val chapterStream = zipFileReader.getFileStream(fullPath)
-                parser.setInput(chapterStream, null)
-                parser.nextTag()
-                parseChapterHtml(parser)
+            val fullTocPath = if(basePath.isEmpty()) tocPath else "$basePath/$tocPath"
+            val tocStream = zipFileReader.getFileStream(fullTocPath)
+            parser.setInput(tocStream, null)
+            parser.nextTag()
+            val toc = parseTableOfContents(parser)
+
+
+            if(spine.isNotEmpty()){
+                val firstChapterPath = manifest[spine.first()]
+                if(firstChapterPath != null) {
+                    val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
+                    println("Chapter path: $fullPath")
+
+                    val chapterStream = zipFileReader.getFileStream(fullPath)
+                    parser.setInput(chapterStream, null)
+                    parser.nextTag()
+                    parseChapterHtml(parser)
+                }
             }
+            return@withContext Book(title, currentChapter, spine, manifest, toc)
         }
-        return Book(title, currentChapter, spine, manifest, toc)
     }
 
     fun getChapterBodyTextFromPath(
