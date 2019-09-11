@@ -42,7 +42,7 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
         zipFileReader: ZipFileReader
     ): Book {
         // Create input stream that supports reset, so we can use it multiple times.
-        return withContext(Dispatchers.IO){
+        return withContext(Dispatchers.Default){
             val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
             parser.setInput(containerStream, null)
             parser.nextTag()
@@ -78,7 +78,7 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
         }
     }
 
-    fun getChapterBodyTextFromPath(
+    suspend fun getChapterBodyTextFromPath(
         path: String,
         zipFileReader: ZipFileReader
     ): String{

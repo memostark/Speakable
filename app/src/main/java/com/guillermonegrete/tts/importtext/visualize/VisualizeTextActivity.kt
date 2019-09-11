@@ -30,9 +30,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
 
-    private lateinit var fileReader: ZipFileReader
-    private lateinit var pageSplitter: PageSplitter
-
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
 
@@ -53,7 +50,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
-            pageSplitter = createPageSplitter()
+            viewModel.pageSplitter = createPageSplitter()
             initParse()
             addPagerCallback()
         }
@@ -81,6 +78,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             pages.observe(this@VisualizeTextActivity, Observer {
+                updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
             })
 
@@ -100,14 +98,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                     showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
                 }
             })
-
-            chapterPath.observe(this@VisualizeTextActivity, Observer {
-                // TODO try to move this to view model class
-                viewModel.changeEpubChapter(it, fileReader)
-                viewModel.splitToPages(pageSplitter)
-
-                updateCurrentChapterLabel()
-            })
         }
     }
 
@@ -115,12 +105,12 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(SHOW_EPUB == intent.action) {
             val uri: Uri = intent.getParcelableExtra(EPUB_URI)
             val rootStream = contentResolver.openInputStream(uri)
-            fileReader = ZipFileReader(rootStream)
-            viewModel.parseEpub(fileReader, pageSplitter)
+            viewModel.fileReader = ZipFileReader(rootStream)
             viewModel.fileUri = uri.toString()
             viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
+            viewModel.parseEpub()
         } else {
-            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text", pageSplitter)
+            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
     }
 

@@ -17,8 +17,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.*
 import org.mockito.MockitoAnnotations
 import java.util.*
 
@@ -48,6 +47,8 @@ class VisualizeTextViewModelTest {
 
         fileRepository = FakeFileRepository()
         viewModel = VisualizeTextViewModel(epubParser, fileRepository)
+        viewModel.pageSplitter = pageSplitter
+        viewModel.fileReader = fileReader
 
         bookFile.apply {
             chapter = 0
@@ -63,8 +64,7 @@ class VisualizeTextViewModelTest {
         // Epub parsing
         runBlockingTest {
             `when`(epubParser.parseBook(fileReader)).thenReturn(DEFAULT_BOOK)
-            viewModel.parseEpub(fileReader, pageSplitter)
-            viewModel.isEpub = true
+            viewModel.parseEpub()
         }
 
         // Then progress indicator is shown
@@ -85,7 +85,7 @@ class VisualizeTextViewModelTest {
         `when`(pageSplitter.getPages()).thenReturn(pages)
 
         parse_book(DEFAULT_BOOK)
-        viewModel.splitToPages(pageSplitter)
+        viewModel.splitToPages()
 
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
         val resultPages = getUnitLiveDataValue(viewModel.pages)
@@ -98,7 +98,7 @@ class VisualizeTextViewModelTest {
         `when`(pageSplitter.getPages()).thenReturn(pages)
         parse_book(DEFAULT_BOOK)
 
-        viewModel.splitToPages(pageSplitter)
+        viewModel.splitToPages()
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
         val resultPages = getUnitLiveDataValue(viewModel.pages)
@@ -112,8 +112,7 @@ class VisualizeTextViewModelTest {
 
         viewModel.swipeChapterRight()
         assertEquals(1, viewModel.currentChapter)
-        val path = getUnitLiveDataValue(viewModel.chapterPath)
-        assertEquals("ch2.html", path)
+        runBlockingTest { verify(epubParser).getChapterBodyTextFromPath("ch2.html", fileReader) }
     }
 
     @Test
@@ -122,13 +121,12 @@ class VisualizeTextViewModelTest {
 
         viewModel.swipeChapterRight()
         assertEquals(1, viewModel.currentChapter)
-        val path = getUnitLiveDataValue(viewModel.chapterPath)
-        assertEquals("ch2.html", path)
+        runBlockingTest { verify(epubParser).getChapterBodyTextFromPath("ch2.html", fileReader) }
 
         viewModel.swipeChapterLeft()
         assertEquals(0, viewModel.currentChapter)
-        val path2 = getUnitLiveDataValue(viewModel.chapterPath)
-        assertEquals("ch1.html", path2)
+        // Called twice, when first load and after swiping
+        runBlockingTest { verify(epubParser, times(2)).getChapterBodyTextFromPath("ch1.html", fileReader) }
     }
 
     @Test
@@ -137,18 +135,7 @@ class VisualizeTextViewModelTest {
 
         viewModel.jumpToChapter("ch3.html")
         assertEquals(2, viewModel.currentChapter)
-        val path = getUnitLiveDataValue(viewModel.chapterPath)
-        assertEquals("ch3.html", path)
-    }
-
-    @Test
-    fun jumps_to_existing_chapter_using_index(){
-        parse_book(THREE_CHAPTER_BOOK)
-
-        viewModel.jumpToChapter(2)
-        assertEquals(2, viewModel.currentChapter)
-        val path = getUnitLiveDataValue(viewModel.chapterPath)
-        assertEquals("ch3.html", path)
+        runBlockingTest { verify(epubParser).getChapterBodyTextFromPath("ch3.html", fileReader) }
     }
 
     @Test
@@ -161,7 +148,7 @@ class VisualizeTextViewModelTest {
         splitPages(8)
         viewModel.fileId = bookFile.id
         parse_book(DEFAULT_BOOK)
-        viewModel.splitToPages(pageSplitter)
+        viewModel.splitToPages()
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -183,7 +170,7 @@ class VisualizeTextViewModelTest {
         splitPages(3)
         parse_book(DEFAULT_BOOK)
         viewModel.fileId = bookFile.id
-        viewModel.initPageSplit(pageSplitter)
+        viewModel.initPageSplit()
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -206,7 +193,7 @@ class VisualizeTextViewModelTest {
         splitPages(3)
         parse_book(DEFAULT_BOOK)
         viewModel.fileId = bookFile.id
-        viewModel.initPageSplit(pageSplitter)
+        viewModel.initPageSplit()
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -227,7 +214,7 @@ class VisualizeTextViewModelTest {
 
         // Initial state
         viewModel.fileUri = uri
-        viewModel.initPageSplit(pageSplitter)
+        viewModel.initPageSplit()
 
         splitPages(7)
 
@@ -263,7 +250,7 @@ class VisualizeTextViewModelTest {
         // Initial state
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = bookFile.id
-        viewModel.initPageSplit(pageSplitter)
+        viewModel.initPageSplit()
 
         splitPages(7)
 
@@ -289,7 +276,7 @@ class VisualizeTextViewModelTest {
     private fun parse_book(book: Book){
         runBlockingTest {
             `when`(epubParser.parseBook(fileReader)).thenReturn(book)
-            viewModel.parseEpub(fileReader, pageSplitter)
+            viewModel.parseEpub()
         }
 
         val resultBook = getUnitLiveDataValue(viewModel.book)
@@ -299,7 +286,7 @@ class VisualizeTextViewModelTest {
     private fun splitPages(pagesSize: Int){
         val pages = Array(pagesSize) {""}.toList()
         `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages(pageSplitter)
+        viewModel.splitToPages()
     }
 
     companion object{
