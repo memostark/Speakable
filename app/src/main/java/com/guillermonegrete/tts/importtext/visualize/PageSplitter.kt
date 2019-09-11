@@ -14,7 +14,7 @@ class PageSplitter(
     private val lineSpacingMultiplier: Float,
     private val lineSpacingExtra: Float,
     private val textPaint: TextPaint,
-    private val imageGetter: Html.ImageGetter?
+    val imageGetter: Html.ImageGetter?
 ) {
     private val pages = ArrayList<CharSequence>()
     private val mSpannableStringBuilder = SpannableStringBuilder()

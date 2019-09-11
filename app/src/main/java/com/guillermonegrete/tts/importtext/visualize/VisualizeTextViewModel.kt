@@ -32,9 +32,6 @@ class VisualizeTextViewModel @Inject constructor(
     var spineSize = 0
         private set
 
-    var basePath = ""
-        private set
-
     var pagesSize = 0
         private set
 
@@ -62,7 +59,10 @@ class VisualizeTextViewModel @Inject constructor(
             _dataLoading.value = true
             viewModelScope.launch {
                 val parsedBook = epubParser.parseBook(it)
-                basePath = epubParser.basePath
+                val imageGetter = pageSplitter?.imageGetter
+                if(imageGetter != null && imageGetter is InputStreamImageGetter){
+                    imageGetter.basePath = epubParser.basePath
+                }
                 text = parsedBook.currentChapter
                 spineSize = parsedBook.spine.size
                 currentBook = parsedBook

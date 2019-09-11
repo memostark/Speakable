@@ -10,10 +10,11 @@ import android.text.Html
 import kotlinx.coroutines.runBlocking
 
 class InputStreamImageGetter(
-    private val basePath: String,
     private val context: Context,
     private val zipFileReader: ZipFileReader
 ): Html.ImageGetter {
+
+    var basePath = ""
 
     override fun getDrawable(source: String?): Drawable? {
         return runBlocking {

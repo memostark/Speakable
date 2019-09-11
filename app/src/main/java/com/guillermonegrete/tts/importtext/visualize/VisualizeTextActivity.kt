@@ -196,9 +196,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
-            val zipReader =
-                ZipFileReader(contentResolver.openInputStream(uri))
-            InputStreamImageGetter(viewModel.basePath, this, zipReader)
+            val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
+            InputStreamImageGetter( this, zipReader)
         } else null
 
         return PageSplitter(
