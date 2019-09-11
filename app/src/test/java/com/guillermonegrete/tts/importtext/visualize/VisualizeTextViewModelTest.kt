@@ -1,7 +1,7 @@
 package com.guillermonegrete.tts.importtext.visualize
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.example.android.architecture.blueprints.todoapp.MainCoroutineRule
+import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.getUnitLiveDataValue

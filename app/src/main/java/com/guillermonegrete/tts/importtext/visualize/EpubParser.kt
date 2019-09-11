@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
@@ -16,7 +17,11 @@ import javax.inject.Inject
 /**
  * Based on this project: https://www.codeproject.com/Articles/592909/EPUB-Viewer-for-Android-with-Text-to-Speech
  */
-class EpubParser @Inject constructor(private val parser: XmlPullParser) {
+class EpubParser constructor(
+    private val parser: XmlPullParser,
+    private val defaultDispatcher: CoroutineDispatcher
+) {
+    @Inject constructor(parser: XmlPullParser): this(parser, Dispatchers.Default)
 
     var basePath = ""
         private set
@@ -42,7 +47,7 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
         zipFileReader: ZipFileReader
     ): Book {
         // Create input stream that supports reset, so we can use it multiple times.
-        return withContext(Dispatchers.Default){
+        return withContext(defaultDispatcher){
             val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
             parser.setInput(containerStream, null)
             parser.nextTag()

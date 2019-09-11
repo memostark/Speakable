@@ -2,11 +2,16 @@ package com.guillermonegrete.tts.importtext.visualize
 
 import android.util.Xml
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.guillermonegrete.tts.InstMainCoroutineRule
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
@@ -16,6 +21,7 @@ import org.xmlpull.v1.XmlPullParser
 import java.io.ByteArrayInputStream
 import java.io.StringReader
 
+@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class EpubParserTest {
 
@@ -24,17 +30,21 @@ class EpubParserTest {
 
     private lateinit var epubParser: EpubParser
 
+    @ExperimentalCoroutinesApi
+    @get:Rule
+    var mainCoroutineRule = InstMainCoroutineRule()
+
     @Before
     fun setUp(){
         MockitoAnnotations.initMocks(this)
 
-        epubParser = EpubParser(xmlParser)
+        epubParser = EpubParser(xmlParser, Dispatchers.Unconfined)
 
         xmlParser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
     }
 
     @Test
-    fun creates_book_object(){
+    fun creates_book_object() = runBlockingTest {
         val contentStream = ByteArrayInputStream(CONTAINER_FILE_XML.toByteArray())
         `when`(zipFileReader.getFileStream(EpubParser.CONTAINER_FILE_PATH)).thenReturn(contentStream)
 
