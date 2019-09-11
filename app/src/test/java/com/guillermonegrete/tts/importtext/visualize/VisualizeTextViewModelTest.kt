@@ -83,11 +83,10 @@ class VisualizeTextViewModelTest {
     fun parse_epub_with_multiple_pages_chapter(){
         val pages = listOf("This shouldn't be here", "This should be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
+        runBlockingTest { `when`(epubParser.getChapterBodyTextFromPath("ch1.html", fileReader)).thenReturn(DEFAULT_CHAPTER)}
 
         parse_book(DEFAULT_BOOK)
-        viewModel.splitToPages()
 
-        verify(pageSplitter).setText(DEFAULT_CHAPTER)
         val resultPages = getUnitLiveDataValue(viewModel.pages)
         assertEquals(pages, resultPages)
     }
@@ -96,12 +95,13 @@ class VisualizeTextViewModelTest {
     fun parse_epub_with_one_page_chapter(){
         val pages = listOf("This shouldn't be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
+        runBlockingTest { `when`(epubParser.getChapterBodyTextFromPath("ch1.html", fileReader)).thenReturn(DEFAULT_CHAPTER)}
         parse_book(DEFAULT_BOOK)
 
-        viewModel.splitToPages()
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
         val resultPages = getUnitLiveDataValue(viewModel.pages)
+        // If it has only one page, then returns two pages (swipe doesn't work with 1 page)
         val expectedPages = listOf("This shouldn't be here", "")
         assertEquals(expectedPages, resultPages)
     }
@@ -148,7 +148,6 @@ class VisualizeTextViewModelTest {
         splitPages(8)
         viewModel.fileId = bookFile.id
         parse_book(DEFAULT_BOOK)
-        viewModel.splitToPages()
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -164,21 +163,22 @@ class VisualizeTextViewModelTest {
     fun when_changed_to_previous_chapter_set_last_page(){
         // Set up
         val initialPage = 2
+        val initialChapter = 1
         bookFile.page = initialPage
+        bookFile.chapter = initialChapter
         fileRepository.addTasks(bookFile)
 
         splitPages(3)
-        parse_book(DEFAULT_BOOK)
         viewModel.fileId = bookFile.id
-        viewModel.initPageSplit()
+        parse_book(DEFAULT_BOOK)
 
         // Returns initial page in first load
         val page = viewModel.getPage()
         assertEquals(initialPage, page)
 
-        // Second load
-        viewModel.swipeChapterLeft()
+        // Second load, changed to chapter 0
         splitPages(5)
+        viewModel.swipeChapterLeft()
         val secondLoadPage = viewModel.getPage()
         assertEquals(5 - 1, secondLoadPage)
     }
@@ -191,9 +191,8 @@ class VisualizeTextViewModelTest {
         fileRepository.addTasks(bookFile)
 
         splitPages(3)
-        parse_book(DEFAULT_BOOK)
         viewModel.fileId = bookFile.id
-        viewModel.initPageSplit()
+        parse_book(DEFAULT_BOOK)
 
         // Returns initial page in first load
         val page = viewModel.getPage()
@@ -214,7 +213,6 @@ class VisualizeTextViewModelTest {
 
         // Initial state
         viewModel.fileUri = uri
-        viewModel.initPageSplit()
 
         splitPages(7)
 
@@ -245,12 +243,12 @@ class VisualizeTextViewModelTest {
         val initialChapter = 2
         bookFile.chapter = initialChapter
         fileRepository.addTasks(bookFile)
-        parse_book(DEFAULT_BOOK)
 
         // Initial state
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = bookFile.id
-        viewModel.initPageSplit()
+        parse_book(DEFAULT_BOOK)
+
 
         splitPages(7)
 
@@ -286,7 +284,6 @@ class VisualizeTextViewModelTest {
     private fun splitPages(pagesSize: Int){
         val pages = Array(pagesSize) {""}.toList()
         `when`(pageSplitter.getPages()).thenReturn(pages)
-        viewModel.splitToPages()
     }
 
     companion object{
@@ -295,7 +292,7 @@ class VisualizeTextViewModelTest {
             "Test title",
             DEFAULT_CHAPTER,
             Array(5){"$it"}.toList(),
-            mapOf("1" to "ch1.html", "2" to "ch2.html", "3" to "ch3.html", "4" to "ch4.html", "5" to "ch5.html"),
+            mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
             TableOfContents(listOf())
         )
         private val TWO_CHAPTER_BOOK = Book(

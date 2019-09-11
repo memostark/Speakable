@@ -87,12 +87,14 @@ class EpubParser constructor(
         path: String,
         zipFileReader: ZipFileReader
     ): String{
-        val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
-        val chapterStream = zipFileReader.getFileStream(fullPath)
-        parser.setInput(chapterStream, null)
-        parser.nextTag()
-        parseChapterHtml(parser)
-        return currentChapter
+        return withContext(Dispatchers.Default){
+            val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
+            val chapterStream = zipFileReader.getFileStream(fullPath)
+            parser.setInput(chapterStream, null)
+            parser.nextTag()
+            parseChapterHtml(parser)
+            return@withContext currentChapter
+        }
     }
 
     private fun extractBasePath(fullPath: String){
