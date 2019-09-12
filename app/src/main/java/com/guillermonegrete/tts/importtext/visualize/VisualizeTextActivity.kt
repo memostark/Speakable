@@ -48,6 +48,10 @@ class VisualizeTextActivity: AppCompatActivity() {
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
         brightnessButton.setOnClickListener { showBrightnessSettings(it) }
 
+        if(SHOW_EPUB != intent.action) {
+            currentChapterLabel.visibility = View.GONE
+        }
+
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
             viewModel.pageSplitter = createPageSplitter()
