@@ -271,6 +271,23 @@ class VisualizeTextViewModelTest {
 
     }
 
+    @Test
+    fun parses_book_from_picker_with_uri_already_in_db(){
+        // Setup
+        fileRepository.addTasks(bookFile)
+        viewModel.fileUri = bookFile.uri
+        viewModel.fileId = -1
+
+        parse_book(DEFAULT_BOOK)
+
+        val lastReadDate = Calendar.getInstance()
+        viewModel.onFinish(lastReadDate)
+
+        assertEquals(1, fileRepository.filesServiceData.values.size)
+
+
+    }
+
     private fun parse_book(book: Book){
         runBlockingTest {
             `when`(epubParser.parseBook(fileReader)).thenReturn(book)

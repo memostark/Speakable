@@ -84,14 +84,6 @@ class ImportTextFragment: Fragment() {
         setViewModel()
 
         recentFilesList = root.findViewById(R.id.recent_files_list)
-        val testUri = "content://com.android.externalstorage.documents/document/primary%3ADownload%2FEnde%2C%20Michael%20-%20Die%20unendliche%20Geschichte.epub"
-        val dummyFiles = listOf(
-            BookFile(testUri, "Chapter 4",  ImportedFileType.EPUB, "en", 2, 3),
-            BookFile(testUri, "Chapter 1",  ImportedFileType.EPUB, "en", 3, 0),
-            BookFile(testUri, "Chapter 3",  ImportedFileType.EPUB, "en", 2, 2),
-            BookFile(testUri, "Chapter 2",  ImportedFileType.EPUB, "en", 1, 1)
-        )
-
         recentFilesList.layoutManager = LinearLayoutManager(context)
 
         return root

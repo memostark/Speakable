@@ -127,11 +127,19 @@ class VisualizeTextViewModel @Inject constructor(
 
     private suspend fun initPageSplit() {
         if(isEpub){
-            databaseBookFile = fileRepository.getFile(fileId)
+            databaseBookFile = getBookFile()
             val initialChapter = databaseBookFile?.chapter ?: 0
             jumpToChapter(initialChapter)
         }else{
             splitToPages()
+        }
+    }
+
+    private suspend fun getBookFile(): BookFile?{
+        return if(fileId == -1){
+            fileUri?.let { fileRepository.getFile(it) }
+        } else {
+            fileRepository.getFile(fileId)
         }
     }
 
