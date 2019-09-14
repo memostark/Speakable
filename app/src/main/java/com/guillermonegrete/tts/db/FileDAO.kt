@@ -20,6 +20,9 @@ abstract class FileDAO {
     @Query("SELECT * FROM book_files WHERE bookFileId = :id")
     abstract fun getFile(id: Int): BookFile?
 
+    @Query("SELECT * FROM book_files WHERE uri = :uri")
+    abstract fun getFile(uri: String): BookFile?
+
     @Transaction
     open fun upsert(file: BookFile) {
         println("Trying to insert file: $file")

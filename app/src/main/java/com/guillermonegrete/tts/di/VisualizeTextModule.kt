@@ -1,8 +1,8 @@
 package com.guillermonegrete.tts.di
 
 import androidx.lifecycle.ViewModel
-import com.guillermonegrete.tts.importtext.VisualizeTextActivity
-import com.guillermonegrete.tts.importtext.VisualizeTextViewModel
+import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
+import com.guillermonegrete.tts.importtext.visualize.VisualizeTextViewModel
 import dagger.Binds
 import dagger.Module
 import dagger.android.ContributesAndroidInjector

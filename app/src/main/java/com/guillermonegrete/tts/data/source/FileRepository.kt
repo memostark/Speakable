@@ -7,5 +7,7 @@ interface FileRepository{
 
     suspend fun getFile(id: Int): BookFile?
 
+    suspend fun getFile(uri: String): BookFile?
+
     suspend fun saveFile(file: BookFile)
 }

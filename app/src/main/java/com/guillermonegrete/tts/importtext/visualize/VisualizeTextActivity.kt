@@ -1,12 +1,10 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextPaint
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +14,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.ui.BrightnessTheme
 import dagger.android.AndroidInjection
 import javax.inject.Inject
 
@@ -27,31 +26,21 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private lateinit var viewPager: ViewPager2
+    private lateinit var progressBar: ProgressBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
 
-    private lateinit var fileReader: ZipFileReader
-    private lateinit var pageSplitter: PageSplitter
+    @Inject lateinit var preferences: SharedPreferences
+    @Inject lateinit var brightnessTheme: BrightnessTheme
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         setPreferenceTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
+        progressBar = findViewById(R.id.visualizer_progress_bar)
 
         createViewModel()
-
-        if(SHOW_EPUB == intent.action) {
-            val uri: Uri = intent.getParcelableExtra(EPUB_URI)
-            val rootStream = contentResolver.openInputStream(uri)
-            fileReader = ZipFileReader(rootStream)
-            viewModel.parseEpub(fileReader)
-            viewModel.isEpub = true
-            viewModel.fileUri = uri.toString()
-            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
-        } else {
-            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
-        }
 
         currentPageLabel= findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
@@ -59,10 +48,14 @@ class VisualizeTextActivity: AppCompatActivity() {
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
         brightnessButton.setOnClickListener { showBrightnessSettings(it) }
 
+        if(SHOW_EPUB != intent.action) {
+            currentChapterLabel.visibility = View.GONE
+        }
+
         viewPager = findViewById(R.id.text_reader_viewpager)
         viewPager.post{
-            pageSplitter = createPageSplitter()
-            viewModel.initPageSplit(pageSplitter)
+            viewModel.pageSplitter = createPageSplitter()
+            initParse()
             addPagerCallback()
         }
     }
@@ -73,19 +66,23 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
 
-    // Change activity theme at runtime: https://stackoverflow.com/a/6390025/10244759
+    // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
     private fun setPreferenceTheme() {
-        when(intent.getStringExtra(BRIGHTNESS_THEME)){
-            "White" -> setTheme(R.style.AppMaterialTheme_White)
-            "Beige" -> setTheme(R.style.AppMaterialTheme_Beige)
-            "Black" -> setTheme(R.style.AppMaterialTheme_Black)
-            else -> setTheme(R.style.AppMaterialTheme_White)
+        when(brightnessTheme){
+            BrightnessTheme.WHITE -> setTheme(R.style.AppMaterialTheme_White)
+            BrightnessTheme.BEIGE -> setTheme(R.style.AppMaterialTheme_Beige)
+            BrightnessTheme.BLACK -> setTheme(R.style.AppMaterialTheme_Black)
         }
     }
 
     private fun createViewModel() {
         viewModel.apply {
+            dataLoading.observe(this@VisualizeTextActivity, Observer {
+                progressBar.visibility = if(it) View.VISIBLE else View.GONE
+            })
+
             pages.observe(this@VisualizeTextActivity, Observer {
+                updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
             })
 
@@ -105,14 +102,19 @@ class VisualizeTextActivity: AppCompatActivity() {
                     showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
                 }
             })
+        }
+    }
 
-            chapterPath.observe(this@VisualizeTextActivity, Observer {
-                // TODO try to move this to view model class
-                viewModel.changeEpubChapter(it, fileReader)
-                viewModel.splitToPages(pageSplitter)
-
-                updateCurrentChapterLabel()
-            })
+    private fun initParse(){
+        if(SHOW_EPUB == intent.action) {
+            val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+            val rootStream = contentResolver.openInputStream(uri)
+            viewModel.fileReader = ZipFileReader(rootStream)
+            viewModel.fileUri = uri.toString()
+            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
+            viewModel.parseEpub()
+        } else {
+            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
         }
     }
 
@@ -129,9 +131,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         val whiteBtn: Button = layout.findViewById(R.id.white_bg_btn)
         val beigeBtn: Button = layout.findViewById(R.id.beige_bg_btn)
         val blackBtn: Button = layout.findViewById(R.id.black_bg_btn)
-        whiteBtn.setOnClickListener {setBackgroundColor("White")}
-        beigeBtn.setOnClickListener {setBackgroundColor("Beige")}
-        blackBtn.setOnClickListener {setBackgroundColor("Black")}
+        whiteBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.WHITE)}
+        beigeBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BEIGE)}
+        blackBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BLACK)}
 
         PopupWindow(
             layout,
@@ -144,12 +146,19 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
     }
 
-    private fun setBackgroundColor(text: String){
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
-        val intent = intent
-        intent.putExtra(BRIGHTNESS_THEME, text)
-        finish()
-        startActivity(intent)
+    private fun setBackgroundColor(theme: BrightnessTheme){
+        if(theme != brightnessTheme) {
+            saveBrightnessPreference(theme.value)
+            viewModel.onFinish()
+            finish()
+            startActivity(intent)
+        }
+    }
+
+    private fun saveBrightnessPreference(preference: String){
+        val editor = preferences.edit()
+        editor.putString(BrightnessTheme.PREFERENCE_KEY, preference)
+        editor.apply()
     }
 
     private fun addPagerCallback(){
@@ -184,7 +193,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         })
     }
 
-    private fun createPageSplitter(): PageSplitter{
+    private fun createPageSplitter(): PageSplitter {
         val lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
         val lineSpacingMultiplier = 1f
         val pageItemPadding = (80 * resources.displayMetrics.density + 0.5f).toInt() // Convert dp to px, 0.5 is for rounding to closest integer
@@ -192,7 +201,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
             val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
-            InputStreamImageGetter(viewModel.basePath, this, zipReader)
+            InputStreamImageGetter( this, zipReader)
         } else null
 
         return PageSplitter(
@@ -217,7 +226,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val filePaths = navPoints.map { it.getContentWithoutTag() }
         val titles = navPoints.map { it.navLabel }
 
-        val adapter = ArrayAdapter(this, android.R.layout.select_dialog_item, titles)
+        val adapter = ArrayAdapter(this, R.layout.dialog_item, titles)
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Table of contents")
@@ -240,7 +249,5 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         const val SHOW_EPUB = "epub"
         const val FILE_ID = "fileId"
-
-        private const val BRIGHTNESS_THEME = "theme"
     }
 }

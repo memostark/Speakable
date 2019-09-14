@@ -1,9 +1,12 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
 import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.*
@@ -14,7 +17,11 @@ import javax.inject.Inject
 /**
  * Based on this project: https://www.codeproject.com/Articles/592909/EPUB-Viewer-for-Android-with-Text-to-Speech
  */
-class EpubParser @Inject constructor(private val parser: XmlPullParser) {
+class EpubParser constructor(
+    private val parser: XmlPullParser,
+    private val defaultDispatcher: CoroutineDispatcher
+) {
+    @Inject constructor(parser: XmlPullParser): this(parser, Dispatchers.Default)
 
     var basePath = ""
         private set
@@ -36,55 +43,58 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
     }
 
-    fun parseBook(
+    suspend fun parseBook(
         zipFileReader: ZipFileReader
     ): Book {
         // Create input stream that supports reset, so we can use it multiple times.
-
-        val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
-        parser.setInput(containerStream, null)
-        parser.nextTag()
-        opfPath = parseContainerFile(parser)
-        extractBasePath(opfPath)
-
-
-        val opfStream = zipFileReader.getFileStream(opfPath)
-        parser.setInput(opfStream, null)
-        parser.nextTag()
-        parseOpfFile(parser)
-
-        val fullTocPath = if(basePath.isEmpty()) tocPath else "$basePath/$tocPath"
-        val tocStream = zipFileReader.getFileStream(fullTocPath)
-        parser.setInput(tocStream, null)
-        parser.nextTag()
-        val toc = parseTableOfContents(parser)
+        return withContext(defaultDispatcher){
+            val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
+            parser.setInput(containerStream, null)
+            parser.nextTag()
+            opfPath = parseContainerFile(parser)
+            extractBasePath(opfPath)
 
 
-        if(spine.isNotEmpty()){
-            val firstChapterPath = manifest[spine.first()]
-            if(firstChapterPath != null) {
-                val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
-                println("Chapter path: $fullPath")
+            val opfStream = zipFileReader.getFileStream(opfPath)
+            parser.setInput(opfStream, null)
+            parser.nextTag()
+            parseOpfFile(parser)
 
-                val chapterStream = zipFileReader.getFileStream(fullPath)
-                parser.setInput(chapterStream, null)
-                parser.nextTag()
-                parseChapterHtml(parser)
+            val fullTocPath = if(basePath.isEmpty()) tocPath else "$basePath/$tocPath"
+            val tocStream = zipFileReader.getFileStream(fullTocPath)
+            parser.setInput(tocStream, null)
+            parser.nextTag()
+            val toc = parseTableOfContents(parser)
+
+
+            if(spine.isNotEmpty()){
+                val firstChapterPath = manifest[spine.first()]
+                if(firstChapterPath != null) {
+                    val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
+                    println("Chapter path: $fullPath")
+
+                    val chapterStream = zipFileReader.getFileStream(fullPath)
+                    parser.setInput(chapterStream, null)
+                    parser.nextTag()
+                    parseChapterHtml(parser)
+                }
             }
+            return@withContext Book(title, currentChapter, spine, manifest, toc)
         }
-        return Book(title, currentChapter, spine, manifest, toc)
     }
 
-    fun getChapterBodyTextFromPath(
+    suspend fun getChapterBodyTextFromPath(
         path: String,
         zipFileReader: ZipFileReader
     ): String{
-        val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
-        val chapterStream = zipFileReader.getFileStream(fullPath)
-        parser.setInput(chapterStream, null)
-        parser.nextTag()
-        parseChapterHtml(parser)
-        return currentChapter
+        return withContext(Dispatchers.Default){
+            val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
+            val chapterStream = zipFileReader.getFileStream(fullPath)
+            parser.setInput(chapterStream, null)
+            parser.nextTag()
+            parseChapterHtml(parser)
+            return@withContext currentChapter
+        }
     }
 
     private fun extractBasePath(fullPath: String){
@@ -118,10 +128,14 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
      */
     private fun parseContainerFile(parser: XmlPullParser): String{
 
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_CONTAINER)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_CONTAINER
+        )
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == XML_ELEMENT_ROOTFILE) return parser.getAttributeValue(null, XML_ATTRIBUTE_FULLPATH)
+            if(parser.name == XML_ELEMENT_ROOTFILE) return parser.getAttributeValue(null,
+                XML_ATTRIBUTE_FULLPATH
+            )
         }
         return ""
     }
@@ -134,7 +148,9 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
      *             spine (toc) -> itemref (idref)
      */
     private fun parseOpfFile(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_PACKAGE)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_PACKAGE
+        )
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             when(parser.name){
@@ -147,7 +163,9 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
     }
 
     private fun readMetadata() {
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_METADATA)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_METADATA
+        )
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             if(parser.name == XML_ELEMENT_DCTITLE) readTitle()
@@ -160,13 +178,19 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
      * Example tag: <dc:title>Hunger: Book One</dc:title>
      */
     private fun readTitle() {
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_DCTITLE)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_DCTITLE
+        )
         title = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_DCTITLE)
+        parser.require(XmlPullParser.END_TAG, ns,
+            XML_ELEMENT_DCTITLE
+        )
     }
 
     private fun readManifest(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_MANIFEST)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_MANIFEST
+        )
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             if(parser.name == XML_ELEMENT_MANIFESTITEM) readManifestItem(parser)
@@ -175,17 +199,25 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
     }
 
     private fun readManifestItem(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_MANIFESTITEM)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_MANIFESTITEM
+        )
         val id = parser.getAttributeValue(null, "id")
         val href = parser.getAttributeValue(null, "href")
         parser.nextTag()
         manifest[id] = href
-        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_MANIFESTITEM)
+        parser.require(XmlPullParser.END_TAG, ns,
+            XML_ELEMENT_MANIFESTITEM
+        )
     }
 
     private fun readSpine(parser: XmlPullParser) {
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_SPINE)
-        val tocId = parser.getAttributeValue(null, XML_ATTRIBUTE_TOC)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_SPINE
+        )
+        val tocId = parser.getAttributeValue(null,
+            XML_ATTRIBUTE_TOC
+        )
         tocPath = manifest[tocId] ?: ""
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
@@ -195,11 +227,17 @@ class EpubParser @Inject constructor(private val parser: XmlPullParser) {
     }
 
     private fun readSpineItem(parser: XmlPullParser) {
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_ITEMREF)
-        val idref = parser.getAttributeValue(null, XML_ATTRIBUTE_IDREF)
+        parser.require(XmlPullParser.START_TAG, ns,
+            XML_ELEMENT_ITEMREF
+        )
+        val idref = parser.getAttributeValue(null,
+            XML_ATTRIBUTE_IDREF
+        )
         parser.nextTag()
         spine.add(idref)
-        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_ITEMREF)
+        parser.require(XmlPullParser.END_TAG, ns,
+            XML_ELEMENT_ITEMREF
+        )
     }
 
     /**

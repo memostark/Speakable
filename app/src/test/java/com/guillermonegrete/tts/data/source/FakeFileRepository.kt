@@ -16,6 +16,10 @@ class FakeFileRepository: FileRepository {
         return filesServiceData[id]
     }
 
+    override suspend fun getFile(uri: String): BookFile? {
+        return filesServiceData.filter { it.value.uri == uri }.values.first()
+    }
+
     override suspend fun saveFile(file: BookFile) {
         filesServiceData[file.id] = file
     }
