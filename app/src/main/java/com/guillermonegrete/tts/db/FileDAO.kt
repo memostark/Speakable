@@ -14,8 +14,11 @@ abstract class FileDAO {
     @Update
     abstract fun update(file: BookFile)
 
-    @Query("SELECT * FROM book_files")
+    @Query("SELECT * FROM book_files ORDER BY lastRead DESC")
     abstract fun getRecentFiles(): List<BookFile>
+
+    @Query("SELECT * FROM book_files")
+    abstract fun getFiles(): List<BookFile>
 
     @Query("SELECT * FROM book_files WHERE bookFileId = :id")
     abstract fun getFile(id: Int): BookFile?
