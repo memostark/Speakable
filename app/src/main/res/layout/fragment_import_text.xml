@@ -11,13 +11,14 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:padding="8dp"
+        android:background="@drawable/black_border"
+        android:ellipsize="end"
         android:hint="@string/import_text_hint"
         android:lines="8"
         android:maxLength="500"
         android:maxLines="8"
-        android:ellipsize="end"
-        android:background="@drawable/black_border"
+        android:padding="8dp"
+        android:gravity="top"
         app:layout_constraintEnd_toStartOf="@+id/guideline3"
         app:layout_constraintStart_toStartOf="@+id/guideline2"
         app:layout_constraintTop_toTopOf="parent" />
@@ -42,6 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="@string/paste_icon_description"
+        style="@style/Widget.AppCompat.Button.Colored"
         app:layout_constraintEnd_toStartOf="@+id/visualize_btn"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -52,55 +54,59 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/visualize_label"
+        style="@style/Widget.AppCompat.Button.Colored"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/paste_btn"
         app:layout_constraintTop_toTopOf="@+id/paste_btn" />
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:textAppearance="?android:textAppearanceMedium"
-        app:layout_constraintBottom_toBottomOf="@+id/pick_txt_file_btn"
-        app:layout_constraintEnd_toStartOf="@+id/pick_txt_file_btn"
-        app:layout_constraintTop_toTopOf="@+id/pick_txt_file_btn"
-        tools:text="My_file.txt" />
-
     <Button
         android:id="@+id/pick_txt_file_btn"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="8dp"
         android:text="@string/pick_txt_file"
-        app:layout_constraintEnd_toStartOf="@+id/guideline3"
-        app:layout_constraintStart_toStartOf="@+id/pick_epub_file_btn"
-        app:layout_constraintTop_toBottomOf="@+id/visualize_btn" />
+        style="@style/Widget.AppCompat.Button.Colored"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/pick_epub_file_btn"
+        app:layout_constraintTop_toTopOf="@+id/pick_epub_file_btn" />
 
     <Button
         android:id="@+id/pick_epub_file_btn"
+        style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="8dp"
         android:text="@string/pick_epub_file"
+        app:layout_constraintEnd_toStartOf="@+id/pick_txt_file_btn"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_chainStyle="spread"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/paste_btn" />
+
+    <TextView
+        android:id="@+id/recent_files_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:text="@string/recent_files_label"
+        android:textAppearance="?android:textAppearanceMedium"
         app:layout_constraintEnd_toStartOf="@+id/guideline3"
-        app:layout_constraintTop_toBottomOf="@+id/pick_txt_file_btn" />
+        app:layout_constraintStart_toStartOf="@+id/guideline2"
+        app:layout_constraintTop_toBottomOf="@+id/pick_epub_file_btn" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recent_files_list"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
         android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline3"
         app:layout_constraintStart_toStartOf="@+id/guideline2"
-        app:layout_constraintTop_toBottomOf="@+id/pick_epub_file_btn"
+        app:layout_constraintTop_toBottomOf="@+id/recent_files_label"
         tools:listitem="@layout/recent_file_item" />
 
     <ProgressBar
