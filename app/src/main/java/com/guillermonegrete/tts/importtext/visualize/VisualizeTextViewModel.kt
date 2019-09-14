@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.importtext
+package com.guillermonegrete.tts.importtext.visualize
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import kotlinx.coroutines.*
 import java.util.*
@@ -16,7 +17,10 @@ class VisualizeTextViewModel @Inject constructor(
     private val fileRepository: FileRepository
 ): ViewModel() {
 
-    var isEpub = false
+    var pageSplitter: PageSplitter? = null
+    var fileReader: ZipFileReader? = null
+
+    private var isEpub = false
     private var firstLoad = true
     private var leftSwipe = false
 
@@ -28,15 +32,12 @@ class VisualizeTextViewModel @Inject constructor(
     var spineSize = 0
         private set
 
-    var basePath = ""
-        private set
-
     var pagesSize = 0
         private set
 
     var fileUri: String? = null
     var fileId: Int = -1
-    var databaseBookFile: BookFile? = null
+    private var databaseBookFile: BookFile? = null
 
     private var currentBook: Book? = null
     private var fileType = ImportedFileType.TXT
@@ -49,28 +50,41 @@ class VisualizeTextViewModel @Inject constructor(
     val pages: LiveData<List<CharSequence>>
         get() = _pages
 
-    private val _chapterPath = MutableLiveData<String>()
-    val chapterPath: LiveData<String>
-        get() = _chapterPath
+    private val _dataLoading = MutableLiveData<Boolean>()
+    val dataLoading: LiveData<Boolean> = _dataLoading
 
 
-    fun parseEpub(fileReader: ZipFileReader){
-        val parsedBook = epubParser.parseBook(fileReader)
-        basePath = epubParser.basePath
-        text = parsedBook.currentChapter
-        spineSize = parsedBook.spine.size
-        currentBook = parsedBook
-        fileType = ImportedFileType.EPUB
-        _book.value = parsedBook
+    fun parseEpub() {
+        fileReader?.let {
+            _dataLoading.value = true
+            viewModelScope.launch {
+                val parsedBook = epubParser.parseBook(it)
+                val imageGetter = pageSplitter?.imageGetter
+                if(imageGetter != null && imageGetter is InputStreamImageGetter){
+                    imageGetter.basePath = epubParser.basePath
+                }
+                text = parsedBook.currentChapter
+                spineSize = parsedBook.spine.size
+                currentBook = parsedBook
+                fileType = ImportedFileType.EPUB
+                _book.value = parsedBook
+                isEpub = true
+                initPageSplit()
+                _dataLoading.value = false
+            }
+        }
     }
 
-    fun changeEpubChapter(path: String, fileReader: ZipFileReader){
-        text = epubParser.getChapterBodyTextFromPath(path, fileReader)
+    private suspend fun changeEpubChapter(path: String){
+        text = fileReader?.let { epubParser.getChapterBodyTextFromPath(path, it) } ?: ""
     }
 
     fun parseSimpleText(text: String){
-        fileType = ImportedFileType.TXT
-        this.text = text
+        viewModelScope.launch {
+            fileType = ImportedFileType.TXT
+            this@VisualizeTextViewModel.text = text
+            initPageSplit()
+        }
     }
 
     fun swipeChapterRight(){
@@ -84,14 +98,19 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun swipeChapter(position: Int){
-        _book.value?.let{
+        currentBook?.let{
             val spineSize = it.spine.size
             if (position in 0 until spineSize) {
                 val spineItem = it.spine[position]
                 val newChapterPath = it.manifest[spineItem]
                 if (newChapterPath != null) {
                     currentChapter = position
-                    _chapterPath.value = newChapterPath
+                    _dataLoading.value = true
+                    viewModelScope.launch {
+                        changeEpubChapter(newChapterPath)
+                        splitToPages()
+                        _dataLoading.value = false
+                    }
                 }
             }
         }
@@ -106,15 +125,21 @@ class VisualizeTextViewModel @Inject constructor(
         return currentPage
     }
 
-    fun initPageSplit(pageSplitter: PageSplitter){
+    private suspend fun initPageSplit() {
         if(isEpub){
-            viewModelScope.launch {
-                databaseBookFile = fileRepository.getFile(fileId)
-                val initialChapter = databaseBookFile?.chapter ?: 0
-                jumpToChapter(initialChapter)
-            }
+            databaseBookFile = getBookFile()
+            val initialChapter = databaseBookFile?.chapter ?: 0
+            jumpToChapter(initialChapter)
         }else{
-            splitToPages(pageSplitter)
+            splitToPages()
+        }
+    }
+
+    private suspend fun getBookFile(): BookFile?{
+        return if(fileId == -1){
+            fileUri?.let { fileRepository.getFile(it) }
+        } else {
+            fileRepository.getFile(fileId)
         }
     }
 
@@ -127,7 +152,12 @@ class VisualizeTextViewModel @Inject constructor(
             val index = it.spine.indexOf(key)
             if(index != -1) {
                 currentChapter = index
-                _chapterPath.value = path
+                _dataLoading.value = true
+                viewModelScope.launch {
+                    changeEpubChapter(path)
+                    splitToPages()
+                    _dataLoading.value = false
+                }
             }
         }
     }
@@ -135,7 +165,7 @@ class VisualizeTextViewModel @Inject constructor(
     /**
      * Used when you have the index, using the order defined in the spine. E.g. index saved from recent files list
      */
-    fun jumpToChapter(index: Int){
+    private suspend fun jumpToChapter(index: Int){
         currentBook?.let {book ->
             val spine = book.spine
             val manifest = book.manifest
@@ -148,20 +178,23 @@ class VisualizeTextViewModel @Inject constructor(
 
             println(" Index: $index, Path: $chapterPath")
 
-            if(index != -1) {
+            if(index != -1 && chapterPath != null) {
                 currentChapter = index
-                _chapterPath.value = chapterPath
+                changeEpubChapter(chapterPath)
+                splitToPages()
             }
         }
     }
 
-    fun splitToPages(pageSplitter: PageSplitter){
-        pageSplitter.setText(text)
-        pageSplitter.split()
-        val mutablePages = pageSplitter.getPages().toMutableList()
-        if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
-        pagesSize = mutablePages.size
-        _pages.value = mutablePages
+    private suspend fun splitToPages() {
+        pageSplitter?.let {
+            it.setText(text)
+            it.split()
+            val mutablePages = it.getPages().toMutableList()
+            if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
+            pagesSize = mutablePages.size
+            _pages.value = mutablePages
+        }
     }
 
     /**

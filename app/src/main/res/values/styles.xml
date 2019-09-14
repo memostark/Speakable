@@ -32,7 +32,10 @@
         <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
     </style>
 
+    <!--Base themes-->
     <style name="AppMaterialTheme" parent="Theme.MaterialComponents.Light.NoActionBar"/>
+
+    <style name="DialogTheme" parent="Theme.MaterialComponents.Light.Dialog.Alert"/>
 
     <!--White theme-->
     <style name="AppMaterialTheme.White">
@@ -41,6 +44,13 @@
         <item name="borderColor">@color/black</item>
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
+
+        <item name="alertDialogTheme">@style/DialogTheme.White</item>
+    </style>
+
+    <style name="DialogTheme.White">
+        <item name="android:background">@color/white</item>
+        <item name="android:textColor">#000</item>
     </style>
 
     <!--Beige theme-->
@@ -50,6 +60,14 @@
         <item name="borderColor">@color/black</item>
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
+
+        <item name="alertDialogTheme">@style/DialogTheme.Beige</item>
+    </style>
+
+    <style name="DialogTheme.Beige">
+        <item name="android:background">@color/beige</item>
+        <item name="android:textColor">#000</item>
+        <item name="colorAccent">@color/beige</item>
     </style>
 
     <!--Black theme-->
@@ -59,5 +77,12 @@
         <item name="borderColor">@color/white</item>
         <item name="iconTintColor">@color/white</item>
         <item name="popUpBackground">@color/DarkerGrey</item>
+
+        <item name="alertDialogTheme">@style/DialogTheme.Black</item>
+    </style>
+
+    <style name="DialogTheme.Black">
+        <item name="android:background">@color/DarkerGrey</item>
+        <item name="android:textColor">#FFF</item>
     </style>
 </resources>

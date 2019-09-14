@@ -22,6 +22,7 @@ import com.guillermonegrete.tts.imageprocessing.*
 import com.guillermonegrete.tts.main.TranslatorEnumKey
 import com.guillermonegrete.tts.main.TranslatorType
 import com.guillermonegrete.tts.threading.MainThreadImpl
+import com.guillermonegrete.tts.ui.BrightnessTheme
 import dagger.Module
 import dagger.Provides
 import javax.inject.Qualifier
@@ -74,6 +75,14 @@ object ApplicationModule {
         val recognizerPreference =
             Integer.parseInt(preferences.getString(TextRecognizerType.PREFERENCE_KEY, defaultType.toString())!!)
         return TextRecognizerType.valueOf(recognizerPreference)
+    }
+
+    @JvmStatic
+    @Provides
+    fun provideBrightnessTheme(preferences: SharedPreferences): BrightnessTheme{
+        val defaultType = BrightnessTheme.WHITE.value
+        val recognizerPreference = preferences.getString(BrightnessTheme.PREFERENCE_KEY, defaultType) ?: defaultType
+        return BrightnessTheme.get(recognizerPreference)
     }
 
     @JvmStatic
