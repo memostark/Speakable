@@ -5,6 +5,8 @@ import com.guillermonegrete.tts.db.BookFile
 interface FileRepository{
     suspend fun getRecentFiles(): List<BookFile>
 
+    suspend fun getFiles(): List<BookFile>
+
     suspend fun getFile(id: Int): BookFile?
 
     suspend fun getFile(uri: String): BookFile?

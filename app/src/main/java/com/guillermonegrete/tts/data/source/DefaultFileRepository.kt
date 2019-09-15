@@ -9,6 +9,13 @@ import javax.inject.Singleton
 
 @Singleton
 class DefaultFileRepository @Inject constructor(private val fileDAO: FileDAO): FileRepository{
+
+    override suspend fun getFiles(): List<BookFile> {
+        return withContext(Dispatchers.IO){
+            return@withContext fileDAO.getFiles()
+        }
+    }
+
     override suspend fun getRecentFiles(): List<BookFile> {
         return withContext(Dispatchers.IO){
             return@withContext fileDAO.getRecentFiles()
