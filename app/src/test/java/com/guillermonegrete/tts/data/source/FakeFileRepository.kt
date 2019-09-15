@@ -8,8 +8,12 @@ class FakeFileRepository: FileRepository {
 
     var filesServiceData: LinkedHashMap<Int, BookFile> = LinkedHashMap()
 
-    override suspend fun getRecentFiles(): List<BookFile> {
+    override suspend fun getFiles(): List<BookFile> {
         return filesServiceData.values.toList()
+    }
+
+    override suspend fun getRecentFiles(): List<BookFile> {
+        return filesServiceData.values.toList().sortedByDescending { it.lastRead }
     }
 
     override suspend fun getFile(id: Int): BookFile? {

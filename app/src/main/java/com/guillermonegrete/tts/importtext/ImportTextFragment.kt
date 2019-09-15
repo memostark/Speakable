@@ -24,7 +24,6 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import dagger.android.support.AndroidSupportInjection
 import java.io.*

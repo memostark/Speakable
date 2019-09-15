@@ -75,6 +75,7 @@
     <string name="brightness_settings">Brightness settings</string>
     <string name="pick_txt_file">Pick TXT file</string>
     <string name="pick_epub_file">PICK EPUB FILE</string>
+    <string name="recent_files_label">Recently opened files</string>
 
 
     <string-array name="language_code_arrays">
