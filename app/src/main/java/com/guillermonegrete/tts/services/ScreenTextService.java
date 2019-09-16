@@ -264,12 +264,24 @@ public class ScreenTextService extends Service {
                 detectTextInteractor.invoke(
                         new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
                         snipView.getSnipRectangle(),
-                        (text, language) -> {
-                            Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                            // TODO should probably move this condition to the custom tts class
-                            boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                            if (!isInitialized) tts.initializeTTS(language);
-                            if(isAvailable) tts.speak(text, ttsListener);
+                        new DetectTextFromScreen.Callback() {
+                            @Override
+                            public void onTextDetected(@NotNull String text, @NotNull String language) {
+                                Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
+                                // TODO should probably move this condition to the custom tts class
+                                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
+                                if (!isInitialized) tts.initializeTTS(language);
+                                if(isAvailable) tts.speak(text, ttsListener);
+                            }
+
+                            @Override
+                            public void onError(@NotNull String message) {
+                                isPlaying = false;
+                                isAvailable = false;
+                                playLoadingIcon.setVisibility(View.GONE);
+                                playButton.setVisibility(View.VISIBLE);
+                                Toast.makeText(ScreenTextService.this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
+                            }
                         });
             }
 
@@ -278,9 +290,20 @@ public class ScreenTextService extends Service {
         translateButton.setOnClickListener(v -> detectTextInteractor.invoke(
                 new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
                 snipView.getSnipRectangle(),
-                (text, language) -> {
-                    System.out.println("detected text: " + text);
-                    detectLanguageAndTranslate(text);
+                new DetectTextFromScreen.Callback() {
+                    @Override
+                    public void onTextDetected(@NotNull String text, @NotNull String language) {
+                        detectLanguageAndTranslate(text);
+                    }
+
+                    @Override
+                    public void onError(@NotNull String message) {
+                        isPlaying = false;
+                        isAvailable = false;
+                        playLoadingIcon.setVisibility(View.GONE);
+                        playButton.setVisibility(View.VISIBLE);
+                        Toast.makeText(ScreenTextService.this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
+                    }
                 }
         ));
 

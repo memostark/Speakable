@@ -9,6 +9,6 @@ interface ImageProcessingSource {
     interface Callback{
         fun onTextDetected(text: String, language: String)
 
-        fun onFailure()
+        fun onFailure(message: String)
     }
 }
