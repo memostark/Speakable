@@ -88,12 +88,13 @@ public class WiktionarySource implements DictionaryDataSource {
 
                     if(subHeaders.length > 1) {
                         String subHeaderContent = subHeaders[1];
-                        /*String[] subsubheader = subHeaders[1].split("\n==== ");
-                        for (String subsub : subsubheader) {
-                            items.add(new WiktionaryItem(subsub.replace("====\n", ""), subHeader));
-                        }*/
-                        items.add(new WiktionaryItem(subHeaderContent.replace("====", ""), subHeader));
-                    } else {
+
+                        // We remove undesirable equals
+                        String firstFilter = subHeaderContent.replace("=====", "");
+                        String itemBodyText = firstFilter.replace("====", "");
+
+                        items.add(new WiktionaryItem(itemBodyText, subHeader));
+                    } else { // Because some headers don't have text body
                         items.add(new WiktionaryItem("", subHeader.replace("===", "")));
                     }
                 }

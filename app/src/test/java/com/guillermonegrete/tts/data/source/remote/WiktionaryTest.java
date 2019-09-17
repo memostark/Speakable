@@ -3,59 +3,15 @@ package com.guillermonegrete.tts.data.source.remote;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryLangHeader;
-import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 
 public class WiktionaryTest {
-
-    private WiktionarySource dataSource;
-    private final CountDownLatch latch = new CountDownLatch(1);
-
-    @Before
-    public void setDataSource(){
-        dataSource = new WiktionarySource();
-    }
-
-    public void TranslatorTest(){
-        dataSource.getDefinition("prueba", new DictionaryDataSource.GetDefinitionCallback() {
-            @Override
-            public void onDefinitionLoaded(List<WikiItem> definitions) {
-                for (WikiItem def : definitions){
-                    if(def instanceof WiktionaryItem){
-                        WiktionaryItem item = (WiktionaryItem) def;
-                        System.out.println("---------Item type:");
-                        System.out.println(item.getSubHeaderText());
-                        System.out.println(item.getItemText());
-                    }else{
-                        WiktionaryLangHeader item = (WiktionaryLangHeader) def;
-                        System.out.println("---------Header type:");
-                        System.out.println(item.getLanguage());
-                    }
-                }
-                latch.countDown();
-            }
-
-            @Override
-            public void onDataNotAvailable() {
-                latch.countDown();
-            }
-        } );
-
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-    }
 
 
     @Test
@@ -71,6 +27,19 @@ public class WiktionaryTest {
                 new WiktionaryItem("(North Wales) (standard) (colloquial) IPA(key): /ˈkasdɛɬ/, [ˈkʰastɛɬ]\n\n", "Pronunciation"),
                 new WiktionaryItem("castell m (plural cestyll or castelli)\n\ncastle (fortified building)\nrook (chess piece)\n\n\n Synonyms \ncaer\n\n", "Noun"),
                 new WiktionaryItem("", "Mutation ")
+        );
+
+        assertWikiItemList(expectedItems, resultItems);
+    }
+
+    @Test
+    public void process_sub_header_with_five_equals(){
+        String wikiExtract = "\n== German ==\n\n\n=== Pronunciation ===\nDescription 1\n\n\n==== Adverb ====\nDescription 2\n\n\n===== Synonyms =====\nDescription 3\n\n\n";
+        List<WikiItem> resultItems = WiktionarySource.WiktionaryParser.parse(wikiExtract);
+
+        List<WikiItem> expectedItems = Arrays.asList(
+                new WiktionaryLangHeader("German"),
+                new WiktionaryItem("Description 1\n\n\n Adverb \nDescription 2\n\n\n Synonyms \nDescription 3\n\n\n", "Pronunciation")
         );
 
         assertWikiItemList(expectedItems, resultItems);
