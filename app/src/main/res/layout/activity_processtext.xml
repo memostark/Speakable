@@ -122,11 +122,14 @@
 
         <com.google.android.material.tabs.TabLayout
             android:layout_width="match_parent"
-            android:layout_height="20dp"
+            android:layout_height="4dp"
             android:id="@+id/pager_menu_dots"
-            app:tabBackground="@drawable/tab_selector"
-            app:tabGravity="center"
-            app:tabIndicatorHeight="0dp"/>
+            android:background="@android:color/transparent"
+            app:tabIndicatorColor="@color/DarkRed"
+            app:tabBackground="@android:color/transparent"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabIndicatorHeight="4dp"/>
 
 
 
