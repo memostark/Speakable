@@ -56,9 +56,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private WiktionaryAdapter mAdapter;
 
-    private String TAG = this.getClass().getSimpleName();
-
-    private String mTranslation;
     private String mSelectedText;
 
     private Boolean mAutoTTS;
@@ -147,6 +144,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private void setWordLayout(Words word){
         setContentView(R.layout.activity_processtext);
+        System.out.println("Detected word language: " + word.lang);
         final String textString = word.word;
 
         TextView mTextTTS = findViewById(R.id.text_tts);
@@ -198,6 +196,14 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         setWiktionaryLayout(word, items);
         setSavedWordToolbar(word);
         languagePreferenceIndex = -1; // Indicates spinner not visible
+
+        // Hides language from spinner, because language is already predefined.
+        Spinner spinner = findViewById(R.id.spinner_language_from_code);
+        spinner.setVisibility(View.INVISIBLE);
+
+        TextView textViewLanguage = findViewById(R.id.text_language_code);
+        textViewLanguage.setVisibility(View.VISIBLE);
+
     }
 
     @Override

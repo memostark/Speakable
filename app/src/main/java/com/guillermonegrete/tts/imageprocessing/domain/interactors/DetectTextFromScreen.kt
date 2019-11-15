@@ -43,10 +43,14 @@ class DetectTextFromScreen @Inject constructor (
             mMainThread.post{callback?.onTextDetected(text, language)}
         }
 
-        override fun onFailure() {}
+        override fun onFailure(message: String) {
+            mMainThread.post{callback?.onError(message)}
+        }
     }
 
     interface Callback{
         fun onTextDetected(text: String, language: String)
+
+        fun onError(message: String)
     }
 }

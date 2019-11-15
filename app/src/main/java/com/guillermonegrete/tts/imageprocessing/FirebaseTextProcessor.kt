@@ -18,7 +18,7 @@ class FirebaseTextProcessor: ImageProcessingSource{
                     bitmapCopy.recycle()
                 }
                 .addOnFailureListener {
-                    callback.onFailure()
+                    callback.onFailure(it.toString())
                     bitmapCopy.recycle()
                 }
     }
@@ -30,7 +30,7 @@ class FirebaseTextProcessor: ImageProcessingSource{
                     callback.onTextDetected(text, it)
                 }
                 .addOnFailureListener {
-                    callback.onFailure()
+                    callback.onFailure(it.toString())
                 }
     }
 }

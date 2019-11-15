@@ -30,6 +30,11 @@
     "language": "de"
   },
   {
+    "siteName": "Reverso Contexto",
+    "link": "https://context.reverso.net/translation/hebrew-english/{q}",
+    "language": "he"
+  },
+  {
     "siteName": "Reverso Conjugator",
     "link": "http://conjugator.reverso.net/conjugation-hebrew-verb-{q}.html",
     "language": "he"
@@ -40,8 +45,8 @@
     "language": "he"
   },
   {
-    "siteName": "Wiktionary",
-    "link": "https://en.wiktionary.org/wiki/{q}",
+    "siteName": "Morfix",
+    "link": "https://www.morfix.co.il/en/{q}",
     "language": "he"
   },
   {

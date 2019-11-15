@@ -26,7 +26,7 @@ class FirebaseCloudTextProcessor(private val detector: FirebaseVisionTextRecogni
                 bitmapCopy.recycle()
             }
             .addOnFailureListener {
-                callback.onFailure()
+                callback.onFailure(it.toString())
                 bitmapCopy.recycle()
             }
     }
