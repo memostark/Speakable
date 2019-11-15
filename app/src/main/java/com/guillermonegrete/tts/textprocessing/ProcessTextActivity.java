@@ -342,7 +342,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         Window window = getWindow();
         WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
                 WindowManager.LayoutParams.FLAG_DIM_BEHIND;
         window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         window.setAttributes(wlp);
@@ -353,8 +352,8 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
         Window window = getWindow();
         WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.dimAmount = 0;
-        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        wlp.y = 50 * (int)getResources().getDisplayMetrics().density; // dp to px
         wlp.gravity = Gravity.BOTTOM;
         window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
