@@ -7,7 +7,10 @@
     <color name="black">#000</color>
     <color name="beige">#ffedbf</color>
     <color name="white">#FFF</color>
+    
+    <color name="highEmphasisWhite">#DEFFFFFF</color>
 
     <color name="grey">#484848</color>
     <color name="DarkerGrey">#2C2C2C</color>
+    <color name="DarkestGrey">#121212</color>
 </resources>

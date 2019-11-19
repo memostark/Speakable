@@ -4,5 +4,5 @@
     <attr name="borderColor" format="reference" />
     <attr name="iconTintColor" format="reference" />
     <attr name="popUpBackground" format="reference" />
-
+    <attr name="cardBackground" format="reference" />
 </resources>
