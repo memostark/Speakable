@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.provider.DocumentsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -212,8 +211,9 @@ class ImportTextFragment: Fragment() {
         uri: Uri,
         fileId: Int
     ){
-        // Check if file exits, this can be improved: https://stackoverflow.com/a/50143855/10244759
-        if (DocumentsContract.isDocumentUri(context, uri)) {
+        val uriValidator = UriValidator()
+
+        if (uriValidator.isLoadable(requireContext(), uri)) {
             val intent = Intent(context, VisualizeTextActivity::class.java).apply {
                 action = VisualizeTextActivity.SHOW_EPUB
                 putExtra(VisualizeTextActivity.EPUB_URI, uri)
