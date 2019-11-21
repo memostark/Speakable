@@ -15,9 +15,9 @@ import android.os.Bundle;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -52,7 +52,7 @@ import static com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIA
 import static com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE;
 
 
-public class ProcessTextActivity extends FragmentActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
+public class ProcessTextActivity extends AppCompatActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
 
     private WiktionaryAdapter mAdapter;
 
@@ -87,6 +87,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         AndroidInjection.inject(this);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -338,7 +339,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private void setCenterDialog(){
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         Window window = getWindow();
         WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
@@ -348,7 +348,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private void setBottomDialog(){
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         Window window = getWindow();
         WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.dimAmount = 0;

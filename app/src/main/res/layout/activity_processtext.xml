@@ -8,7 +8,6 @@
     android:layout_marginTop="50dp"
     android:layout_marginStart="30dp"
     android:layout_marginEnd="30dp"
-    android:theme="@android:style/Theme.Dialog"
     app:cardElevation="5dp">
 
     <LinearLayout
@@ -38,7 +37,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="#000000"
+                android:textColor="?attr/colorOnBackground"
                 android:textSize="20sp"
                 tools:text="Selected text" />
             <Spinner
@@ -124,7 +123,7 @@
             android:layout_height="4dp"
             android:id="@+id/pager_menu_dots"
             android:background="@android:color/transparent"
-            app:tabIndicatorColor="@color/DarkRed"
+            app:tabIndicatorColor="?attr/colorPrimary"
             app:tabBackground="@android:color/transparent"
             app:tabMode="fixed"
             app:tabGravity="fill"
