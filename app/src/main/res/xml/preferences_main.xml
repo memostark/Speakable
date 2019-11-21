@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <SwitchPreferenceCompat
         android:key="auto_tts_switch"
         android:title="TTS automatically"
@@ -57,5 +58,20 @@
         android:title="Pop up window size"
         android:summary="Small or large"
         android:defaultValue="light" />
+
+    <PreferenceCategory
+        android:key="theme_category"
+        android:title="Theme">
+
+        <ListPreference
+            android:key="theme_pref_key"
+            android:title="Choose theme"
+            android:defaultValue="default"
+            android:dialogTitle="Choose theme"
+            android:entries="@array/themeListArray"
+            android:entryValues="@array/themeEntryArray"
+            app:useSimpleSummaryProvider="true"/>
+
+    </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
