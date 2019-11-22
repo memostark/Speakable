@@ -34,7 +34,6 @@
 package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.navigation.NavigationView;
@@ -68,55 +67,50 @@ public class MainActivity extends AppCompatActivity {
         mDrawerLayout = findViewById(R.id.main_drawer_layout);
         setActionBar();
 
-        NavigationView nav_view = findViewById(R.id.nav_view);
-        nav_view.setCheckedItem(R.id.nav_item_main);
-        nav_view.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                menuItem.setChecked(true);
-                mDrawerLayout.closeDrawers();
+        NavigationView navView = findViewById(R.id.nav_view);
+        navView.setCheckedItem(R.id.nav_item_main);
+        navView.setNavigationItemSelectedListener(menuItem -> {
+            menuItem.setChecked(true);
+            mDrawerLayout.closeDrawers();
 
-                FragmentManager fragmentManager = getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                Fragment newFragment;
-                String title;
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            Fragment newFragment;
+            String title;
 
-                switch (menuItem.getItemId()){
-                    case R.id.nav_item_main:
-                        title = getString(R.string.main);
-                        newFragment = new TextToSpeechFragment();
-                        break;
-                    case R.id.nav_item_saved:
-                        title = getString(R.string.saved);
-                        newFragment  = new SavedWordsFragment();
-                        break;
-                    case R.id.nav_item_import:
-                        title = getString(R.string.import_text);
-                        newFragment = new ImportTextFragment();
-                        break;
-                    case  R.id.nav_item_settings:
-                        title = "";
-                        newFragment  = new SettingsFragment();
-                        break;
-                    default:
-                        title = getString(R.string.main);
-                        newFragment = new TextToSpeechFragment();
-                        break;
-                }
-
-                actionbar.setTitle(title);
-                fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
-                fragmentTransaction.commit();
-
-                return true;
+            switch (menuItem.getItemId()){
+                case R.id.nav_item_saved:
+                    title = getString(R.string.saved);
+                    newFragment  = new SavedWordsFragment();
+                    break;
+                case R.id.nav_item_import:
+                    title = getString(R.string.import_text);
+                    newFragment = new ImportTextFragment();
+                    break;
+                case  R.id.nav_item_settings:
+                    title = "";
+                    newFragment  = new SettingsFragment();
+                    break;
+                default:
+                    title = getString(R.string.main);
+                    newFragment = new TextToSpeechFragment();
+                    break;
             }
+
+            actionbar.setTitle(title);
+            fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
+            fragmentTransaction.commit();
+
+            return true;
         });
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        TextToSpeechFragment fragment = new TextToSpeechFragment();
-        fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
-        fragmentTransaction.commit();
+        if(savedInstanceState == null){
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            TextToSpeechFragment fragment = new TextToSpeechFragment();
+            fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
+            fragmentTransaction.commit();
+        }
     }
 
     private void setActionBar(){
