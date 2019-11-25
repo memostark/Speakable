@@ -11,6 +11,7 @@
         style="@style/Base.Widget.AppCompat.Spinner.Underlined"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:spinnerMode="dialog"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView

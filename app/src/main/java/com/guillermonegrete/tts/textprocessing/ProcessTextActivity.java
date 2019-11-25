@@ -397,7 +397,6 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
 
     private void setLanguageFromSpinner(){
         Spinner spinner = findViewById(R.id.spinner_language_from_code);
-        setSpinnerPopUpHeight(spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.googleTranslateLangsWithAutoValue, R.layout.spinner_layout_end);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -409,33 +408,13 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
 
     private void setSpinner(){
         Spinner spinner = findViewById(R.id.translate_to_spinner);
-        setSpinnerPopUpHeight(spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
 
         spinner.setSelection(languagePreferenceIndex, false);
         spinner.setOnItemSelectedListener(new SpinnerListener());
-    }
-
-    // Taken from: https://stackoverflow.com/questions/20597584/how-to-limit-the-height-of-spinner-drop-down-view-in-android
-    private void setSpinnerPopUpHeight(Spinner spinner){
-        try {
-            Field popup = Spinner.class.getDeclaredField("mPopup");
-            popup.setAccessible(true);
-
-            // Get private mPopup member variable and try cast to ListPopupWindow
-            android.widget.ListPopupWindow popupWindow = (android.widget.ListPopupWindow) popup.get(spinner);
-
-            // Set popupWindow height to 500px
-            popupWindow.setHeight(300);
-        }
-        catch (NoClassDefFoundError | ClassCastException | NoSuchFieldException | IllegalAccessException e) {
-            // silently fail...
-        }
     }
 
     @Override

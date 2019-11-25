@@ -46,8 +46,7 @@
                 android:layout_height="wrap_content"
                 android:dropDownWidth="70dp"
                 android:background="@android:color/transparent"
-                android:spinnerMode="dropdown"
-                android:theme="@style/Theme.AppCompat.Light"
+                android:spinnerMode="dialog"
                 style="@android:style/Widget.Material.Spinner"
                 android:layout_gravity="center"/>
             <TextView

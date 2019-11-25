@@ -74,9 +74,8 @@ class TranslationFragment: Fragment() {
 
     private fun setSpinner(root: View) {
         val spinner = root.findViewById<Spinner>(R.id.translate_to_spinner)
-        setSpinnerPopUpHeight(spinner)
         val arrayAdapter = ArrayAdapter.createFromResource(
-            context,
+            requireContext(),
             R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item
         )
         // Specify the layout to use when the list of choices appears
@@ -86,26 +85,6 @@ class TranslationFragment: Fragment() {
             adapter = arrayAdapter
             spinnerIndex?.let { setSelection(it, false) }
             onItemSelectedListener = SpinnerListener()
-        }
-
-    }
-
-    // Taken from: https://stackoverflow.com/questions/20597584/how-to-limit-the-height-of-spinner-drop-down-view-in-android
-    private fun setSpinnerPopUpHeight(spinner: Spinner) {
-        try {
-            val popup = Spinner::class.java.getDeclaredField("mPopup")
-            popup.isAccessible = true
-
-            // Get private mPopup member variable and try cast to ListPopupWindow
-            val popupWindow = popup.get(spinner) as android.widget.ListPopupWindow
-
-            // Set popupWindow height to 500px
-            popupWindow.height = 300
-        } catch (e: NoClassDefFoundError) {
-            // silently fail...
-        } catch (e: ClassCastException) {
-        } catch (e: NoSuchFieldException) {
-        } catch (e: IllegalAccessException) {
         }
 
     }
