@@ -6,6 +6,13 @@
         <!--Avoids showing two action bars-->
         <item name="windowActionModeOverlay">true</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+
+        <!--Color-->
+        <item name="colorPrimary">#28C7BB</item>
+        <item name="colorPrimaryDark">#00968b</item>
+        <item name="colorPrimaryVariant">#00968b</item>
+        <item name="colorSecondary">#6a98ba</item>
+        <item name="colorSecondaryVariant">#4a698a</item>
     </style>
 
     <style name="Theme.Transparent" parent="android:Theme">
@@ -33,9 +40,9 @@
     </style>
 
     <!--Base themes-->
-    <style name="AppMaterialTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar"/>
+    <style name="AppMaterialTheme" parent="AppTheme"/>
 
-    <style name="DialogTheme" parent="Theme.MaterialComponents.Light.Dialog.Alert"/>
+    <style name="DialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert"/>
 
     <!--White theme-->
     <style name="AppMaterialTheme.White">
