@@ -1,11 +1,18 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <!--Avoids showing two action bars-->
         <item name="windowActionModeOverlay">true</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+
+        <!--Color-->
+        <item name="colorPrimary">#28C7BB</item>
+        <item name="colorPrimaryDark">#00968b</item>
+        <item name="colorPrimaryVariant">#00968b</item>
+        <item name="colorSecondary">#6a98ba</item>
+        <item name="colorSecondaryVariant">#4a698a</item>
     </style>
 
     <style name="Theme.Transparent" parent="android:Theme">
@@ -33,14 +40,15 @@
     </style>
 
     <!--Base themes-->
-    <style name="AppMaterialTheme" parent="Theme.MaterialComponents.Light.NoActionBar"/>
+    <style name="AppMaterialTheme" parent="AppTheme"/>
 
-    <style name="DialogTheme" parent="Theme.MaterialComponents.Light.Dialog.Alert"/>
+    <style name="DialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert"/>
 
     <!--White theme-->
     <style name="AppMaterialTheme.White">
         <item name="android:textColor">#000</item>
         <item name="android:windowBackground">@color/white</item>
+        <item name="cardBackground">@color/white</item>
         <item name="borderColor">@color/black</item>
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
@@ -57,6 +65,7 @@
     <style name="AppMaterialTheme.Beige">
         <item name="android:textColor">#000</item>
         <item name="android:windowBackground">@color/beige</item>
+        <item name="cardBackground">@color/beige</item>
         <item name="borderColor">@color/black</item>
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
@@ -72,10 +81,11 @@
 
     <!--Black theme-->
     <style name="AppMaterialTheme.Black">
-        <item name="android:textColor">#FFF</item>
-        <item name="android:windowBackground">@color/black</item>
-        <item name="borderColor">@color/white</item>
-        <item name="iconTintColor">@color/white</item>
+        <item name="android:textColor">@color/highEmphasisWhite</item>
+        <item name="android:windowBackground">@color/DarkestGrey</item>
+        <item name="cardBackground">@color/grey</item>
+        <item name="borderColor">@color/highEmphasisWhite</item>
+        <item name="iconTintColor">@color/highEmphasisWhite</item>
         <item name="popUpBackground">@color/DarkerGrey</item>
 
         <item name="alertDialogTheme">@style/DialogTheme.Black</item>

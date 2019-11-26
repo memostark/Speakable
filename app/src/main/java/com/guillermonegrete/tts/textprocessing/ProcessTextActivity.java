@@ -15,9 +15,9 @@ import android.os.Bundle;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -43,7 +43,6 @@ import dagger.android.AndroidInjection;
 
 
 import javax.inject.Inject;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,7 +51,7 @@ import static com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIA
 import static com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE;
 
 
-public class ProcessTextActivity extends FragmentActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
+public class ProcessTextActivity extends AppCompatActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
 
     private WiktionaryAdapter mAdapter;
 
@@ -87,6 +86,7 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         AndroidInjection.inject(this);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -338,23 +338,20 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
     }
 
     private void setCenterDialog(){
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         Window window = getWindow();
         WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
                 WindowManager.LayoutParams.FLAG_DIM_BEHIND;
         window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         window.setAttributes(wlp);
     }
 
     private void setBottomDialog(){
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         Window window = getWindow();
         WindowManager.LayoutParams wlp = window.getAttributes();
         wlp.dimAmount = 0;
-        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        wlp.y = 50 * (int)getResources().getDisplayMetrics().density; // dp to px
         wlp.gravity = Gravity.BOTTOM;
         window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
@@ -399,7 +396,6 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private void setLanguageFromSpinner(){
         Spinner spinner = findViewById(R.id.spinner_language_from_code);
-        setSpinnerPopUpHeight(spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.googleTranslateLangsWithAutoValue, R.layout.spinner_layout_end);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -411,33 +407,13 @@ public class ProcessTextActivity extends FragmentActivity implements ProcessText
 
     private void setSpinner(){
         Spinner spinner = findViewById(R.id.translate_to_spinner);
-        setSpinnerPopUpHeight(spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
 
         spinner.setSelection(languagePreferenceIndex, false);
         spinner.setOnItemSelectedListener(new SpinnerListener());
-    }
-
-    // Taken from: https://stackoverflow.com/questions/20597584/how-to-limit-the-height-of-spinner-drop-down-view-in-android
-    private void setSpinnerPopUpHeight(Spinner spinner){
-        try {
-            Field popup = Spinner.class.getDeclaredField("mPopup");
-            popup.setAccessible(true);
-
-            // Get private mPopup member variable and try cast to ListPopupWindow
-            android.widget.ListPopupWindow popupWindow = (android.widget.ListPopupWindow) popup.get(spinner);
-
-            // Set popupWindow height to 500px
-            popupWindow.setHeight(300);
-        }
-        catch (NoClassDefFoundError | ClassCastException | NoSuchFieldException | IllegalAccessException e) {
-            // silently fail...
-        }
     }
 
     @Override

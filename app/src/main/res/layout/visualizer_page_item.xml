@@ -10,6 +10,5 @@
         android:layout_height="match_parent"
         android:padding="32dp"
         android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:background="@drawable/theme_color_border"/>
+        android:textAppearance="?android:attr/textAppearanceLarge"/>
 </FrameLayout>

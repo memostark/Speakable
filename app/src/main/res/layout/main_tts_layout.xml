@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_below="@id/toolbar"
-    android:background="#FAFAFA"
     android:focusable="true"
     android:focusableInTouchMode="true">
 
@@ -27,7 +26,7 @@
 
     <Button
         android:id="@+id/startBubble_btn"
-        style="@style/Widget.AppCompat.Button.Colored"
+        style="@style/Widget.MaterialComponents.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -39,7 +38,7 @@
 
     <Button
         android:id="@+id/clipboard_btn"
-        style="@style/Widget.AppCompat.Button.Colored"
+        style="@style/Widget.MaterialComponents.Button"
         android:layout_width="wrap_content"
         android:layout_height="48dp"
         android:text="@string/clipboard_btn_caption"
@@ -66,6 +65,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/reproduce_description"
+            android:tint="?colorOnSurface"
             android:src="@drawable/ic_volume_up_black_24dp"
             tools:visibility="gone" />
 
@@ -83,6 +83,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:contentDescription="@string/browse_icon_description"
+        android:tint="?colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@+id/play_icons_container"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toStartOf="@+id/paste_btn"
@@ -97,6 +98,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:contentDescription="@string/paste_icon_description"
+        android:tint="?colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@+id/browse_btn"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"

@@ -22,6 +22,7 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.utils.ColorUtilsKt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +36,12 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     private boolean multiSelect = false;
     private ArrayList<String> selectedItems = new ArrayList<>();
 
-    public SavedWordListAdapter(Context context){
+    SavedWordListAdapter(Context context){
         this.layoutInflater = LayoutInflater.from(context);
         this.context = context;
     }
 
-    public void setWordsList(List<Words> wordsList){
+    void setWordsList(List<Words> wordsList){
         this.wordsList = wordsList;
         notifyDataSetChanged();
     }
@@ -91,14 +92,11 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
-            switch (menuItem.getItemId()){
-                case (R.id.action_menu_delete):
-                    // TODO move this code to view model
-                    WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
-                    for (String intItem : selectedItems) {
-                        wordsDAO.deleteWord(intItem);
-                    }
-                    break;
+            if (menuItem.getItemId() == R.id.action_menu_delete) {// TODO move this code to view model
+                WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
+                for (String intItem : selectedItems) {
+                    wordsDAO.deleteWord(intItem);
+                }
             }
             actionMode.finish();
             return true;
@@ -120,7 +118,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         private ConstraintLayout container;
         private Words word;
 
-        public WordsViewHolder(View itemView){
+        WordsViewHolder(View itemView){
             super(itemView);
 
             wordText = itemView.findViewById(R.id.saved_word_text);
@@ -134,24 +132,17 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             if (selectedItems.contains(wordText.getText().toString())) {
                 container.setBackgroundColor(Color.LTGRAY);
             } else {
-                container.setBackgroundColor(Color.WHITE);
+                int defaultBGColor = ColorUtilsKt.getThemeColor(itemView.getContext(), R.attr.colorSurface);
+                container.setBackgroundColor(defaultBGColor);
             }
 
-            itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View view) {
-                    ((AppCompatActivity)view.getContext()).startSupportActionMode(actionModeCallback);
-                    selectItem(wordText.getText().toString());
-                    return true;
-                }
+            itemView.setOnLongClickListener(view -> {
+                ((AppCompatActivity)view.getContext()).startSupportActionMode(actionModeCallback);
+                selectItem(wordText.getText().toString());
+                return true;
             });
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    selectItem(wordText.getText().toString());
-                }
-            });
+            itemView.setOnClickListener(view -> selectItem(wordText.getText().toString()));
         }
 
         void setWord(Words word){
@@ -171,7 +162,8 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             if (multiSelect) {
                 if (selectedItems.contains(item)) {
                     selectedItems.remove(item);
-                    container.setBackgroundColor(Color.WHITE);
+                    int defaultBGColor = ColorUtilsKt.getThemeColor(itemView.getContext(), R.attr.colorSurface);
+                    container.setBackgroundColor(defaultBGColor);
                 } else {
                     selectedItems.add(item);
                     container.setBackgroundColor(Color.LTGRAY);

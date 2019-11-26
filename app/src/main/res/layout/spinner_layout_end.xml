@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--Custom layout for spinner that aligns spinner text to the end-->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/text1"
     style="?android:attr/spinnerItemStyle"
     android:singleLine="true"
@@ -7,4 +9,5 @@
     android:layout_height="wrap_content"
     android:ellipsize="marquee"
     android:textAlignment="textEnd"
-    android:gravity="end"/>
+    android:gravity="end"
+    tools:text="Selection" />

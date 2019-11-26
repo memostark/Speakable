@@ -22,11 +22,9 @@
         android:id="@+id/item_text"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="#FFF"
         android:gravity="center_vertical"
         android:padding="5dp"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="#FF000000"
         tools:text="Dictionary definition for Word." />
 
 </LinearLayout>
