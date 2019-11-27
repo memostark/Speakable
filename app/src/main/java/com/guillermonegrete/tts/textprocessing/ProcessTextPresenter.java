@@ -352,5 +352,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isPlaying = false;
             mMainThread.post(() -> mView.showPlayIcon());
         }
+
+        @Override
+        public void onError() {
+            isPlaying = false;
+            mMainThread.post(() -> mView.showErrorPlayingAudio());
+        }
     };
 }

@@ -52,8 +52,10 @@ public class Synthesizer {
     private Callback callback;
 
     private void playSound(final byte[] sound) {
-        if (sound == null || sound.length == 0) return;
-
+        if (sound == null || sound.length == 0) {
+            callback.onError();
+            return;
+        }
 
         AsyncTask.execute(new Runnable() {
             @Override
@@ -123,7 +125,7 @@ public class Synthesizer {
         m_eServiceStrategy = eServiceStrategy;
     }
 
-    public byte[] getAudioBytes(String text) {
+    private byte[] getAudioBytes(String text) {
         String ssml = "<speak version='1.0' xml:lang='" + m_serviceVoice.lang + "'><voice xml:lang='" + m_serviceVoice.lang + "' xml:gender='" + m_serviceVoice.gender + "'";
         if (m_eServiceStrategy == ServiceStrategy.AlwaysService) {
             if (m_serviceVoice.voiceName.length() > 0) {
@@ -144,7 +146,7 @@ public class Synthesizer {
         playSound(SpeakSSML(ssml));
     }
 
-    public byte[] SpeakSSML(String ssml) {
+    private byte[] SpeakSSML(String ssml) {
         byte[] result = null;
         /*
          * check current network environment

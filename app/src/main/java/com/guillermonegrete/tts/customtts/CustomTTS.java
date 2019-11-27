@@ -52,8 +52,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             }
 
             @Override
-            public void onError() {
-            }
+            public void onError() { listener.onError(); }
         };
         mSynth = new Synthesizer(BuildConfig.TTSApiKey, synthCallback);
         isInitialized = false;
@@ -243,5 +242,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         void onSpeakStart();
 
         void onSpeakDone();
+
+        void onError();
     }
 }
