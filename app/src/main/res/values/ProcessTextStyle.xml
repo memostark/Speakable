@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="ProcessTextStyle" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <!--Color-->
+        <item name="colorPrimary">#28C7BB</item>
+        <item name="colorPrimaryDark">#00968b</item>
+        <item name="colorPrimaryVariant">#00968b</item>
+        <item name="colorSecondary">#6a98ba</item>
+        <item name="colorSecondaryVariant">#4a698a</item>
+
         <item name="android:textSize">14sp</item>
         <item name="windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
