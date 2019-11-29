@@ -2,7 +2,6 @@ package com.guillermonegrete.tts.importtext.visualize
 
 import android.text.Spannable
 import android.text.SpannableString
-import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,7 +28,7 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
         private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         fun bind(text: CharSequence){
-            pageTextView.movementMethod = LinkMovementMethod.getInstance()
+            pageTextView.movementMethod = SelectMovementMethod()
 
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
             setSpannables(pageTextView)
