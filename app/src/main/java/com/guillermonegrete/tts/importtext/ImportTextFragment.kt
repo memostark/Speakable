@@ -13,7 +13,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -22,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.textfield.TextInputEditText
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import dagger.android.support.AndroidSupportInjection
@@ -53,10 +53,10 @@ class ImportTextFragment: Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val root = inflater.inflate(R.layout.fragment_import_text, container, false)
-        val editText: TextView = root.findViewById(R.id.import_text_edit)
+        val editText: TextInputEditText = root.findViewById(R.id.import_text_edit)
 
         val pasteButton: Button = root.findViewById(R.id.paste_btn)
-        pasteButton.setOnClickListener { editText.text = getClipboardText() }
+        pasteButton.setOnClickListener { editText.setText(getClipboardText()) }
 
         val visualizeButton: Button = root.findViewById(R.id.visualize_btn)
         visualizeButton.setOnClickListener {
