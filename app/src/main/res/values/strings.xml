@@ -48,9 +48,9 @@
     <string name="how_to_menu_title">How to use</string>
     <string name="powered_by_google_label">Powered by Google Translate</string>
     <string name="bubble_view_description">Floating icon</string>
-    <string name="reproduce_description">reproduce</string>
-    <string name="translate_description">translate</string>
-    <string name="screenshot_description">screenshot</string>
+    <string name="reproduce_description">Reproduce</string>
+    <string name="translate_description">Translate</string>
+    <string name="screenshot_description">Screenshot</string>
     <string name="copy_definition_btn_description">Copy to clipboard</string>
     <string name="translation_label">Translation</string>
     <string name="copy_translation_btn_description">Copy translation to clipboard</string>
@@ -77,12 +77,4 @@
     <string name="pick_epub_file">PICK EPUB FILE</string>
     <string name="recent_files_label">Recently opened files</string>
 
-
-    <string-array name="language_code_arrays">
-        <item>All</item>
-        <item>EN</item>
-        <item>ES</item>
-        <item>DE</item>
-        <item>HE</item>
-    </string-array>
 </resources>

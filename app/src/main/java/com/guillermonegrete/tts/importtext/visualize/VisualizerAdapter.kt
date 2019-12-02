@@ -1,13 +1,13 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.content.Intent
 import android.text.Spannable
 import android.text.SpannableString
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.textprocessing.ProcessTextActivity
 import java.text.BreakIterator
 import java.util.*
 
@@ -26,6 +26,48 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
 
     class PageViewHolder(view: View): RecyclerView.ViewHolder(view){
         private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
+
+        private val actionModeCallback = object : ActionMode.Callback{
+            override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+                when(item.itemId){
+                    R.id.show_process_text_activity -> {
+                        if (pageTextView.isFocused) {
+                            val selStart = pageTextView.selectionStart
+                            val selEnd = pageTextView.selectionEnd
+
+                            // We need to make sure start and end are within the text length
+                            val min = 0.coerceAtLeast(selStart.coerceAtMost(selEnd))
+                            val max = 0.coerceAtLeast(selStart.coerceAtLeast(selEnd))
+
+                            val selectedText = pageTextView.text.subSequence(min, max)
+                            showTextDialog(selectedText)
+                        }
+
+                        mode.finish()
+                        return true
+                    }
+                }
+                return false
+            }
+
+            override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+                return true
+            }
+
+            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+                menu.clear()
+                val inflater: MenuInflater = mode.menuInflater
+                menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, "Copy")
+                inflater.inflate(R.menu.menu_context_text_visualizer, menu)
+                return true
+            }
+
+            override fun onDestroyActionMode(mode: ActionMode?) {}
+        }
+
+        init {
+            pageTextView.customSelectionActionModeCallback = actionModeCallback
+        }
 
         fun bind(text: CharSequence){
             pageTextView.movementMethod = SelectMovementMethod()
@@ -53,6 +95,13 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
                 start = end
                 end = iterator.next()
             }
+        }
+
+        private fun showTextDialog(text: CharSequence){
+            val wiktionaryIntent = Intent(itemView.context, ProcessTextActivity::class.java)
+            wiktionaryIntent.action = ProcessTextActivity.NO_SERVICE
+            wiktionaryIntent.putExtra("android.intent.extra.PROCESS_TEXT", text)
+            itemView.context.startActivity(wiktionaryIntent)
         }
     }
 }
