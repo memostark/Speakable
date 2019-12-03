@@ -53,6 +53,11 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
 
         viewPager = findViewById(R.id.text_reader_viewpager)
+        viewPager.setPageTransformer { _, position ->
+            // A new page is shown when position is 0.0f,
+            // so we request focus in order to highlight text correctly.
+            if(position == 0.0f) setPageTextFocus()
+        }
         viewPager.post{
             viewModel.pageSplitter = createPageSplitter()
             initParse()
@@ -191,6 +196,13 @@ class VisualizeTextActivity: AppCompatActivity() {
                 }
             }
         })
+    }
+
+    private fun setPageTextFocus() {
+        val focusedView = viewPager.focusedChild
+
+        val pageTextView: View? = focusedView.findViewById(R.id.page_text_view)
+        pageTextView?.requestFocus()
     }
 
     private fun createPageSplitter(): PageSplitter {

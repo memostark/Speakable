@@ -70,6 +70,7 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
             pageTextView.customSelectionActionModeCallback = actionModeCallback
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
+            pageTextView.movementMethod = LinkMovementMethod.getInstance()
         }
 
         fun bind(text: CharSequence){
