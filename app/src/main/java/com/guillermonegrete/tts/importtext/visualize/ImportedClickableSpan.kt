@@ -6,10 +6,9 @@ import android.graphics.Color
 import android.text.TextPaint
 import android.text.style.ClickableSpan
 import android.view.View
-import android.widget.TextView
 import com.guillermonegrete.tts.textprocessing.ProcessTextActivity
 
-class ImportedClickableSpan(val word: String): ClickableSpan() {
+class ImportedClickableSpan(private val word: String): ClickableSpan() {
 
     private var clicked = false
     /**
@@ -18,11 +17,7 @@ class ImportedClickableSpan(val word: String): ClickableSpan() {
     private var highLightColor = 0x6633B5E5
 
     override fun onClick(widget: View) {
-        val textView = widget as TextView
-        highLightColor = textView.highlightColor
         clicked = true
-        widget.invalidate() // Why do we invalidate here?
-
         showTextDialog(widget.context)
     }
 

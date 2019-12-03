@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.content.Intent
 import android.text.Spannable
 import android.text.SpannableString
+import android.text.method.LinkMovementMethod
 import android.view.*
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -67,10 +68,12 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
 
         init {
             pageTextView.customSelectionActionModeCallback = actionModeCallback
+            // Color taken from member variable mHighlightColor from TextView class.
+            pageTextView.highlightColor = 0x6633B5E5
         }
 
         fun bind(text: CharSequence){
-            pageTextView.movementMethod = SelectMovementMethod()
+            pageTextView.movementMethod = LinkMovementMethod.getInstance()
 
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
             setSpannables(pageTextView)
