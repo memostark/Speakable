@@ -76,5 +76,7 @@
     <string name="pick_txt_file">Pick TXT file</string>
     <string name="pick_epub_file">PICK EPUB FILE</string>
     <string name="recent_files_label">Recently opened files</string>
+    <string name="error_translation">Error when translating</string>
+    <string name="error">Error</string>
 
 </resources>

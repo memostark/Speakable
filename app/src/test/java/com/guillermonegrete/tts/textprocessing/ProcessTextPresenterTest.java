@@ -4,6 +4,8 @@ import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TestThreadExecutor;
+import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
+import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
@@ -24,6 +26,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -49,6 +52,9 @@ public class ProcessTextPresenterTest {
     private ArgumentCaptor<DictionaryDataSource.GetDefinitionCallback> getDefinitionCallbacCaptor;
 
     @Captor
+    private ArgumentCaptor<ExternalLinksDataSource.Callback> getLinksCaptor;
+
+    @Captor
     private ArgumentCaptor<CustomTTS.Listener> ttsListenerCaptor;
 
     private ProcessTextPresenter presenter;
@@ -56,6 +62,10 @@ public class ProcessTextPresenterTest {
     private List<WikiItem> defaultDictionaryItems = Arrays.asList(
             new WiktionaryItem("First", "First header"),
             new WiktionaryItem("Second", "Second header")
+    );
+
+    private List<ExternalLink> defaultLinksItems = Collections.singletonList(
+            new ExternalLink("Dummy Site", "dummy-link", "en")
     );
 
     private static final String languageFrom = "auto";
@@ -212,6 +222,10 @@ public class ProcessTextPresenterTest {
         // Return dictionary definitions
         verify(dictionaryRepository).getDefinition(eq(inputText), getDefinitionCallbacCaptor.capture());
         getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(defaultDictionaryItems);
+
+        // Return external links
+        verify(linksRepository).getLanguageLinks(eq("un"), getLinksCaptor.capture());
+        getLinksCaptor.getValue().onLinksRetrieved(defaultLinksItems);
 
         verify(view).setWiktionaryLayout(emptyWord, defaultDictionaryItems);
         verify(view).setTranslationErrorMessage();

@@ -126,7 +126,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             }
 
             if(mWord.lang.equals("un")){
-                mCallback.onTranslationError("Error");
+                mMainThread.post(() -> mCallback.onTranslationError("Error"));
             }
         }
     }

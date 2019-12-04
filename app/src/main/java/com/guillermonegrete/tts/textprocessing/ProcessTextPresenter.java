@@ -39,6 +39,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     private boolean isPlaying;
     private boolean isAvailable;
+    private boolean hasTranslation;
 
     @Inject
     ProcessTextPresenter(
@@ -59,6 +60,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         insideLocalDatabase = false;
         isPlaying = false;
         isAvailable = true;
+
+        hasTranslation = false;
     }
 
 
@@ -90,6 +93,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void getLayout(String text, String languageFrom, String languageTo) {
+        hasTranslation = true;
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
@@ -122,7 +126,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
             @Override
             public void onTranslationError(String message) {
-                mView.setTranslationErrorMessage();
+                hasTranslation = false;
             }
         }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
 
@@ -133,6 +137,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void getDictionaryEntry(final Words word) {
         foundWord = word;
+        hasTranslation = true;
         checkTTSInitialization();
 
         GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
@@ -162,7 +167,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         GetExternalLink link_interactor = new GetExternalLink(
                 mExecutor,
                 mMainThread,
-                links -> mView.setExternalDictionary(links),
+                links -> {
+                    mView.setExternalDictionary(links);
+                    if(!hasTranslation) mView.setTranslationErrorMessage();
+                },
                 linksRepository,
                 language
         );

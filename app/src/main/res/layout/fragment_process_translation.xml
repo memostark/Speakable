@@ -146,4 +146,44 @@
         android:layout_height="wrap_content"
         app:constraint_referenced_ids="saved_definition_label,copy_definition_button,saved_definition_text" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/notes_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="saved_notes_label,saved_notes_text"/>
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/all_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="definition_group,translation_group,notes_group"/>
+
+    <LinearLayout
+        android:id="@+id/error_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start"
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/error"
+            app:srcCompat="@drawable/ic_error_outline_black_24dp"
+            android:tint="?colorOnSurface"
+            android:layout_gravity="center"/>
+
+        <TextView
+            android:text="@string/error_translation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

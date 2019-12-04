@@ -53,7 +53,7 @@ import static com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_IC
 
 public class ProcessTextActivity extends AppCompatActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
 
-    private WiktionaryAdapter mAdapter;
+    private WiktionaryAdapter dictionaryAdapter;
 
     private String mSelectedText;
 
@@ -64,7 +64,7 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
     @Inject ProcessTextContract.Presenter presenter;
 
     private ViewPager pager;
-    private MyPageAdapter adapter;
+    private MyPageAdapter pagerAdapter;
 
     private ImageButton playButton;
     private ProgressBar playProgressBar;
@@ -169,7 +169,7 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
         boolean isLargeWindow = preferences.getBoolean(SettingsFragment.PREF_WINDOW_SIZE, ButtonsPreference.DEFAULT_VALUE);
         if(isLargeWindow) setCenterDialog(); else  setBottomDialog();
         setWordLayout(word);
-        mAdapter = new WiktionaryAdapter(this, items);
+        dictionaryAdapter = new WiktionaryAdapter(this, items);
 
         mFoundWords = word;
 
@@ -236,17 +236,28 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
 
     @Override
     public void setExternalDictionary(List<ExternalLink> links) {
-        adapter = new MyPageAdapter(getSupportFragmentManager());
-        if(mAdapter != null) adapter.addFragment(DefinitionFragment.newInstance(mAdapter));
+        pagerAdapter = new MyPageAdapter(getSupportFragmentManager());
+        if(dictionaryAdapter != null) pagerAdapter.addFragment(DefinitionFragment.newInstance(dictionaryAdapter));
         TranslationFragment translationFragment = TranslationFragment.newInstance(mFoundWords, languagePreferenceIndex);
         translationFragment.setListener(translationFragListener);
-        adapter.addFragment(translationFragment);
-        adapter.addFragment(ExternalLinksFragment.newInstance(mSelectedText, (ArrayList<ExternalLink>) links));
-        pager.setAdapter(adapter);
+        pagerAdapter.addFragment(translationFragment);
+        pagerAdapter.addFragment(ExternalLinksFragment.newInstance(mSelectedText, (ArrayList<ExternalLink>) links));
+        pager.setAdapter(pagerAdapter);
     }
 
     @Override
-    public void setTranslationErrorMessage() {}
+    public void setTranslationErrorMessage() {
+        // If pager is not null, means we are using activity_processtext layout,
+        // otherwise is sentence layout
+        if(pagerAdapter != null){
+            int index;
+            // Check if the adapter has dictionary fragment
+            if(dictionaryAdapter != null && pagerAdapter.getCount() == 3) index = 1; else index = 0;
+
+            Fragment fragment = pagerAdapter.getItem(index);
+            if(fragment instanceof TranslationFragment) ((TranslationFragment)fragment).setErrorLayout();
+        }
+    }
 
     @Override
     public void showSaveDialog(Words word) {
@@ -321,7 +332,7 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
         // otherwise is sentence layout
         if(pager != null){
             int fragIndex = pager.getCurrentItem();
-            Fragment fragment = adapter.getItem(fragIndex);
+            Fragment fragment = pagerAdapter.getItem(fragIndex);
             if(fragment instanceof TranslationFragment) ((TranslationFragment)fragment).updateTranslation(translation);
         }else {
             TextView translationTextView = findViewById(R.id.text_translation);
