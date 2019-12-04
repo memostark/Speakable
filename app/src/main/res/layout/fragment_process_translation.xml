@@ -133,6 +133,12 @@
         app:layout_constraintTop_toTopOf="@+id/saved_definition_label" />
 
     <androidx.constraintlayout.widget.Group
+        android:id="@+id/all_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="translation_label,translate_to_spinner,translation_text,copy_translation_button,saved_definition_label,copy_definition_button,saved_definition_text,saved_notes_label,saved_notes_text"/>
+
+    <androidx.constraintlayout.widget.Group
         android:id="@+id/translation_group"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -151,12 +157,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:constraint_referenced_ids="saved_notes_label,saved_notes_text"/>
-
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/all_group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:constraint_referenced_ids="definition_group,translation_group,notes_group"/>
 
     <LinearLayout
         android:id="@+id/error_layout"

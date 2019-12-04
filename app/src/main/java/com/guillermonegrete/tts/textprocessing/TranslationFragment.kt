@@ -36,8 +36,7 @@ class TranslationFragment: Fragment() {
             with(root){
                 findViewById<TextView>(R.id.saved_definition_text).text = word.definition
                 if(word.notes.isNullOrBlank()) {
-                    findViewById<TextView>(R.id.saved_notes_label).visibility = View.GONE
-                    findViewById<TextView>(R.id.saved_notes_text).visibility = View.GONE
+                    findViewById<Group>(R.id.notes_group).visibility = View.GONE
                 }else findViewById<TextView>(R.id.saved_notes_text).text = word.notes
 
                 findViewById<ImageButton>(R.id.copy_definition_button).setOnClickListener {
