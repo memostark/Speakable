@@ -246,6 +246,9 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
     }
 
     @Override
+    public void setTranslationErrorMessage() {}
+
+    @Override
     public void showSaveDialog(Words word) {
         DialogFragment dialogFragment;
         dialogFragment = SaveWordDialogFragment.newInstance(word);
@@ -314,6 +317,8 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
         TextView textLanguage = findViewById(R.id.text_language_code);
         if(languageFrom.equals("auto")) textLanguage.setVisibility(View.VISIBLE); else textLanguage.setVisibility(View.GONE);
 
+        // If pager is not null, means we are using activity_processtext layout,
+        // otherwise is sentence layout
         if(pager != null){
             int fragIndex = pager.getCurrentItem();
             Fragment fragment = adapter.getItem(fragIndex);

@@ -17,7 +17,7 @@ import java.util.List;
 public class GetLayout extends AbstractInteractor implements GetLayoutInteractor {
 
     private GetLayoutInteractor.Callback mCallback;
-    private WordRepository mRepository;
+    private WordRepository wordRepository;
     private DictionaryRepository dictionaryRepository;
     private String mText;
     private String languageFrom;
@@ -39,7 +39,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         super(threadExecutor, mainThread);
         mCallback = callback;
         mText = text;
-        mRepository = repository;
+        wordRepository = repository;
         dictionaryRepository = dictRepository;
 
         insideDictionary = false;
@@ -56,28 +56,21 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         if(splittedText.length > 1){
             // Get translation, wait for callback
             System.out.println("Preference language: " + preferenceLanguage);
-            mRepository.getLanguageAndTranslation(mText, languageFrom, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
+            wordRepository.getLanguageAndTranslation(mText, languageFrom, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
                 @Override
                 public void onTranslationAndLanguage(Words word) {
                     mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION);
                 }
 
                 @Override
-                public void onDataNotAvailable() {
-
-                }
+                public void onDataNotAvailable() {}
             });
         }else{
             // Search in database
-            mRepository.getWordLanguageInfo(mText, languageFrom , preferenceLanguage, new WordRepositorySource.GetWordRepositoryCallback() {
+            wordRepository.getWordLanguageInfo(mText, languageFrom , preferenceLanguage, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(final Words word) {
-                    mMainThread.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SAVED_WORD);
-                        }
-                    });
+                    mMainThread.post(() -> mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SAVED_WORD));
                 }
 
                 @Override
@@ -93,7 +86,11 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
                 }
 
                 @Override
-                public void onDataNotAvailable() {}
+                public void onDataNotAvailable(Words emptyWord) {
+                    translationDone = true;
+                    mWord = emptyWord;
+                    setRemoteLayout();
+                }
             });
         }
 
@@ -123,14 +120,13 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
         if(dictionaryRequestDone && translationDone){
             if(insideDictionary){
-                mMainThread.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCallback.onDictionaryLayoutDetermined(mWord, items);
-                    }
-                });
+                mMainThread.post(() -> mCallback.onDictionaryLayoutDetermined(mWord, items));
             }else{
                 mCallback.onLayoutDetermined(mWord, ProcessTextLayoutType.WORD_TRANSLATION);
+            }
+
+            if(mWord.lang.equals("un")){
+                mCallback.onTranslationError("Error");
             }
         }
     }

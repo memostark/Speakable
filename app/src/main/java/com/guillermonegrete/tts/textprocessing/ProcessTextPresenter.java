@@ -119,6 +119,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(word, items);
             }
+
+            @Override
+            public void onTranslationError(String message) {
+                mView.setTranslationErrorMessage();
+            }
         }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
 
         interactor.execute();
@@ -154,14 +159,13 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void getExternalLinks(String language) {
-        GetExternalLink link_interactor = new GetExternalLink(mExecutor, mMainThread, links -> {
-            mView.setExternalDictionary(links);
-            for(ExternalLink link : links){
-                System.out.print("Site name: ");
-                System.out.println(link.siteName);
-            }
-
-        }, linksRepository, language);
+        GetExternalLink link_interactor = new GetExternalLink(
+                mExecutor,
+                mMainThread,
+                links -> mView.setExternalDictionary(links),
+                linksRepository,
+                language
+        );
 
         link_interactor.execute();
     }

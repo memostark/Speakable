@@ -12,6 +12,7 @@ import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.data.source.local.DatabaseExternalLinksSource;
 import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.threading.TestMainThread;
 
 import org.junit.Before;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +52,11 @@ public class ProcessTextPresenterTest {
     private ArgumentCaptor<CustomTTS.Listener> ttsListenerCaptor;
 
     private ProcessTextPresenter presenter;
+
+    private List<WikiItem> defaultDictionaryItems = Arrays.asList(
+            new WiktionaryItem("First", "First header"),
+            new WiktionaryItem("Second", "Second header")
+    );
 
     private static final String languageFrom = "auto";
     private static final String languageTo = "en";
@@ -187,6 +194,27 @@ public class ProcessTextPresenterTest {
         presenter.onClickReproduce(inputText);
         verify(customTTS).speak(eq(inputText), any());
 
+    }
+
+    @Test
+    public void show_error_with_word_translation_and_dictionary_available(){
+        String inputText = "test_input";
+        String languageFrom = "ES";
+
+        presenter.getLayout(inputText, languageFrom, languageTo);
+
+        // Indicate that no local word nor remote word available
+        verify(wordRepository).getWordLanguageInfo(eq(inputText), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
+        getWordCallbackCaptor.getValue().onLocalWordNotAvailable();
+        Words emptyWord = new Words(inputText, "un", "un");
+        getWordCallbackCaptor.getValue().onDataNotAvailable(emptyWord);
+
+        // Return dictionary definitions
+        verify(dictionaryRepository).getDefinition(eq(inputText), getDefinitionCallbacCaptor.capture());
+        getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(defaultDictionaryItems);
+
+        verify(view).setWiktionaryLayout(emptyWord, defaultDictionaryItems);
+        verify(view).setTranslationErrorMessage();
     }
 
 }

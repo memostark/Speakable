@@ -14,7 +14,7 @@ public interface WordRepositorySource {
 
         void onRemoteWordLoaded(Words word);
 
-        void onDataNotAvailable();
+        void onDataNotAvailable(Words emptyWord);
     }
 
     interface GetTranslationCallback{
