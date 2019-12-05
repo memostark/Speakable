@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.di
 
 import android.app.Application
 import com.guillermonegrete.tts.SpeakableApplication
+import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import dagger.BindsInstance
 import dagger.Component
 import dagger.android.AndroidInjector
@@ -26,4 +27,6 @@ interface ApplicationComponent: AndroidInjector<SpeakableApplication>{
     interface Factory {
         fun create(@BindsInstance app: Application): ApplicationComponent
     }
+
+    fun inject(fragment: TextInfoDialog)
 }

@@ -8,6 +8,7 @@
 package com.guillermonegrete.tts.textprocessing;
 
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -51,7 +52,7 @@ import static com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIA
 import static com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE;
 
 
-public class ProcessTextActivity extends AppCompatActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback{
+public class ProcessTextActivity extends AppCompatActivity implements ProcessTextContract.View, SaveWordDialogFragment.Callback, DialogInterface.OnDismissListener {
 
     private WiktionaryAdapter dictionaryAdapter;
 
@@ -92,17 +93,15 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
 
         mSelectedText = getSelectedText();
 
-        mAutoTTS = getAutoTTSPreference();
-        languagePreferenceISO = getPreferenceISO();
-        languageFrom = getLanguageFromPreference();
+        TextInfoDialog dialog = new TextInfoDialog();
 
-        presenter.setView(this);
-        Words extraWord = getIntent().getParcelableExtra("Word");
-        if(extraWord != null) presenter.start(extraWord);
-        else {
-            if(NO_SERVICE.equals(getIntent().getAction())) presenter.getLayout(getSelectedText(), languageFrom, languagePreferenceISO);
-            else presenter.startWithService(getSelectedText(), languageFrom, languagePreferenceISO);
-        }
+        Bundle bundle = new Bundle();
+        bundle.putString(TextInfoDialog.getTEXT_KEY(), mSelectedText);
+        bundle.putString(TextInfoDialog.getACTION_KEY(), getIntent().getAction());
+        bundle.putString(TextInfoDialog.getACTION_KEY(), getIntent().getParcelableExtra("Word"));
+
+        dialog.setArguments(bundle);
+        dialog.show(getSupportFragmentManager(), "Text_info");
     }
 
     @Override
@@ -459,6 +458,11 @@ public class ProcessTextActivity extends AppCompatActivity implements ProcessTex
             presenter.onLanguageSpinnerChange(languageFrom, languagePreferenceISO);
         }
     };
+
+    @Override
+    public void onDismiss(DialogInterface dialog) {
+        finish();
+    }
 
     /**
      *  Listener when layout is for a sentence
