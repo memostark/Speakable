@@ -5,22 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.1"
-        android:orientation="vertical">
-
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view_wiki"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:listheader="@layout/header_item"
-            tools:listitem = "@layout/definition_item"
-            tools:itemCount="5"/>
-
-    </LinearLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_wiki"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:listheader="@layout/header_item"
+        tools:listitem = "@layout/definition_item"
+        tools:itemCount="5"/>
 
 </LinearLayout>

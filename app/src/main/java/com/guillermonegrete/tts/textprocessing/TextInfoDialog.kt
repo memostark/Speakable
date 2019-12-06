@@ -12,10 +12,10 @@ import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentPagerAdapter
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.SpeakableApplication
 import com.guillermonegrete.tts.customviews.ButtonsPreference
@@ -45,7 +45,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     @Inject
     internal lateinit var presenter: ProcessTextContract.Presenter
 
-    private var pager: ViewPager? = null
+    private var pager: ViewPager2? = null
     private var pagerAdapter: MyPageAdapter? = null
 
     private var playButton: ImageButton? = null
@@ -102,7 +102,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.activity_processtext, container, false)
+        return inflater.inflate(R.layout.placeholder_layout, container, false)
     }
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -131,7 +131,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun setWordLayout(word: Words) {
-//        setContentView(R.layout.activity_processtext)
+        setContentView(R.layout.activity_processtext)
         val textString = word.word
 
         val mTextTTS = view?.findViewById<TextView>(R.id.text_tts)
@@ -200,7 +200,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     override fun setSentenceLayout(word: Words) {
         setBottomDialog()
         val text = word.word
-        // setContentView(R.layout.activity_process_sentence)
+        setContentView(R.layout.activity_process_sentence)
         val mTextTTS = view?.findViewById<TextView>(R.id.text_tts)
         mTextTTS?.text = text
         val mTextTranslation = view?.findViewById<TextView>(R.id.text_translation)
@@ -217,7 +217,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun setExternalDictionary(links: List<ExternalLink>) {
-        pagerAdapter = MyPageAdapter(childFragmentManager)
+        pagerAdapter = MyPageAdapter(this)
         if (dictionaryAdapter != null) pagerAdapter?.addFragment(
             DefinitionFragment.newInstance(dictionaryAdapter)
         )
@@ -228,6 +228,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
         )
         pager?.adapter = pagerAdapter
+
+        val tabLayout = view?.findViewById<TabLayout>(R.id.pager_menu_dots)
+        if(tabLayout != null){
+            pager?.let {
+                TabLayoutMediator(tabLayout, it, true) { _, _ -> }.attach() // Tab without text
+            }
+        }
     }
 
     override fun setTranslationErrorMessage() {
@@ -235,9 +242,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         // otherwise is sentence layout
         if (pagerAdapter != null) {
             // Check if the adapter has dictionary fragment
-            val index: Int = if (dictionaryAdapter != null && pagerAdapter?.count == 3) 1 else 0
+            val index: Int = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
 
-            val fragment = pagerAdapter?.getItem(index)
+            val fragment = pagerAdapter?.fragments?.get(index)
             if (fragment is TranslationFragment) fragment.setErrorLayout()
         }
     }
@@ -306,7 +313,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         if (pager != null) {
             val fragIndex = pager?.currentItem
             if(fragIndex != null) {
-                val fragment = pagerAdapter?.getItem(fragIndex)
+                val fragment = pagerAdapter?.fragments?.get(fragIndex)
                 if (fragment is TranslationFragment) fragment.updateTranslation(translation)
             }
         } else {
@@ -375,8 +382,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     private fun createViewPager() {
         pager = view?.findViewById(R.id.process_view_pager)
-        val tabLayout = view?.findViewById<TabLayout>(R.id.pager_menu_dots)
-        tabLayout?.setupWithViewPager(pager, true)
     }
 
     private fun createSmallViewPager() {
@@ -384,8 +389,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         val params = pager?.layoutParams
         params?.height = 250
         pager?.layoutParams = params
-        val tabLayout = view?.findViewById<TabLayout>(R.id.pager_menu_dots)
-        tabLayout?.setupWithViewPager(pager, true)
     }
 
     private fun setLanguageFromSpinner() {
@@ -473,22 +476,18 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
 
-    private inner class MyPageAdapter internal constructor(fm: FragmentManager) :
-        FragmentPagerAdapter(fm) {
+    private inner class MyPageAdapter internal constructor(fragment: Fragment) :
+        FragmentStateAdapter(fragment) {
 
-        private val fragments = ArrayList<Fragment>()
+        val fragments = ArrayList<Fragment>()
 
-        internal fun addFragment(fragment: Fragment) {
+        fun addFragment(fragment: Fragment) {
             fragments.add(fragment)
         }
 
-        override fun getItem(position: Int): Fragment {
-            return fragments[position]
-        }
+        override fun getItemCount() = fragments.size
 
-        override fun getCount(): Int {
-            return fragments.size
-        }
+        override fun createFragment(position: Int) = fragments[position]
     }
 
 
@@ -499,6 +498,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         @JvmStatic val ACTION_KEY = "extra_key"
 
         private const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
-        private const val NO_SERVICE = "no_service"
+        const val NO_SERVICE = "no_service"
     }
 }
