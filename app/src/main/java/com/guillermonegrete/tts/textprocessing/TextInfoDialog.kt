@@ -30,7 +30,7 @@ import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import java.util.*
 import javax.inject.Inject
 
-class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
+class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
 
     private var window: Window? = null
 
@@ -102,6 +102,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        context?.theme?.applyStyle(R.style.ProcessTextStyle, true)
         return inflater.inflate(R.layout.placeholder_layout, container, false)
     }
 
@@ -493,11 +494,20 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     companion object{
         // Bundle keys
-        @JvmStatic val TEXT_KEY = "text_key"
-        @JvmStatic val WORD_KEY = "word_key"
-        @JvmStatic val ACTION_KEY = "extra_key"
+        const val TEXT_KEY = "text_key"
+        const val WORD_KEY = "word_key"
+        const val ACTION_KEY = "extra_key"
 
         private const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
+
+        @JvmStatic
+        fun newInstance(text: String, action: String?, word: Words?) = TextInfoDialog().apply {
+            arguments = Bundle().apply {
+                putString(TEXT_KEY, text)
+                putString(ACTION_KEY, action)
+                putParcelable(WORD_KEY, word)
+            }
+        }
     }
 }

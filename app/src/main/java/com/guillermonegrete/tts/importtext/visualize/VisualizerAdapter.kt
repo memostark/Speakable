@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.importtext.visualize
 
-import android.content.Intent
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.method.LinkMovementMethod
@@ -8,11 +7,10 @@ import android.view.*
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.textprocessing.ProcessTextActivity
 import java.text.BreakIterator
 import java.util.*
 
-class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Adapter<VisualizerAdapter.PageViewHolder>() {
+class VisualizerAdapter(private val pages: List<CharSequence>, private val showTextDialog: (CharSequence) -> Unit): RecyclerView.Adapter<VisualizerAdapter.PageViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(R.layout.visualizer_page_item, parent, false)
@@ -25,7 +23,7 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
         holder.bind(pages[position])
     }
 
-    class PageViewHolder(view: View): RecyclerView.ViewHolder(view){
+    inner class PageViewHolder(view: View): RecyclerView.ViewHolder(view){
         private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         private val actionModeCallback = object : ActionMode.Callback{
@@ -90,7 +88,14 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
             while (end != BreakIterator.DONE) {
                 val possibleWord = spans.substring(start, end)
                 if (Character.isLetterOrDigit(possibleWord.first())) {
-                    val clickSpan = ImportedClickableSpan(possibleWord)
+
+                    val clickSpan = object: ImportedClickableSpan() {
+                        override fun onClick(widget: View) {
+                            super.onClick(widget)
+                            showTextDialog(possibleWord)
+                        }
+                    }
+
                     spans.setSpan(
                         clickSpan, start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -99,13 +104,6 @@ class VisualizerAdapter(private val pages: List<CharSequence>): RecyclerView.Ada
                 start = end
                 end = iterator.next()
             }
-        }
-
-        private fun showTextDialog(text: CharSequence){
-            val wiktionaryIntent = Intent(itemView.context, ProcessTextActivity::class.java)
-            wiktionaryIntent.action = ProcessTextActivity.NO_SERVICE
-            wiktionaryIntent.putExtra("android.intent.extra.PROCESS_TEXT", text)
-            itemView.context.startActivity(wiktionaryIntent)
         }
     }
 }

@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import dagger.android.AndroidInjection
 import javax.inject.Inject
@@ -126,7 +127,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
         val position = viewModel.getPage()
         currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 of 33
-        viewPager.adapter = VisualizerAdapter(pages)
+        viewPager.adapter = VisualizerAdapter(pages) { showTextDialog(it) }
         viewPager.setCurrentItem(position, false)
 
     }
@@ -253,6 +254,15 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun updateCurrentChapterLabel(){
         currentChapterLabel.text = resources.getString(R.string.reader_current_chapter_label, viewModel.currentChapter + 1, viewModel.spineSize)
+    }
+
+    private fun showTextDialog(text: CharSequence){
+        val dialog = TextInfoDialog.newInstance(
+            text.toString(),
+            TextInfoDialog.NO_SERVICE,
+            null
+        )
+        dialog.show(supportFragmentManager, "Text_info")
     }
 
     companion object{

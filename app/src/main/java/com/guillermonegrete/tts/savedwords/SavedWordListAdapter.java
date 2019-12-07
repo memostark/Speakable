@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.savedwords;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 
 import androidx.annotation.NonNull;
@@ -17,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
@@ -36,9 +34,12 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     private boolean multiSelect = false;
     private ArrayList<String> selectedItems = new ArrayList<>();
 
-    SavedWordListAdapter(Context context){
+    private Listener listener;
+
+    SavedWordListAdapter(Context context, Listener listener){
         this.layoutInflater = LayoutInflater.from(context);
         this.context = context;
+        this.listener = listener;
     }
 
     void setWordsList(List<Words> wordsList){
@@ -169,11 +170,12 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                     container.setBackgroundColor(Color.LTGRAY);
                 }
             } else {
-                Intent wiktionaryIntent = new Intent(context, ProcessTextActivity.class);
-                wiktionaryIntent.putExtra("android.intent.extra.PROCESS_TEXT", wordText.getText().toString());
-                wiktionaryIntent.putExtra("Word", word);
-                context.startActivity(wiktionaryIntent);
+                listener.showTextInfoDialog(wordText.getText().toString(), word);
             }
         }
+    }
+
+    interface Listener{
+        void showTextInfoDialog(String text, Words word);
     }
 }

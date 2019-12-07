@@ -20,9 +20,6 @@ import com.guillermonegrete.tts.R;
 
 public class ProcessTextActivity extends AppCompatActivity implements DialogInterface.OnDismissListener {
 
-    public static final String NO_SERVICE = "no_service";
-
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -31,14 +28,11 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
 
         String selectedText = getSelectedText();
 
-        TextInfoDialog dialog = new TextInfoDialog();
-
-        Bundle bundle = new Bundle();
-        bundle.putString(TextInfoDialog.getTEXT_KEY(), selectedText);
-        bundle.putString(TextInfoDialog.getACTION_KEY(), getIntent().getAction());
-        bundle.putString(TextInfoDialog.getWORD_KEY(), getIntent().getParcelableExtra("Word"));
-
-        dialog.setArguments(bundle);
+        TextInfoDialog dialog = TextInfoDialog.newInstance(
+                selectedText,
+                getIntent().getAction(),
+                getIntent().getParcelableExtra("Word")
+        );
         dialog.show(getSupportFragmentManager(), "Text_info");
     }
 

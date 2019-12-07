@@ -32,17 +32,18 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
+
 import dagger.android.support.AndroidSupportInjection;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener {
+public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener, SavedWordListAdapter.Listener {
 
     private SavedWordListAdapter wordListAdapter;
     @Inject ViewModelProvider.Factory viewModelFactory;
-    private SavedWordsViewModel wordsViewModel;
     private RecyclerView mRecyclerView;
     private Spinner spinnerLang;
 
@@ -56,7 +57,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     public void onAttach(@NonNull Context context) {
         AndroidSupportInjection.inject(this);
         super.onAttach(context);
-        wordListAdapter = new SavedWordListAdapter(context);
+        wordListAdapter = new SavedWordListAdapter(context, this);
     }
 
     @Nullable
@@ -79,7 +80,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     }
 
     private void initData(){
-        wordsViewModel = ViewModelProviders.of(this, viewModelFactory).get(SavedWordsViewModel.class);
+        SavedWordsViewModel wordsViewModel = ViewModelProviders.of(this, viewModelFactory).get(SavedWordsViewModel.class);
 
         wordsViewModel.getLanguages();
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
@@ -119,11 +120,13 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             private void init() {
                 backgroundColor = new ColorDrawable(Color.RED);
                 deleteIcon  = ContextCompat.getDrawable(requireContext(), R.drawable.ic_delete_black_24dp);
-                deleteIcon .setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
-                // xMarkMargin = (int) MainActivity.this.getResources().getDimension(R.dimen.ic_clear_margin);
-                intrinsicWidth = deleteIcon.getIntrinsicWidth();
-                intrinsicHeight = deleteIcon.getIntrinsicHeight();
-                initiated = true;
+                if (deleteIcon != null) {
+                    deleteIcon .setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
+                    // xMarkMargin = (int) MainActivity.this.getResources().getDimension(R.dimen.ic_clear_margin);
+                    intrinsicWidth = deleteIcon.getIntrinsicWidth();
+                    intrinsicHeight = deleteIcon.getIntrinsicHeight();
+                    initiated = true;
+                }
             }
 
             @Override
@@ -204,5 +207,15 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
             wordListAdapter.setWordsList(filtered_word);
         }
+    }
+
+    @Override
+    public void showTextInfoDialog(String text, Words word) {
+        TextInfoDialog dialog = TextInfoDialog.newInstance(
+                text,
+                TextInfoDialog.NO_SERVICE,
+                word
+        );
+        dialog.show(getChildFragmentManager(), "Text_info");
     }
 }
