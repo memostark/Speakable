@@ -102,7 +102,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        context?.theme?.applyStyle(R.style.ProcessTextStyle, true)
         return inflater.inflate(R.layout.placeholder_layout, container, false)
     }
 
