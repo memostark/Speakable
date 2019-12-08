@@ -50,7 +50,8 @@ import javax.inject.Singleton
     With language selected:
     [[["disappointment of that poor","decepción de ese pobre",null,null,3]],null,"es"]
 
-
+    // Latest response as of 04/Dec/2019
+    [[["tiny","winzige",null,null,0]],null,"de",null,null,null,null,[]]
 
     Because response JSON cannot be converted to POJO we have to parse it manually.
 */
@@ -98,8 +99,13 @@ class GooglePublicSource: WordDataSource {
 
                     val body = response.body()
                     if(response.isSuccessful && body != null){
-                        val parsedWord = processText(body.string(), wordText)
-                        callback?.onWordLoaded(parsedWord)
+                        try {
+                            val parsedWord = processText(body.string(), wordText)
+                            callback?.onWordLoaded(parsedWord)
+                        }catch (e: Exception){
+                            callback?.onDataNotAvailable()
+                        }
+
                     }else{
                         callback?.onDataNotAvailable()
                     }
@@ -112,14 +118,16 @@ class GooglePublicSource: WordDataSource {
     @VisibleForTesting
     fun processText(bodyText: String, wordText: String): Words{
         val jsonArray  = gson.fromJson(bodyText, JsonArray::class.java)
+
+        // We extract all the posible translations from the first element
+        // E.g. [["tiny","winzige",null,null,0], ["little","winzige",null,null,0]]
         val jsonSentences = jsonArray[0].asJsonArray
         val sentences = arrayListOf<String>()
         for(i in 0 until  jsonSentences.size()){
             sentences.add(jsonSentences[i].asJsonArray[0].asString)
         }
 
-        val lastElement = jsonArray.last()
-        val rawLanguage = if(lastElement is JsonArray) lastElement.asJsonArray[0].asJsonArray[0].asString else lastElement.asString
+        val rawLanguage = jsonArray[2].asString
         val detectedLanguage = if(rawLanguage == "iw") "he" else rawLanguage
 
         val translation = sentences.joinToString(separator = "")

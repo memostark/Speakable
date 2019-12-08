@@ -1,35 +1,12 @@
 package com.guillermonegrete.tts.data.source.remote
 
-import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.util.concurrent.CountDownLatch
 
 class GooglePublicSourceTest {
 
     private val dataSource: GooglePublicSource = GooglePublicSource()
-    private val latch = CountDownLatch(1)
-
-    fun translatorTest(){
-        dataSource.getWordLanguageInfo("prueba", "auto", "en", object: WordDataSource.GetWordCallback{
-            override fun onWordLoaded(word: Words?) {
-                latch.countDown()
-            }
-
-            override fun onDataNotAvailable() {
-                latch.countDown()
-            }
-
-        })
-
-        try {
-            latch.await()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-
-    }
 
     @Test
     fun process_request_with_auto_detect(){

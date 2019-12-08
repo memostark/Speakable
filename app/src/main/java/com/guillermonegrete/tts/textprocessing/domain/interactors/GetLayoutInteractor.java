@@ -11,5 +11,7 @@ public interface GetLayoutInteractor {
         void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType);
 
         void onDictionaryLayoutDetermined(Words word, List<WikiItem> items);
+
+        void onTranslationError(String message);
     }
 }

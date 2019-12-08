@@ -23,6 +23,8 @@ public interface ProcessTextContract {
 
         void setExternalDictionary(List<ExternalLink> links);
 
+        void setTranslationErrorMessage();
+
         void showSaveDialog(Words word);
 
         void showDeleteDialog(String word);

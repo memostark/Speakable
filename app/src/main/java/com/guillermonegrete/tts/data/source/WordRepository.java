@@ -106,7 +106,7 @@ public class WordRepository implements WordRepositorySource {
 
             @Override
             public void onDataNotAvailable() {
-                callback.onDataNotAvailable();
+                callback.onDataNotAvailable(new Words(wordText, "un", "un"));
             }
         });
     }

@@ -20,6 +20,8 @@ class TranslationFragment: Fragment() {
     private var listener: Listener? = null
 
     private lateinit var translationEditText: TextView
+    private lateinit var errorLayout: View
+    private lateinit var allGroup: Group
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +36,7 @@ class TranslationFragment: Fragment() {
             with(root){
                 findViewById<TextView>(R.id.saved_definition_text).text = word.definition
                 if(word.notes.isNullOrBlank()) {
-                    findViewById<TextView>(R.id.saved_notes_label).visibility = View.GONE
-                    findViewById<TextView>(R.id.saved_notes_text).visibility = View.GONE
+                    findViewById<Group>(R.id.notes_group).visibility = View.GONE
                 }else findViewById<TextView>(R.id.saved_notes_text).text = word.notes
 
                 findViewById<ImageButton>(R.id.copy_definition_button).setOnClickListener {
@@ -52,13 +53,16 @@ class TranslationFragment: Fragment() {
                         saveTextToClipboard(word.definition)
                     }
                 }
+
+                errorLayout = findViewById(R.id.error_layout)
+                allGroup = findViewById(R.id.all_group)
             }
         }
 
         return root
     }
 
-    fun saveTextToClipboard(text: String){
+    private fun saveTextToClipboard(text: String){
         val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip: ClipData = ClipData.newPlainText("simple text", text)
         clipboard.primaryClip = clip
@@ -66,6 +70,11 @@ class TranslationFragment: Fragment() {
 
     fun updateTranslation(translation: String){
         translationEditText.text = translation
+    }
+
+    fun setErrorLayout(){
+        errorLayout.visibility = View.VISIBLE
+        allGroup.visibility = View.GONE
     }
 
     fun setListener(listener: Listener){
