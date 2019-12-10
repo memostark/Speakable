@@ -1,6 +1,8 @@
 package com.guillermonegrete.tts.data.source.remote;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.guillermonegrete.tts.data.source.WordDataSource;
@@ -39,6 +41,9 @@ public class MSTranslatorSource implements WordDataSource {
 
     }
 
+    /**
+     *  These three functions should not be used for this implementation
+     */
     @Override
     public List<Words> getWords() {
         return null;
@@ -46,6 +51,11 @@ public class MSTranslatorSource implements WordDataSource {
 
     @Override
     public List<String> getLanguagesISO() {
+        return null;
+    }
+
+    @Override
+    public LiveData<List<Words>> getWordsStream() {
         return null;
     }
 

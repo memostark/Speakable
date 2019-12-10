@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.savedwords;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,12 +13,20 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.SpeakableApplication;
+import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
-import com.guillermonegrete.tts.db.WordsDatabase;
+import com.guillermonegrete.tts.threading.MainThreadImpl;
+
+import javax.inject.Inject;
 
 public class SaveWordDialogFragment extends DialogFragment {
+    @Inject WordsDAO wordsDAO;
+    @Inject ThreadExecutor executor;
+    @Inject MainThreadImpl mainThread;
     private Context context;
 
     private Words wordItem;
@@ -41,6 +48,7 @@ public class SaveWordDialogFragment extends DialogFragment {
 
     @Override
     public void onAttach(@NonNull Context context) {
+        ((SpeakableApplication)context.getApplicationContext()).getAppComponent().inject(this);
         super.onAttach(context);
         this.context = context;
     }
@@ -57,8 +65,8 @@ public class SaveWordDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        View dialogue_layout = getActivity().getLayoutInflater().inflate(R.layout.new_word_dialog, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        View dialogue_layout = requireActivity().getLayoutInflater().inflate(R.layout.new_word_dialog, null);
         final EditText wordEditText = dialogue_layout.findViewById(R.id.new_word_edit);
         final EditText languageEditText = dialogue_layout.findViewById(R.id.new_word_language_edit);
         final EditText translationEditText = dialogue_layout.findViewById(R.id.new_translation_edit);
@@ -75,22 +83,13 @@ public class SaveWordDialogFragment extends DialogFragment {
 
         builder.setView(dialogue_layout)
                 .setTitle(getString(R.string.dialog_new_word_title))
-                .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                .setPositiveButton(R.string.save, (dialog, which) ->
                         saveWord(wordEditText.getText().toString(),
                                 languageEditText.getText().toString(),
                                 translationEditText.getText().toString(),
-                                notesEditText.getText().toString());
-
-                    }
-                })
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
+                                notesEditText.getText().toString())
+                )
+                .setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel());
         return builder.create();
     }
 
@@ -103,7 +102,6 @@ public class SaveWordDialogFragment extends DialogFragment {
         if(!TextUtils.isEmpty(notes)) word_entry.notes = notes;
 
         // TODO remove database logic from here
-        WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
 
         if(TAG_DIALOG_UPDATE_WORD.equals(getTag())){
 
@@ -113,14 +111,14 @@ public class SaveWordDialogFragment extends DialogFragment {
             if (wordToUpdate != null)  {
                 if (wordToUpdate.notes == null){
                     wordToUpdate.notes = notes;
-                    wordsDAO.update(wordToUpdate);
+                    update(wordToUpdate);
                 } else if (!wordToUpdate.notes.equals(notes)) {
                     wordToUpdate.notes = notes;
-                    wordsDAO.update(wordToUpdate);
+                    update(wordToUpdate);
                 }
             }
         }else{
-            wordsDAO.insert(word_entry);
+            insert(word_entry);
             Toast.makeText(getActivity(), "New word saved", Toast.LENGTH_SHORT).show();
 
             Activity activity = getActivity();
@@ -128,6 +126,24 @@ public class SaveWordDialogFragment extends DialogFragment {
                 ((Callback)activity).onWordSaved(word_entry);
         }
 
+    }
+
+    private void update(Words word){
+        executor.execute(new AbstractInteractor(executor, mainThread) {
+            @Override
+            public void run() {
+                wordsDAO.update(word);
+            }
+        });
+    }
+
+    private void insert(Words word){
+        executor.execute(new AbstractInteractor(executor, mainThread) {
+            @Override
+            public void run() {
+                wordsDAO.insert(word);
+            }
+        });
     }
 
     public interface Callback{

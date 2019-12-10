@@ -1,9 +1,6 @@
 package com.guillermonegrete.tts.savedwords
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 
 import com.guillermonegrete.tts.db.Words
@@ -19,43 +16,26 @@ class SavedWordsViewModel @Inject constructor(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
-    private val _wordsList = MutableLiveData<List<Words>>().apply { value = emptyList() }
-    val wordsList: LiveData<List<Words>> = _wordsList
-
-    private val _languagesList = MutableLiveData<List<String>>().apply { value = emptyList() }
-    val languagesList: LiveData<List<String>> = _languagesList
-
     /**
-     * This method purpose is to show how to use coroutines with a view model to get data.
-     * When you don't have to modify the database query, a better way to implement this is wrapping
-     * the result with LiveData, Room automatically makes the query asynchronous.
+     * Using LiveData as a stream instead of Coroutines Flow because the source contains Java files.
+     * Not using RxJava either because this use case is simple enough for LiveData, in case of
+     * increased complexity consider switching to RxJava.
      */
-    fun getWords(){
-        viewModelScope.launch {
-            val words =  getWordsAsync()
-            _wordsList.value = words
-        }
+    val wordsList: LiveData<List<Words>> = liveData {
+        emitSource(wordRepository.wordsStream)
     }
 
-    /**
-     * Similar to getWords but creates it's own scope instead of calling a suspend function
-     */
-    fun getLanguages(){
-        viewModelScope.launch {
-            val languages = withContext(ioDispatcher){
-                return@withContext wordRepository.languagesISO
-            }
-            _languagesList.value = languages
-        }
+    val languagesList: LiveData<List<String>> = liveData {
+        emit(wordRepository.languagesISO)
     }
 
     fun insert(vararg words: Words) {
         wordRepository.insert(*words)
     }
 
-    private suspend fun getWordsAsync(): List<Words>{
-        return withContext(ioDispatcher) {
-            return@withContext  wordRepository.words
+    fun delete(word: String){
+        viewModelScope.launch(ioDispatcher) {
+            wordRepository.deleteWord(word)
         }
     }
 }

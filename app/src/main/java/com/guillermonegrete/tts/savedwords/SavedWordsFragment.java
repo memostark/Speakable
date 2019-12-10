@@ -30,8 +30,6 @@ import android.widget.Toast;
 
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
-import com.guillermonegrete.tts.db.WordsDAO;
-import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
 
 import dagger.android.support.AndroidSupportInjection;
@@ -44,6 +42,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private SavedWordListAdapter wordListAdapter;
     @Inject ViewModelProvider.Factory viewModelFactory;
+    private SavedWordsViewModel wordsViewModel;
     private RecyclerView mRecyclerView;
     private Spinner spinnerLang;
 
@@ -80,9 +79,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     }
 
     private void initData(){
-        SavedWordsViewModel wordsViewModel = ViewModelProviders.of(this, viewModelFactory).get(SavedWordsViewModel.class);
+        wordsViewModel = ViewModelProviders.of(this, viewModelFactory).get(SavedWordsViewModel.class);
 
-        wordsViewModel.getLanguages();
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
             ArrayList<String> spinnerItems = new ArrayList<>(languages);
             spinnerItems.add(0, ALL_OPTION);
@@ -92,7 +90,6 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             spinnerLang.setAdapter(adapter);
         });
 
-        wordsViewModel.getWords();
         wordsViewModel.getWordsList().observe(this, wordsList -> {
             words = wordsList;
             // TODO filtering should be done in view model
@@ -140,9 +137,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
                 String word_text = saved_word_text.getText().toString();
                 Toast.makeText(requireContext(), "Swiped word: " + word_text, Toast.LENGTH_SHORT).show();
 
-                WordsDAO wordsDAO = WordsDatabase.getDatabase(requireContext()).wordsDAO();
-                wordsDAO.deleteWord(word_text);
-
+                wordsViewModel.delete(word_text);
             }
 
             @Override
