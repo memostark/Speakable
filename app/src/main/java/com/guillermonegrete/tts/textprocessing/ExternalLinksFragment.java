@@ -28,6 +28,8 @@ public class ExternalLinksFragment extends Fragment {
 
     private List<ExternalLink> links;
 
+    private RecyclerView recyclerView;
+
     private static final String WORD_TEXT = "word_text";
     private static final String LINKS_LIST = "links";
 
@@ -52,21 +54,27 @@ public class ExternalLinksFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
-        wordExtra = args.getString(WORD_TEXT);
-        links = args.getParcelableArrayList(LINKS_LIST);
+        if (args != null) {
+            wordExtra = args.getString(WORD_TEXT);
+            links = args.getParcelableArrayList(LINKS_LIST);
+        }
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.external_links_grid, container, false);
-        RecyclerView recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
-
-        DefaultWebBrowser browser = getDefaultWebBrowser();
-        ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, wordExtra, links, browser);
-        recyclerView.setAdapter(adapter);
+        recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
         recyclerView.setLayoutManager(new GridLayoutManager(mContext, 2));
+
+        setExternalLinks(links);
         return fragment_layout;
+    }
+
+    void setExternalLinks(List<ExternalLink> links){
+        DefaultWebBrowser browser = getDefaultWebBrowser();
+        ExternalLinksAdapter adapter = new ExternalLinksAdapter(wordExtra, links, browser);
+        recyclerView.setAdapter(adapter);
     }
 
     private DefaultWebBrowser getDefaultWebBrowser(){

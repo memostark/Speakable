@@ -18,23 +18,21 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
 
     private List<ExternalLink> links;
     private String word;
-    private LayoutInflater inflater;
 
 
     private DefaultWebBrowser defaultWebBrowser;
 
-    ExternalLinksAdapter(Context context, String word, List<ExternalLink> links, DefaultWebBrowser defaultWebBrowser){
+    ExternalLinksAdapter(String word, List<ExternalLink> links, DefaultWebBrowser defaultWebBrowser){
         this.links = links;
         this.word = word;
         this.defaultWebBrowser = defaultWebBrowser;
-        inflater = LayoutInflater.from(context);
     }
 
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = inflater.inflate(R.layout.external_link_item, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.external_link_item, parent, false);
         return new ViewHolder(view, defaultWebBrowser);
     }
 

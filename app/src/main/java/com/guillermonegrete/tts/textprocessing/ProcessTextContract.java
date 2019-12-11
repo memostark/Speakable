@@ -42,6 +42,8 @@ public interface ProcessTextContract {
         void showStopIcon();
 
         void updateTranslation(String translation);
+
+        void updateExternalLinks(List<ExternalLink> links);
     }
 
     interface Presenter extends BasePresenter<View>{

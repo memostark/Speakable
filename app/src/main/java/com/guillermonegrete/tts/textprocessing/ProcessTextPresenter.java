@@ -216,6 +216,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
+        hasTranslation = true;
         getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
@@ -226,9 +227,20 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
             @Override
             public void onDataNotAvailable() {
-
+                hasTranslation = false;
+                mView.setTranslationErrorMessage();
             }
         });
+
+        GetExternalLink linkInteractor = new GetExternalLink(
+                mExecutor,
+                mMainThread,
+                links -> mView.updateExternalLinks(links),
+                linksRepository,
+                languageFrom
+        );
+
+        linkInteractor.execute();
     }
 
     @Override

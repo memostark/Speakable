@@ -240,11 +240,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     override fun setTranslationErrorMessage() {
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
-        if (pagerAdapter != null) {
+        pagerAdapter?.let {
             // Check if the adapter has dictionary fragment
-            val index: Int = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
+            val index: Int = if (dictionaryAdapter != null && it.itemCount == 3) 1 else 0
 
-            val fragment = pagerAdapter?.fragments?.get(index)
+            val fragment = it.fragments[index]
             if (fragment is TranslationFragment) fragment.setErrorLayout()
         }
     }
@@ -322,6 +322,15 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         }
     }
 
+    override fun updateExternalLinks(links: MutableList<ExternalLink>?) {
+
+        pagerAdapter?.let {
+            val index: Int = if (dictionaryAdapter != null && it.itemCount == 3) 2 else 1
+
+            val fragment = it.fragments[index]
+            if (fragment is ExternalLinksFragment) fragment.setExternalLinks(links)
+        }
+    }
 
     override fun setPresenter(presenter: ProcessTextContract.Presenter) {
         this.presenter = presenter
@@ -392,10 +401,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setLanguageFromSpinner() {
-        val spinner = view?.findViewById<Spinner>(R.id.spinner_language_from_code)
+        val spinner: Spinner? = view?.findViewById(R.id.spinner_language_from_code)
         val adapter = ArrayAdapter.createFromResource(
             requireContext(),
-            R.array.googleTranslateLangsWithAutoValue, R.layout.spinner_layout_end
+            R.array.googleTranslateLangsWithAutoValue,
+            R.layout.spinner_layout_end
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner?.adapter = adapter
