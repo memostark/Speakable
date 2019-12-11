@@ -43,5 +43,7 @@ public interface WordRepositorySource {
 
     void deleteWord(Words word);
 
+    void delete(Words... words);
+
     void insert(Words... words);
 }

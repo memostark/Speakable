@@ -205,6 +205,11 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     }
 
     @Override
+    public void onDeleteWords(List<Words> words) {
+        wordsViewModel.delete(words.toArray(new Words[0]));
+    }
+
+    @Override
     public void showTextInfoDialog(String text, Words word) {
         TextInfoDialog dialog = TextInfoDialog.newInstance(
                 text,

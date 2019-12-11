@@ -100,6 +100,11 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
+    public void delete(Words... words) {
+        mWordLocalDataSource.deleteWords(words);
+    }
+
+    @Override
     public void insert(Words... words) {
         mWordLocalDataSource.insertWords(words);
     }

@@ -23,5 +23,7 @@ public interface WordDataSource {
 
     void insertWords(Words... words);
 
+    void deleteWords(Words... words);
+
     void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordCallback callback);
 }

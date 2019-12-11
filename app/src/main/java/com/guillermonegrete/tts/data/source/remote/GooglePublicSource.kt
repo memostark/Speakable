@@ -84,6 +84,8 @@ class GooglePublicSource: WordDataSource {
 
     override fun insertWords(vararg words: Words?) {}
 
+    override fun deleteWords(vararg words: Words?) {}
+
     override fun getWordLanguageInfo(
         wordText: String?,
         languageFrom: String?,

@@ -46,6 +46,11 @@ public class WordLocalDataSource implements WordDataSource {
         mWordDAO.insert(words);
     }
 
+    @Override
+    public void deleteWords(Words... words) {
+        mWordDAO.deleteWords(words);
+    }
+
     public void deleteWord(String word) {
         mWordDAO.deleteWord(word);
 

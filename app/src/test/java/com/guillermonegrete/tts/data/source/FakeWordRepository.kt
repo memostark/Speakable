@@ -58,6 +58,10 @@ class FakeWordRepository: WordRepositorySource {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    override fun delete(vararg words: Words?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun insert(vararg words: Words?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

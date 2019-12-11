@@ -25,7 +25,7 @@ class SavedWordsViewModel @Inject constructor(
         emitSource(wordRepository.wordsStream)
     }
 
-    val languagesList: LiveData<List<String>> = liveData {
+    val languagesList: LiveData<List<String>> = liveData(ioDispatcher) {
         emit(wordRepository.languagesISO)
     }
 
@@ -36,6 +36,12 @@ class SavedWordsViewModel @Inject constructor(
     fun delete(word: String){
         viewModelScope.launch(ioDispatcher) {
             wordRepository.deleteWord(word)
+        }
+    }
+
+    fun delete(vararg words: Words){
+        viewModelScope.launch(ioDispatcher){
+            wordRepository.delete(*words)
         }
     }
 }
