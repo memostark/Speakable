@@ -27,6 +27,7 @@ import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPD
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
+import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import java.util.*
 import javax.inject.Inject
 
@@ -402,9 +403,10 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     private fun setLanguageFromSpinner() {
         val spinner: Spinner? = view?.findViewById(R.id.spinner_language_from_code)
-        val adapter = ArrayAdapter.createFromResource(
+        val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLangsWithAutoValue,
+            R.array.googleTranslateLangsWithAutoArray,
             R.layout.spinner_layout_end
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -416,9 +418,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     private fun setSpinner() {
         val spinner = view?.findViewById<Spinner>(R.id.translate_to_spinner)
-        val adapter = ArrayAdapter.createFromResource(
+        val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
-            R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item
+            R.array.googleTranslateLanguagesValue,
+            R.array.googleTranslateLanguagesArray,
+            android.R.layout.simple_spinner_item
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner?.adapter = adapter
