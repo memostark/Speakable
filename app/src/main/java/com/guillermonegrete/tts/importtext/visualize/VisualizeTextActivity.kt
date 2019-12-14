@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.text.TextPaint
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -34,6 +33,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
 
+    private var splitterCreated = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         setPreferenceTheme()
@@ -54,14 +55,18 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
 
         viewPager = findViewById(R.id.text_reader_viewpager)
-        viewPager.setPageTransformer { _, position ->
+        // Creates one item so setPageTransformer is called
+        // Used to get the page text view properties to create page splitter.
+        viewPager.adapter = VisualizerAdapter(listOf("")) {} // Empty callback, not necessary at the moment
+        viewPager.setPageTransformer { view, position ->
+
+            setUpPageParsing(view)
+
             // A new page is shown when position is 0.0f,
             // so we request focus in order to highlight text correctly.
             if(position == 0.0f) setPageTextFocus()
         }
         viewPager.post{
-            viewModel.pageSplitter = createPageSplitter()
-            initParse()
             addPagerCallback()
         }
     }
@@ -206,7 +211,18 @@ class VisualizeTextActivity: AppCompatActivity() {
         pageTextView?.requestFocus()
     }
 
-    private fun createPageSplitter(): PageSplitter {
+    private fun setUpPageParsing(focusedView: View){
+        // Execute only one time
+        if(splitterCreated) {
+
+            val pageTextView: TextView = focusedView as TextView
+            viewModel.pageSplitter = createPageSplitter(pageTextView)
+            initParse()
+            splitterCreated = false
+        }
+    }
+
+    private fun createPageSplitter(textView: TextView): PageSplitter {
         val lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
         val lineSpacingMultiplier = 1f
         val pageItemPadding = (80 * resources.displayMetrics.density + 0.5f).toInt() // Convert dp to px, 0.5 is for rounding to closest integer
@@ -222,16 +238,10 @@ class VisualizeTextActivity: AppCompatActivity() {
             viewPager.height - pageItemPadding,
             lineSpacingMultiplier,
             lineSpacingExtra,
-            createTextPaint(),
+            textView.paint,
+            textView.includeFontPadding,
             imageGetter
         )
-    }
-
-    private fun createTextPaint(): TextPaint{
-        val textSize = resources.getDimension(R.dimen.text_size_large)
-        val pageTextPaint = TextPaint()
-        pageTextPaint.textSize = textSize
-        return pageTextPaint
     }
 
     private fun showTableOfContents(navPoints: List<NavPoint>){

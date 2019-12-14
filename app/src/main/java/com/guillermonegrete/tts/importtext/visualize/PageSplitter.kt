@@ -16,6 +16,7 @@ class PageSplitter(
     private val lineSpacingMultiplier: Float,
     private val lineSpacingExtra: Float,
     private val textPaint: TextPaint,
+    private val includeFontPadding: Boolean,
     val imageGetter: Html.ImageGetter?
 ) {
     private val pages = ArrayList<CharSequence>()
@@ -27,7 +28,7 @@ class PageSplitter(
         append(charSequence)
     }
 
-    fun append(charSequence: CharSequence) {
+    private fun append(charSequence: CharSequence) {
         mSpannableStringBuilder.append(charSequence)
     }
 
@@ -38,9 +39,10 @@ class PageSplitter(
                 StaticLayout.Builder.obtain(formattedText, 0, formattedText.length, textPaint, pageWidth)
                     .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                     .setLineSpacing(lineSpacingExtra, lineSpacingMultiplier)
-                    .setIncludePad(false)
+                    .setIncludePad(includeFontPadding)
                     .build()
             } else {
+                @Suppress("DEPRECATION")
                 StaticLayout(
                     formattedText,
                     textPaint,
@@ -48,23 +50,35 @@ class PageSplitter(
                     Layout.Alignment.ALIGN_NORMAL,
                     lineSpacingMultiplier,
                     lineSpacingExtra,
-                    false
+                    includeFontPadding
                 )
             }
 
-            var startLine = 0
-            while (startLine < staticLayout.lineCount) {
-                val startLineTop = staticLayout.getLineTop(startLine)
-                val endLine = staticLayout.getLineForVertical(startLineTop + pageHeight)
-                val endLineBottom = staticLayout.getLineBottom(endLine)
+            splitLineByLine(staticLayout)
+        }
+    }
 
-                val lastFullyVisibleLine: Int =
-                    if (endLineBottom > startLineTop + pageHeight) endLine - 1
-                    else endLine
-                val startOffset = staticLayout.getLineStart(startLine)
-                val endOffset = staticLayout.getLineEnd(lastFullyVisibleLine)
-                pages.add(formattedText.subSequence(startOffset, endOffset))
-                startLine = lastFullyVisibleLine + 1
+    /**
+     * Splitting method taken from: https://stackoverflow.com/questions/31837840/paginating-text-in-android
+     */
+    private fun splitLineByLine(layout: StaticLayout){
+        val lines = layout.lineCount
+        val text = layout.text
+        var startOffset = 0
+        var height = pageHeight
+
+        for (i in 0 until lines) {
+            if (height < layout.getLineBottom(i)) {
+                // When the layout height has been exceeded
+                pages.add(text.subSequence(startOffset, layout.getLineStart(i)))
+                startOffset = layout.getLineStart(i)
+                height = layout.getLineTop(i) + pageHeight
+            }
+
+            if (i == lines - 1) {
+                // Put the rest of the text into the last page
+                pages.add(text.subSequence(startOffset, layout.getLineEnd(i)))
+                return
             }
         }
     }
@@ -73,6 +87,7 @@ class PageSplitter(
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT, imageGetter, null)
         } else {
+            @Suppress("DEPRECATION")
             Html.fromHtml(text.toString(), imageGetter, null)
         }
     }
