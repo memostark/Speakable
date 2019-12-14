@@ -29,6 +29,7 @@ public class ExternalLinksFragment extends Fragment {
     private List<ExternalLink> links;
 
     private RecyclerView recyclerView;
+    private DefaultWebBrowser defaultWebBrowser;
 
     private static final String WORD_TEXT = "word_text";
     private static final String LINKS_LIST = "links";
@@ -67,18 +68,28 @@ public class ExternalLinksFragment extends Fragment {
         recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
         recyclerView.setLayoutManager(new GridLayoutManager(mContext, 2));
 
+        defaultWebBrowser = getDefaultWebBrowser();
         setExternalLinks(links);
         return fragment_layout;
     }
 
     void setExternalLinks(List<ExternalLink> links){
-        DefaultWebBrowser browser = getDefaultWebBrowser();
-        ExternalLinksAdapter adapter = new ExternalLinksAdapter(wordExtra, links, browser);
-        recyclerView.setAdapter(adapter);
+
+        // External links can be updated when fragment is not attached, in that case update args
+        // Otherwise update adapter normally
+        if(isAdded()){
+            ExternalLinksAdapter adapter = new ExternalLinksAdapter(wordExtra, links, defaultWebBrowser);
+            recyclerView.setAdapter(adapter);
+        }else{
+            Bundle args = getArguments();
+            if (args != null) {
+                args.putParcelableArrayList(LINKS_LIST, new ArrayList<>(links));
+            }
+        }
     }
 
     private DefaultWebBrowser getDefaultWebBrowser(){
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
         String preference = preferences.getString(DefaultWebBrowser.PREFERENCE_KEY, "");
         return DefaultWebBrowser.Companion.get(preference);
     }
