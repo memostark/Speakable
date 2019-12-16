@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.data.source;
 
+import androidx.lifecycle.LiveData;
+
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.di.ApplicationModule;
@@ -28,6 +30,11 @@ public class WordRepository implements WordRepositorySource {
     @Override
     public List<Words> getWords() {
         return mWordLocalDataSource.getWords();
+    }
+
+    @Override
+    public LiveData<List<Words>> getWordsStream() {
+        return mWordLocalDataSource.getWordsStream();
     }
 
     @Override
@@ -90,6 +97,11 @@ public class WordRepository implements WordRepositorySource {
     public void deleteWord(Words word) {
         WordLocalDataSource wordSource = (WordLocalDataSource) mWordLocalDataSource;
         wordSource.deleteWord(word);
+    }
+
+    @Override
+    public void delete(Words... words) {
+        mWordLocalDataSource.deleteWords(words);
     }
 
     @Override

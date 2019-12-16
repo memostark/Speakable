@@ -39,8 +39,7 @@ class SavedWordsViewModelTest {
     }
 
     @Test
-    fun load_all_tasks_from_repository(){
-        viewModel.getWords()
+    fun load_all_words_from_repository(){
 
         val words = getUnitLiveDataValue(viewModel.wordsList)
         assertEquals(3, words.size)
@@ -49,8 +48,6 @@ class SavedWordsViewModelTest {
     @Test
     fun load_all_languages_from_repository(){
         runBlockingTest {
-            viewModel.getLanguages()
-
             val langs = getUnitLiveDataValue(viewModel.languagesList)
             assertEquals(2, langs.size)
         }

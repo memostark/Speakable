@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.db;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
@@ -33,11 +34,14 @@ public interface WordsDAO {
     @Query("DELETE FROM words where word = :word")
     void deleteWord(String word);
 
-    @Query("DELETE FROM words")
-    void deleteAll();
+    @Delete
+    void deleteWords(Words... words);
 
     @Query("SELECT * FROM words")
     List<Words> getAllWords();
+
+    @Query("SELECT * FROM words")
+    LiveData<List<Words>> getAllWordsLive();
 
     @Query("SELECT DISTINCT LOWER(lang) FROM words")
     LiveData<List<String>> getLanguagesISOLiveData();

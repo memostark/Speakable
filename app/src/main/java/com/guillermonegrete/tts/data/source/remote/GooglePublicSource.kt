@@ -1,6 +1,8 @@
 package com.guillermonegrete.tts.data.source.remote
 
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.google.gson.*
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
@@ -78,7 +80,11 @@ class GooglePublicSource: WordDataSource {
 
     override fun getLanguagesISO(): MutableList<String> = mutableListOf()
 
+    override fun getWordsStream(): LiveData<MutableList<Words>> = MutableLiveData()
+
     override fun insertWords(vararg words: Words?) {}
+
+    override fun deleteWords(vararg words: Words?) {}
 
     override fun getWordLanguageInfo(
         wordText: String?,

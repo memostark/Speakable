@@ -28,6 +28,9 @@ public class ExternalLinksFragment extends Fragment {
 
     private List<ExternalLink> links;
 
+    private RecyclerView recyclerView;
+    private DefaultWebBrowser defaultWebBrowser;
+
     private static final String WORD_TEXT = "word_text";
     private static final String LINKS_LIST = "links";
 
@@ -52,25 +55,41 @@ public class ExternalLinksFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
-        wordExtra = args.getString(WORD_TEXT);
-        links = args.getParcelableArrayList(LINKS_LIST);
+        if (args != null) {
+            wordExtra = args.getString(WORD_TEXT);
+            links = args.getParcelableArrayList(LINKS_LIST);
+        }
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.external_links_grid, container, false);
-        RecyclerView recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
-
-        DefaultWebBrowser browser = getDefaultWebBrowser();
-        ExternalLinksAdapter adapter = new ExternalLinksAdapter(mContext, wordExtra, links, browser);
-        recyclerView.setAdapter(adapter);
+        recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
         recyclerView.setLayoutManager(new GridLayoutManager(mContext, 2));
+
+        defaultWebBrowser = getDefaultWebBrowser();
+        setExternalLinks(links);
         return fragment_layout;
     }
 
+    void setExternalLinks(List<ExternalLink> links){
+
+        // External links can be updated when fragment is not attached, in that case update args
+        // Otherwise update adapter normally
+        if(isAdded()){
+            ExternalLinksAdapter adapter = new ExternalLinksAdapter(wordExtra, links, defaultWebBrowser);
+            recyclerView.setAdapter(adapter);
+        }else{
+            Bundle args = getArguments();
+            if (args != null) {
+                args.putParcelableArrayList(LINKS_LIST, new ArrayList<>(links));
+            }
+        }
+    }
+
     private DefaultWebBrowser getDefaultWebBrowser(){
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
         String preference = preferences.getString(DefaultWebBrowser.PREFERENCE_KEY, "");
         return DefaultWebBrowser.Companion.get(preference);
     }

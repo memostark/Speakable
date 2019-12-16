@@ -1,6 +1,8 @@
 package com.guillermonegrete.tts.data.source
 
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.guillermonegrete.tts.db.Words
 import java.util.LinkedHashMap
 
@@ -12,6 +14,10 @@ class FakeWordRepository: WordRepositorySource {
 
     override fun getWords(): MutableList<Words> {
         return wordsServiceData.values.toMutableList()
+    }
+
+    override fun getWordsStream(): LiveData<MutableList<Words>> {
+        return MutableLiveData(wordsServiceData.values.toMutableList())
     }
 
     override fun getLanguagesISO(): MutableList<String> {
@@ -49,6 +55,10 @@ class FakeWordRepository: WordRepositorySource {
     }
 
     override fun deleteWord(word: Words?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun delete(vararg words: Words?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

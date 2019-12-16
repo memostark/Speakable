@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.data.source;
 
+import androidx.lifecycle.LiveData;
+
 import com.guillermonegrete.tts.db.Words;
 
 import java.util.List;
@@ -25,6 +27,8 @@ public interface WordRepositorySource {
 
     List<Words> getWords();
 
+    LiveData<List<Words>> getWordsStream();
+
     List<String> getLanguagesISO();
 
     void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback);
@@ -38,6 +42,8 @@ public interface WordRepositorySource {
     void deleteWord(String word);
 
     void deleteWord(Words word);
+
+    void delete(Words... words);
 
     void insert(Words... words);
 }

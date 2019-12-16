@@ -12,6 +12,7 @@ import androidx.constraintlayout.widget.Group
 import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 
 class TranslationFragment: Fragment() {
 
@@ -83,9 +84,11 @@ class TranslationFragment: Fragment() {
 
     private fun setSpinner(root: View) {
         val spinner = root.findViewById<Spinner>(R.id.translate_to_spinner)
-        val arrayAdapter = ArrayAdapter.createFromResource(
+        val arrayAdapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
-            R.array.googleTranslateLanguagesArray, android.R.layout.simple_spinner_item
+            R.array.googleTranslateLanguagesValue,
+            R.array.googleTranslateLanguagesArray,
+            android.R.layout.simple_spinner_item
         )
         // Specify the layout to use when the list of choices appears
         arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)

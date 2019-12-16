@@ -10,4 +10,4 @@
     android:ellipsize="marquee"
     android:textAlignment="textEnd"
     android:gravity="end"
-    tools:text="Selection" />
+    tools:text="EN" />

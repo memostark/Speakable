@@ -18,8 +18,6 @@ import android.widget.TextView;
 
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
-import com.guillermonegrete.tts.db.WordsDAO;
-import com.guillermonegrete.tts.db.WordsDatabase;
 import com.guillermonegrete.tts.utils.ColorUtilsKt;
 
 import java.util.ArrayList;
@@ -32,7 +30,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     private Context context;
 
     private boolean multiSelect = false;
-    private ArrayList<String> selectedItems = new ArrayList<>();
+    private ArrayList<Words> selectedItems = new ArrayList<>();
 
     private Listener listener;
 
@@ -93,11 +91,8 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
-            if (menuItem.getItemId() == R.id.action_menu_delete) {// TODO move this code to view model
-                WordsDAO wordsDAO = WordsDatabase.getDatabase(context).wordsDAO();
-                for (String intItem : selectedItems) {
-                    wordsDAO.deleteWord(intItem);
-                }
+            if (menuItem.getItemId() == R.id.action_menu_delete) {
+                listener.onDeleteWords(selectedItems);
             }
             actionMode.finish();
             return true;
@@ -130,7 +125,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         }
 
         void update(){
-            if (selectedItems.contains(wordText.getText().toString())) {
+            if (selectedItems.contains(word)) {
                 container.setBackgroundColor(Color.LTGRAY);
             } else {
                 int defaultBGColor = ColorUtilsKt.getThemeColor(itemView.getContext(), R.attr.colorSurface);
@@ -138,12 +133,12 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             }
 
             itemView.setOnLongClickListener(view -> {
-                ((AppCompatActivity)view.getContext()).startSupportActionMode(actionModeCallback);
-                selectItem(wordText.getText().toString());
+                ((AppCompatActivity) view.getContext()).startSupportActionMode(actionModeCallback);
+                selectItem(word);
                 return true;
             });
 
-            itemView.setOnClickListener(view -> selectItem(wordText.getText().toString()));
+            itemView.setOnClickListener(view -> selectItem(word));
         }
 
         void setWord(Words word){
@@ -159,7 +154,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             }
         }
 
-        void selectItem(String item){
+        void selectItem(Words item){
             if (multiSelect) {
                 if (selectedItems.contains(item)) {
                     selectedItems.remove(item);
@@ -176,6 +171,8 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     }
 
     interface Listener{
+        void onDeleteWords(List<Words> words);
+
         void showTextInfoDialog(String text, Words word);
     }
 }

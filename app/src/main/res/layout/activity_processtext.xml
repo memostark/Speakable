@@ -44,10 +44,10 @@
                 android:id="@+id/spinner_language_from_code"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
-                android:dropDownWidth="70dp"
                 android:background="@android:color/transparent"
                 android:spinnerMode="dialog"
                 style="@android:style/Widget.Material.Spinner"
+                tools:listitem="@layout/spinner_layout_end"
                 android:layout_gravity="center"/>
             <TextView
                 android:id="@+id/text_language_code"

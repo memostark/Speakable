@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.data.source.local;
 
+import androidx.lifecycle.LiveData;
+
 import com.guillermonegrete.tts.data.source.WordDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
@@ -20,6 +22,11 @@ public class WordLocalDataSource implements WordDataSource {
     }
 
     @Override
+    public LiveData<List<Words>> getWordsStream() {
+        return mWordDAO.getAllWordsLive();
+    }
+
+    @Override
     public List<String> getLanguagesISO() {
         return mWordDAO.getLanguagesISO();
     }
@@ -37,6 +44,11 @@ public class WordLocalDataSource implements WordDataSource {
     @Override
     public void insertWords(Words... words) {
         mWordDAO.insert(words);
+    }
+
+    @Override
+    public void deleteWords(Words... words) {
+        mWordDAO.deleteWords(words);
     }
 
     public void deleteWord(String word) {
