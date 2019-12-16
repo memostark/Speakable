@@ -7,6 +7,8 @@ import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
@@ -26,14 +28,21 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private lateinit var viewPager: ViewPager2
+    private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
+
+    private val expandedConstraintSet = ConstraintSet()
+    private val contractedConstraintSet = ConstraintSet()
 
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
 
     private var splitterCreated = true
+    private var isFullScreen = false
+
+    private lateinit var scaleDetector: ScaleGestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
@@ -41,6 +50,14 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
         progressBar = findViewById(R.id.visualizer_progress_bar)
+        rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
+        contractedConstraintSet.clone(rootConstraintLayout)
+
+        expandedConstraintSet.clone(rootConstraintLayout)
+        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
+        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, 0)
+        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, 0)
+        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0)
 
         createViewModel()
 
@@ -62,6 +79,13 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             setUpPageParsing(view)
 
+            view.setOnTouchListener { _, event ->
+                scaleDetector.onTouchEvent(event)
+//                if(scaleDetector.isInProgress) return@setOnTouchListener true
+//                return@setOnTouchListener false
+                false
+            }
+
             // A new page is shown when position is 0.0f,
             // so we request focus in order to highlight text correctly.
             if(position == 0.0f) setPageTextFocus()
@@ -69,6 +93,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.post{
             addPagerCallback()
         }
+
+        scaleDetector = ScaleGestureDetector(this, PinchListener())
     }
 
     override fun onDestroy() {
@@ -207,7 +233,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setPageTextFocus() {
         val focusedView = viewPager.focusedChild
 
-        val pageTextView: View? = focusedView.findViewById(R.id.page_text_view)
+        val pageTextView: View? = focusedView?.findViewById(R.id.page_text_view)
         pageTextView?.requestFocus()
     }
 
@@ -275,11 +301,67 @@ class VisualizeTextActivity: AppCompatActivity() {
         dialog.show(supportFragmentManager, "Text_info")
     }
 
+    inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
+
+        var pinchDetected = false
+
+        override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+            viewPager.isUserInputEnabled = false
+            pinchDetected = false
+            return true
+        }
+
+        override fun onScaleEnd(detector: ScaleGestureDetector?) {
+            viewPager.isUserInputEnabled = true
+        }
+
+        override fun onScale(detector: ScaleGestureDetector?): Boolean {
+            detector?.let {
+                if(it.scaleFactor > PINCH_LOWER_LIMIT && !pinchDetected){
+                    Toast.makeText(this@VisualizeTextActivity, "Pinch ouch ${it.currentSpan}", Toast.LENGTH_SHORT).show()
+                    println("Pinch ouch ${it.currentSpan}, scale: ${it.scaleFactor}")
+                    toggleImmersiveMode()
+                    pinchDetected = true
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
+    private fun toggleImmersiveMode() {
+        isFullScreen = !isFullScreen
+        if(isFullScreen){
+            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
+                    // Set the content to appear under the system bars so that the
+                    // content doesn't resize when the system bars hide and show.
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    // Hide the nav bar and status bar
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+            actionBar?.show()
+
+            expandedConstraintSet.applyTo(rootConstraintLayout)
+
+        }else{
+            window.decorView.systemUiVisibility = 0
+            actionBar?.hide()
+
+            contractedConstraintSet.applyTo(rootConstraintLayout)
+        }
+
+    }
+
     companion object{
         const val IMPORTED_TEXT = "imported_text"
         const val EPUB_URI = "epub_uri"
 
         const val SHOW_EPUB = "epub"
         const val FILE_ID = "fileId"
+
+        const val PINCH_LOWER_LIMIT = 1.3f
     }
 }
