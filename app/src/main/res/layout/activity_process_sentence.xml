@@ -38,16 +38,14 @@
 
         <Spinner
             android:id="@+id/spinner_language_from_code"
-            style="@style/Widget.AppCompat.Spinner"
+            style="@android:style/Widget.Material.Spinner"
             android:layout_width="60dp"
             android:layout_height="0dp"
             android:background="#FFFFBB33"
-            android:dropDownVerticalOffset="-150dp"
-            android:spinnerMode="dropdown"
-            android:theme="@style/Theme.AppCompat.Light"
-            android:dropDownWidth="70dp"
+            android:spinnerMode="dialog"
             android:gravity="center"
             android:foregroundGravity="top"
+            tools:listitem="@layout/spinner_layout_end"
             app:layout_constraintBottom_toBottomOf="@+id/text_tts"
             app:layout_constraintEnd_toStartOf="@id/text_language_code"
             app:layout_constraintTop_toTopOf="@+id/text_tts" />
