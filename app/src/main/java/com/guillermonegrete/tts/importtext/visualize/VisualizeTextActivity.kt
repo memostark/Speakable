@@ -11,7 +11,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 import androidx.viewpager2.widget.ViewPager2
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
@@ -24,7 +23,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
     private val viewModel by lazy {
-        ViewModelProviders.of(this, viewModelFactory).get(VisualizeTextViewModel::class.java)
+        ViewModelProvider(this, viewModelFactory).get(VisualizeTextViewModel::class.java)
     }
 
     private lateinit var viewPager: ViewPager2

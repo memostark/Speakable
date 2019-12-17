@@ -18,7 +18,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
@@ -42,7 +41,7 @@ class ImportTextFragment: Fragment() {
 
     @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
     private val viewModel by lazy {
-        ViewModelProviders.of(this, viewModelFactory).get(ImportTextViewModel::class.java)
+        ViewModelProvider(this, viewModelFactory).get(ImportTextViewModel::class.java)
     }
 
     override fun onAttach(context: Context) {
