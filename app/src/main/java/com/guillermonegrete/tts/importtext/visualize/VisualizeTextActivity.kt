@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.text.Selection
+import android.text.Spannable
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -31,6 +33,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
+
+    private var pageTextView: TextView? = null
 
     private val expandedConstraintSet = ConstraintSet()
     private val contractedConstraintSet = ConstraintSet()
@@ -75,15 +79,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf("")) {} // Empty callback, not necessary at the moment
         viewPager.setPageTransformer { view, position ->
+            pageTextView = view as? TextView
 
             setUpPageParsing(view)
-
-            view.setOnTouchListener { _, event ->
-                scaleDetector.onTouchEvent(event)
-//                if(scaleDetector.isInProgress) return@setOnTouchListener true
-//                return@setOnTouchListener false
-                false
-            }
 
             // A new page is shown when position is 0.0f,
             // so we request focus in order to highlight text correctly.
@@ -95,6 +93,63 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         scaleDetector = ScaleGestureDetector(this, PinchListener())
     }
+
+    /**
+     * Handle scaling in text view with selectable text and clickable spans. Intercept touch event if is scaling.
+     *
+     * Inspired by: https://stackoverflow.com/a/5369880/10244759
+     */
+    private var eventInProgress = false
+    private var scaleInProgress = false
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        val actionId = ev?.actionMasked ?: -1
+        val actionMasked = actionToString(actionId)
+
+        if(eventInProgress){
+            if(pageTextView?.isShown == true) scaleDetector.onTouchEvent(ev)
+            if(scaleDetector.isInProgress) {
+                // Cancel long press to avoid showing contextual action menu
+                pageTextView?.cancelLongPress()
+                scaleInProgress = true
+                // Don't pass event when scaling
+                return true
+            }
+        }
+
+        println("Action masked: $actionMasked, Pointer count: ${ev?.pointerCount}, scaleInProgress: ${scaleDetector.isInProgress}")
+
+        when(actionId){
+            MotionEvent.ACTION_DOWN -> eventInProgress = true
+            MotionEvent.ACTION_UP -> {
+                eventInProgress = false
+                if(scaleInProgress){
+                    // Removes lingering highlight from text
+                    val span = pageTextView?.text as? Spannable
+                    Selection.removeSelection(span)
+                    scaleInProgress = false
+                    // Don't pass event if there was scaling to avoid unexpected clicks
+                    return true
+                }
+            }
+        }
+
+        return super.dispatchTouchEvent(ev)
+    }
+
+    private fun actionToString(action: Int): String {
+        return when (action) {
+            MotionEvent.ACTION_DOWN -> "Down"
+            MotionEvent.ACTION_MOVE -> "Move"
+            MotionEvent.ACTION_POINTER_DOWN -> "Pointer Down"
+            MotionEvent.ACTION_UP -> "Up"
+            MotionEvent.ACTION_POINTER_UP -> "Pointer Up"
+            MotionEvent.ACTION_OUTSIDE -> "Outside"
+            MotionEvent.ACTION_CANCEL -> "Cancel"
+            else -> ""
+        }
+    }
+
 
     override fun onDestroy() {
         viewModel.onFinish()
@@ -316,12 +371,20 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
             detector?.let {
-                if(it.scaleFactor > PINCH_LOWER_LIMIT && !pinchDetected){
-                    Toast.makeText(this@VisualizeTextActivity, "Pinch ouch ${it.currentSpan}", Toast.LENGTH_SHORT).show()
-                    println("Pinch ouch ${it.currentSpan}, scale: ${it.scaleFactor}")
-                    toggleImmersiveMode()
-                    pinchDetected = true
-                    return true
+                if(!pinchDetected){
+                    if(it.scaleFactor > PINCH_UPPER_LIMIT && !isFullScreen){
+                        Toast.makeText(this@VisualizeTextActivity, "Pinch out", Toast.LENGTH_SHORT).show()
+                        println("Pinch ouch ${it.currentSpan}, scale: ${it.scaleFactor}")
+                        toggleImmersiveMode()
+                        pinchDetected = true
+                        return true
+                    }
+                    if(it.scaleFactor < PINCH_LOWER_LIMIT && isFullScreen){
+                        Toast.makeText(this@VisualizeTextActivity, "Pinch in", Toast.LENGTH_SHORT).show()
+                        toggleImmersiveMode()
+                        pinchDetected = true
+                        return true
+                    }
                 }
             }
             return false
@@ -361,6 +424,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val SHOW_EPUB = "epub"
         const val FILE_ID = "fileId"
 
-        const val PINCH_LOWER_LIMIT = 1.3f
+        const val PINCH_UPPER_LIMIT = 1.3f
+        const val PINCH_LOWER_LIMIT = 0.8f
     }
 }
