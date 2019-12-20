@@ -103,6 +103,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        keepImmersiveMode()
+
         return inflater.inflate(R.layout.placeholder_layout, container, false)
     }
 
@@ -129,6 +131,30 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         languageFromIndex = languagesISO.indexOf(preference)
         languageFromIndex++ // Increment because the list we searched is missing one element "auto"
         return preference
+    }
+
+    /**
+     * In case the parent activity has immersive mode, this code prevents the dialog from interrupting
+     * by removing focus before showing the window. More info: https://stackoverflow.com/a/24549869/10244759
+     */
+    private fun keepImmersiveMode(){
+        window?.let {w ->
+            // Remove focus
+            w.setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+
+            // Copy parent activity window configuration
+            activity?.window?.decorView?.systemUiVisibility?.let {
+                w.decorView.systemUiVisibility = it
+            }
+
+            // Restore focus after showing dialog
+            dialog?.setOnShowListener {
+                w.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+
+                val wm = activity?.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+                wm?.updateViewLayout(w.decorView, w.attributes)
+            }
+        }
     }
 
     private fun setWordLayout(word: Words) {

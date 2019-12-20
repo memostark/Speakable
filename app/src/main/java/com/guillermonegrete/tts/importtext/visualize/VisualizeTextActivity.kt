@@ -373,14 +373,11 @@ class VisualizeTextActivity: AppCompatActivity() {
             detector?.let {
                 if(!pinchDetected){
                     if(it.scaleFactor > PINCH_UPPER_LIMIT && !isFullScreen){
-                        Toast.makeText(this@VisualizeTextActivity, "Pinch out", Toast.LENGTH_SHORT).show()
-                        println("Pinch ouch ${it.currentSpan}, scale: ${it.scaleFactor}")
                         toggleImmersiveMode()
                         pinchDetected = true
                         return true
                     }
                     if(it.scaleFactor < PINCH_LOWER_LIMIT && isFullScreen){
-                        Toast.makeText(this@VisualizeTextActivity, "Pinch in", Toast.LENGTH_SHORT).show()
                         toggleImmersiveMode()
                         pinchDetected = true
                         return true
