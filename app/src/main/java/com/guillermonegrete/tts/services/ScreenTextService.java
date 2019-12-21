@@ -124,9 +124,9 @@ public class ScreenTextService extends Service {
         AndroidInjection.inject(this);
         super.onCreate();
 
-        service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
-        trash_layout= new TrashView(this);
-        hasPermission=false;
+        service_layout = View.inflate(this, R.layout.service_processtext, null);
+        trash_layout = new TrashView(this);
+        hasPermission = false;
         isPlaying = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);

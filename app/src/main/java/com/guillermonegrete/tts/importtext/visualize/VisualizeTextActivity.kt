@@ -104,7 +104,6 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         val actionId = ev?.actionMasked ?: -1
-        val actionMasked = actionToString(actionId)
 
         if(eventInProgress){
             if(pageTextView?.isShown == true) scaleDetector.onTouchEvent(ev)
@@ -116,8 +115,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                 return true
             }
         }
-
-        println("Action masked: $actionMasked, Pointer count: ${ev?.pointerCount}, scaleInProgress: ${scaleDetector.isInProgress}")
 
         when(actionId){
             MotionEvent.ACTION_DOWN -> eventInProgress = true
@@ -137,17 +134,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
-    private fun actionToString(action: Int): String {
-        return when (action) {
-            MotionEvent.ACTION_DOWN -> "Down"
-            MotionEvent.ACTION_MOVE -> "Move"
-            MotionEvent.ACTION_POINTER_DOWN -> "Pointer Down"
-            MotionEvent.ACTION_UP -> "Up"
-            MotionEvent.ACTION_POINTER_UP -> "Pointer Up"
-            MotionEvent.ACTION_OUTSIDE -> "Outside"
-            MotionEvent.ACTION_CANCEL -> "Cancel"
-            else -> ""
-        }
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if(hasFocus) hideSystemUi()
     }
 
 
@@ -391,27 +380,31 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun toggleImmersiveMode() {
         isFullScreen = !isFullScreen
         if(isFullScreen){
-            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
-                    // Set the content to appear under the system bars so that the
-                    // content doesn't resize when the system bars hide and show.
-                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    // Hide the nav bar and status bar
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN)
-
-            actionBar?.show()
+            hideSystemUi()
 
             expandedConstraintSet.applyTo(rootConstraintLayout)
 
         }else{
             window.decorView.systemUiVisibility = 0
-            actionBar?.hide()
+            actionBar?.show()
 
             contractedConstraintSet.applyTo(rootConstraintLayout)
         }
 
+    }
+
+    private fun hideSystemUi(){
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
+                // Set the content to appear under the system bars so that the
+                // content doesn't resize when the system bars hide and show.
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                // Hide the nav bar and status bar
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+        actionBar?.hide()
     }
 
     companion object{
