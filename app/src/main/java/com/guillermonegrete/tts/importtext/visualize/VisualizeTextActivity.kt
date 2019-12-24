@@ -36,6 +36,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private var pageTextView: TextView? = null
 
+    private lateinit var pagesAdapter: VisualizerAdapter
+
     private val expandedConstraintSet = ConstraintSet()
     private val contractedConstraintSet = ConstraintSet()
 
@@ -52,19 +54,16 @@ class VisualizeTextActivity: AppCompatActivity() {
         setPreferenceTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)
+
         progressBar = findViewById(R.id.visualizer_progress_bar)
         rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
-        contractedConstraintSet.clone(rootConstraintLayout)
 
-        expandedConstraintSet.clone(rootConstraintLayout)
-        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
-        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, 0)
-        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, 0)
-        expandedConstraintSet.connect(R.id.text_reader_card_view, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0)
+        contractedConstraintSet.clone(rootConstraintLayout)
+        expandedConstraintSet.clone(this, R.layout.activity_visualize_text_expanded)
 
         createViewModel()
 
-        currentPageLabel= findViewById(R.id.reader_current_page)
+        currentPageLabel = findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
@@ -199,9 +198,11 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
+        pagesAdapter = VisualizerAdapter(pages) { showTextDialog(it) }
+        viewPager.adapter = pagesAdapter
+
         val position = viewModel.getPage()
         currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 of 33
-        viewPager.adapter = VisualizerAdapter(pages) { showTextDialog(it) }
         viewPager.setCurrentItem(position, false)
 
     }
@@ -346,7 +347,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
 
-        var pinchDetected = false
+        private var pinchDetected = false
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
             viewPager.isUserInputEnabled = false
@@ -378,18 +379,29 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun toggleImmersiveMode() {
+        val position = viewModel.currentPage
+
         isFullScreen = !isFullScreen
         if(isFullScreen){
             hideSystemUi()
 
             expandedConstraintSet.applyTo(rootConstraintLayout)
 
+            pagesAdapter.isExpanded = true
+
+
         }else{
             window.decorView.systemUiVisibility = 0
             actionBar?.show()
 
             contractedConstraintSet.applyTo(rootConstraintLayout)
+
+
+            pagesAdapter.isExpanded = false
         }
+
+        viewPager.adapter = pagesAdapter
+        viewPager.setCurrentItem(position, false)
 
     }
 
