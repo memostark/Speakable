@@ -270,7 +270,7 @@ public class ScreenTextService extends Service {
                                 Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
                                 // TODO should probably move this condition to the custom tts class
                                 boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                                if (!isInitialized) tts.initializeTTS(language);
+                                if (!isInitialized) tts.initializeTTS(language, ttsListener);
                                 if(isAvailable) tts.speak(text, ttsListener);
                             }
 

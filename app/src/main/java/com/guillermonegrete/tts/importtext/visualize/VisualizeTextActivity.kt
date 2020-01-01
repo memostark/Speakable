@@ -124,8 +124,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                     val span = pageTextView?.text as? Spannable
                     Selection.removeSelection(span)
                     scaleInProgress = false
-                    // Don't pass event if there was scaling to avoid unexpected clicks
-                    return true
                 }
             }
         }

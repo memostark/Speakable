@@ -16,7 +16,6 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInter
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
-import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
@@ -221,7 +220,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
                 boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
-                if(!isInitialized) customTTS.initializeTTS(word.lang);
+                if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
                 mView.updateTranslation(word.definition);
             }
 
@@ -279,7 +278,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         isAvailable = true;
         String lang = foundWord.lang;
         boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(lang);
-        if(!isInitialized) customTTS.initializeTTS(lang);
+        System.out.println("Is TTS initialized: " + isInitialized);
+        if(!isInitialized) customTTS.initializeTTS(lang, ttsListener);
     }
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
