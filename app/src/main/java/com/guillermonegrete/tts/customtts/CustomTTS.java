@@ -23,6 +23,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private Synthesizer mSynth;
 
     private Boolean isInitialized;
+    private Boolean isShutdown = false;
     private Boolean usinglocalTTS;
 
     private String language;
@@ -32,9 +33,13 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private HashMap<String, String> map = new HashMap<>();
     private Bundle params = new Bundle();
 
+    private Context context;
+
     @Inject
     public CustomTTS(Context context){
-        localTTS = new TextToSpeech(context, this);
+        this.context = context.getApplicationContext();
+
+        localTTS = new TextToSpeech(this.context, this);
         Synthesizer.Callback synthCallback = new Synthesizer.Callback() {
             @Override
             public void onStart() {
@@ -83,15 +88,20 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         else mSynth.stopSound();
     }
 
-     public void initializeTTS(final String langCode, Listener listener) {
-        this.listener = listener;
-        localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
-        language = langCode;
-        isInitialized = false;
-        if(langCode.equals("he")){
-            initializeMSService();
-        }else{
-            initializeGoogleLocalService(langCode);
+     public void initializeTTS(String langCode, Listener listener) {
+        boolean ttsReady = isInitialized && language.equals(langCode);
+        System.out.println("Is TTS initialized: " + isInitialized);
+
+        if(!ttsReady){
+            this.listener = listener;
+            language = langCode;
+            isInitialized = false;
+            if(langCode.equals("he")){
+                initializeMSService();
+            }else{
+                initializeGoogleLocalService(langCode);
+                localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
+            }
         }
     }
 
@@ -104,6 +114,36 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     private void initializeGoogleLocalService(String langCode){
+        if(isShutdown){
+            // Recreate and set language on init method
+            localTTS = new TextToSpeech(context.getApplicationContext(), this);
+        } else {
+            setLocalLanguage(langCode);
+        }
+    }
+
+    @Override
+    public void onInit(int status) {
+        String message;
+        switch (status){
+            case TextToSpeech.ERROR:
+                message = "Error";
+                break;
+            case TextToSpeech.SUCCESS:
+                message = "Success";
+
+                // If true, it was called from initializeGoogleLocalService method, set language
+                if(isShutdown) setLocalLanguage(language);
+                isShutdown = false;
+                break;
+            default:
+                message = "Unknown";
+                break;
+        }
+        System.out.println("Local TTS Status: " + message);
+    }
+
+    private void setLocalLanguage(String langCode){
         System.out.println("Language to set:" + langCode);
         int result = localTTS.setLanguage(new Locale(langCode.toUpperCase()));
         if (result == TextToSpeech.LANG_MISSING_DATA ||
@@ -116,24 +156,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             usinglocalTTS = true;
             isInitialized = true;
         }
-    }
-
-    @Override
-    public void onInit(int status) {
-        System.out.print("Local TTS Status: ");
-        String message;
-        switch (status){
-            case TextToSpeech.ERROR:
-                message = "Error";
-                break;
-            case TextToSpeech.SUCCESS:
-                message = "Success";
-                break;
-            default:
-                message = "Unknown";
-                break;
-        }
-        System.out.println(message);
     }
 
     private class CustomUtteranceListener extends UtteranceProgressListener {
@@ -187,10 +209,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         }
     }
 
-    public Boolean getInitialized() {
-        return isInitialized;
-    }
-
     public String getLanguage() {
         return language;
     }
@@ -198,6 +216,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     public void finishTTS(){
         System.out.println("Destroying localTTS");
         isInitialized = false;
+        isShutdown = true;
         if(localTTS != null){
             localTTS.stop();
             localTTS.shutdown();

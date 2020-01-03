@@ -219,8 +219,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
-                boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
-                if(!isInitialized) customTTS.initializeTTS(word.lang, ttsListener);
+                customTTS.initializeTTS(word.lang, ttsListener);
                 mView.updateTranslation(word.definition);
             }
 
@@ -277,9 +276,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private void checkTTSInitialization(){
         isAvailable = true;
         String lang = foundWord.lang;
-        boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(lang);
-        System.out.println("Is TTS initialized: " + isInitialized);
-        if(!isInitialized) customTTS.initializeTTS(lang, ttsListener);
+        customTTS.initializeTTS(lang, ttsListener);
     }
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
