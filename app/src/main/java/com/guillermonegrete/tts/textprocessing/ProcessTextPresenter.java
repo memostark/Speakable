@@ -1,12 +1,15 @@
 package com.guillermonegrete.tts.textprocessing;
 
 
+import android.content.SharedPreferences;
+
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
+import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntry;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntryInteractor;
@@ -30,6 +33,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private WordRepository mRepository;
     private DictionaryRepository dictionaryRepository;
     private ExternalLinksDataSource linksRepository;
+    private SharedPreferences sharedPreferences;
     private CustomTTS customTTS;
     private GetLangAndTranslation getTranslationInteractor;
 
@@ -47,12 +51,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             WordRepository repository,
             DictionaryRepository dictRepository,
             ExternalLinksDataSource linksRepository,
+            SharedPreferences sharedPreferences,
             CustomTTS customTTS,
             GetLangAndTranslation getTranslationInteractor){
         super(executor, mainThread);
         mRepository = repository;
         dictionaryRepository = dictRepository;
         this.linksRepository = linksRepository;
+        this.sharedPreferences = sharedPreferences;
         this.customTTS = customTTS;
         this.getTranslationInteractor = getTranslationInteractor;
 
@@ -279,7 +285,19 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         customTTS.initializeTTS(lang, ttsListener);
     }
 
+    private Boolean getAutoTTSPreference(){
+        return sharedPreferences.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
+    }
+
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+
+        @Override
+        public void onEngineReady() {
+            boolean autoPlay = getAutoTTSPreference();
+
+            if(autoPlay) onClickReproduce(foundWord.word);
+        }
+
         @Override
         public void onLanguageUnavailable() {
             isPlaying = false;

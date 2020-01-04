@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.textprocessing;
 
+import android.content.SharedPreferences;
+
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
@@ -39,6 +41,7 @@ public class ProcessTextPresenterTest {
     @Mock private WordRepository wordRepository;
     @Mock private DictionaryRepository dictionaryRepository;
     @Mock private DatabaseExternalLinksSource linksRepository;
+    @Mock private SharedPreferences sharedPreferences;
     @Mock private CustomTTS customTTS;
     @Mock private GetLangAndTranslation getTranslationInteractor;
 
@@ -80,7 +83,7 @@ public class ProcessTextPresenterTest {
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
         Executor executor = new TestThreadExecutor();
-        ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, customTTS, getTranslationInteractor);
+        ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, sharedPreferences, customTTS, getTranslationInteractor);
         presenter.setView(view);
         return presenter;
     }

@@ -21,7 +21,8 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private MainTTSContract.View view;
 
     private boolean isPlaying;
-    private boolean isAvailable;
+
+    private String text;
 
     @Inject
     MainTTSPresenter(Executor executor, MainThread mainThread, WordRepository wordRepository, CustomTTS tts) {
@@ -39,8 +40,9 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
             isPlaying = false;
             view.showPlayIcon();
         }else{
-            isAvailable = true;
             view.showLoadingTTS();
+            this.text = text;
+
             // TODO this request should be done in a background thread
             wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
                 @Override
@@ -48,11 +50,6 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
                     String language = word.lang;
                     tts.initializeTTS(language, ttsListener);
                     view.showDetectedLanguage(language);
-
-                    if(isAvailable) {
-                        PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, ttsListener, text);
-                        interactor.execute();
-                    }
                 }
 
                 @Override
@@ -82,10 +79,19 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     }
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+
+        @Override
+        public void onEngineReady() {
+            System.out.println("On engine ready");
+
+            System.out.println("Running tts interactor");
+            PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, ttsListener, text);
+            interactor.execute();
+        }
+
         @Override
         public void onLanguageUnavailable() {
             isPlaying = false;
-            isAvailable = false;
             view.showLanguageNotAvailable();
         }
 

@@ -25,18 +25,13 @@ import android.view.inputmethod.InputMethodManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
-import androidx.preference.PreferenceManager
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.guillermonegrete.tts.BuildConfig
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.services.ScreenTextService
 
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
-import com.guillermonegrete.tts.data.source.WordDataSource
-import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
-import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 

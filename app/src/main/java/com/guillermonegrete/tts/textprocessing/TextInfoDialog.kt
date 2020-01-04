@@ -39,8 +39,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     private var inputText: String? = null
 
-    private var autoTTS: Boolean = false
-
     private lateinit var mFoundWords: Words
 
     @Inject
@@ -73,7 +71,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
         inputText = arguments?.getString(TEXT_KEY)
 
-        autoTTS = getAutoTTSPreference()
         languageToISO = getPreferenceISO()
         languageFrom = getLanguageFromPreference()
 
@@ -112,11 +109,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         super.onDismiss(dialog)
         val parent = activity
         if(parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
-    }
-
-
-    private fun getAutoTTSPreference(): Boolean {
-        return preferences.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true)
     }
 
     private fun getPreferenceISO(): String {
@@ -172,8 +164,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         setLanguageFromSpinner()
 
         view?.findViewById<View>(R.id.save_icon)?.setOnClickListener { presenter.onClickBookmark() }
-
-        if (autoTTS) presenter.onClickReproduce(textString)
     }
 
     override fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
@@ -239,8 +229,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
         setLanguageFromSpinner()
         setSpinner()
-
-        if (autoTTS) presenter.onClickReproduce(text)
     }
 
     override fun setExternalDictionary(links: List<ExternalLink>) {

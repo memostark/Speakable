@@ -96,12 +96,16 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             this.listener = listener;
             language = langCode;
             isInitialized = false;
+
             if(langCode.equals("he")){
                 initializeMSService();
             }else{
                 initializeGoogleLocalService(langCode);
                 localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
             }
+
+        } else {
+            if(listener != null) listener.onEngineReady();
         }
     }
 
@@ -111,6 +115,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         mSynth.SetVoice(voice, null);
         usinglocalTTS = false;
         isInitialized = true;
+        if(listener != null) listener.onEngineReady();
     }
 
     private void initializeGoogleLocalService(String langCode){
@@ -155,6 +160,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         } else {
             usinglocalTTS = true;
             isInitialized = true;
+
+            if(listener != null) listener.onEngineReady();
         }
     }
 
@@ -224,6 +231,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     public interface Listener{
+        void onEngineReady();
+
         void onLanguageUnavailable();
 
         void onSpeakStart();
