@@ -61,6 +61,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private var languageFrom: String? = null
     private var languageToISO: String? = null
 
+    private var ttsReady = false
+
     override fun onAttach(context: Context) {
         (context.applicationContext as SpeakableApplication).appComponent.inject(this)
         super.onAttach(context)
@@ -302,21 +304,27 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
             playIconsContainer?.visibility = View.GONE
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
         }
+        ttsReady = false
     }
 
     override fun showLoadingTTS() {
         playProgressBar?.visibility = View.VISIBLE
         playButton?.visibility = View.GONE
+        ttsReady = false
     }
 
     override fun showPlayIcon() {
         playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar?.visibility = View.GONE
+        playButton?.visibility = View.VISIBLE
+        ttsReady = true
     }
 
     override fun showStopIcon() {
         playButton?.setImageResource(R.drawable.ic_stop_black_24dp)
         playProgressBar?.visibility = View.GONE
         playButton?.visibility = View.VISIBLE
+        ttsReady = true
     }
 
     override fun updateTranslation(translation: String) {
@@ -402,6 +410,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
         playProgressBar = view?.findViewById(R.id.play_loading_icon)
         playIconsContainer = view?.findViewById(R.id.play_icons_container)
+
+        if(ttsReady){
+            playProgressBar?.visibility = View.GONE
+            playButton?.visibility = View.VISIBLE
+        }
     }
 
     private fun createViewPager() {

@@ -296,6 +296,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             boolean autoPlay = getAutoTTSPreference();
 
             if(autoPlay) onClickReproduce(foundWord.word);
+            else {
+                mView.showPlayIcon();
+            }
         }
 
         @Override
