@@ -335,21 +335,20 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         ttsReady = true
     }
 
-    override fun updateTranslation(translation: String) {
+    override fun updateTranslation(word: Words) {
         val textLanguage = view?.findViewById<TextView>(R.id.text_language_code)
         textLanguage?.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
 
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
         if (pager != null) {
-            val fragIndex = pager?.currentItem
-            if(fragIndex != null) {
-                val fragment = pagerAdapter?.fragments?.get(fragIndex)
-                if (fragment is TranslationFragment) fragment.updateTranslation(translation)
-            }
+            val fragIndex = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
+
+            val fragment = pagerAdapter?.fragments?.get(fragIndex)
+            if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
             val translationTextView = view?.findViewById<TextView>(R.id.text_translation)
-            translationTextView?.text = translation
+            translationTextView?.text = word.definition
         }
     }
 

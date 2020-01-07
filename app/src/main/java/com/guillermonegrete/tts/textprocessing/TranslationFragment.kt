@@ -69,13 +69,19 @@ class TranslationFragment: Fragment() {
         clipboard.primaryClip = clip
     }
 
-    fun updateTranslation(translation: String){
-        translationEditText.text = translation
+    fun updateTranslation(word: Words){
+        if(isAdded) {
+            translationEditText.text = word.definition
+        }else{
+            arguments?.putParcelable(ARGUMENT_WORD, word)
+        }
     }
 
     fun setErrorLayout(){
-        errorLayout.visibility = View.VISIBLE
-        allGroup.visibility = View.GONE
+        if(view != null) {
+            errorLayout.visibility = View.VISIBLE
+            allGroup.visibility = View.GONE
+        }
     }
 
     fun setListener(listener: Listener){
@@ -103,9 +109,7 @@ class TranslationFragment: Fragment() {
 
     inner class SpinnerListener: AdapterView.OnItemSelectedListener {
 
-        override fun onNothingSelected(parent: AdapterView<*>?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
+        override fun onNothingSelected(parent: AdapterView<*>?) {}
 
         override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
             listener?.onItemSelected(position)

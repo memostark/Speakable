@@ -41,7 +41,7 @@ public interface ProcessTextContract {
 
         void showStopIcon();
 
-        void updateTranslation(String translation);
+        void updateTranslation(Words words);
 
         void updateExternalLinks(List<ExternalLink> links);
     }
@@ -59,8 +59,6 @@ public interface ProcessTextContract {
         void getLayout(String text, String languageFrom, String languageTo);
 
         void getDictionaryEntry(Words word);
-
-        void getExternalLinks(String language);
 
         void onClickBookmark();
 

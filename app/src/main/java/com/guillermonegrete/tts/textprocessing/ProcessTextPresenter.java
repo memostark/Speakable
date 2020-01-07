@@ -171,9 +171,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         interactor.execute();
     }
 
-
-    @Override
-    public void getExternalLinks(String language) {
+    private void getExternalLinks(String language) {
         GetExternalLink link_interactor = new GetExternalLink(
                 mExecutor,
                 mMainThread,
@@ -231,7 +229,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
                 customTTS.initializeTTS(word.lang, ttsListener);
-                mView.updateTranslation(word.definition);
+                mView.updateTranslation(word);
             }
 
             @Override
