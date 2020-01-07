@@ -107,8 +107,14 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         return inflater.inflate(R.layout.placeholder_layout, container, false)
     }
 
+    override fun onStop() {
+        super.onStop()
+        presenter.stop()
+    }
+
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
+        presenter.destroy()
         val parent = activity
         if(parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
     }
@@ -175,7 +181,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         )
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
         setWordLayout(word)
-        dictionaryAdapter = WiktionaryAdapter(requireContext(), items)
+        dictionaryAdapter = WiktionaryAdapter(items)
 
         mFoundWords = word
 
@@ -234,6 +240,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     override fun setExternalDictionary(links: List<ExternalLink>) {
+        if(!isAdded) return
+
         pagerAdapter = MyPageAdapter(this)
         if (dictionaryAdapter != null) pagerAdapter?.addFragment(
             DefinitionFragment.newInstance(dictionaryAdapter)
@@ -362,9 +370,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private fun setContentView(@LayoutRes id: Int){
         val inflater = activity?.layoutInflater
         val newView = inflater?.inflate(id, null)
-        val rootView = view as ViewGroup
-        rootView.removeAllViews()
-        rootView.addView(newView)
+        val rootView = view as? ViewGroup
+        rootView?.removeAllViews()
+        rootView?.addView(newView)
     }
 
     private fun setCenterDialog() {
@@ -429,6 +437,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setLanguageFromSpinner() {
+        // Sometimes activity can be destroyed before this is called, due to network/DB latency
+        if(context == null) return
+
         val spinner: Spinner? = view?.findViewById(R.id.spinner_language_from_code)
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
@@ -444,6 +455,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setSpinner() {
+        if(context == null) return
+
         val spinner = view?.findViewById<Spinner>(R.id.translate_to_spinner)
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),

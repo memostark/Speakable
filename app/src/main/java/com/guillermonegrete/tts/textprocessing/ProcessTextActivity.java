@@ -29,6 +29,7 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        setFinishOnTouchOutside(false);
         detectStatusBar();
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);

@@ -44,6 +44,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean isAvailable;
     private boolean hasTranslation;
 
+    private boolean viewIsActive = false;
+
     @Inject
     ProcessTextPresenter(
             Executor executor,
@@ -99,6 +101,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void getLayout(String text, String languageFrom, String languageTo) {
         hasTranslation = true;
+        viewIsActive = true;
+
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
@@ -143,6 +147,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void getDictionaryEntry(final Words word) {
         foundWord = word;
         hasTranslation = true;
+        viewIsActive = true;
         checkTTSInitialization();
 
         GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
@@ -259,20 +264,22 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void pause() {
-        stopPlaying();
+        onViewInactive();
     }
 
     @Override
     public void stop() {
-        stopPlaying();
+        onViewInactive();
     }
 
     @Override
     public void destroy() {
-        stopPlaying();
+        onViewInactive();
     }
 
-    private void stopPlaying(){
+    private void onViewInactive(){
+        viewIsActive = false;
+
         if(isPlaying) {
             customTTS.stop();
             isPlaying = false;
@@ -295,7 +302,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         public void onEngineReady() {
             boolean autoPlay = getAutoTTSPreference();
 
-            if(autoPlay) onClickReproduce(foundWord.word);
+            if(autoPlay && viewIsActive) {
+                onClickReproduce(foundWord.word);
+            }
             else {
                 mView.showPlayIcon();
             }
