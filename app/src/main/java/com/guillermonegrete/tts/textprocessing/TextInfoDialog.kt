@@ -39,8 +39,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     private var inputText: String? = null
 
-    private var autoTTS: Boolean = false
-
     private lateinit var mFoundWords: Words
 
     @Inject
@@ -63,6 +61,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private var languageFrom: String? = null
     private var languageToISO: String? = null
 
+    private var ttsReady = false
+
     override fun onAttach(context: Context) {
         (context.applicationContext as SpeakableApplication).appComponent.inject(this)
         super.onAttach(context)
@@ -73,7 +73,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
         inputText = arguments?.getString(TEXT_KEY)
 
-        autoTTS = getAutoTTSPreference()
         languageToISO = getPreferenceISO()
         languageFrom = getLanguageFromPreference()
 
@@ -103,18 +102,21 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        keepImmersiveMode()
+
         return inflater.inflate(R.layout.placeholder_layout, container, false)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        presenter.stop()
     }
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
+        presenter.destroy()
         val parent = activity
         if(parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
-    }
-
-
-    private fun getAutoTTSPreference(): Boolean {
-        return preferences.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true)
     }
 
     private fun getPreferenceISO(): String {
@@ -129,6 +131,30 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         languageFromIndex = languagesISO.indexOf(preference)
         languageFromIndex++ // Increment because the list we searched is missing one element "auto"
         return preference
+    }
+
+    /**
+     * In case the parent activity has immersive mode, this code prevents the dialog from interrupting
+     * by removing focus before showing the window. More info: https://stackoverflow.com/a/24549869/10244759
+     */
+    private fun keepImmersiveMode(){
+        window?.let {w ->
+            // Remove focus
+            w.setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+
+            // Copy parent activity window configuration
+            activity?.window?.decorView?.systemUiVisibility?.let {
+                w.decorView.systemUiVisibility = it
+            }
+
+            // Restore focus after showing dialog
+            dialog?.setOnShowListener {
+                w.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+
+                val wm = activity?.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+                wm?.updateViewLayout(w.decorView, w.attributes)
+            }
+        }
     }
 
     private fun setWordLayout(word: Words) {
@@ -146,8 +172,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         setLanguageFromSpinner()
 
         view?.findViewById<View>(R.id.save_icon)?.setOnClickListener { presenter.onClickBookmark() }
-
-        if (autoTTS) presenter.onClickReproduce(textString)
     }
 
     override fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
@@ -157,7 +181,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         )
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
         setWordLayout(word)
-        dictionaryAdapter = WiktionaryAdapter(requireContext(), items)
+        dictionaryAdapter = WiktionaryAdapter(items)
 
         mFoundWords = word
 
@@ -213,11 +237,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
         setLanguageFromSpinner()
         setSpinner()
-
-        if (autoTTS) presenter.onClickReproduce(text)
     }
 
     override fun setExternalDictionary(links: List<ExternalLink>) {
+        if(!isAdded) return
+
         pagerAdapter = MyPageAdapter(this)
         if (dictionaryAdapter != null) pagerAdapter?.addFragment(
             DefinitionFragment.newInstance(dictionaryAdapter)
@@ -288,38 +312,43 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
             playIconsContainer?.visibility = View.GONE
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
         }
+        ttsReady = false
     }
 
     override fun showLoadingTTS() {
         playProgressBar?.visibility = View.VISIBLE
         playButton?.visibility = View.GONE
+        ttsReady = false
     }
 
     override fun showPlayIcon() {
         playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar?.visibility = View.GONE
+        playButton?.visibility = View.VISIBLE
+        ttsReady = true
     }
 
     override fun showStopIcon() {
         playButton?.setImageResource(R.drawable.ic_stop_black_24dp)
         playProgressBar?.visibility = View.GONE
         playButton?.visibility = View.VISIBLE
+        ttsReady = true
     }
 
-    override fun updateTranslation(translation: String) {
+    override fun updateTranslation(word: Words) {
         val textLanguage = view?.findViewById<TextView>(R.id.text_language_code)
         textLanguage?.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
 
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
         if (pager != null) {
-            val fragIndex = pager?.currentItem
-            if(fragIndex != null) {
-                val fragment = pagerAdapter?.fragments?.get(fragIndex)
-                if (fragment is TranslationFragment) fragment.updateTranslation(translation)
-            }
+            val fragIndex = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
+
+            val fragment = pagerAdapter?.fragments?.get(fragIndex)
+            if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
             val translationTextView = view?.findViewById<TextView>(R.id.text_translation)
-            translationTextView?.text = translation
+            translationTextView?.text = word.definition
         }
     }
 
@@ -340,9 +369,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private fun setContentView(@LayoutRes id: Int){
         val inflater = activity?.layoutInflater
         val newView = inflater?.inflate(id, null)
-        val rootView = view as ViewGroup
-        rootView.removeAllViews()
-        rootView.addView(newView)
+        val rootView = view as? ViewGroup
+        rootView?.removeAllViews()
+        rootView?.addView(newView)
     }
 
     private fun setCenterDialog() {
@@ -388,6 +417,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
         playProgressBar = view?.findViewById(R.id.play_loading_icon)
         playIconsContainer = view?.findViewById(R.id.play_icons_container)
+
+        if(ttsReady){
+            playProgressBar?.visibility = View.GONE
+            playButton?.visibility = View.VISIBLE
+        }
     }
 
     private fun createViewPager() {
@@ -402,6 +436,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setLanguageFromSpinner() {
+        // Sometimes activity can be destroyed before this is called, due to network/DB latency
+        if(context == null) return
+
         val spinner: Spinner? = view?.findViewById(R.id.spinner_language_from_code)
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
@@ -417,6 +454,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setSpinner() {
+        if(context == null) return
+
         val spinner = view?.findViewById<Spinner>(R.id.translate_to_spinner)
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),

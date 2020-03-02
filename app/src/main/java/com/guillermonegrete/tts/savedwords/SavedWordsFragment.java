@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.savedwords;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -79,7 +78,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     }
 
     private void initData(){
-        wordsViewModel = ViewModelProviders.of(this, viewModelFactory).get(SavedWordsViewModel.class);
+        wordsViewModel = new ViewModelProvider(this, viewModelFactory).get(SavedWordsViewModel.class);
 
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
             ArrayList<String> spinnerItems = new ArrayList<>(languages);
@@ -90,7 +89,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             spinnerLang.setAdapter(adapter);
         });
 
-        wordsViewModel.getWordsList().observe(this, wordsList -> {
+        wordsViewModel.getWordsList().observe(getViewLifecycleOwner(), wordsList -> {
             words = wordsList;
             // TODO filtering should be done in view model
             filterWords();

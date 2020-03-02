@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.textprocessing;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,17 +19,15 @@ public class WiktionaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     private List<WikiItem> items;
 
-    private LayoutInflater inflater;
-
-    public WiktionaryAdapter(Context context, List<WikiItem> items){
-        inflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    public WiktionaryAdapter(List<WikiItem> items){
         this.items = items;
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+
         if(viewType == WikiItem.RowType.HEADER_ITEM.ordinal()){
             View view = inflater.inflate(R.layout.header_item, parent, false);
             return new HeaderViewHolder(view);
@@ -64,7 +61,7 @@ public class WiktionaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     class HeaderViewHolder extends RecyclerView.ViewHolder{
         TextView headerText;
 
-        public HeaderViewHolder(@NonNull View itemView) {
+        HeaderViewHolder(@NonNull View itemView) {
             super(itemView);
             headerText = itemView.findViewById(R.id.textSeparator);
         }
@@ -78,7 +75,7 @@ public class WiktionaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         TextView subHeaderText;
         TextView definitionText;
 
-        public ItemViewHolder(@NonNull View itemView) {
+        ItemViewHolder(@NonNull View itemView) {
             super(itemView);
             subHeaderText = itemView.findViewById(R.id.text_subheader);
             definitionText = itemView.findViewById(R.id.item_text);

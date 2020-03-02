@@ -19,6 +19,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private TextToSpeech localTTS;
 
     private Boolean isInitialized;
+    private Boolean isShutdown = false;
 
     private String language;
 
@@ -27,9 +28,13 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private HashMap<String, String> map = new HashMap<>();
     private Bundle params = new Bundle();
 
+    private Context context;
+
     @Inject
     public CustomTTS(Context context){
-        localTTS = new TextToSpeech(context, this);
+        this.context = context.getApplicationContext();
+
+        localTTS = new TextToSpeech(this.context, this);
         isInitialized = false;
         map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CustomTTSID");
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
@@ -53,31 +58,67 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         localTTS.stop();
     }
 
-     public void initializeTTS(final String langCode) {
-        localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
-        language = langCode;
-        isInitialized = false;
-        initializeGoogleLocalService(langCode);
+     public void initializeTTS(String langCode, Listener listener) {
+        boolean ttsReady = isInitialized && language.equals(langCode);
+        System.out.println("Is TTS initialized: " + isInitialized);
+
+        if(!ttsReady){
+            this.listener = listener;
+            language = langCode;
+            isInitialized = false;
+
+            initializeGoogleLocalService(langCode);
+            localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
+
+        } else {
+            if(listener != null) listener.onEngineReady();
+        }
     }
 
     private void initializeGoogleLocalService(String langCode){
-        System.out.println(String.format("Language to set: %s", langCode ));
-        int result = localTTS.setLanguage(new Locale(langCode.toUpperCase()));
-        if (result == TextToSpeech.LANG_MISSING_DATA ||
-                result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            System.out.print("Error code: ");
-            System.out.println(result);
-            System.out.println("Initialize TTS Error, This Language is not supported");
-            if(listener != null) listener.onLanguageUnavailable();
+        if(isShutdown){
+            // Recreate and set language on init method
+            localTTS = new TextToSpeech(context.getApplicationContext(), this);
         } else {
-            isInitialized = true;
+            setLocalLanguage(langCode);
         }
     }
 
     @Override
     public void onInit(int status) {
-        System.out.print("Local TTS Status:");
-        System.out.println(status);
+        String message;
+        switch (status){
+            case TextToSpeech.ERROR:
+                message = "Error";
+                break;
+            case TextToSpeech.SUCCESS:
+                message = "Success";
+
+                // If true, it was called from initializeGoogleLocalService method, set language
+                if(isShutdown) setLocalLanguage(language);
+                isShutdown = false;
+                break;
+            default:
+                message = "Unknown";
+                break;
+        }
+        System.out.println("Local TTS Status: " + message);
+    }
+
+    private void setLocalLanguage(String langCode){
+        System.out.println("Language to set:" + langCode);
+        int result = localTTS.setLanguage(new Locale(langCode.toUpperCase()));
+        if (result == TextToSpeech.LANG_MISSING_DATA ||
+                result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            System.out.println("Error code: " + result);
+            System.out.println("Initialize TTS Error, This Language is not supported");
+            if(listener != null) listener.onLanguageUnavailable();
+
+        } else {
+            isInitialized = true;
+
+            if(listener != null) listener.onEngineReady();
+        }
     }
 
     private class CustomUtteranceListener extends UtteranceProgressListener {
@@ -93,11 +134,42 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         }
 
         @Override
-        public void onError(String utteranceId) {listener.onLanguageUnavailable();}
-    }
+        public void onError(String utteranceId) {
+            listener.onLanguageUnavailable();
+        }
 
-    public Boolean getInitialized() {
-        return isInitialized;
+        @Override
+        public void onError(String utteranceId, int errorCode) {
+            super.onError(utteranceId, errorCode);
+            String error;
+            switch (errorCode){
+                case TextToSpeech.ERROR_INVALID_REQUEST:
+                    error = "ERROR_INVALID_REQUEST";
+                    break;
+                case TextToSpeech.ERROR_NETWORK:
+                    error = "ERROR_NETWORK";
+                    break;
+                case TextToSpeech.ERROR_NETWORK_TIMEOUT:
+                    error = "ERROR_NETWORK_TIMEOUT";
+                    break;
+                case TextToSpeech.ERROR_NOT_INSTALLED_YET:
+                    error = "ERROR_NOT_INSTALLED_YET";
+                    break;
+                case TextToSpeech.ERROR_OUTPUT:
+                    error = "ERROR_OUTPUT";
+                    break;
+                case TextToSpeech.ERROR_SERVICE:
+                    error = "ERROR_SERVICE";
+                    break;
+                case TextToSpeech.ERROR_SYNTHESIS:
+                    error = "ERROR_SYNTHESIS";
+                    break;
+                default:
+                    error = "Unknown";
+                    break;
+            }
+            System.out.println("Text To speech error: " + error);
+        }
     }
 
     public String getLanguage() {
@@ -107,13 +179,16 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     public void finishTTS(){
         System.out.println("Destroying localTTS");
         isInitialized = false;
-        if(localTTS !=null){
+        isShutdown = true;
+        if(localTTS != null){
             localTTS.stop();
             localTTS.shutdown();
         }
     }
 
     public interface Listener{
+        void onEngineReady();
+
         void onLanguageUnavailable();
 
         void onSpeakStart();

@@ -5,6 +5,7 @@ import android.text.SpannableString
 import android.text.method.LinkMovementMethod
 import android.view.*
 import android.widget.TextView
+import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import java.text.BreakIterator
@@ -12,9 +13,11 @@ import java.util.*
 
 class VisualizerAdapter(private val pages: List<CharSequence>, private val showTextDialog: (CharSequence) -> Unit): RecyclerView.Adapter<VisualizerAdapter.PageViewHolder>() {
 
+    var isExpanded = false
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(R.layout.visualizer_page_item, parent, false)
-        return PageViewHolder(layout)
+        return PageViewHolder(isExpanded, layout)
     }
 
     override fun getItemCount() = pages.size
@@ -23,7 +26,7 @@ class VisualizerAdapter(private val pages: List<CharSequence>, private val showT
         holder.bind(pages[position])
     }
 
-    inner class PageViewHolder(view: View): RecyclerView.ViewHolder(view){
+    inner class PageViewHolder(isExpanded: Boolean, view: View): RecyclerView.ViewHolder(view){
         private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         private val actionModeCallback = object : ActionMode.Callback{
@@ -49,9 +52,7 @@ class VisualizerAdapter(private val pages: List<CharSequence>, private val showT
                 return false
             }
 
-            override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-                return true
-            }
+            override fun onCreateActionMode(mode: ActionMode, menu: Menu) = true
 
             override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
                 menu.clear()
@@ -69,6 +70,12 @@ class VisualizerAdapter(private val pages: List<CharSequence>, private val showT
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
             pageTextView.movementMethod = LinkMovementMethod.getInstance()
+
+            if(isExpanded){
+                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+            }else{
+                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE)
+            }
         }
 
         fun bind(text: CharSequence){

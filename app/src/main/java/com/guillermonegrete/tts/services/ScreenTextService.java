@@ -110,7 +110,8 @@ public class ScreenTextService extends Service {
     private Point screenSize;
 
     private boolean isPlaying;
-    private boolean isAvailable;
+
+    private String text;
 
 
     @Nullable
@@ -125,9 +126,9 @@ public class ScreenTextService extends Service {
         AndroidInjection.inject(this);
         super.onCreate();
 
-        service_layout= LayoutInflater.from(this).inflate(R.layout.service_processtext, null);
-        trash_layout= new TrashView(this);
-        hasPermission=false;
+        service_layout = View.inflate(this, R.layout.service_processtext, null);
+        trash_layout = new TrashView(this);
+        hasPermission = false;
         isPlaying = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -258,7 +259,6 @@ public class ScreenTextService extends Service {
                 isPlaying = false;
                 playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
             }else {
-                isAvailable = true;
                 playLoadingIcon.setVisibility(View.VISIBLE);
                 playButton.setVisibility(View.GONE);
 
@@ -269,16 +269,13 @@ public class ScreenTextService extends Service {
                             @Override
                             public void onTextDetected(@NotNull String text, @NotNull String language) {
                                 Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                                // TODO should probably move this condition to the custom tts class
-                                boolean isInitialized = tts.getInitialized() && tts.getLanguage().equals(language);
-                                if (!isInitialized) tts.initializeTTS(language);
-                                if(isAvailable) tts.speak(text, ttsListener);
+                                ScreenTextService.this.text = text;
+                                tts.initializeTTS(language, ttsListener);
                             }
 
                             @Override
                             public void onError(@NotNull String message) {
                                 isPlaying = false;
-                                isAvailable = false;
                                 playLoadingIcon.setVisibility(View.GONE);
                                 playButton.setVisibility(View.VISIBLE);
                                 Toast.makeText(ScreenTextService.this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
@@ -300,7 +297,6 @@ public class ScreenTextService extends Service {
                     @Override
                     public void onError(@NotNull String message) {
                         isPlaying = false;
-                        isAvailable = false;
                         playLoadingIcon.setVisibility(View.GONE);
                         playButton.setVisibility(View.VISIBLE);
                         Toast.makeText(ScreenTextService.this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
@@ -579,9 +575,13 @@ public class ScreenTextService extends Service {
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
         @Override
+        public void onEngineReady() {
+            tts.speak(text, ttsListener);
+        }
+
+        @Override
         public void onLanguageUnavailable() {
             isPlaying = false;
-            isAvailable = false;
             playLoadingIcon.setVisibility(View.GONE);
             playButton.setVisibility(View.VISIBLE);
             Toast.makeText(ScreenTextService.this, "Language not available for TTS", Toast.LENGTH_SHORT).show();

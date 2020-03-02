@@ -1,12 +1,15 @@
 package com.guillermonegrete.tts.textprocessing;
 
 
+import android.content.SharedPreferences;
+
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
+import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntry;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntryInteractor;
@@ -16,7 +19,6 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInter
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
-import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
@@ -31,6 +33,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private WordRepository mRepository;
     private DictionaryRepository dictionaryRepository;
     private ExternalLinksDataSource linksRepository;
+    private SharedPreferences sharedPreferences;
     private CustomTTS customTTS;
     private GetLangAndTranslation getTranslationInteractor;
 
@@ -41,6 +44,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean isAvailable;
     private boolean hasTranslation;
 
+    private boolean viewIsActive = false;
+
     @Inject
     ProcessTextPresenter(
             Executor executor,
@@ -48,12 +53,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             WordRepository repository,
             DictionaryRepository dictRepository,
             ExternalLinksDataSource linksRepository,
+            SharedPreferences sharedPreferences,
             CustomTTS customTTS,
             GetLangAndTranslation getTranslationInteractor){
         super(executor, mainThread);
         mRepository = repository;
         dictionaryRepository = dictRepository;
         this.linksRepository = linksRepository;
+        this.sharedPreferences = sharedPreferences;
         this.customTTS = customTTS;
         this.getTranslationInteractor = getTranslationInteractor;
 
@@ -94,6 +101,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void getLayout(String text, String languageFrom, String languageTo) {
         hasTranslation = true;
+        viewIsActive = true;
+
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
@@ -138,6 +147,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void getDictionaryEntry(final Words word) {
         foundWord = word;
         hasTranslation = true;
+        viewIsActive = true;
         checkTTSInitialization();
 
         GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
@@ -161,9 +171,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         interactor.execute();
     }
 
-
-    @Override
-    public void getExternalLinks(String language) {
+    private void getExternalLinks(String language) {
         GetExternalLink link_interactor = new GetExternalLink(
                 mExecutor,
                 mMainThread,
@@ -220,9 +228,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
-                boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(word.lang);
-                if(!isInitialized) customTTS.initializeTTS(word.lang);
-                mView.updateTranslation(word.definition);
+                customTTS.initializeTTS(word.lang, ttsListener);
+                mView.updateTranslation(word);
             }
 
             @Override
@@ -255,20 +262,22 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void pause() {
-        stopPlaying();
+        onViewInactive();
     }
 
     @Override
     public void stop() {
-        stopPlaying();
+        onViewInactive();
     }
 
     @Override
     public void destroy() {
-        stopPlaying();
+        onViewInactive();
     }
 
-    private void stopPlaying(){
+    private void onViewInactive(){
+        viewIsActive = false;
+
         if(isPlaying) {
             customTTS.stop();
             isPlaying = false;
@@ -278,11 +287,27 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private void checkTTSInitialization(){
         isAvailable = true;
         String lang = foundWord.lang;
-        boolean isInitialized = customTTS.getInitialized() && customTTS.getLanguage().equals(lang);
-        if(!isInitialized) customTTS.initializeTTS(lang);
+        customTTS.initializeTTS(lang, ttsListener);
+    }
+
+    private Boolean getAutoTTSPreference(){
+        return sharedPreferences.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
     }
 
     private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+
+        @Override
+        public void onEngineReady() {
+            boolean autoPlay = getAutoTTSPreference();
+
+            if(autoPlay && viewIsActive) {
+                onClickReproduce(foundWord.word);
+            }
+            else {
+                mView.showPlayIcon();
+            }
+        }
+
         @Override
         public void onLanguageUnavailable() {
             isPlaying = false;

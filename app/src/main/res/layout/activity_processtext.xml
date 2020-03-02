@@ -94,16 +94,14 @@
                     android:src="@drawable/ic_volume_up_black_24dp"
                     android:contentDescription="@string/save_icon_description"
                     android:background="?android:selectableItemBackgroundBorderless"
-                    tools:visibility="visible"/>
+                    android:visibility="gone"/>
 
                 <ProgressBar
                     android:id="@+id/play_loading_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
-                    style="@android:style/Widget.Holo.ProgressBar"
-                    android:visibility="gone"
-                    tools:visibility="visible"/>
+                    style="@android:style/Widget.Holo.ProgressBar"/>
             </FrameLayout>
 
 
