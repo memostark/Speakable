@@ -10,11 +10,13 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.provider.Settings;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
@@ -30,7 +32,7 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         setFinishOnTouchOutside(false);
-        detectStatusBar();
+        hasOverlayDrawPermission();
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
@@ -66,6 +68,20 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
                         // Hide the nav bar and status bar
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN);
+    }
+
+    /**
+     * If SDK is Android M or higher, we need to ask for permission to create the layout to detect the status bar.
+     * More here: https://developer.android.com/reference/android/Manifest.permission.html#SYSTEM_ALERT_WINDOW
+     *
+     * Because of this we just hide the UI by default if we don't have permission.
+     */
+    private void hasOverlayDrawPermission(){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)){
+            hideSystemUI();
+        }else{
+            detectStatusBar();
+        }
     }
 
     /**
