@@ -43,7 +43,7 @@ Speakable includes a text viewer that allows you to use all the app features (su
 
 You can either enter the text you want to view or import it from an external file like and epub and txt.
 
-<img src="readme_images/import_text_Screen.jpg" alt="drawing" width="350"/>
+<img src="readme_images/import_text_screen.jpg" alt="drawing" width="350"/>
 
 Inside the viewer you can click any word to see translation, definition and more!
 
