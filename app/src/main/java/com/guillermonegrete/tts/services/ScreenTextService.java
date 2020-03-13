@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.widget.*;
 import androidx.annotation.Nullable;
@@ -389,7 +390,7 @@ public class ScreenTextService extends Service {
         windowParams.gravity = Gravity.TOP | Gravity.START;
         windowParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
         windowParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        windowParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+        windowParams.type = getLayoutParamType();
         windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         windowParams.format = PixelFormat.TRANSLUCENT;
     }
@@ -397,7 +398,7 @@ public class ScreenTextService extends Service {
     private void defaultTrashViewParams(){
         mParamsTrash.width = ViewGroup.LayoutParams.MATCH_PARENT;
         mParamsTrash.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        mParamsTrash.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
+        mParamsTrash.type = getLayoutParamType();
         mParamsTrash.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
@@ -406,6 +407,16 @@ public class ScreenTextService extends Service {
         mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
         mParamsTrash.x = 0;
         mParamsTrash.y = 0;
+    }
+
+    private int getLayoutParamType(){
+        int LAYOUT_FLAG;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        } else {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_PHONE;
+        }
+        return LAYOUT_FLAG;
     }
 
     private void showSnippingView(){
@@ -567,7 +578,7 @@ public class ScreenTextService extends Service {
         if(tts!=null) tts.finishTTS();
     }
 
-    private class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
+    private static class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
 
         @Override
         public boolean onSingleTapUp(MotionEvent event) {
