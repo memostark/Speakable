@@ -10,6 +10,8 @@ package com.guillermonegrete.tts.services;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ClipData;
@@ -23,6 +25,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.widget.*;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 
@@ -516,7 +519,13 @@ public class ScreenTextService extends Service {
         intent.setAction(action);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
 
-        String CHANNEL_IMPORTANCE = "service_notification";
+        String CHANNEL_IMPORTANCE;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CHANNEL_IMPORTANCE = createNotificationChannel();
+        } else {
+            CHANNEL_IMPORTANCE = "service_notification";
+        }
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_IMPORTANCE)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Clipboard translation is activated")
@@ -529,6 +538,17 @@ public class ScreenTextService extends Service {
                 .setContentIntent(pendingIntent).build();
 
         startForeground(1337, notification);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private String createNotificationChannel(){
+        NotificationChannel chan = new NotificationChannel("my_service",
+                "My Background Service", NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        service.createNotificationChannel(chan);
+        return "my_service";
     }
 
     private void addViews(){
