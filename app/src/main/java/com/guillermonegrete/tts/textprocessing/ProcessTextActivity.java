@@ -92,7 +92,7 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
     private void detectStatusBar(){
 
         final WindowManager.LayoutParams p = new WindowManager.LayoutParams();
-        p.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+        p.type = getLayoutParamType();
         p.gravity = Gravity.END | Gravity.TOP;
         p.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         p.width = 1;
@@ -127,6 +127,16 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
         }else{
             showDialog();
         }
+    }
+
+    private int getLayoutParamType(){
+        int LAYOUT_FLAG;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        } else {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+        }
+        return LAYOUT_FLAG;
     }
 
     @Override
