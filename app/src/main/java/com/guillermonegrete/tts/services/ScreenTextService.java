@@ -10,6 +10,8 @@ package com.guillermonegrete.tts.services;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ClipData;
@@ -19,9 +21,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.widget.*;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 
@@ -387,7 +391,7 @@ public class ScreenTextService extends Service {
         windowParams.gravity = Gravity.TOP | Gravity.START;
         windowParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
         windowParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        windowParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+        windowParams.type = getLayoutParamType();
         windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         windowParams.format = PixelFormat.TRANSLUCENT;
     }
@@ -395,7 +399,7 @@ public class ScreenTextService extends Service {
     private void defaultTrashViewParams(){
         mParamsTrash.width = ViewGroup.LayoutParams.MATCH_PARENT;
         mParamsTrash.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        mParamsTrash.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
+        mParamsTrash.type = getLayoutParamType();
         mParamsTrash.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
@@ -404,6 +408,16 @@ public class ScreenTextService extends Service {
         mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
         mParamsTrash.x = 0;
         mParamsTrash.y = 0;
+    }
+
+    private int getLayoutParamType(){
+        int LAYOUT_FLAG;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        } else {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_PHONE;
+        }
+        return LAYOUT_FLAG;
     }
 
     private void showSnippingView(){
@@ -503,7 +517,13 @@ public class ScreenTextService extends Service {
         intent.setAction(action);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
 
-        String CHANNEL_IMPORTANCE = "service_notification";
+        String CHANNEL_IMPORTANCE;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CHANNEL_IMPORTANCE = createNotificationChannel();
+        } else {
+            CHANNEL_IMPORTANCE = "service_notification";
+        }
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_IMPORTANCE)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Clipboard translation is activated")
@@ -516,6 +536,17 @@ public class ScreenTextService extends Service {
                 .setContentIntent(pendingIntent).build();
 
         startForeground(1337, notification);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private String createNotificationChannel(){
+        NotificationChannel chan = new NotificationChannel("my_service",
+                "My Background Service", NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        service.createNotificationChannel(chan);
+        return "my_service";
     }
 
     private void addViews(){
@@ -565,7 +596,7 @@ public class ScreenTextService extends Service {
         if(tts!=null) tts.finishTTS();
     }
 
-    private class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
+    private static class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
 
         @Override
         public boolean onSingleTapUp(MotionEvent event) {
