@@ -102,7 +102,7 @@ class VisualizeTextViewModel @Inject constructor(
             val spineSize = it.spine.size
             if (position in 0 until spineSize) {
                 val spineItem = it.spine[position]
-                val newChapterPath = it.manifest[spineItem]
+                val newChapterPath = it.manifest[spineItem.idRef]
                 if (newChapterPath != null) {
                     currentChapter = position
                     _dataLoading.value = true
@@ -149,7 +149,7 @@ class VisualizeTextViewModel @Inject constructor(
     fun jumpToChapter(path: String){
         _book.value?.let{
             val key = it.manifest.filterValues { value -> value == path }.keys.first()
-            val index = it.spine.indexOf(key)
+            val index = it.spine.indexOfFirst { item -> item.idRef == key }
             if(index != -1) {
                 currentChapter = index
                 _dataLoading.value = true
@@ -174,7 +174,7 @@ class VisualizeTextViewModel @Inject constructor(
             println("Spine: $spine")
 
             val spineItem = spine[index]
-            val chapterPath = manifest[spineItem]
+            val chapterPath = manifest[spineItem.idRef]
 
             println(" Index: $index, Path: $chapterPath")
 

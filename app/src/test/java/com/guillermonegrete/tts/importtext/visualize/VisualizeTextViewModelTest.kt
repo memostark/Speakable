@@ -8,6 +8,7 @@ import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
@@ -308,21 +309,28 @@ class VisualizeTextViewModelTest {
         private val DEFAULT_BOOK = Book(
             "Test title",
             DEFAULT_CHAPTER,
-            Array(5){"$it"}.toList(),
+            Array(5){SpineItem("$it", "", 0)}.toList(),
             mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
             TableOfContents(listOf())
         )
         private val TWO_CHAPTER_BOOK = Book(
             "title",
             DEFAULT_CHAPTER,
-            listOf("chapter1", "chapter2"),
+            listOf(
+                SpineItem("chapter1", "", 0),
+                SpineItem("chapter2", "", 0)
+            ),
             mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html"),
             TableOfContents(listOf())
         )
         private val THREE_CHAPTER_BOOK = Book(
             "title",
             DEFAULT_CHAPTER,
-            listOf("chapter1", "chapter2", "chapter3"),
+            listOf(
+                SpineItem("chapter1", "", 0),
+                SpineItem("chapter2", "", 0),
+                SpineItem("chapter3", "", 0)
+            ),
             mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html", "chapter3" to "ch3.html"),
             TableOfContents(listOf(
                 NavPoint("chapter1", "ch1.html"),

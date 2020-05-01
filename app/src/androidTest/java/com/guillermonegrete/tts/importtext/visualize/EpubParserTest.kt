@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.guillermonegrete.tts.InstMainCoroutineRule
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -61,7 +62,11 @@ class EpubParserTest {
         println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
 
         val expectedBook = Book("Hunger: Book One", "Test text",
-            listOf("coverpage-wrapper", "item4", "item5"),
+            listOf(
+                SpineItem("coverpage-wrapper", "wrap0000.html", 0),
+                SpineItem("item4", "18291-h@18291-h-0.htm.html", 0),
+                SpineItem("item5", "18291-h@18291-h-1.htm.html", 0)
+            ),
             mapOf("item1" to "pgepub.css", "item2" to "0.css", "item3" to "1.css", "item4" to "18291-h@18291-h-0.htm.html", "item5" to "18291-h@18291-h-1.htm.html", "ncx" to "toc.ncx", "item13" to "cover.png", "coverpage-wrapper" to "wrap0000.html"),
             TableOfContents(listOf(
             NavPoint("Volume 1", "volume1.html"),

@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext.visualize
 import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,8 @@ class EpubParser constructor(
         private set
 
     private var opfPath = ""
-    private var spine = mutableListOf<String>()
+    private val spineIdRefs = mutableListOf<String>()
+    private var spine = mutableListOf<SpineItem>()
     private val manifest = mutableMapOf<String, String>()
     private var tocPath = ""
 
@@ -67,8 +69,8 @@ class EpubParser constructor(
             val toc = parseTableOfContents(parser)
 
 
-            if(spine.isNotEmpty()){
-                val firstChapterPath = manifest[spine.first()]
+            if(spineIdRefs.isNotEmpty()){
+                val firstChapterPath = manifest[spineIdRefs.first()]
                 if(firstChapterPath != null) {
                     val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
                     println("Chapter path: $fullPath")
@@ -77,6 +79,12 @@ class EpubParser constructor(
                     parser.setInput(chapterStream, null)
                     parser.nextTag()
                     parseChapterHtml(parser)
+                }
+
+                // Create spine items from idrefs and manifest
+                for(idref in spineIdRefs){
+                    val href = manifest[idref] ?: ""
+                    spine.add(SpineItem(idref, href, 0))
                 }
             }
             return@withContext Book(title, currentChapter, spine, manifest, toc)
@@ -234,7 +242,8 @@ class EpubParser constructor(
             XML_ATTRIBUTE_IDREF
         )
         parser.nextTag()
-        spine.add(idref)
+        spineIdRefs.add(idref)
+//        spine.add(SpineItem(idref, "", 0))
         parser.require(XmlPullParser.END_TAG, ns,
             XML_ELEMENT_ITEMREF
         )
