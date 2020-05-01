@@ -35,7 +35,7 @@ class VisualizeTextViewModelTest {
     private lateinit var viewModel: VisualizeTextViewModel
 
     @Mock private lateinit var epubParser: EpubParser
-    @Mock private lateinit var fileReader: ZipFileReader
+    @Mock private lateinit var fileReader: DefaultZipFileReader
     private lateinit var fileRepository: FakeFileRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter

@@ -15,9 +15,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
 import org.xmlpull.v1.XmlPullParser
 import java.io.ByteArrayInputStream
 import java.io.StringReader
@@ -27,7 +24,7 @@ import java.io.StringReader
 class EpubParserTest {
 
     private val xmlParser: XmlPullParser = Xml.newPullParser()
-    @Mock private lateinit var zipFileReader: ZipFileReader
+    private lateinit var zipFileReader: FakeZipFileReader
 
     private lateinit var epubParser: EpubParser
 
@@ -37,9 +34,9 @@ class EpubParserTest {
 
     @Before
     fun setUp(){
-        MockitoAnnotations.initMocks(this)
 
         epubParser = EpubParser(xmlParser, Dispatchers.Unconfined)
+        zipFileReader = FakeZipFileReader()
 
         xmlParser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
     }
@@ -47,16 +44,16 @@ class EpubParserTest {
     @Test
     fun creates_book_object() = runBlockingTest {
         val contentStream = ByteArrayInputStream(CONTAINER_FILE_XML.toByteArray())
-        `when`(zipFileReader.getFileStream(EpubParser.CONTAINER_FILE_PATH)).thenReturn(contentStream)
+        zipFileReader.addFileStream(EpubParser.CONTAINER_FILE_PATH, contentStream)
 
         val opfStream = ByteArrayInputStream(OPF_FILE_XML.toByteArray())
-        `when`(zipFileReader.getFileStream(opfPath)).thenReturn(opfStream)
+        zipFileReader.addFileStream(opfPath, opfStream)
 
         val tocStream = ByteArrayInputStream(TABLE_OF_CONTENTS_XML.toByteArray())
-        `when`(zipFileReader.getFileStream("$basePath/$tocPath")).thenReturn(tocStream)
+        zipFileReader.addFileStream("$basePath/$tocPath", tocStream)
 
         val chapterStream = ByteArrayInputStream(CHAPTER_FILE_XML.toByteArray())
-        `when`(zipFileReader.getFileStream(chapterPath)).thenReturn(chapterStream)
+        zipFileReader.addFileStream(chapterPath, chapterStream)
 
         val book = epubParser.parseBook(zipFileReader)
         println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
