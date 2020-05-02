@@ -29,7 +29,7 @@ class EpubParser constructor(
 
     private var opfPath = ""
     private val spineIdRefs = mutableListOf<String>()
-    private var spine = mutableListOf<SpineItem>()
+    private var chapterLength = 0
     private val manifest = mutableMapOf<String, String>()
     private var tocPath = ""
 
@@ -68,24 +68,22 @@ class EpubParser constructor(
             parser.nextTag()
             val toc = parseTableOfContents(parser)
 
+            val spine = mutableListOf<SpineItem>()
 
-            if(spineIdRefs.isNotEmpty()){
-                val firstChapterPath = manifest[spineIdRefs.first()]
-                if(firstChapterPath != null) {
-                    val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
-                    println("Chapter path: $fullPath")
+            var isCurrentChapter = true
+            for(idref in spineIdRefs){
+                val href = manifest[idref] ?: ""
+                val fullPath = if(basePath.isEmpty()) href else "$basePath/$href"
+                println("Chapter path: $fullPath")
 
-                    val chapterStream = zipFileReader.getFileStream(fullPath)
-                    parser.setInput(chapterStream, null)
-                    parser.nextTag()
-                    parseChapterHtml(parser)
-                }
+                val chapterStream = zipFileReader.getFileStream(fullPath)
+                parser.setInput(chapterStream, null)
+                parser.nextTag()
+                parseChapterHtml(parser, isCurrentChapter) // In this case the first item is the current
 
-                // Create spine items from idrefs and manifest
-                for(idref in spineIdRefs){
-                    val href = manifest[idref] ?: ""
-                    spine.add(SpineItem(idref, href, 0))
-                }
+                if(isCurrentChapter) isCurrentChapter = false
+
+                spine.add(SpineItem(idref, href, chapterLength))
             }
             return@withContext Book(title, currentChapter, spine, manifest, toc)
         }
@@ -100,7 +98,7 @@ class EpubParser constructor(
             val chapterStream = zipFileReader.getFileStream(fullPath)
             parser.setInput(chapterStream, null)
             parser.nextTag()
-            parseChapterHtml(parser)
+            parseChapterHtml(parser, true)
             return@withContext currentChapter
         }
     }
@@ -243,7 +241,6 @@ class EpubParser constructor(
         )
         parser.nextTag()
         spineIdRefs.add(idref)
-//        spine.add(SpineItem(idref, "", 0))
         parser.require(XmlPullParser.END_TAG, ns,
             XML_ELEMENT_ITEMREF
         )
@@ -251,21 +248,23 @@ class EpubParser constructor(
 
     /**
      *  Get contents of body tag in html/xhtml
-     *  Tags heirarchy:
+     *  Tags hierarchy:
      *  html -> head
      *          body
      */
-    private fun parseChapterHtml(parser: XmlPullParser){
+    private fun parseChapterHtml(parser: XmlPullParser, isCurrentChapter: Boolean){
         parser.require(XmlPullParser.START_TAG, ns, "html")
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == "body") readBodyTag(parser)
+            if(parser.name == "body") readBodyTag(parser, isCurrentChapter)
             else skip(parser)
         }
     }
 
-    private fun readBodyTag(parser: XmlPullParser) {
-        currentChapter = getInnerXml(parser)
+    private fun readBodyTag(parser: XmlPullParser, isCurrentChapter: Boolean) {
+        val innerXml = getInnerXml(parser)
+        chapterLength = innerXml.length
+        if(isCurrentChapter) currentChapter = innerXml
     }
 
 
