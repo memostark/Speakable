@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
@@ -34,15 +35,15 @@ class RecentFilesAdapter(
         private val title: TextView = itemView.findViewById(R.id.book_title)
         private val lastRead: TextView = itemView.findViewById(R.id.last_read)
         private val fileType: TextView = itemView.findViewById(R.id.file_type_text)
-        private val date: TextView = itemView.findViewById(R.id.last_read)
+        private val progress: ProgressBar = itemView.findViewById(R.id.file_progressBar)
 
         fun bind(file: BookFile){
             title.text = file.title
-            lastRead.text = file.lastRead.toString()
             fileType.text = file.fileType.name
+            progress.progress = file.percentageDone
 
             val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            date.text = dateFormatter.format(file.lastRead.time)
+            lastRead.text = dateFormatter.format(file.lastRead.time)
 
             itemView.setOnClickListener { viewModel.openVisualizer(file) }
         }

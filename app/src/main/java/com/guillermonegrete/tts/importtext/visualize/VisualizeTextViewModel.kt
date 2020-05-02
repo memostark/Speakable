@@ -214,9 +214,10 @@ class VisualizeTextViewModel @Inject constructor(
                     page = currentPage
                     chapter = currentChapter
                     lastRead = date
+                    percentageDone = currentPage
                 }
                 val title = currentBook?.title ?: ""
-                val bookFile = databaseBookFile ?: BookFile(it, title, fileType, "und", currentPage, currentChapter, date)
+                val bookFile = databaseBookFile ?: BookFile(it, title, fileType, "und", currentPage, currentChapter, currentPage, date)
                 fileRepository.saveFile(bookFile)
             }
         }

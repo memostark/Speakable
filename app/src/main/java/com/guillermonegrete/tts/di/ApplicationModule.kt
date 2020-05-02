@@ -117,11 +117,7 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideFilesDatabase(context: Context): FilesDatabase{
-        return Room.databaseBuilder(
-            context.applicationContext,
-            FilesDatabase::class.java,
-            "files.db"
-        ).build()
+        return FilesDatabase.getDatabase(context)
     }
 
     @JvmStatic
