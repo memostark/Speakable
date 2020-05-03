@@ -6,7 +6,9 @@ data class Book(
     val spine: List<SpineItem>,
     val manifest: Map<String, String>,
     val tableOfContents: TableOfContents
-)
+){
+    val totalChars= spine.sumBy { it.charCount }
+}
 
 data class SpineItem(
     val idRef:String,

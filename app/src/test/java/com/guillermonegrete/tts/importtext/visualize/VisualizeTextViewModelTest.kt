@@ -222,15 +222,23 @@ class VisualizeTextViewModelTest {
         viewModel.swipeChapterRight()
         viewModel.swipeChapterRight()
 
+        val initialPage = 5
+        viewModel.currentPage = initialPage
+
         val lastReadDate = Calendar.getInstance()
         viewModel.onFinish(lastReadDate)
+
+        val sumPreviousChars = sumCharacters(3, initialPage)
+        println("Total chars ${DEFAULT_BOOK.totalChars} ")
 
         val expectedFile = BookFile(
             uri,
             DEFAULT_BOOK.title,
             ImportedFileType.EPUB,
+            page = initialPage,
             chapter = 3,
-            lastRead = lastReadDate
+            lastRead = lastReadDate,
+            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars
         )
         val resultFile = fileRepository.filesServiceData.values.first()
         assertEquals(1, fileRepository.filesServiceData.values.size)
@@ -258,13 +266,16 @@ class VisualizeTextViewModelTest {
         val lastReadDate = Calendar.getInstance()
         viewModel.onFinish(lastReadDate)
 
+        val sumPreviousChars = sumCharacters(3, 0)
+
         val expectedFile = BookFile(
             bookFile.uri,
             bookFile.title,
             bookFile.fileType,
             id = bookFile.id,
             chapter = initialChapter + 1,
-            lastRead = lastReadDate
+            lastRead = lastReadDate,
+            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars
         )
         val resultFile = fileRepository.filesServiceData.values.first()
         assertEquals(1, fileRepository.filesServiceData.values.size)
@@ -279,6 +290,7 @@ class VisualizeTextViewModelTest {
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = -1
 
+        splitPages(1)
         parse_book(DEFAULT_BOOK)
 
         val lastReadDate = Calendar.getInstance()
@@ -300,8 +312,24 @@ class VisualizeTextViewModelTest {
     }
 
     private fun splitPages(pagesSize: Int){
-        val pages = Array(pagesSize) {""}.toList()
+        val pages = Array(pagesSize) {"n"}.toList()
         `when`(pageSplitter.getPages()).thenReturn(pages)
+    }
+
+    private fun sumCharacters(chapterIndex: Int, pageIndex: Int): Int{
+        var sumPreviousChars = 0
+        // Sum of previous chapters (previous items in the spine)
+        for (i in 0 until chapterIndex){
+            sumPreviousChars += DEFAULT_BOOK.spine[i].charCount
+        }
+
+        // Sum of previous pages
+        for(i in 0..pageIndex){
+            sumPreviousChars += 1 // Every page only has one character
+        }
+
+        println("Sum previous pages $sumPreviousChars")
+        return sumPreviousChars
     }
 
     companion object{
@@ -309,7 +337,7 @@ class VisualizeTextViewModelTest {
         private val DEFAULT_BOOK = Book(
             "Test title",
             DEFAULT_CHAPTER,
-            Array(5){SpineItem("$it", "", 0)}.toList(),
+            Array(5){SpineItem("$it", "", it + 100)}.toList(),
             mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
             TableOfContents(listOf())
         )

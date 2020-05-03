@@ -46,6 +46,7 @@ class VisualizeTextViewModel @Inject constructor(
     val book: LiveData<Book>
         get() = _book
 
+    private var currentPages = listOf<CharSequence>()
     private val _pages = MutableLiveData<List<CharSequence>>()
     val pages: LiveData<List<CharSequence>>
         get() = _pages
@@ -194,6 +195,7 @@ class VisualizeTextViewModel @Inject constructor(
             if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
             pagesSize = mutablePages.size
             _pages.value = mutablePages
+            currentPages = mutablePages
         }
     }
 
@@ -207,20 +209,43 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun saveBookFileData(date: Calendar){
-        fileUri?.let {
+        fileUri?.let { uri ->
             // This operation is intended to be synchronous
             runBlocking{
+                val progress = calculateProgress()
+
                 databaseBookFile?.apply {
                     page = currentPage
                     chapter = currentChapter
                     lastRead = date
-                    percentageDone = currentPage
+                    percentageDone = progress
                 }
                 val title = currentBook?.title ?: ""
-                val bookFile = databaseBookFile ?: BookFile(it, title, fileType, "und", currentPage, currentChapter, currentPage, date)
+                val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
                 fileRepository.saveFile(bookFile)
             }
         }
+    }
+
+    private fun calculateProgress(): Int{
+        var percentage = 0
+
+        currentBook?.let {
+            var sumPreviousChars = 0
+
+            // Sum of previous spine items (chapters)
+            for (i in 0 until currentChapter){
+                sumPreviousChars += it.spine[i].charCount
+            }
+
+            // Sum of previous and current pages
+            for(i in 0..currentPage){
+                sumPreviousChars += currentPages[i].length
+            }
+
+            percentage = 100 * sumPreviousChars / it.totalChars
+        }
+        return percentage
     }
 
 }
