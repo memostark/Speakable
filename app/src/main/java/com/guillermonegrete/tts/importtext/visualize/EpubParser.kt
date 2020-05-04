@@ -1,5 +1,8 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.os.Build
+import android.text.Html
+import android.text.Spanned
 import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
@@ -12,7 +15,6 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.*
 import java.lang.StringBuilder
-import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
 /**
@@ -106,25 +108,6 @@ class EpubParser constructor(
     private fun extractBasePath(fullPath: String){
         val segments = fullPath.split("/")
         basePath = if(segments.size > 1) segments.first() else "" // No base path, files are in root directory
-    }
-
-    private fun getFileStreamFromZip(fileName: String, inputStream: InputStream): InputStream?{
-        val zipStream: ZipInputStream?
-
-        try {
-            zipStream = ZipInputStream(BufferedInputStream(inputStream))
-            var zipEntry = zipStream.nextEntry
-
-            while (zipEntry != null){
-                if(fileName == zipEntry.name) return zipStream
-
-                zipStream.closeEntry()
-                zipEntry = zipStream.nextEntry
-            }
-        }catch (e: IOException){
-            println("Error opening file $fileName: $e")
-        }
-        return null
     }
 
     /**
@@ -263,8 +246,20 @@ class EpubParser constructor(
 
     private fun readBodyTag(parser: XmlPullParser, isCurrentChapter: Boolean) {
         val innerXml = getInnerXml(parser)
-        chapterLength = innerXml.length
+        chapterLength = formatHtml(innerXml).length
         if(isCurrentChapter) currentChapter = innerXml
+    }
+
+    /**
+     * Format the raw xhtml text to get a more accurate length of the text.
+     */
+    private fun formatHtml(text: CharSequence): Spanned {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT, null, null)
+        } else {
+            @Suppress("DEPRECATION")
+            Html.fromHtml(text.toString(), null, null)
+        }
     }
 
 
