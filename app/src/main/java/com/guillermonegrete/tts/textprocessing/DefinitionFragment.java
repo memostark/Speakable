@@ -39,4 +39,9 @@ public class DefinitionFragment extends Fragment {
         return fragment_layout;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mAdapter = null;
+    }
 }

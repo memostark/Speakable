@@ -273,6 +273,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void destroy() {
         onViewInactive();
+        customTTS.removeListener(ttsListener);
     }
 
     private void onViewInactive(){

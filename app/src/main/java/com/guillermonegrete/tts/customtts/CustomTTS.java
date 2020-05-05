@@ -88,6 +88,12 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         else mSynth.stopSound();
     }
 
+    public void removeListener(Listener listener){
+        if(listener == this.listener){
+            this.listener = null;
+        }
+    }
+
      public void initializeTTS(String langCode, Listener listener) {
         boolean ttsReady = isInitialized && language.equals(langCode);
         System.out.println("Is TTS initialized: " + isInitialized);
