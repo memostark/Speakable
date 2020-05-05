@@ -1,6 +1,8 @@
 # Speakable (Text to Speech)
 Speakable is a language learning android application that allows you to enter or select words and reproduce them with Text to Speech. You can also save words, translate to different languages, search definitions and open EPUB/text files within the app.
 
+![](app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png)
+
 # How to use
 
 ## Enter text
