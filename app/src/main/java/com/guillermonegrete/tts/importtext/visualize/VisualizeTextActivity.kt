@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.text.Selection
 import android.text.Spannable
 import android.view.*
@@ -91,6 +92,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
 
         scaleDetector = ScaleGestureDetector(this, PinchListener())
+
+        setUIChangesListener()
     }
 
     /**
@@ -133,7 +136,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if(hasFocus) hideSystemUi()
+        if(hasFocus && isFullScreen) hideSystemUi()
     }
 
 
@@ -142,6 +145,16 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onDestroy()
     }
 
+    private fun setUIChangesListener() {
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && isFullScreen) {
+                // The system bars are visible. Make any desired
+                Toast.makeText(this, "Bars are visible", Toast.LENGTH_SHORT).show()
+                val handler = Handler()
+                handler.postDelayed({ hideSystemUi() }, 3000)
+            }
+        }
+    }
 
     // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
     private fun setPreferenceTheme() {
