@@ -12,6 +12,7 @@ import android.view.MotionEvent
 import android.view.View
 
 import com.guillermonegrete.tts.R
+import kotlin.math.sqrt
 
 class SnippingView : View {
 
@@ -155,7 +156,7 @@ class SnippingView : View {
                     val centerY = ball.centerY
 
                     // Calculate the radius from the touch to the center of the ball
-                    val radiusCircle = Math.sqrt(((centerX - x) * (centerX - x) + (centerY - y) * (centerY - y)).toDouble())
+                    val radiusCircle = sqrt(((centerX - x) * (centerX - x) + (centerY - y) * (centerY - y)).toDouble())
 
                     if (radiusCircle < ball.width) {
 

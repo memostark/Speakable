@@ -114,7 +114,7 @@ class ImportTextFragment: Fragment() {
             })
 
             dataLoading.observe(viewLifecycleOwner, Observer {
-                progressBar.visibility = if(it) View.VISIBLE else View.GONE
+                progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
             loadRecentFiles()

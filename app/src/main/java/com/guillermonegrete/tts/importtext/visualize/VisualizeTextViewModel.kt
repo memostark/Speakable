@@ -61,7 +61,7 @@ class VisualizeTextViewModel @Inject constructor(
             viewModelScope.launch {
                 val parsedBook = epubParser.parseBook(it)
                 val imageGetter = pageSplitter?.imageGetter
-                if(imageGetter != null && imageGetter is InputStreamImageGetter){
+                if(imageGetter is InputStreamImageGetter){
                     imageGetter.basePath = epubParser.basePath
                 }
                 text = parsedBook.currentChapter

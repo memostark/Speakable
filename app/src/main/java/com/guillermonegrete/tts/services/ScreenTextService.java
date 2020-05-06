@@ -210,14 +210,18 @@ public class ScreenTextService extends Service {
                         case MotionEvent.ACTION_MOVE:
                             xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
                             yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
-                            System.out.println("x0: " + initialX + " y0: " + initialY);
-                            System.out.println("x: " + xByTouch + " y: " + yByTouch);
+//                            System.out.println("x0: " + initialX + " y0: " + initialY);
+//                            System.out.println("x: " + xByTouch + " y: " + yByTouch);
+
                             final boolean isIntersecting = isIntersectingWithTrash();
                             final boolean isIntersect = state == STATE_INTERSECTING;
                             if (isIntersecting) {
                                 bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
-                                windowParams.x= (int) trash_layout.getTrashIconCenterX();
-                                windowParams.y = (int) trash_layout.getTrashIconCenterY();
+                                int containerWidth = icon_container.getWidth() / 2;
+                                int containerHeight = icon_container.getHeight() / 2;
+
+                                windowParams.x = (int) trash_layout.getTrashIconCenterX() - containerWidth;
+                                windowParams.y = (int) trash_layout.getTrashIconCenterY() - containerHeight;
                             }else{
                                 windowParams.x = xByTouch;
                                 windowParams.y = yByTouch;
@@ -566,7 +570,7 @@ public class ScreenTextService extends Service {
         int bubbleWidth =  icon_container.getMeasuredWidth();
         ValueAnimator ani;
         int toPosition;
-        if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2*bubbleWidth/3;
+        if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2 * bubbleWidth / 3;
         else toPosition = -bubbleWidth / 3;
 
         System.out.println("currentX: " + currentX + " bubble width: " + bubbleWidth + " to: " + toPosition);

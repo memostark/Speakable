@@ -168,7 +168,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun createViewModel() {
         viewModel.apply {
             dataLoading.observe(this@VisualizeTextActivity, Observer {
-                progressBar.visibility = if(it) View.VISIBLE else View.GONE
+                progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
             pages.observe(this@VisualizeTextActivity, Observer {

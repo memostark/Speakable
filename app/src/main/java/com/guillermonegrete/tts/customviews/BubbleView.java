@@ -35,15 +35,7 @@ public class BubbleView extends AppCompatImageView {
         mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         mParams = new WindowManager.LayoutParams();
         mAnimationHandler = new FloatingAnimationHandler(this);
-        mParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-        mParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        mParams.type =  WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
-        mParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        mParams.format = PixelFormat.TRANSLUCENT;
-        mParams.gravity = Gravity.START | Gravity.BOTTOM;
-
+        init();
     }
 
     public BubbleView(Context context, AttributeSet attrs){
@@ -51,6 +43,10 @@ public class BubbleView extends AppCompatImageView {
         mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         mParams = new WindowManager.LayoutParams();
         mAnimationHandler = new FloatingAnimationHandler(this);
+        init();
+    }
+
+    private void init(){
         mParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
         mParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         mParams.type =  WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
@@ -59,7 +55,6 @@ public class BubbleView extends AppCompatImageView {
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         mParams.format = PixelFormat.TRANSLUCENT;
         mParams.gravity = Gravity.START | Gravity.BOTTOM;
-
     }
 
     private void updateViewLayout() {
@@ -150,10 +145,9 @@ public class BubbleView extends AppCompatImageView {
 
             if(mState == BubbleView.STATE_INTERSECTING){
                 //final float basePosition = calcAnimationPosition(trackingTargetTimeRate);
-                // 最終的な到達点
-                final float targetPositionX = mTargetPositionX - bubbleView.getWidth() / 2;
-                final float targetPositionY = mTargetPositionY - bubbleView.getHeight() / 2;
-                // 現在地からの移動
+                final float targetPositionX = mTargetPositionX - bubbleView.getWidth() / 2.0f;
+                final float targetPositionY = mTargetPositionY - bubbleView.getHeight() / 2.0f;
+
                 params.x = (int) (mStartX + (targetPositionX - mStartX));
                 params.y = (int) (mStartY + (targetPositionY - mStartY));
                 //bubbleView.updateViewLayout();
@@ -193,11 +187,10 @@ public class BubbleView extends AppCompatImageView {
         }
 
         /**
-         * 現在の状態を返します。
          *
          * @return STATE_NORMAL or STATE_INTERSECTING or STATE_FINISHING
          */
-        public int getState() {
+        int getState() {
             return mState;
         }
     }
