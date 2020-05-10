@@ -94,7 +94,7 @@
                     android:src="@drawable/ic_volume_up_black_24dp"
                     android:contentDescription="@string/save_icon_description"
                     android:background="?android:selectableItemBackgroundBorderless"
-                    android:visibility="gone"/>
+                    android:visibility="invisible"/>
 
                 <ProgressBar
                     android:id="@+id/play_loading_icon"

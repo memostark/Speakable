@@ -318,20 +318,20 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     override fun showLoadingTTS() {
         playProgressBar?.visibility = View.VISIBLE
-        playButton?.visibility = View.GONE
+        playButton?.visibility = View.INVISIBLE
         ttsReady = false
     }
 
     override fun showPlayIcon() {
         playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar?.visibility = View.GONE
+        playProgressBar?.visibility = View.INVISIBLE
         playButton?.visibility = View.VISIBLE
         ttsReady = true
     }
 
     override fun showStopIcon() {
         playButton?.setImageResource(R.drawable.ic_stop_black_24dp)
-        playProgressBar?.visibility = View.GONE
+        playProgressBar?.visibility = View.INVISIBLE
         playButton?.visibility = View.VISIBLE
         ttsReady = true
     }
@@ -378,7 +378,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setBrightnessTheme(){
-        val theme = arguments?.getString(THEME_KEY) ?: ""
+        val theme = arguments?.getString(THEME_KEY) ?: return
 
         if(theme.isNotEmpty()) {
 
@@ -436,10 +436,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         playProgressBar = view?.findViewById(R.id.play_loading_icon)
         playIconsContainer = view?.findViewById(R.id.play_icons_container)
 
-        if(ttsReady){
-            playProgressBar?.visibility = View.GONE
-            playButton?.visibility = View.VISIBLE
-        }
+        presenter.onPlayIconSet()
     }
 
     private fun createViewPager() {

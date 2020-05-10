@@ -72,5 +72,7 @@ public interface ProcessTextContract {
 
         void onLanguageSpinnerChange(String languageFrom, String languageTo);
 
+        void onPlayIconSet();
+
     }
 }

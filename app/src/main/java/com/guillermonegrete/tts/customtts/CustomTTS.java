@@ -96,7 +96,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
      public void initializeTTS(String langCode, Listener listener) {
         boolean ttsReady = isInitialized && language.equals(langCode);
-        System.out.println("Is TTS initialized: " + isInitialized);
 
         if(!ttsReady){
             this.listener = listener;
@@ -155,7 +154,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     private void setLocalLanguage(String langCode){
-        System.out.println("Language to set:" + langCode);
+
         int result = localTTS.setLanguage(new Locale(langCode.toUpperCase()));
         if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {

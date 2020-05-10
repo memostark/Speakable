@@ -40,6 +40,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean insideLocalDatabase;
     private Words foundWord;
 
+    private boolean isLoading;
     private boolean isPlaying;
     private boolean isAvailable;
     private boolean hasTranslation;
@@ -65,6 +66,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         this.getTranslationInteractor = getTranslationInteractor;
 
         insideLocalDatabase = false;
+        isLoading = false;
         isPlaying = false;
         isAvailable = true;
 
@@ -211,6 +213,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isPlaying = false;
             mView.showPlayIcon();
         }else if(isAvailable){
+            isLoading = true;
             mView.showLoadingTTS();
             PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, ttsListener, text);
             interactor.execute();
@@ -248,6 +251,24 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         );
 
         linkInteractor.execute();
+    }
+
+    @Override
+    public void onPlayIconSet() {
+        if(isLoading){
+            mView.showLoadingTTS();
+            return;
+        }
+
+        if(isAvailable){
+            if(isPlaying){
+                mView.showStopIcon();
+            }else {
+                mView.showPlayIcon();
+            }
+        }else {
+            mView.showLanguageNotAvailable();
+        }
     }
 
     @Override
@@ -299,6 +320,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         @Override
         public void onEngineReady() {
+            isLoading = false;
             boolean autoPlay = getAutoTTSPreference();
 
             if(autoPlay && viewIsActive) {
@@ -311,6 +333,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         @Override
         public void onLanguageUnavailable() {
+            isLoading = false;
             isPlaying = false;
             isAvailable = false;
             mMainThread.post(() -> mView.showLanguageNotAvailable());
@@ -318,6 +341,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         @Override
         public void onSpeakStart() {
+            isLoading = false;
             isPlaying = true;
             // TODO move main thread code to interactor
             mMainThread.post(() -> mView.showStopIcon());
