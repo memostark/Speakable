@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.MaterialComponents.NoActionBar">
+        <!-- Customize your theme here. -->
+        <!--Avoids showing two action bars-->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+
+        <!--Color-->
+        <item name="colorPrimary">#28C7BB</item>
+        <item name="colorPrimaryDark">#00968b</item>
+        <item name="colorPrimaryVariant">#00968b</item>
+        <item name="colorSecondary">#6a98ba</item>
+        <item name="colorSecondaryVariant">#4a698a</item>
+
+        <!--Dark version uses grey instead of white-->
+        <item name="textInfoDialogBG">@color/grey</item>
+    </style>
+</resources>

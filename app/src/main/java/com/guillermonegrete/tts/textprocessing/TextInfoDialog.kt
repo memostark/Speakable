@@ -27,6 +27,7 @@ import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPD
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
+import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import java.util.*
 import javax.inject.Inject
@@ -367,11 +368,28 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setContentView(@LayoutRes id: Int){
+        setBrightnessTheme()
         val inflater = activity?.layoutInflater
-        val newView = inflater?.inflate(id, null)
+        inflater ?: return
+        val newView = inflater.inflate(id, null)
         val rootView = view as? ViewGroup
         rootView?.removeAllViews()
         rootView?.addView(newView)
+    }
+
+    private fun setBrightnessTheme(){
+        val theme = arguments?.getString(THEME_KEY) ?: ""
+
+        if(theme.isNotEmpty()) {
+
+            val id = when (BrightnessTheme.get(theme)) {
+                BrightnessTheme.WHITE -> R.style.ProcessTextStyle_White
+                BrightnessTheme.BEIGE -> R.style.ProcessTextStyle_Beige
+                BrightnessTheme.BLACK -> R.style.ProcessTextStyle_Dark
+            }
+
+            context?.theme?.applyStyle(id, true)
+        }
     }
 
     private fun setCenterDialog() {
@@ -549,16 +567,24 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         const val TEXT_KEY = "text_key"
         const val WORD_KEY = "word_key"
         const val ACTION_KEY = "extra_key"
+        const val THEME_KEY = "theme_key"
 
         private const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
 
         @JvmStatic
-        fun newInstance(text: String, action: String?, word: Words?) = TextInfoDialog().apply {
+        @JvmOverloads
+        fun newInstance(
+            text: String,
+            action: String?,
+            word: Words?,
+            theme: String = ""
+        ) = TextInfoDialog().apply {
             arguments = Bundle().apply {
                 putString(TEXT_KEY, text)
                 putString(ACTION_KEY, action)
                 putParcelable(WORD_KEY, word)
+                putString(THEME_KEY, theme)
             }
         }
     }

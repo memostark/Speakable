@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.edit
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
@@ -248,9 +249,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun saveBrightnessPreference(preference: String){
-        val editor = preferences.edit()
-        editor.putString(BrightnessTheme.PREFERENCE_KEY, preference)
-        editor.apply()
+        preferences.edit{ putString(BrightnessTheme.PREFERENCE_KEY, preference) }
     }
 
     private fun addPagerCallback(){
@@ -351,7 +350,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         val dialog = TextInfoDialog.newInstance(
             text.toString(),
             TextInfoDialog.NO_SERVICE,
-            null
+            null,
+            brightnessTheme.value
         )
         dialog.show(supportFragmentManager, "Text_info")
     }

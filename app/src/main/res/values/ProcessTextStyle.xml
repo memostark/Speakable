@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="ProcessTextStyle" parent="Theme.MaterialComponents.DayNight.Dialog">
+    <style name="ProcessTextStyle" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
         <!--Color-->
         <item name="colorPrimary">#28C7BB</item>
         <item name="colorPrimaryDark">#00968b</item>
@@ -13,6 +13,24 @@
         <item name="android:windowActivityTransitions">true</item>
         <item name="android:windowAnimationStyle">@style/CustomActivityAnimation</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+    </style>
+
+    <style name="ProcessTextStyle.White">
+        <item name="android:textColor">@color/black</item>
+        <item name="textInfoDialogBG">@color/white</item>
+        <item name="colorOnBackground">@color/black</item>
+    </style>
+
+    <style name="ProcessTextStyle.Beige">
+        <item name="android:textColor">#000</item>
+        <item name="textInfoDialogBG">@color/beige</item>
+        <item name="colorOnBackground">@color/black</item>
+    </style>
+
+    <style name="ProcessTextStyle.Dark">
+        <item name="android:textColor">#FFF</item>
+        <item name="textInfoDialogBG">@color/grey</item>
+        <item name="colorOnBackground">@color/white</item>
     </style>
 
     <style name="CustomActivityAnimation" parent="@android:style/Animation.Activity">

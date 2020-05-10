@@ -25,6 +25,7 @@
         android:gravity="center_vertical"
         android:padding="5dp"
         android:textAppearance="?android:attr/textAppearanceSmall"
+        android:background="?textInfoDialogBG"
         tools:text="Dictionary definition for Word." />
 
 </LinearLayout>

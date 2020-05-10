@@ -1,8 +1,8 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+
         <!--Avoids showing two action bars-->
         <item name="windowActionModeOverlay">true</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
@@ -13,6 +13,8 @@
         <item name="colorPrimaryVariant">#00968b</item>
         <item name="colorSecondary">#6a98ba</item>
         <item name="colorSecondaryVariant">#4a698a</item>
+
+        <item name="textInfoDialogBG">@color/white</item>
     </style>
 
     <style name="Theme.Transparent" parent="android:Theme">
@@ -42,6 +44,7 @@
     <!--Base themes-->
     <style name="AppMaterialTheme" parent="AppTheme"/>
 
+    <!--Used to change brightness of AlertDialog: https://stackoverflow.com/a/29799142/10244759-->
     <style name="DialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert"/>
 
     <!--White theme-->
