@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.textprocessing
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
@@ -10,6 +11,7 @@ import android.view.*
 import android.widget.*
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AlertDialog
+import androidx.cardview.widget.CardView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -31,6 +33,7 @@ import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import java.util.*
 import javax.inject.Inject
+import kotlin.math.abs
 
 class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
 
@@ -375,6 +378,69 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         val rootView = view as? ViewGroup
         rootView?.removeAllViews()
         rootView?.addView(newView)
+
+        setSwipeListener(newView)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setSwipeListener(layout: View) {
+        val card: CardView = layout.findViewById(R.id.text_dialog_card)
+
+        val params = dialog?.window?.attributes
+
+        var downActionX = 0.0f
+        var downActionY = 0.0f
+
+        var iParamX = 0
+        var iParamY = 0
+
+        var directionSet = false
+        var horizontalAxis = true
+
+        val minDismissDistance = 300 // pixels
+
+        card.setOnTouchListener { _, event ->
+            params ?: return@setOnTouchListener false
+
+            when(event.actionMasked){
+                MotionEvent.ACTION_DOWN ->{
+                    iParamX = params.x
+                    iParamY = params.y
+
+                    downActionX = event.rawX
+                    downActionY = event.rawY
+                }
+                MotionEvent.ACTION_MOVE ->{
+                    val dRawX = event.rawX - downActionX
+                    val dRawY = event.rawY - downActionY
+                    if(!directionSet){
+                        // This calculates new raw pos - old raw pos, params position cancel each other
+                        horizontalAxis = abs(dRawX) >= abs(dRawY)
+                        directionSet = true
+                    }
+
+                    if(horizontalAxis){
+                        params.x = iParamX + dRawX.toInt()
+                    }else {
+                        params.y = iParamY + dRawY.toInt()
+                    }
+
+                    dialog?.window?.attributes = params
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->{
+
+                    if(abs(params.x - iParamX) > minDismissDistance){
+                        dismiss()
+                    }else {
+                        params.x = 0
+                        params.y = 0
+                        dialog?.window?.attributes = params
+                    }
+                    directionSet = false
+                }
+            }
+            true
+        }
     }
 
     private fun setBrightnessTheme(){
