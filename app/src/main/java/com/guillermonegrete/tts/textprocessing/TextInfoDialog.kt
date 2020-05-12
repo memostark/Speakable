@@ -391,6 +391,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         var iParamX = 0
         var iParamY = 0
 
+        var initialScreenY = 0
+
         var directionSet = false
         var horizontalAxis = true
 
@@ -408,18 +410,20 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
                     downActionX = event.rawX
                     downActionY = event.rawY
+
+                    val location = intArrayOf(0, 0)
+                    window?.decorView?.getLocationOnScreen(location)
+                    initialScreenY = location[1]
                 }
                 MotionEvent.ACTION_MOVE ->{
 
                     val dRawX = event.rawX - downActionX
-                    // Multiple by 1 or -1 because the y axis can be inverted when using Gravity.Bottom param.
-                    val dRawY = (event.rawY - downActionY) * yAxis
+                    val dRawY = (event.rawY - downActionY)
 
                     if(!directionSet){
 
                         // Only set direction after a minimum pixel movement
                         if(sqrt(dRawX * dRawX + dRawY * dRawY) < radioThreshold) return@setOnTouchListener false
-                        // This calculates new raw pos - old raw pos, params position cancel each other
                         horizontalAxis = abs(dRawX) >= abs(dRawY)
                         directionSet = true
                     }
@@ -427,7 +431,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
                     if(horizontalAxis){
                         params.x = iParamX + dRawX.toInt()
                     }else {
-                        params.y = iParamY + dRawY.toInt()
+                        // Multiple by 1 or -1 because the y axis can be inverted when using Gravity.Bottom param.
+                        params.y = iParamY + (dRawY * yAxis).toInt()
+                        if(initialScreenY + dRawY.toInt() <= 0) return@setOnTouchListener false
                     }
 
                     dialog?.window?.attributes = params
@@ -445,11 +451,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
                 }
             }
             true
-        }
-
-        dialog?.window?.decorView?.setOnTouchListener { v, event ->
-            println("Touching decor view: ${event.rawX}, ${event.rawY}" )
-            false
         }
     }
 
