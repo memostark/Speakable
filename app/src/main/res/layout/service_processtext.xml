@@ -16,7 +16,8 @@
         android:id="@+id/icon_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal">
+        android:layout_gravity="bottom|center_horizontal"
+        tools:background="@drawable/slot_background">
 
         <com.guillermonegrete.tts.customviews.BubbleView
             android:id="@+id/image_bubble"

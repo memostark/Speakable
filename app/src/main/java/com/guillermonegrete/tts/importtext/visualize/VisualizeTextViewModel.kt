@@ -46,6 +46,7 @@ class VisualizeTextViewModel @Inject constructor(
     val book: LiveData<Book>
         get() = _book
 
+    private var currentPages = listOf<CharSequence>()
     private val _pages = MutableLiveData<List<CharSequence>>()
     val pages: LiveData<List<CharSequence>>
         get() = _pages
@@ -60,7 +61,7 @@ class VisualizeTextViewModel @Inject constructor(
             viewModelScope.launch {
                 val parsedBook = epubParser.parseBook(it)
                 val imageGetter = pageSplitter?.imageGetter
-                if(imageGetter != null && imageGetter is InputStreamImageGetter){
+                if(imageGetter is InputStreamImageGetter){
                     imageGetter.basePath = epubParser.basePath
                 }
                 text = parsedBook.currentChapter
@@ -102,7 +103,7 @@ class VisualizeTextViewModel @Inject constructor(
             val spineSize = it.spine.size
             if (position in 0 until spineSize) {
                 val spineItem = it.spine[position]
-                val newChapterPath = it.manifest[spineItem]
+                val newChapterPath = it.manifest[spineItem.idRef]
                 if (newChapterPath != null) {
                     currentChapter = position
                     _dataLoading.value = true
@@ -149,7 +150,7 @@ class VisualizeTextViewModel @Inject constructor(
     fun jumpToChapter(path: String){
         _book.value?.let{
             val key = it.manifest.filterValues { value -> value == path }.keys.first()
-            val index = it.spine.indexOf(key)
+            val index = it.spine.indexOfFirst { item -> item.idRef == key }
             if(index != -1) {
                 currentChapter = index
                 _dataLoading.value = true
@@ -174,7 +175,7 @@ class VisualizeTextViewModel @Inject constructor(
             println("Spine: $spine")
 
             val spineItem = spine[index]
-            val chapterPath = manifest[spineItem]
+            val chapterPath = manifest[spineItem.idRef]
 
             println(" Index: $index, Path: $chapterPath")
 
@@ -194,6 +195,7 @@ class VisualizeTextViewModel @Inject constructor(
             if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
             pagesSize = mutablePages.size
             _pages.value = mutablePages
+            currentPages = mutablePages
         }
     }
 
@@ -207,19 +209,43 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun saveBookFileData(date: Calendar){
-        fileUri?.let {
+        fileUri?.let { uri ->
             // This operation is intended to be synchronous
             runBlocking{
+                val progress = calculateProgress()
+
                 databaseBookFile?.apply {
                     page = currentPage
                     chapter = currentChapter
                     lastRead = date
+                    percentageDone = progress
                 }
                 val title = currentBook?.title ?: ""
-                val bookFile = databaseBookFile ?: BookFile(it, title, fileType, "und", currentPage, currentChapter, date)
+                val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
                 fileRepository.saveFile(bookFile)
             }
         }
+    }
+
+    private fun calculateProgress(): Int{
+        var percentage = 0
+
+        currentBook?.let {
+            var sumPreviousChars = 0
+
+            // Sum of previous spine items (chapters)
+            for (i in 0 until currentChapter){
+                sumPreviousChars += it.spine[i].charCount
+            }
+
+            // Sum of previous and current pages
+            for(i in 0..currentPage){
+                sumPreviousChars += currentPages[i].length
+            }
+
+            percentage = 100 * sumPreviousChars / it.totalChars
+        }
+        return percentage
     }
 
 }

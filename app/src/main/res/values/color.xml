@@ -10,7 +10,7 @@
     
     <color name="highEmphasisWhite">#DEFFFFFF</color>
 
-    <color name="grey">#484848</color>
-    <color name="DarkerGrey">#2C2C2C</color>
+    <color name="grey">#424242</color>
+    <color name="DarkerGrey">#303030</color>
     <color name="DarkestGrey">#121212</color>
 </resources>

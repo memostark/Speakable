@@ -14,8 +14,18 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "com.guillermonegrete.tts.DexOpenerAndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "room.schemaLocation":"$projectDir/schemas".toString(),
+                        "room.incremental":"true",
+                        "room.expandProjection":"true"
+                ]
+            }
+        }
+
     }
     buildTypes {
         release {
@@ -26,6 +36,10 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }
 
@@ -62,9 +76,6 @@ dependencies {
     //  Mockito framework
     testImplementation 'org.mockito:mockito-core:2.25.1'
     testImplementation group: 'com.nhaarman', name: 'mockito-kotlin', version: '1.5.0'
-    androidTestImplementation "org.mockito:mockito-android:2.25.1"
-    // Allows to use mock with instrumentation tests with kotlin
-    androidTestImplementation 'com.github.tmurakami:dexopener:2.0.2'
 
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
@@ -72,6 +83,9 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta4'
     implementation 'com.google.android.material:material:1.2.0-alpha01'
+
+    // KTX core
+    implementation "androidx.core:core-ktx:1.2.0"
 
     // Google custom tabs
     implementation 'androidx.browser:browser:1.0.0'
@@ -88,16 +102,17 @@ dependencies {
     implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
 
     // Room
-    implementation 'androidx.room:room-runtime:2.2.2'
-    annotationProcessor 'androidx.room:room-compiler:2.2.2'
-    kapt 'androidx.room:room-compiler:2.2.2'
+    def room_version = "2.2.5"
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
 
     // Lifecycle-aware components
-    def lifecycle_version = "2.2.0-rc03"
+    def lifecycle_version = "2.2.0"
     implementation "androidx.lifecycle:lifecycle-livedata:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
@@ -130,6 +145,9 @@ dependencies {
     implementation 'com.google.dagger:dagger-android-support:2.23.2'
     kapt 'com.google.dagger:dagger-android-processor:2.23.2'
     kapt 'com.google.dagger:dagger-compiler:2.23.2'
+
+    // LeakCanary
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.2'
 
     // Instrumental testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'

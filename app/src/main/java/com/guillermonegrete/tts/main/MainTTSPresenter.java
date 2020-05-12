@@ -131,6 +131,8 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     @Override
     public void destroy() {
         stopPlaying();
+        tts.removeListener(ttsListener);
+        view = null;
     }
 
     private void stopPlaying(){

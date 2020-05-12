@@ -2,8 +2,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="#2F2F2F"
-    android:gravity="center_vertical" >
+    android:gravity="center_vertical">
 
     <TextView
         android:id="@+id/textSeparator"
@@ -16,6 +17,7 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textColor="#FFF"
         android:textStyle="bold"
-        android:visibility="visible" />
+        android:visibility="visible"
+        tools:text="Sub Header"/>
 
 </LinearLayout>

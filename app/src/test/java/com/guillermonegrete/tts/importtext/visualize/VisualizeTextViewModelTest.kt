@@ -8,6 +8,7 @@ import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
@@ -34,7 +35,7 @@ class VisualizeTextViewModelTest {
     private lateinit var viewModel: VisualizeTextViewModel
 
     @Mock private lateinit var epubParser: EpubParser
-    @Mock private lateinit var fileReader: ZipFileReader
+    @Mock private lateinit var fileReader: DefaultZipFileReader
     private lateinit var fileRepository: FakeFileRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter
@@ -221,15 +222,23 @@ class VisualizeTextViewModelTest {
         viewModel.swipeChapterRight()
         viewModel.swipeChapterRight()
 
+        val initialPage = 5
+        viewModel.currentPage = initialPage
+
         val lastReadDate = Calendar.getInstance()
         viewModel.onFinish(lastReadDate)
+
+        val sumPreviousChars = sumCharacters(3, initialPage)
+        println("Total chars ${DEFAULT_BOOK.totalChars} ")
 
         val expectedFile = BookFile(
             uri,
             DEFAULT_BOOK.title,
             ImportedFileType.EPUB,
+            page = initialPage,
             chapter = 3,
-            lastRead = lastReadDate
+            lastRead = lastReadDate,
+            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars
         )
         val resultFile = fileRepository.filesServiceData.values.first()
         assertEquals(1, fileRepository.filesServiceData.values.size)
@@ -257,13 +266,16 @@ class VisualizeTextViewModelTest {
         val lastReadDate = Calendar.getInstance()
         viewModel.onFinish(lastReadDate)
 
+        val sumPreviousChars = sumCharacters(3, 0)
+
         val expectedFile = BookFile(
             bookFile.uri,
             bookFile.title,
             bookFile.fileType,
             id = bookFile.id,
             chapter = initialChapter + 1,
-            lastRead = lastReadDate
+            lastRead = lastReadDate,
+            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars
         )
         val resultFile = fileRepository.filesServiceData.values.first()
         assertEquals(1, fileRepository.filesServiceData.values.size)
@@ -278,6 +290,7 @@ class VisualizeTextViewModelTest {
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = -1
 
+        splitPages(1)
         parse_book(DEFAULT_BOOK)
 
         val lastReadDate = Calendar.getInstance()
@@ -299,8 +312,24 @@ class VisualizeTextViewModelTest {
     }
 
     private fun splitPages(pagesSize: Int){
-        val pages = Array(pagesSize) {""}.toList()
+        val pages = Array(pagesSize) {"n"}.toList()
         `when`(pageSplitter.getPages()).thenReturn(pages)
+    }
+
+    private fun sumCharacters(chapterIndex: Int, pageIndex: Int): Int{
+        var sumPreviousChars = 0
+        // Sum of previous chapters (previous items in the spine)
+        for (i in 0 until chapterIndex){
+            sumPreviousChars += DEFAULT_BOOK.spine[i].charCount
+        }
+
+        // Sum of previous pages
+        for(i in 0..pageIndex){
+            sumPreviousChars += 1 // Every page only has one character
+        }
+
+        println("Sum previous pages $sumPreviousChars")
+        return sumPreviousChars
     }
 
     companion object{
@@ -308,21 +337,28 @@ class VisualizeTextViewModelTest {
         private val DEFAULT_BOOK = Book(
             "Test title",
             DEFAULT_CHAPTER,
-            Array(5){"$it"}.toList(),
+            Array(5){SpineItem("$it", "", it + 100)}.toList(),
             mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
             TableOfContents(listOf())
         )
         private val TWO_CHAPTER_BOOK = Book(
             "title",
             DEFAULT_CHAPTER,
-            listOf("chapter1", "chapter2"),
+            listOf(
+                SpineItem("chapter1", "", 0),
+                SpineItem("chapter2", "", 0)
+            ),
             mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html"),
             TableOfContents(listOf())
         )
         private val THREE_CHAPTER_BOOK = Book(
             "title",
             DEFAULT_CHAPTER,
-            listOf("chapter1", "chapter2", "chapter3"),
+            listOf(
+                SpineItem("chapter1", "", 0),
+                SpineItem("chapter2", "", 0),
+                SpineItem("chapter3", "", 0)
+            ),
             mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html", "chapter3" to "ch3.html"),
             TableOfContents(listOf(
                 NavPoint("chapter1", "ch1.html"),

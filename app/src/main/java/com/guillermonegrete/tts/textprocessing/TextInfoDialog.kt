@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.textprocessing
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
@@ -10,6 +11,7 @@ import android.view.*
 import android.widget.*
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AlertDialog
+import androidx.cardview.widget.CardView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -27,9 +29,12 @@ import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPD
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
+import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import java.util.*
 import javax.inject.Inject
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
 
@@ -61,7 +66,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private var languageFrom: String? = null
     private var languageToISO: String? = null
 
-    private var ttsReady = false
+    private var yAxis = 1
 
     override fun onAttach(context: Context) {
         (context.applicationContext as SpeakableApplication).appComponent.inject(this)
@@ -312,27 +317,23 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
             playIconsContainer?.visibility = View.GONE
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
         }
-        ttsReady = false
     }
 
     override fun showLoadingTTS() {
         playProgressBar?.visibility = View.VISIBLE
-        playButton?.visibility = View.GONE
-        ttsReady = false
+        playButton?.visibility = View.INVISIBLE
     }
 
     override fun showPlayIcon() {
         playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar?.visibility = View.GONE
+        playProgressBar?.visibility = View.INVISIBLE
         playButton?.visibility = View.VISIBLE
-        ttsReady = true
     }
 
     override fun showStopIcon() {
         playButton?.setImageResource(R.drawable.ic_stop_black_24dp)
-        playProgressBar?.visibility = View.GONE
+        playProgressBar?.visibility = View.INVISIBLE
         playButton?.visibility = View.VISIBLE
-        ttsReady = true
     }
 
     override fun updateTranslation(word: Words) {
@@ -367,11 +368,105 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setContentView(@LayoutRes id: Int){
+        setBrightnessTheme()
         val inflater = activity?.layoutInflater
-        val newView = inflater?.inflate(id, null)
+        inflater ?: return
+        val newView = inflater.inflate(id, null)
         val rootView = view as? ViewGroup
         rootView?.removeAllViews()
         rootView?.addView(newView)
+
+        setSwipeListener(newView)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setSwipeListener(layout: View) {
+        val card: CardView = layout.findViewById(R.id.text_dialog_card)
+
+        val params = dialog?.window?.attributes
+
+        var downActionX = 0.0f
+        var downActionY = 0.0f
+
+        var iParamX = 0
+        var iParamY = 0
+
+        var initialScreenY = 0
+
+        var directionSet = false
+        var horizontalAxis = true
+
+        // pixels
+        val minDismissDistance = 300
+        val radioThreshold = 8
+
+        card.setOnTouchListener { _, event ->
+            params ?: return@setOnTouchListener false
+
+            when(event.actionMasked){
+                MotionEvent.ACTION_DOWN ->{
+                    iParamX = params.x
+                    iParamY = params.y
+
+                    downActionX = event.rawX
+                    downActionY = event.rawY
+
+                    val location = intArrayOf(0, 0)
+                    window?.decorView?.getLocationOnScreen(location)
+                    initialScreenY = location[1]
+                }
+                MotionEvent.ACTION_MOVE ->{
+
+                    val dRawX = event.rawX - downActionX
+                    val dRawY = (event.rawY - downActionY)
+
+                    if(!directionSet){
+
+                        // Only set direction after a minimum pixel movement
+                        if(sqrt(dRawX * dRawX + dRawY * dRawY) < radioThreshold) return@setOnTouchListener false
+                        horizontalAxis = abs(dRawX) >= abs(dRawY)
+                        directionSet = true
+                    }
+
+                    if(horizontalAxis){
+                        params.x = iParamX + dRawX.toInt()
+                    }else {
+                        // Multiple by 1 or -1 because the y axis can be inverted when using Gravity.Bottom param.
+                        params.y = iParamY + (dRawY * yAxis).toInt()
+                        if(initialScreenY + dRawY.toInt() <= 0) return@setOnTouchListener false
+                    }
+
+                    dialog?.window?.attributes = params
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->{
+
+                    if(abs(params.x - iParamX) > minDismissDistance){
+                        dismiss()
+                    }else {
+                        params.x = iParamX
+                        params.y = iParamY
+                        dialog?.window?.attributes = params
+                    }
+                    directionSet = false
+                }
+            }
+            true
+        }
+    }
+
+    private fun setBrightnessTheme(){
+        val theme = arguments?.getString(THEME_KEY) ?: return
+
+        if(theme.isNotEmpty()) {
+
+            val id = when (BrightnessTheme.get(theme)) {
+                BrightnessTheme.WHITE -> R.style.ProcessTextStyle_White
+                BrightnessTheme.BEIGE -> R.style.ProcessTextStyle_Beige
+                BrightnessTheme.BLACK -> R.style.ProcessTextStyle_Dark
+            }
+
+            context?.theme?.applyStyle(id, true)
+        }
     }
 
     private fun setCenterDialog() {
@@ -387,6 +482,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private fun setBottomDialog() {
 
         window?.let {
+
+            yAxis = -1
+
             val wlp = it.attributes
             wlp.dimAmount = 0f
             wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
@@ -418,10 +516,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         playProgressBar = view?.findViewById(R.id.play_loading_icon)
         playIconsContainer = view?.findViewById(R.id.play_icons_container)
 
-        if(ttsReady){
-            playProgressBar?.visibility = View.GONE
-            playButton?.visibility = View.VISIBLE
-        }
+        presenter.onPlayIconSet()
     }
 
     private fun createViewPager() {
@@ -549,16 +644,24 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         const val TEXT_KEY = "text_key"
         const val WORD_KEY = "word_key"
         const val ACTION_KEY = "extra_key"
+        const val THEME_KEY = "theme_key"
 
         private const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
 
         @JvmStatic
-        fun newInstance(text: String, action: String?, word: Words?) = TextInfoDialog().apply {
+        @JvmOverloads
+        fun newInstance(
+            text: String,
+            action: String?,
+            word: Words?,
+            theme: String = ""
+        ) = TextInfoDialog().apply {
             arguments = Bundle().apply {
                 putString(TEXT_KEY, text)
                 putString(ACTION_KEY, action)
                 putParcelable(WORD_KEY, word)
+                putString(THEME_KEY, theme)
             }
         }
     }

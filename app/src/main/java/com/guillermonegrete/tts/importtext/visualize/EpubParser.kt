@@ -1,8 +1,12 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.os.Build
+import android.text.Html
+import android.text.Spanned
 import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -11,7 +15,6 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.*
 import java.lang.StringBuilder
-import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
 /**
@@ -27,7 +30,8 @@ class EpubParser constructor(
         private set
 
     private var opfPath = ""
-    private var spine = mutableListOf<String>()
+    private val spineIdRefs = mutableListOf<String>()
+    private var chapterLength = 0
     private val manifest = mutableMapOf<String, String>()
     private var tocPath = ""
 
@@ -66,18 +70,22 @@ class EpubParser constructor(
             parser.nextTag()
             val toc = parseTableOfContents(parser)
 
+            val spine = mutableListOf<SpineItem>()
 
-            if(spine.isNotEmpty()){
-                val firstChapterPath = manifest[spine.first()]
-                if(firstChapterPath != null) {
-                    val fullPath = if(basePath.isEmpty()) firstChapterPath else "$basePath/$firstChapterPath"
-                    println("Chapter path: $fullPath")
+            var isCurrentChapter = true
+            for(idref in spineIdRefs){
+                val href = manifest[idref] ?: ""
+                val fullPath = if(basePath.isEmpty()) href else "$basePath/$href"
+                println("Chapter path: $fullPath")
 
-                    val chapterStream = zipFileReader.getFileStream(fullPath)
-                    parser.setInput(chapterStream, null)
-                    parser.nextTag()
-                    parseChapterHtml(parser)
-                }
+                val chapterStream = zipFileReader.getFileStream(fullPath)
+                parser.setInput(chapterStream, null)
+                parser.nextTag()
+                parseChapterHtml(parser, isCurrentChapter) // In this case the first item is the current
+
+                if(isCurrentChapter) isCurrentChapter = false
+
+                spine.add(SpineItem(idref, href, chapterLength))
             }
             return@withContext Book(title, currentChapter, spine, manifest, toc)
         }
@@ -92,7 +100,7 @@ class EpubParser constructor(
             val chapterStream = zipFileReader.getFileStream(fullPath)
             parser.setInput(chapterStream, null)
             parser.nextTag()
-            parseChapterHtml(parser)
+            parseChapterHtml(parser, true)
             return@withContext currentChapter
         }
     }
@@ -100,25 +108,6 @@ class EpubParser constructor(
     private fun extractBasePath(fullPath: String){
         val segments = fullPath.split("/")
         basePath = if(segments.size > 1) segments.first() else "" // No base path, files are in root directory
-    }
-
-    private fun getFileStreamFromZip(fileName: String, inputStream: InputStream): InputStream?{
-        val zipStream: ZipInputStream?
-
-        try {
-            zipStream = ZipInputStream(BufferedInputStream(inputStream))
-            var zipEntry = zipStream.nextEntry
-
-            while (zipEntry != null){
-                if(fileName == zipEntry.name) return zipStream
-
-                zipStream.closeEntry()
-                zipEntry = zipStream.nextEntry
-            }
-        }catch (e: IOException){
-            println("Error opening file $fileName: $e")
-        }
-        return null
     }
 
     /**
@@ -234,7 +223,7 @@ class EpubParser constructor(
             XML_ATTRIBUTE_IDREF
         )
         parser.nextTag()
-        spine.add(idref)
+        spineIdRefs.add(idref)
         parser.require(XmlPullParser.END_TAG, ns,
             XML_ELEMENT_ITEMREF
         )
@@ -242,21 +231,35 @@ class EpubParser constructor(
 
     /**
      *  Get contents of body tag in html/xhtml
-     *  Tags heirarchy:
+     *  Tags hierarchy:
      *  html -> head
      *          body
      */
-    private fun parseChapterHtml(parser: XmlPullParser){
+    private fun parseChapterHtml(parser: XmlPullParser, isCurrentChapter: Boolean){
         parser.require(XmlPullParser.START_TAG, ns, "html")
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == "body") readBodyTag(parser)
+            if(parser.name == "body") readBodyTag(parser, isCurrentChapter)
             else skip(parser)
         }
     }
 
-    private fun readBodyTag(parser: XmlPullParser) {
-        currentChapter = getInnerXml(parser)
+    private fun readBodyTag(parser: XmlPullParser, isCurrentChapter: Boolean) {
+        val innerXml = getInnerXml(parser)
+        chapterLength = formatHtml(innerXml).length
+        if(isCurrentChapter) currentChapter = innerXml
+    }
+
+    /**
+     * Format the raw xhtml text to get a more accurate length of the text.
+     */
+    private fun formatHtml(text: CharSequence): Spanned {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT, null, null)
+        } else {
+            @Suppress("DEPRECATION")
+            Html.fromHtml(text.toString(), null, null)
+        }
     }
 
 

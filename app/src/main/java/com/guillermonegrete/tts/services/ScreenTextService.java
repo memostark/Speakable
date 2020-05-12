@@ -28,6 +28,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
+import androidx.lifecycle.Observer;
 
 import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
@@ -55,10 +56,8 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 
-import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import dagger.android.AndroidInjection;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 
@@ -104,18 +103,24 @@ public class ScreenTextService extends Service {
     @Inject DetectTextFromScreen detectTextInteractor;
     @Inject GetLangAndTranslation getTranslationInteractor;
 
-    /*
-    *  Type of service
-    * */
+    /**
+     * Types of service
+     */
     public static final String NORMAL_SERVICE = "startService";
     public static final String NO_FLOATING_ICON_SERVICE = "startNoFloatingIcon";
     public static final String LONGPRESS_SERVICE = "showServiceLongPress";
 
     private Point screenSize;
 
-    private boolean isPlaying;
+    private ScreenTextViewModel viewModel;
 
-    private String text;
+    // Observers
+    private Observer<Boolean> loadingObserver;
+    private Observer<Boolean> isPlayingObserver;
+    private Observer<String> langDetectedObserver;
+    private Observer<String> langToPreferenceObserver;
+    private Observer<Boolean> detectTextErrorObserver;
+    private Observer<Words> textTranslatedObserver;
 
 
     @Nullable
@@ -133,7 +138,6 @@ public class ScreenTextService extends Service {
         service_layout = View.inflate(this, R.layout.service_processtext, null);
         trash_layout = new TrashView(this);
         hasPermission = false;
-        isPlaying = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
@@ -211,14 +215,18 @@ public class ScreenTextService extends Service {
                         case MotionEvent.ACTION_MOVE:
                             xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
                             yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
-                            System.out.println("x0: " + initialX + " y0: " + initialY);
-                            System.out.println("x: " + xByTouch + " y: " + yByTouch);
+//                            System.out.println("x0: " + initialX + " y0: " + initialY);
+//                            System.out.println("x: " + xByTouch + " y: " + yByTouch);
+
                             final boolean isIntersecting = isIntersectingWithTrash();
                             final boolean isIntersect = state == STATE_INTERSECTING;
                             if (isIntersecting) {
                                 bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
-                                windowParams.x= (int) trash_layout.getTrashIconCenterX();
-                                windowParams.y = (int) trash_layout.getTrashIconCenterY();
+                                int containerWidth = icon_container.getWidth() / 2;
+                                int containerHeight = icon_container.getHeight() / 2;
+
+                                windowParams.x = (int) trash_layout.getTrashIconCenterX() - containerWidth;
+                                windowParams.y = (int) trash_layout.getTrashIconCenterY() - containerHeight;
                             }else{
                                 windowParams.x = xByTouch;
                                 windowParams.y = yByTouch;
@@ -257,78 +265,63 @@ public class ScreenTextService extends Service {
             }
         });
 
-        playButton.setOnClickListener(view -> {
-            if(isPlaying) {
-                tts.stop();
-                isPlaying = false;
-                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
-            }else {
-                playLoadingIcon.setVisibility(View.VISIBLE);
-                playButton.setVisibility(View.GONE);
-
-                detectTextInteractor.invoke(
+        playButton.setOnClickListener(view ->
+                viewModel.onPlayClick(
                         new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
-                        snipView.getSnipRectangle(),
-                        new DetectTextFromScreen.Callback() {
-                            @Override
-                            public void onTextDetected(@NotNull String text, @NotNull String language) {
-                                Toast.makeText(ScreenTextService.this, "Language detected: " + language, Toast.LENGTH_SHORT).show();
-                                ScreenTextService.this.text = text;
-                                tts.initializeTTS(language, ttsListener);
-                            }
+                        snipView.getSnipRectangle()
+                )
+        );
 
-                            @Override
-                            public void onError(@NotNull String message) {
-                                isPlaying = false;
-                                playLoadingIcon.setVisibility(View.GONE);
-                                playButton.setVisibility(View.VISIBLE);
-                                Toast.makeText(ScreenTextService.this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-            }
-
-        });
-
-        translateButton.setOnClickListener(v -> detectTextInteractor.invoke(
-                new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
-                snipView.getSnipRectangle(),
-                new DetectTextFromScreen.Callback() {
-                    @Override
-                    public void onTextDetected(@NotNull String text, @NotNull String language) {
-                        detectLanguageAndTranslate(text);
-                    }
-
-                    @Override
-                    public void onError(@NotNull String message) {
-                        isPlaying = false;
-                        playLoadingIcon.setVisibility(View.GONE);
-                        playButton.setVisibility(View.VISIBLE);
-                        Toast.makeText(ScreenTextService.this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        ));
+        translateButton.setOnClickListener(v ->
+                viewModel.onTranslateClick(
+                        new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
+                        snipView.getSnipRectangle()
+                )
+        );
 
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+//        setTextRecognizer();
         setClipboardCallback();
-
     }
 
-    private void detectLanguageAndTranslate(String text){
-        languageToPreference = getLanguageToPreference();
-        getTranslationInteractor.invoke(
-                text,
-                "auto",
-                languageToPreference,
-                new GetLangAndTranslation.Callback(){
-                    @Override
-                    public void onDataNotAvailable() { System.out.println("Error translating");}
+    private void setViewModel() {
+        // Because service has no lifecycle we have to observeForever, don't forget to unbind onDestroy.
+        loadingObserver = isLoading -> {
+            if(isLoading){
+                playLoadingIcon.setVisibility(View.VISIBLE);
+                playButton.setVisibility(View.INVISIBLE);
+            }else{
+                playLoadingIcon.setVisibility(View.INVISIBLE);
+                playButton.setVisibility(View.VISIBLE);
+                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+            }
 
-                    @Override
-                    public void onTranslationAndLanguage(@NotNull Words word) {
-                        showPopUpTranslation(word);
-                    }
-                });
+        };
+        viewModel.getTtsLoading().observeForever(loadingObserver);
+
+        isPlayingObserver = isPlaying-> {
+            if(isPlaying){
+                playLoadingIcon.setVisibility(View.INVISIBLE);
+                playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+                playButton.setVisibility(View.VISIBLE);
+            }
+        };
+        viewModel.isPlaying().observeForever(isPlayingObserver);
+
+        langDetectedObserver = lang -> Toast.makeText(ScreenTextService.this, "Language detected: " + lang, Toast.LENGTH_SHORT).show();
+        viewModel.getLangDetected().observeForever(langDetectedObserver);
+
+        langToPreferenceObserver = lang -> languageToPreference = lang;
+        viewModel.getLangToPreference().observeForever(langToPreferenceObserver);
+
+        detectTextErrorObserver = error -> {
+            if(error) Toast.makeText(this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
+        };
+        viewModel.getDetectTextError().observeForever(detectTextErrorObserver);
+
+        textTranslatedObserver = this::showPopUpTranslation;
+        viewModel.getTextTranslated().observeForever(textTranslatedObserver);
     }
 
     private void setTrashViewVerticalPosition(){
@@ -375,13 +368,6 @@ public class ScreenTextService extends Service {
 
     private void setClipboardCallback(){
         if(clipboard != null) clipboard.addPrimaryClipChangedListener(clipboardListener);
-    }
-
-    private String getLanguageToPreference(){
-        int englishIndex = 15;
-        int languagePreferenceIndex = sharedPreferences.getInt(SettingsFragment.PREF_LANGUAGE_TO, englishIndex);
-        String[] languagesISO = getResources().getStringArray(R.array.googleTranslateLanguagesValue);
-        return languagesISO[languagePreferenceIndex];
     }
 
 
@@ -493,6 +479,17 @@ public class ScreenTextService extends Service {
                     resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
                 }
                 hasPermission = true;
+
+                viewModel = new ScreenTextViewModel(
+                        getResources().getStringArray(R.array.googleTranslateLanguagesValue),
+                        mainThread,
+                        tts,
+                        sharedPreferences,
+                        detectTextInteractor,
+                        getTranslationInteractor
+                );
+
+                setViewModel();
             }else if(NO_FLOATING_ICON_SERVICE.equals(action)){
                 action=LONGPRESS_SERVICE;
             }else if(LONGPRESS_SERVICE.equals(action)) {
@@ -564,7 +561,7 @@ public class ScreenTextService extends Service {
         int bubbleWidth =  icon_container.getMeasuredWidth();
         ValueAnimator ani;
         int toPosition;
-        if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2*bubbleWidth/3;
+        if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2 * bubbleWidth / 3;
         else toPosition = -bubbleWidth / 3;
 
         System.out.println("currentX: " + currentX + " bubble width: " + bubbleWidth + " to: " + toPosition);
@@ -594,6 +591,17 @@ public class ScreenTextService extends Service {
             clipboard.removePrimaryClipChangedListener(clipboardListener);
         }
         if(tts!=null) tts.finishTTS();
+
+        if(viewModel != null) unbindObservers();
+    }
+
+    private void unbindObservers() {
+        viewModel.isPlaying().removeObserver(isPlayingObserver);
+        viewModel.getTtsLoading().removeObserver(loadingObserver);
+        viewModel.getLangDetected().removeObserver(langDetectedObserver);
+        viewModel.getDetectTextError().removeObserver(detectTextErrorObserver);
+        viewModel.getTextTranslated().removeObserver(textTranslatedObserver);
+        viewModel.getLangToPreference().removeObserver(langToPreferenceObserver);
     }
 
     private static class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
@@ -603,42 +611,5 @@ public class ScreenTextService extends Service {
             return true;
         }
     }
-
-    private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
-        @Override
-        public void onEngineReady() {
-            tts.speak(text, ttsListener);
-        }
-
-        @Override
-        public void onLanguageUnavailable() {
-            isPlaying = false;
-            playLoadingIcon.setVisibility(View.GONE);
-            playButton.setVisibility(View.VISIBLE);
-            Toast.makeText(ScreenTextService.this, "Language not available for TTS", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onSpeakStart() {
-            // TODO Should create a presenter or view model for this main thread stuff
-            mainThread.post(() -> {
-                playLoadingIcon.setVisibility(View.GONE);
-                isPlaying = true;
-                playButton.setImageResource(R.drawable.ic_stop_black_24dp);
-                playButton.setVisibility(View.VISIBLE);
-            });
-        }
-
-        @Override
-        public void onSpeakDone() {
-            // For some reason I need to use main thread here even though I'm not using other threads
-            // Should find out why this is necessary
-            mainThread.post(() -> {
-                isPlaying = false;
-                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
-            });
-        }
-    };
-
 
 }

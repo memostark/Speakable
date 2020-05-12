@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.text.Selection
 import android.text.Spannable
 import android.view.*
@@ -11,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.edit
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
@@ -91,6 +93,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
 
         scaleDetector = ScaleGestureDetector(this, PinchListener())
+
+        setUIChangesListener()
     }
 
     /**
@@ -133,7 +137,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if(hasFocus) hideSystemUi()
+        if(hasFocus && isFullScreen) hideSystemUi()
     }
 
 
@@ -142,6 +146,16 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onDestroy()
     }
 
+    private fun setUIChangesListener() {
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && isFullScreen) {
+                // The system bars are visible. Make any desired
+                Toast.makeText(this, "Bars are visible", Toast.LENGTH_SHORT).show()
+                val handler = Handler()
+                handler.postDelayed({ hideSystemUi() }, 3000)
+            }
+        }
+    }
 
     // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
     private fun setPreferenceTheme() {
@@ -155,7 +169,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun createViewModel() {
         viewModel.apply {
             dataLoading.observe(this@VisualizeTextActivity, Observer {
-                progressBar.visibility = if(it) View.VISIBLE else View.GONE
+                progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
             pages.observe(this@VisualizeTextActivity, Observer {
@@ -186,7 +200,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(SHOW_EPUB == intent.action) {
             val uri: Uri = intent.getParcelableExtra(EPUB_URI)
             val rootStream = contentResolver.openInputStream(uri)
-            viewModel.fileReader = ZipFileReader(rootStream)
+            viewModel.fileReader = DefaultZipFileReader(rootStream)
             viewModel.fileUri = uri.toString()
             viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
             viewModel.parseEpub()
@@ -235,9 +249,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun saveBrightnessPreference(preference: String){
-        val editor = preferences.edit()
-        editor.putString(BrightnessTheme.PREFERENCE_KEY, preference)
-        editor.apply()
+        preferences.edit{ putString(BrightnessTheme.PREFERENCE_KEY, preference) }
     }
 
     private fun addPagerCallback(){
@@ -297,7 +309,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
-            val zipReader = ZipFileReader(contentResolver.openInputStream(uri))
+            val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri))
             InputStreamImageGetter( this, zipReader)
         } else null
 
@@ -338,7 +350,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         val dialog = TextInfoDialog.newInstance(
             text.toString(),
             TextInfoDialog.NO_SERVICE,
-            null
+            null,
+            brightnessTheme.value
         )
         dialog.show(supportFragmentManager, "Text_info")
     }

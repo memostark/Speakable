@@ -73,10 +73,10 @@ public class TrashView extends FrameLayout {
         mWindowManager.getDefaultDisplay().getMetrics(mMetrics);
 
         setBackground();
-        mTrashIconRootView = (FrameLayout) mRootView.findViewById(R.id.trash_icon_container);
+        mTrashIconRootView =  mRootView.findViewById(R.id.trash_icon_container);
         mTrashIconRootView.setClipChildren(false);
 
-        mActionTrashIconView = (ImageView) mRootView.findViewById(R.id.trash_action_icon);
+        mActionTrashIconView = mRootView.findViewById(R.id.trash_action_icon);
 
         setWillNotDraw(false); //------------FOR TESTING----------------------
 
@@ -96,17 +96,13 @@ public class TrashView extends FrameLayout {
     }
 
     public void setBackground(){
-        final FrameLayout backgroundView = (FrameLayout) mRootView.findViewById(R.id.backgroundView);
+        final FrameLayout backgroundView = mRootView.findViewById(R.id.backgroundView);
         backgroundView.setAlpha(0.0f);
         final GradientDrawable gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{0x00000000, 0x50000000});
         backgroundView.setBackground(gradientDrawable);
         final FrameLayout.LayoutParams backgroundParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (BACKGROUND_HEIGHT * mMetrics.density));
         backgroundParams.gravity = Gravity.BOTTOM;
         mRootView.updateViewLayout(backgroundView, backgroundParams);
-    }
-
-    public void setRect(Rect rect){
-        rec=rect;
     }
 
     @Override
@@ -161,29 +157,24 @@ public class TrashView extends FrameLayout {
         final float newWidthScale = width / mActionTrashIconBaseWidth;
         final float newHeightScale = height / mActionTrashIconBaseHeight;
         mActionTrashIconMaxScale = Math.max(newWidthScale, newHeightScale);
-        // ENTERアニメーション作成
+        // ENTER
         mEnterScaleAnimator = ObjectAnimator.ofPropertyValuesHolder(mActionTrashIconView, PropertyValuesHolder.ofFloat(ImageView.SCALE_X, mActionTrashIconMaxScale), PropertyValuesHolder.ofFloat(ImageView.SCALE_Y, mActionTrashIconMaxScale));
         mEnterScaleAnimator.setInterpolator(new OvershootInterpolator());
         mEnterScaleAnimator.setDuration(TRASH_ICON_SCALE_DURATION_MILLIS);
-        // Exitアニメーション作成
+        // Exit
         mExitScaleAnimator = ObjectAnimator.ofPropertyValuesHolder(mActionTrashIconView, PropertyValuesHolder.ofFloat(ImageView.SCALE_X, 1.0f), PropertyValuesHolder.ofFloat(ImageView.SCALE_Y, 1.0f));
         mExitScaleAnimator.setInterpolator(new OvershootInterpolator());
         mExitScaleAnimator.setDuration(TRASH_ICON_SCALE_DURATION_MILLIS);
     }
 
     public float getTrashIconCenterX() {
-        final ImageView iconView = mActionTrashIconView;
-        final float iconViewPaddingLeft = iconView.getPaddingLeft();
-        final float iconWidth = iconView.getWidth() - iconViewPaddingLeft - iconView.getPaddingRight();
-        return mTrashIconRootView.getX() + iconViewPaddingLeft;
+        final int containerHalfWidth = mTrashIconRootView.getWidth() / 2;
+        return mTrashIconRootView.getX() + containerHalfWidth;
     }
 
     public float getTrashIconCenterY() {
-        final ImageView iconView = mActionTrashIconView;
-        final float iconViewHeight = iconView.getHeight();
-        final float iconViewPaddingBottom = iconView.getPaddingBottom();
-        final float iconHeight = iconViewHeight - iconView.getPaddingTop() - iconViewPaddingBottom;
-        return mTrashIconRootView.getY() + iconViewPaddingBottom;
+        final int containerHalfHeight = mTrashIconRootView.getHeight() / 2;
+        return mTrashIconRootView.getY() + containerHalfHeight;
     }
 
     private void setScaleTrashIconImmediately(boolean isEnter) {
@@ -300,8 +291,8 @@ public class TrashView extends FrameLayout {
 
             final int animationCode = msg.what;
             final int animationType = msg.arg1;
-            final FrameLayout trash_icon_cont = (FrameLayout) trashView.findViewById(R.id.trash_icon_container);
-            final FrameLayout backgroundView = (FrameLayout) trashView.findViewById(R.id.backgroundView);
+            final FrameLayout trash_icon_cont = trashView.findViewById(R.id.trash_icon_container);
+            final FrameLayout backgroundView = trashView.findViewById(R.id.backgroundView);
 
             if (animationType == TYPE_FIRST) {
                 mStartTime = SystemClock.uptimeMillis();
@@ -391,9 +382,8 @@ public class TrashView extends FrameLayout {
             final int left = (int) -offsetX;
             final int top = (int) (2*(trashIconHeight - backgroundHeight) / 2 - TRASH_MOVE_LIMIT_TOP_OFFSET * density);
             final int right = (int) offsetX;
-            final int bottom = trashIconHeight;
             //mTrashIconLimitPosition.set(-100, -600, 100, 200);
-            mTrashIconLimitPosition.set(left,top,right,bottom);
+            mTrashIconLimitPosition.set(left, top, right, trashIconHeight);
             mMoveStickyYRange = backgroundHeight*0.2f;
         }
     }

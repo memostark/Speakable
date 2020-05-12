@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.guillermonegrete.tts.InstMainCoroutineRule
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,9 +15,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
 import org.xmlpull.v1.XmlPullParser
 import java.io.ByteArrayInputStream
 import java.io.StringReader
@@ -26,7 +24,7 @@ import java.io.StringReader
 class EpubParserTest {
 
     private val xmlParser: XmlPullParser = Xml.newPullParser()
-    @Mock private lateinit var zipFileReader: ZipFileReader
+    private lateinit var zipFileReader: FakeZipFileReader
 
     private lateinit var epubParser: EpubParser
 
@@ -36,9 +34,9 @@ class EpubParserTest {
 
     @Before
     fun setUp(){
-        MockitoAnnotations.initMocks(this)
 
         epubParser = EpubParser(xmlParser, Dispatchers.Unconfined)
+        zipFileReader = FakeZipFileReader()
 
         xmlParser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
     }
@@ -46,22 +44,28 @@ class EpubParserTest {
     @Test
     fun creates_book_object() = runBlockingTest {
         val contentStream = ByteArrayInputStream(CONTAINER_FILE_XML.toByteArray())
-        `when`(zipFileReader.getFileStream(EpubParser.CONTAINER_FILE_PATH)).thenReturn(contentStream)
+        zipFileReader.addFileStream(EpubParser.CONTAINER_FILE_PATH, contentStream)
 
         val opfStream = ByteArrayInputStream(OPF_FILE_XML.toByteArray())
-        `when`(zipFileReader.getFileStream(opfPath)).thenReturn(opfStream)
+        zipFileReader.addFileStream(opfPath, opfStream)
 
         val tocStream = ByteArrayInputStream(TABLE_OF_CONTENTS_XML.toByteArray())
-        `when`(zipFileReader.getFileStream("$basePath/$tocPath")).thenReturn(tocStream)
+        zipFileReader.addFileStream("$basePath/$tocPath", tocStream)
 
-        val chapterStream = ByteArrayInputStream(CHAPTER_FILE_XML.toByteArray())
-        `when`(zipFileReader.getFileStream(chapterPath)).thenReturn(chapterStream)
+        chaptersXml.forEachIndexed { index, s ->
+            val chapterStream = ByteArrayInputStream(s.toByteArray())
+            zipFileReader.addFileStream(chapterRefs[index], chapterStream)
+        }
 
         val book = epubParser.parseBook(zipFileReader)
         println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
 
-        val expectedBook = Book("Hunger: Book One", "Test text",
-            listOf("coverpage-wrapper", "item4", "item5"),
+        val expectedBook = Book("Hunger: Book One", chapterBodies.first(),
+            listOf(
+                SpineItem("coverpage-wrapper", "wrap0000.html", chapterBodies.first().length),
+                SpineItem("item4", "18291-h@18291-h-0.htm.html", chapterBodies[1].length),
+                SpineItem("item5", "18291-h@18291-h-1.htm.html", chapterBodies[2].length)
+            ),
             mapOf("item1" to "pgepub.css", "item2" to "0.css", "item3" to "1.css", "item4" to "18291-h@18291-h-0.htm.html", "item5" to "18291-h@18291-h-1.htm.html", "ncx" to "toc.ncx", "item13" to "cover.png", "coverpage-wrapper" to "wrap0000.html"),
             TableOfContents(listOf(
             NavPoint("Volume 1", "volume1.html"),
@@ -191,15 +195,13 @@ class EpubParserTest {
                     <reference href="wrap0000.html" type="cover" title="Cover"/>
                   </guide>
                 </package>"""
-        const val chapterPath = "18291/wrap0000.html"
-        const val CHAPTER_FILE_XML =
-            """<?xml version='1.0' encoding='utf-8'?>
+        const val CHAPTER_XML_TEMPLATE = """<?xml version='1.0' encoding='utf-8'?>
                 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.1//EN' 'http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd'>
                 <html xmlns="http://www.w3.org/1999/xhtml">
                 <head>
                     <meta name="generator" content="HTML Tidy for HTML5 for Linux version 5.2.0"/>
                     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
-                    <title>The Project Gutenberg eBook of רעב (חלק ראשון)‏, by קנוט המסון.</title>
+                    <title>The Project Gutenberg eBook</title>
                     
                     
                     <link href="0.css" type="text/css" rel="stylesheet"/>
@@ -207,6 +209,18 @@ class EpubParserTest {
                     <link href="pgepub.css" type="text/css" rel="stylesheet"/>
                     <meta content="EpubMaker 0.3.26 &lt;https://github.com/gitenberg-dev/pg-epubmaker&gt;" name="generator"/>
                 </head>
-                <body dir="rtl" xml:lang="he">Test text</body></html>"""
+                <body dir="rtl" xml:lang="he">{}</body></html>"""
+        private val chapterBodies = listOf(
+            "Text input",
+            "Chapter number 2",
+            "Chapter with a longer character length"
+        )
+        private val chaptersXml  = chapterBodies.map { CHAPTER_XML_TEMPLATE.replace("{}", it) }
+        private val chapterRefs = listOf(
+            "18291/wrap0000.html",
+            "18291/18291-h@18291-h-0.htm.html",
+            "18291/18291-h@18291-h-1.htm.html"
+        )
+
     }
 }

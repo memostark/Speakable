@@ -3,7 +3,8 @@
 
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_centerHorizontal="true">
+    android:layout_centerHorizontal="true"
+    android:background="?textInfoDialogBG">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/external_links_recycle"
