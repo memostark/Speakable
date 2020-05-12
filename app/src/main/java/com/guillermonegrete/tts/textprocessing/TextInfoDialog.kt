@@ -34,6 +34,7 @@ import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.abs
+import kotlin.math.sqrt
 
 class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
 
@@ -65,7 +66,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private var languageFrom: String? = null
     private var languageToISO: String? = null
 
-    private var ttsReady = false
+    private var yAxis = 1
 
     override fun onAttach(context: Context) {
         (context.applicationContext as SpeakableApplication).appComponent.inject(this)
@@ -316,27 +317,23 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
             playIconsContainer?.visibility = View.GONE
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
         }
-        ttsReady = false
     }
 
     override fun showLoadingTTS() {
         playProgressBar?.visibility = View.VISIBLE
         playButton?.visibility = View.INVISIBLE
-        ttsReady = false
     }
 
     override fun showPlayIcon() {
         playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
         playProgressBar?.visibility = View.INVISIBLE
         playButton?.visibility = View.VISIBLE
-        ttsReady = true
     }
 
     override fun showStopIcon() {
         playButton?.setImageResource(R.drawable.ic_stop_black_24dp)
         playProgressBar?.visibility = View.INVISIBLE
         playButton?.visibility = View.VISIBLE
-        ttsReady = true
     }
 
     override fun updateTranslation(word: Words) {
@@ -397,7 +394,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         var directionSet = false
         var horizontalAxis = true
 
-        val minDismissDistance = 300 // pixels
+        // pixels
+        val minDismissDistance = 300
+        val radioThreshold = 8
 
         card.setOnTouchListener { _, event ->
             params ?: return@setOnTouchListener false
@@ -411,9 +410,15 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
                     downActionY = event.rawY
                 }
                 MotionEvent.ACTION_MOVE ->{
+
                     val dRawX = event.rawX - downActionX
-                    val dRawY = event.rawY - downActionY
+                    // Multiple by 1 or -1 because the y axis can be inverted when using Gravity.Bottom param.
+                    val dRawY = (event.rawY - downActionY) * yAxis
+
                     if(!directionSet){
+
+                        // Only set direction after a minimum pixel movement
+                        if(sqrt(dRawX * dRawX + dRawY * dRawY) < radioThreshold) return@setOnTouchListener false
                         // This calculates new raw pos - old raw pos, params position cancel each other
                         horizontalAxis = abs(dRawX) >= abs(dRawY)
                         directionSet = true
@@ -432,14 +437,19 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
                     if(abs(params.x - iParamX) > minDismissDistance){
                         dismiss()
                     }else {
-                        params.x = 0
-                        params.y = 0
+                        params.x = iParamX
+                        params.y = iParamY
                         dialog?.window?.attributes = params
                     }
                     directionSet = false
                 }
             }
             true
+        }
+
+        dialog?.window?.decorView?.setOnTouchListener { v, event ->
+            println("Touching decor view: ${event.rawX}, ${event.rawY}" )
+            false
         }
     }
 
@@ -471,6 +481,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     private fun setBottomDialog() {
 
         window?.let {
+
+            yAxis = -1
+
             val wlp = it.attributes
             wlp.dimAmount = 0f
             wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS

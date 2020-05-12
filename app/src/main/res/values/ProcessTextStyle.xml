@@ -13,6 +13,8 @@
         <item name="android:windowActivityTransitions">true</item>
         <item name="android:windowAnimationStyle">@style/CustomActivityAnimation</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+
+        <item name="textInfoDialogBG">?colorBackgroundFloating</item>
     </style>
 
     <style name="ProcessTextStyle.White">

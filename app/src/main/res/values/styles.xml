@@ -1,7 +1,7 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
 
         <!--Avoids showing two action bars-->
         <item name="windowActionModeOverlay">true</item>
@@ -14,7 +14,7 @@
         <item name="colorSecondary">#6a98ba</item>
         <item name="colorSecondaryVariant">#4a698a</item>
 
-        <item name="textInfoDialogBG">@color/white</item>
+        <item name="textInfoDialogBG">?colorBackgroundFloating</item>
     </style>
 
     <style name="Theme.Transparent" parent="android:Theme">
