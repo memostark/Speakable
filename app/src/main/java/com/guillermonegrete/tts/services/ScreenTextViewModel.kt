@@ -38,6 +38,9 @@ class ScreenTextViewModel(
     private val _isPlaying = MutableLiveData<Boolean>()
     val isPlaying: LiveData<Boolean> = _isPlaying
 
+    private val _onError = MutableLiveData<String>()
+    val onError: LiveData<String> = _onError
+
     private val _textTranslated = MutableLiveData<Words>()
     val textTranslated: LiveData<Words> = _textTranslated
 
@@ -124,6 +127,11 @@ class ScreenTextViewModel(
         _isPlaying.value = true
     }
 
+    private fun setErrorState(msg: String){
+        setStopState()
+        _onError.value = msg
+    }
+
     private fun getLanguageToPreference(): String {
         val englishIndex = 15
         /**
@@ -158,6 +166,13 @@ class ScreenTextViewModel(
             mainThread.post {
                 isPlayingValue = false
                 setStopState()
+            }
+        }
+
+        override fun onError() {
+            mainThread.post {
+                isPlayingValue = false
+                setErrorState("TTS error: Failed to play")
             }
         }
     }

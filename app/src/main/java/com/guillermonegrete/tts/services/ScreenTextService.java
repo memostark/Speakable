@@ -117,6 +117,7 @@ public class ScreenTextService extends Service {
     // Observers
     private Observer<Boolean> loadingObserver;
     private Observer<Boolean> isPlayingObserver;
+    private Observer<String> hasErrorObserver;
     private Observer<String> langDetectedObserver;
     private Observer<String> langToPreferenceObserver;
     private Observer<Boolean> detectTextErrorObserver;
@@ -308,6 +309,9 @@ public class ScreenTextService extends Service {
             }
         };
         viewModel.isPlaying().observeForever(isPlayingObserver);
+
+        hasErrorObserver = msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        viewModel.getOnError().observeForever(hasErrorObserver);
 
         langDetectedObserver = lang -> Toast.makeText(ScreenTextService.this, "Language detected: " + lang, Toast.LENGTH_SHORT).show();
         viewModel.getLangDetected().observeForever(langDetectedObserver);
@@ -598,6 +602,7 @@ public class ScreenTextService extends Service {
     private void unbindObservers() {
         viewModel.isPlaying().removeObserver(isPlayingObserver);
         viewModel.getTtsLoading().removeObserver(loadingObserver);
+        viewModel.getOnError().removeObserver(hasErrorObserver);
         viewModel.getLangDetected().removeObserver(langDetectedObserver);
         viewModel.getDetectTextError().removeObserver(detectTextErrorObserver);
         viewModel.getTextTranslated().removeObserver(textTranslatedObserver);
