@@ -306,6 +306,13 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         editIcon?.visibility = View.GONE
     }
 
+    override fun showErrorPlayingAudio() {
+        playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar?.visibility = View.INVISIBLE
+        playButton?.visibility = View.VISIBLE
+        Toast.makeText(context, "Could not play audio", Toast.LENGTH_SHORT).show()
+    }
+
     override fun startService() {
         val intentService = Intent(context, ScreenTextService::class.java)
         intentService.action = NO_FLOATING_ICON_SERVICE

@@ -73,8 +73,6 @@ kapt {
 }
 
 dependencies {
-    releaseImplementation(name: 'speechsdk', ext: 'aar')
-    debugImplementation project(path: ':speechsdk')
 
     // Required -- JUnit 4 framework
     testImplementation 'junit:junit:4.12'

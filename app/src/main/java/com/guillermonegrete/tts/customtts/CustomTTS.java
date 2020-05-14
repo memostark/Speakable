@@ -6,9 +6,6 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 
 import android.speech.tts.UtteranceProgressListener;
-import com.guillermonegrete.speech.tts.Synthesizer;
-import com.guillermonegrete.speech.tts.Voice;
-import com.guillermonegrete.tts.BuildConfig;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -20,11 +17,9 @@ import java.util.Locale;
 public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private TextToSpeech localTTS;
-    private Synthesizer mSynth;
 
     private Boolean isInitialized;
     private Boolean isShutdown = false;
-    private Boolean usinglocalTTS;
 
     private String language;
 
@@ -40,39 +35,16 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         this.context = context.getApplicationContext();
 
         localTTS = new TextToSpeech(this.context, this);
-        Synthesizer.Callback synthCallback = new Synthesizer.Callback() {
-            @Override
-            public void onStart() {
-                listener.onSpeakStart();
-            }
-
-            @Override
-            public void onStop() {
-                listener.onSpeakDone();
-            }
-
-            @Override
-            public void onError() { listener.onError(); }
-        };
-        mSynth = new Synthesizer(BuildConfig.TTSApiKey, synthCallback);
         isInitialized = false;
-        usinglocalTTS = false;
         map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CustomTTSID");
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
     private void speak(String text){
-        if(usinglocalTTS){
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
-            } else {
-                localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, map);
-            }
-        }else{
-            if(mSynth.getLocalAudioBytes(text) == null){
-                mSynth.getAudio(text);
-            }
-            mSynth.speakLocalAudio();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
+        } else {
+            localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, map);
         }
     }
 
@@ -83,8 +55,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
     public void stop(){
-        if(usinglocalTTS) localTTS.stop();
-        else mSynth.stopSound();
+        localTTS.stop();
     }
 
     public void removeListener(Listener listener){
@@ -101,25 +72,12 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             language = langCode;
             isInitialized = false;
 
-            if(langCode.equals("he")){
-                initializeMSService();
-            }else{
-                initializeGoogleLocalService(langCode);
-                localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
-            }
+            initializeGoogleLocalService(langCode);
+            localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
 
         } else {
             if(listener != null) listener.onEngineReady();
         }
-    }
-
-    private void initializeMSService(){
-        mSynth.SetServiceStrategy(Synthesizer.ServiceStrategy.AlwaysService);
-        Voice voice = new Voice("he-IL", "Microsoft Server Speech Text to Speech Voice (he-IL, Asaf)", Voice.Gender.Male, true);
-        mSynth.SetVoice(voice, null);
-        usinglocalTTS = false;
-        isInitialized = true;
-        if(listener != null) listener.onEngineReady();
     }
 
     private void initializeGoogleLocalService(String langCode){
@@ -162,7 +120,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             if(listener != null) listener.onLanguageUnavailable();
 
         } else {
-            usinglocalTTS = true;
             isInitialized = true;
 
             if(listener != null) listener.onEngineReady();
