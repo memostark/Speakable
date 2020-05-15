@@ -8,9 +8,7 @@ import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.*
@@ -52,41 +50,27 @@ class EpubParser constructor(
     ): Book {
         // Create input stream that supports reset, so we can use it multiple times.
         return withContext(defaultDispatcher){
-            val containerStream = zipFileReader.getFileStream(CONTAINER_FILE_PATH)
-            parser.setInput(containerStream, null)
+            val readers = zipFileReader.getAllReaders()
+
+            val containerReader = readers[CONTAINER_FILE_PATH]
+            parser.setInput(containerReader)
             parser.nextTag()
             opfPath = parseContainerFile(parser)
             extractBasePath(opfPath)
 
-
-            val opfStream = zipFileReader.getFileStream(opfPath)
-            parser.setInput(opfStream, null)
+            val opfReader = readers[opfPath]
+            parser.setInput(opfReader)
             parser.nextTag()
             parseOpfFile(parser)
 
             val fullTocPath = if(basePath.isEmpty()) tocPath else "$basePath/$tocPath"
-            val tocStream = zipFileReader.getFileStream(fullTocPath)
-            parser.setInput(tocStream, null)
+            val tocReader = readers[fullTocPath]
+            parser.setInput(tocReader)
             parser.nextTag()
             val toc = parseTableOfContents(parser)
 
-            val spine = mutableListOf<SpineItem>()
+            val spine = readSpineItemFiles(readers)
 
-            var isCurrentChapter = true
-            for(idref in spineIdRefs){
-                val href = manifest[idref] ?: ""
-                val fullPath = if(basePath.isEmpty()) href else "$basePath/$href"
-                println("Chapter path: $fullPath")
-
-                val chapterStream = zipFileReader.getFileStream(fullPath)
-                parser.setInput(chapterStream, null)
-                parser.nextTag()
-                parseChapterHtml(parser, isCurrentChapter) // In this case the first item is the current
-
-                if(isCurrentChapter) isCurrentChapter = false
-
-                spine.add(SpineItem(idref, href, chapterLength))
-            }
             return@withContext Book(title, currentChapter, spine, manifest, toc)
         }
     }
@@ -391,6 +375,21 @@ class EpubParser constructor(
             }
         }
         return sb.toString()
+    }
+
+    private suspend fun readSpineItemFiles(readers: Map<String, StringReader>) = coroutineScope{
+
+        spineIdRefs.mapIndexed { index, idRef ->
+            val href = manifest[idRef] ?: ""
+            val fullPath = if(basePath.isEmpty()) href else "$basePath/$href"
+            val reader = readers[fullPath]
+
+            parser.setInput(reader)
+            parser.nextTag()
+            parseChapterHtml(parser, index == 0) // In this case the first item is the current
+
+            SpineItem(idRef, href, chapterLength)
+        }
     }
 
     companion object {

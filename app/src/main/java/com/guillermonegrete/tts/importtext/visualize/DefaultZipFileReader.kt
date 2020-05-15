@@ -40,4 +40,35 @@ class DefaultZipFileReader(inputStream: InputStream?): ZipFileReader {
             return@withContext null
         }
     }
+
+    override suspend fun getAllReaders(): Map<String, StringReader> {
+        return withContext(Dispatchers.IO){
+            val zipStream: ZipInputStream?
+
+            if(shouldResetStream) byteStream.reset()
+            shouldResetStream = true
+
+            try {
+                zipStream = ZipInputStream(BufferedInputStream(byteStream))
+                val streamMap = mutableMapOf<String, StringReader>()
+
+                zipStream.use {
+                    var zipEntry = it.nextEntry
+
+                    while (zipEntry != null){
+                        val text = it.bufferedReader().readText()
+                        streamMap[zipEntry.name] = StringReader(text)
+
+                        it.closeEntry()
+                        zipEntry = it.nextEntry
+                    }
+                }
+
+                return@withContext streamMap
+            }catch (e: IOException){
+                println("Error opening zip file: $e")
+            }
+            return@withContext mapOf<String, StringReader>()
+        }
+    }
 }
