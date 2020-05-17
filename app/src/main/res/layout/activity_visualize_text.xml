@@ -40,11 +40,11 @@
         android:id="@+id/reader_current_page"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:text="1 of 30" />
+        app:layout_constraintEnd_toStartOf="@+id/show_toc_btn"
+        tools:text="1 / 30" />
 
     <ImageButton
         android:id="@+id/show_toc_btn"
@@ -86,5 +86,16 @@
         app:layout_constraintStart_toStartOf="@+id/text_reader_card_view"
         app:layout_constraintTop_toTopOf="@+id/text_reader_card_view"
         tools:visibility="visible"/>
+
+    <SeekBar
+        android:id="@+id/pages_seekBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
+        app:layout_constraintEnd_toStartOf="@+id/reader_current_page"
+        app:layout_constraintStart_toEndOf="@+id/brightness_settings_btn"
+        app:layout_constraintTop_toTopOf="@+id/reader_current_page" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

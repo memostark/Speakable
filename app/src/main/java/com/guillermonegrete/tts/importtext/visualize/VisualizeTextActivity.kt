@@ -33,6 +33,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var progressBar: ProgressBar
+    private lateinit var pagesSeekBar: SeekBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
 
@@ -58,6 +59,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         setContentView(R.layout.activity_visualize_text)
 
         progressBar = findViewById(R.id.visualizer_progress_bar)
+        pagesSeekBar = findViewById(R.id.pages_seekBar)
         rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
 
         contractedConstraintSet.clone(rootConstraintLayout)
@@ -95,6 +97,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         scaleDetector = ScaleGestureDetector(this, PinchListener())
 
         setUIChangesListener()
+        setUpSeekBar()
     }
 
     /**
@@ -149,12 +152,25 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setUIChangesListener() {
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
             if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && isFullScreen) {
-                // The system bars are visible. Make any desired
-                Toast.makeText(this, "Bars are visible", Toast.LENGTH_SHORT).show()
+                // The system bars are visible
                 val handler = Handler()
                 handler.postDelayed({ hideSystemUi() }, 3000)
             }
         }
+    }
+
+    private fun setUpSeekBar(){
+
+        pagesSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if(fromUser) viewPager.currentItem = progress
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
     }
 
     // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
@@ -170,6 +186,10 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewModel.apply {
             dataLoading.observe(this@VisualizeTextActivity, Observer {
                 progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
+
+                // Update set in case of layout changes
+                // The last layout observer to be called is data loading with value false
+                if(!it) contractedConstraintSet.clone(rootConstraintLayout)
             })
 
             pages.observe(this@VisualizeTextActivity, Observer {
@@ -214,9 +234,12 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.adapter = pagesAdapter
 
         val position = viewModel.getPage()
-        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 of 33
+        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
         viewPager.setCurrentItem(position, false)
 
+        // Subtract 1 because seek bar is zero based numbering
+        pagesSeekBar.max = pages.size - 1
+        pagesSeekBar.progress = position
     }
 
     private fun showBrightnessSettings(view: View) {
@@ -255,10 +278,14 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun addPagerCallback(){
         var swipeFirst = false
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
+
             override fun onPageSelected(position: Int) {
                 viewModel.currentPage = position
+
                 val pageNumber = position + 1
                 currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
+
+                pagesSeekBar.progress = position
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -371,20 +398,21 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
-            detector?.let {
-                if(!pinchDetected){
-                    if(it.scaleFactor > PINCH_UPPER_LIMIT && !isFullScreen){
-                        toggleImmersiveMode()
-                        pinchDetected = true
-                        return true
-                    }
-                    if(it.scaleFactor < PINCH_LOWER_LIMIT && isFullScreen){
-                        toggleImmersiveMode()
-                        pinchDetected = true
-                        return true
-                    }
+            detector ?: return false
+
+            if(!pinchDetected){
+                if(detector.scaleFactor > PINCH_UPPER_LIMIT && !isFullScreen){
+                    toggleImmersiveMode()
+                    pinchDetected = true
+                    return true
+                }
+                if(detector.scaleFactor < PINCH_LOWER_LIMIT && isFullScreen){
+                    toggleImmersiveMode()
+                    pinchDetected = true
+                    return true
                 }
             }
+
             return false
         }
     }
