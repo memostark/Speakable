@@ -138,6 +138,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onTranslationError(String message) {
                 hasTranslation = false;
+                mView.showTranslationError(message);
             }
         }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
 

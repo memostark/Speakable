@@ -220,6 +220,10 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     }
 
+    override fun showTranslationError(error: String) {
+        Toast.makeText(context, "No translation found: $error", Toast.LENGTH_SHORT).show()
+    }
+
     override fun setTranslationLayout(word: Words) {
         setBottomDialog()
         mFoundWords = word

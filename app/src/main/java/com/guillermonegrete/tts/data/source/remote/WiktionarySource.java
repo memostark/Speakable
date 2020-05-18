@@ -61,7 +61,7 @@ public class WiktionarySource implements DictionaryDataSource {
 
             @Override
             public void onFailure(Call<WiktionaryResponse> call, Throwable t) {
-
+                callback.onDataNotAvailable();
             }
         });
 

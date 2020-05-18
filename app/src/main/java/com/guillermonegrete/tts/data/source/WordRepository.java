@@ -8,16 +8,22 @@ import com.guillermonegrete.tts.di.ApplicationModule;
 
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
+@Singleton
 public class WordRepository implements WordRepositorySource {
 
     private final WordDataSource remoteTranslatorSource;
 
     private final WordDataSource mWordLocalDataSource;
+
+    private ConcurrentMap<String, Words> cachedWords;
 
 
     @Inject
@@ -25,6 +31,8 @@ public class WordRepository implements WordRepositorySource {
                           @ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource){
         this.remoteTranslatorSource = checkNotNull(remoteTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
+
+        cachedWords = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -76,7 +84,7 @@ public class WordRepository implements WordRepositorySource {
             @Override
             public void onWordLoaded(Words word) {
                 callback.onTranslationAndLanguage(word);
-
+                cachedWords.put(text, word);
             }
 
             @Override
@@ -110,10 +118,19 @@ public class WordRepository implements WordRepositorySource {
     }
 
     private void getRemoteWord(String wordText, String languageFrom, String languageTo, final GetWordRepositoryCallback callback) {
+
+        Words cacheWord = cachedWords.get(wordText);
+        if(cachedWords.get(wordText) != null){
+            callback.onRemoteWordLoaded(cacheWord);
+            return;
+        }
+
         remoteTranslatorSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback() {
+
             @Override
             public void onWordLoaded(Words word) {
                 callback.onRemoteWordLoaded(word);
+                cachedWords.put(wordText, word);
             }
 
             @Override
