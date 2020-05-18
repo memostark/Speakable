@@ -56,23 +56,24 @@ class VisualizeTextViewModel @Inject constructor(
 
 
     fun parseEpub() {
-        fileReader?.let {
-            _dataLoading.value = true
-            viewModelScope.launch {
-                val parsedBook = epubParser.parseBook(it)
-                val imageGetter = pageSplitter?.imageGetter
-                if(imageGetter is InputStreamImageGetter){
-                    imageGetter.basePath = epubParser.basePath
-                }
-                text = parsedBook.currentChapter
-                spineSize = parsedBook.spine.size
-                currentBook = parsedBook
-                fileType = ImportedFileType.EPUB
-                _book.value = parsedBook
-                isEpub = true
-                initPageSplit()
-                _dataLoading.value = false
+        val reader = fileReader
+        reader ?: return
+
+        _dataLoading.value = true
+        viewModelScope.launch {
+            val parsedBook = epubParser.parseBook(reader)
+            val imageGetter = pageSplitter?.imageGetter
+            if(imageGetter is InputStreamImageGetter){
+                imageGetter.basePath = epubParser.basePath
             }
+            text = parsedBook.currentChapter
+            spineSize = parsedBook.spine.size
+            currentBook = parsedBook
+            fileType = ImportedFileType.EPUB
+            _book.value = parsedBook
+            isEpub = true
+            initPageSplit()
+            _dataLoading.value = false
         }
     }
 
@@ -99,20 +100,20 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun swipeChapter(position: Int){
-        currentBook?.let{
-            val spineSize = it.spine.size
-            if (position in 0 until spineSize) {
-                val spineItem = it.spine[position]
-                val newChapterPath = it.manifest[spineItem.idRef]
-                if (newChapterPath != null) {
-                    currentChapter = position
-                    _dataLoading.value = true
-                    viewModelScope.launch {
-                        changeEpubChapter(newChapterPath)
-                        splitToPages()
-                        _dataLoading.value = false
-                    }
-                }
+        val tempBook = _book.value
+        tempBook ?: return
+
+        val spineSize = tempBook.spine.size
+        if (position in 0 until spineSize) {
+
+            val newChapterPath = tempBook.spine[position].href
+
+            currentChapter = position
+            _dataLoading.value = true
+            viewModelScope.launch {
+                changeEpubChapter(newChapterPath)
+                splitToPages()
+                _dataLoading.value = false
             }
         }
     }
@@ -148,17 +149,18 @@ class VisualizeTextViewModel @Inject constructor(
      * Used when you have the file path to the chapter e.g. changing chapters with the table of contents
      */
     fun jumpToChapter(path: String){
-        _book.value?.let{
-            val key = it.manifest.filterValues { value -> value == path }.keys.first()
-            val index = it.spine.indexOfFirst { item -> item.idRef == key }
-            if(index != -1) {
-                currentChapter = index
-                _dataLoading.value = true
-                viewModelScope.launch {
-                    changeEpubChapter(path)
-                    splitToPages()
-                    _dataLoading.value = false
-                }
+        val tempBook = _book.value
+        tempBook ?: return
+
+        val key = tempBook.manifest.filterValues { value -> value == path }.keys.first()
+        val index = tempBook.spine.indexOfFirst { item -> item.idRef == key }
+        if(index != -1) {
+            currentChapter = index
+            _dataLoading.value = true
+            viewModelScope.launch {
+                changeEpubChapter(path)
+                splitToPages()
+                _dataLoading.value = false
             }
         }
     }
@@ -167,23 +169,15 @@ class VisualizeTextViewModel @Inject constructor(
      * Used when you have the index, using the order defined in the spine. E.g. index saved from recent files list
      */
     private suspend fun jumpToChapter(index: Int){
-        currentBook?.let {book ->
-            val spine = book.spine
-            val manifest = book.manifest
+        val tempBook = currentBook
+        tempBook ?: return
 
-            println("Manifest: $manifest")
-            println("Spine: $spine")
+        val chapterPath = tempBook.spine[index].href
 
-            val spineItem = spine[index]
-            val chapterPath = manifest[spineItem.idRef]
-
-            println(" Index: $index, Path: $chapterPath")
-
-            if(index != -1 && chapterPath != null) {
-                currentChapter = index
-                changeEpubChapter(chapterPath)
-                splitToPages()
-            }
+        if(index != -1) {
+            currentChapter = index
+            changeEpubChapter(chapterPath)
+            splitToPages()
         }
     }
 
@@ -209,21 +203,22 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun saveBookFileData(date: Calendar){
-        fileUri?.let { uri ->
-            // This operation is intended to be synchronous
-            runBlocking{
-                val progress = calculateProgress()
+        val uri = fileUri
+        uri ?: return
 
-                databaseBookFile?.apply {
-                    page = currentPage
-                    chapter = currentChapter
-                    lastRead = date
-                    percentageDone = progress
-                }
-                val title = currentBook?.title ?: ""
-                val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
-                fileRepository.saveFile(bookFile)
+        // This operation is intended to be synchronous
+        runBlocking{
+            val progress = calculateProgress()
+
+            databaseBookFile?.apply {
+                page = currentPage
+                chapter = currentChapter
+                lastRead = date
+                percentageDone = progress
             }
+            val title = currentBook?.title ?: ""
+            val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
+            fileRepository.saveFile(bookFile)
         }
     }
 

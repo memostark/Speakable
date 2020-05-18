@@ -337,7 +337,7 @@ class VisualizeTextViewModelTest {
         private val DEFAULT_BOOK = Book(
             "Test title",
             DEFAULT_CHAPTER,
-            Array(5){SpineItem("$it", "", it + 100)}.toList(),
+            Array(5){SpineItem("$it", "ch${it + 1}.html", it + 100)}.toList(),
             mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
             TableOfContents(listOf())
         )
@@ -345,8 +345,8 @@ class VisualizeTextViewModelTest {
             "title",
             DEFAULT_CHAPTER,
             listOf(
-                SpineItem("chapter1", "", 0),
-                SpineItem("chapter2", "", 0)
+                SpineItem("chapter1", "ch1.html", 0),
+                SpineItem("chapter2", "ch2.html", 0)
             ),
             mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html"),
             TableOfContents(listOf())
