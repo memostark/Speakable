@@ -11,25 +11,38 @@ import com.guillermonegrete.tts.R
 import java.text.BreakIterator
 import java.util.*
 
-class VisualizerAdapter(private val pages: List<CharSequence>, private val showTextDialog: (CharSequence) -> Unit): RecyclerView.Adapter<VisualizerAdapter.PageViewHolder>() {
+class VisualizerAdapter(private val pages: List<CharSequence>, private val showTextDialog: (CharSequence) -> Unit): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var isExpanded = false
+    var isSplit = false
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
-        val layout = LayoutInflater.from(parent.context).inflate(R.layout.visualizer_page_item, parent, false)
-        return PageViewHolder(isExpanded, layout)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val layout = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
+        return when(viewType){
+            R.layout.visualizer_split_page_item -> SplitPageViewHolder(layout)
+            else -> PageViewHolder(isExpanded, layout)
+        }
     }
 
     override fun getItemCount() = pages.size
 
-    override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
-        holder.bind(pages[position])
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when(holder){
+            is PageViewHolder -> holder.bind(pages[position])
+            is SplitPageViewHolder -> holder.bind(pages[position])
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        if(isSplit) return R.layout.visualizer_split_page_item
+        return R.layout.visualizer_page_item
     }
 
     inner class PageViewHolder(isExpanded: Boolean, view: View): RecyclerView.ViewHolder(view){
         private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         private val actionModeCallback = object : ActionMode.Callback{
+
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
                 when(item.itemId){
                     R.id.show_process_text_activity -> {
@@ -48,8 +61,8 @@ class VisualizerAdapter(private val pages: List<CharSequence>, private val showT
                         mode.finish()
                         return true
                     }
+                    else -> return false
                 }
-                return false
             }
 
             override fun onCreateActionMode(mode: ActionMode, menu: Menu) = true
@@ -112,5 +125,19 @@ class VisualizerAdapter(private val pages: List<CharSequence>, private val showT
                 end = iterator.next()
             }
         }
+    }
+
+    class SplitPageViewHolder(view: View): RecyclerView.ViewHolder(view){
+        private val topText: TextView = view.findViewById(R.id.page_text_view)
+        private val bottomText: TextView = view.findViewById(R.id.page_bottom_text_view)
+
+        private val noTranslation = itemView.context.getString(R.string.translation_not_found)
+
+
+        fun bind(text: CharSequence){
+            topText.text = text
+            bottomText.text = noTranslation
+        }
+
     }
 }

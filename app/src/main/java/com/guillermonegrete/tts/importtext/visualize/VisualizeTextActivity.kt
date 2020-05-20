@@ -71,7 +71,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
-        brightnessButton.setOnClickListener { showBrightnessSettings(it) }
+        brightnessButton.setOnClickListener { showSettingsPopUp(it) }
 
         if(SHOW_EPUB != intent.action) {
             currentChapterLabel.visibility = View.GONE
@@ -242,14 +242,33 @@ class VisualizeTextActivity: AppCompatActivity() {
         pagesSeekBar.progress = position
     }
 
-    private fun showBrightnessSettings(view: View) {
-        val layout = LayoutInflater.from(this).inflate(R.layout.pop_up_brightness_settings, view.rootView as ViewGroup, false)
-        val whiteBtn: Button = layout.findViewById(R.id.white_bg_btn)
-        val beigeBtn: Button = layout.findViewById(R.id.beige_bg_btn)
-        val blackBtn: Button = layout.findViewById(R.id.black_bg_btn)
-        whiteBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.WHITE)}
-        beigeBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BEIGE)}
-        blackBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BLACK)}
+    private fun showSettingsPopUp(view: View) {
+        val layout = LayoutInflater.from(this).inflate(R.layout.pop_up_settings, view.rootView as ViewGroup, false)
+
+        // Brightness settings
+        layout.findViewById<Button>(R.id.white_bg_btn).setOnClickListener {setBackgroundColor(BrightnessTheme.WHITE)}
+        layout.findViewById<Button>(R.id.beige_bg_btn).setOnClickListener {setBackgroundColor(BrightnessTheme.BEIGE)}
+        layout.findViewById<Button>(R.id.black_bg_btn).setOnClickListener {setBackgroundColor(BrightnessTheme.BLACK)}
+
+        // Split view
+        val splitPref: ImageButton = layout.findViewById(R.id.split_page_btn)
+        val singlePagePref: ImageButton = layout.findViewById(R.id.single_page_btn)
+
+        splitPref.setOnClickListener {
+            setSplitPageMode(true)
+
+            splitPref.isSelected = true
+            singlePagePref.isSelected = false
+        }
+        singlePagePref.setOnClickListener {
+            setSplitPageMode(false)
+
+            splitPref.isSelected = false
+            singlePagePref.isSelected = true
+        }
+
+        splitPref.isSelected = pagesAdapter.isSplit
+        singlePagePref.isSelected = !pagesAdapter.isSplit
 
         PopupWindow(
             layout,
@@ -260,6 +279,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             elevation = 8f
             showAtLocation(view, Gravity.START or Gravity.BOTTOM, 24, 24)
         }
+    }
+
+    private fun setSplitPageMode(splitPage: Boolean){
+        val position = viewModel.currentPage
+
+        pagesAdapter.isSplit = splitPage
+        viewPager.adapter = pagesAdapter
+        viewPager.setCurrentItem(position, false)
     }
 
     private fun setBackgroundColor(theme: BrightnessTheme){
@@ -434,7 +461,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             actionBar?.show()
 
             contractedConstraintSet.applyTo(rootConstraintLayout)
-
 
             pagesAdapter.isExpanded = false
         }

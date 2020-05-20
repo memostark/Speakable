@@ -71,7 +71,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page"
-        app:srcCompat="@drawable/ic_settings_brightness_grey_24dp"
+        app:srcCompat="@drawable/ic_settings_black_24dp"
         android:tint="?attr/iconTintColor"/>
 
     <ProgressBar

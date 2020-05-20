@@ -78,5 +78,9 @@
     <string name="recent_files_label">Recently opened files</string>
     <string name="error_translation">Error when translating</string>
     <string name="error">Error</string>
+    <string name="split_page_setting">Split page</string>
+    <string name="page_setting">Page mode</string>
+    <string name="translation_not_found">No translation found.</string>
+    <string name="single_page_setting">Single page</string>
 
 </resources>
