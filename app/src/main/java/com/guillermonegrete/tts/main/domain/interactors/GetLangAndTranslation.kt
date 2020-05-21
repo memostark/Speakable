@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.main.domain.interactors
 import com.guillermonegrete.tts.AbstractInteractor
 import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
-import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.db.Words
 import javax.inject.Inject
@@ -11,7 +10,7 @@ import javax.inject.Inject
 class GetLangAndTranslation @Inject constructor(
     executor: Executor,
     mainThread: MainThread,
-    private val wordRepository: WordRepository
+    private val wordRepository: WordRepositorySource
 ) : AbstractInteractor(executor, mainThread){
 
     private var text = ""
@@ -22,9 +21,9 @@ class GetLangAndTranslation @Inject constructor(
     @JvmOverloads
     operator fun invoke(
         text: String,
+        callback: Callback,
         languageFrom: String = "auto",
-        languageTo: String = "en",
-        callback: Callback
+        languageTo: String = "en"
     ){
         this.text = text
         this.languageFrom = languageFrom
@@ -50,8 +49,8 @@ class GetLangAndTranslation @Inject constructor(
     }
 
     interface Callback{
-        fun onTranslationAndLanguage(word: Words) {}
+        fun onTranslationAndLanguage(word: Words)
 
-        fun onDataNotAvailable() {}
+        fun onDataNotAvailable()
     }
 }

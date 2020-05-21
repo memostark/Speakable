@@ -9,6 +9,7 @@ import java.util.LinkedHashMap
 class FakeWordRepository: WordRepositorySource {
 
     var wordsServiceData: LinkedHashMap<Int, Words> = LinkedHashMap()
+    var translationsData: LinkedHashMap<String, Words> = LinkedHashMap()
 
     var languagesData: MutableSet<String> = mutableSetOf()
 
@@ -47,7 +48,8 @@ class FakeWordRepository: WordRepositorySource {
         languageTo: String?,
         callback: WordRepositorySource.GetTranslationCallback?
     ) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // Need to implement error handling
+        callback?.onTranslationAndLanguage(translationsData[text])
     }
 
     override fun deleteWord(word: String?) {
@@ -71,6 +73,13 @@ class FakeWordRepository: WordRepositorySource {
         for (word in words) {
             wordsServiceData[word.id] = word
             languagesData.add(word.lang)
+        }
+    }
+
+    @VisibleForTesting
+    fun addTranslation(vararg words: Words) {
+        for (word in words) {
+            translationsData[word.word] = word
         }
     }
 }

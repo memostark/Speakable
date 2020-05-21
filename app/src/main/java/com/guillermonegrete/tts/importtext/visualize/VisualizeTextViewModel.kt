@@ -6,15 +6,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import kotlinx.coroutines.*
 import java.util.*
 import javax.inject.Inject
 
 class VisualizeTextViewModel @Inject constructor(
     private val epubParser: EpubParser,
-    private val fileRepository: FileRepository
+    private val fileRepository: FileRepository,
+    private val getTranslationInteractor: GetLangAndTranslation
 ): ViewModel() {
 
     var pageSplitter: PageSplitter? = null
@@ -53,6 +56,9 @@ class VisualizeTextViewModel @Inject constructor(
 
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
+
+    private val _pageTranslation = MutableLiveData<Words>()
+    val pageTranslation: LiveData<Words> = _pageTranslation
 
 
     fun parseEpub() {
@@ -163,6 +169,19 @@ class VisualizeTextViewModel @Inject constructor(
                 _dataLoading.value = false
             }
         }
+    }
+
+    fun translatePage(index: Int){
+        val text = currentPages[index]
+        getTranslationInteractor(
+            text.toString(),
+            object : GetLangAndTranslation.Callback {
+                override fun onTranslationAndLanguage(word: Words) {
+                    _pageTranslation.value = word
+                }
+
+                override fun onDataNotAvailable() {}
+            })
     }
 
     /**

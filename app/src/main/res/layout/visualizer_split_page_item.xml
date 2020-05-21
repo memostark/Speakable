@@ -23,11 +23,25 @@
         android:id="@+id/page_bottom_text_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginBottom="40dp"
         android:layout_marginEnd="40dp"
         android:layout_marginStart="40dp"
         android:layout_weight="1"
+        android:visibility="gone"
         app:autoSizeTextType="uniform"
         app:autoSizeMaxTextSize="30sp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/page_translate_btn"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="end"
+        android:contentDescription="@string/translate_description"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        app:iconTint="?iconTintColor"
+        app:icon="@drawable/ic_translate_black_24dp"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:cornerRadius="4dp"/>
 
 </LinearLayout>

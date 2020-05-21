@@ -100,8 +100,6 @@ class ScreenTextViewModel(
 
         getTranslationInteractor.invoke(
             text,
-            "auto",
-            languagePreference,
             object: GetLangAndTranslation.Callback {
                 override fun onTranslationAndLanguage(word: Words) {
                     _textTranslated.value = word
@@ -110,7 +108,9 @@ class ScreenTextViewModel(
                 override fun onDataNotAvailable() {
                     println("Error translating")
                 }
-            }
+            },
+            "auto",
+            languagePreference
         )
 
     }

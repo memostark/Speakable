@@ -80,7 +80,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager = findViewById(R.id.text_reader_viewpager)
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
-        viewPager.adapter = VisualizerAdapter(listOf("")) {} // Empty callback, not necessary at the moment
+        viewPager.adapter = VisualizerAdapter(listOf(""),
+            {}, viewModel) // Empty callback, not necessary at the moment
         viewPager.setPageTransformer { view, position ->
             pageTextView = view as? TextView
 
@@ -230,7 +231,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
-        pagesAdapter = VisualizerAdapter(pages) { showTextDialog(it) }
+        pagesAdapter = VisualizerAdapter(pages, { showTextDialog(it) }, viewModel)
         viewPager.adapter = pagesAdapter
 
         val position = viewModel.getPage()

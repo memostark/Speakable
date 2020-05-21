@@ -2,14 +2,19 @@ package com.guillermonegrete.tts.importtext.visualize
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
+import com.guillermonegrete.tts.TestThreadExecutor
 import com.guillermonegrete.tts.data.source.FakeFileRepository
+import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert
@@ -37,6 +42,7 @@ class VisualizeTextViewModelTest {
     @Mock private lateinit var epubParser: EpubParser
     @Mock private lateinit var fileReader: DefaultZipFileReader
     private lateinit var fileRepository: FakeFileRepository
+    private lateinit var wordRepository: FakeWordRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
@@ -47,7 +53,11 @@ class VisualizeTextViewModelTest {
         MockitoAnnotations.initMocks(this)
 
         fileRepository = FakeFileRepository()
-        viewModel = VisualizeTextViewModel(epubParser, fileRepository)
+        wordRepository = FakeWordRepository()
+
+        val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
+
+        viewModel = VisualizeTextViewModel(epubParser, fileRepository, getTranslationInteractor)
         viewModel.pageSplitter = pageSplitter
         viewModel.fileReader = fileReader
 
@@ -299,6 +309,25 @@ class VisualizeTextViewModelTest {
         assertEquals(1, fileRepository.filesServiceData.values.size)
 
 
+    }
+
+    @Test
+    fun `Translates page first time`(){
+
+        val pages = listOf("", "", "Página para traducir", "", "")
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+        parse_book(DEFAULT_BOOK)
+
+        val pageIndex = 2
+        val expectedWord = Words(pages[pageIndex], "ES", "Page to translate")
+        wordRepository.addTranslation(expectedWord)
+
+        // Tell view model to translate page 3
+        viewModel.translatePage(pageIndex)
+
+        // Assert expected result
+        val resultWord = getUnitLiveDataValue(viewModel.pageTranslation)
+        assertEquals(expectedWord, resultWord)
     }
 
     private fun parse_book(book: Book){

@@ -4,17 +4,25 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.method.LinkMovementMethod
 import android.view.*
+import android.widget.Button
 import android.widget.TextView
 import androidx.core.widget.TextViewCompat
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import java.text.BreakIterator
 import java.util.*
 
-class VisualizerAdapter(private val pages: List<CharSequence>, private val showTextDialog: (CharSequence) -> Unit): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class VisualizerAdapter(
+    private val pages: List<CharSequence>,
+    private val showTextDialog: (CharSequence) -> Unit,
+    val viewModel: VisualizeTextViewModel
+): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var isExpanded = false
     var isSplit = false
+    val splitPages = mutableSetOf<Int>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
@@ -127,16 +135,46 @@ class VisualizerAdapter(private val pages: List<CharSequence>, private val showT
         }
     }
 
-    class SplitPageViewHolder(view: View): RecyclerView.ViewHolder(view){
+    inner class SplitPageViewHolder(view: View): RecyclerView.ViewHolder(view){
         private val topText: TextView = view.findViewById(R.id.page_text_view)
         private val bottomText: TextView = view.findViewById(R.id.page_bottom_text_view)
 
+        private val translateBtn: Button = view.findViewById(R.id.page_translate_btn)
+
         private val noTranslation = itemView.context.getString(R.string.translation_not_found)
 
+        init {
+            translateBtn.setOnClickListener {
+
+                val position = adapterPosition
+                if(splitPages.contains(position)) splitPages.remove(position)
+                else splitPages.add(position)
+
+                viewModel.translatePage(position)
+
+                setBottomText()
+            }
+
+            // Move this code later to activity/fragment
+            viewModel.pageTranslation.observe(itemView.context as LifecycleOwner, Observer {
+                bottomText.text = it.definition
+            })
+        }
 
         fun bind(text: CharSequence){
             topText.text = text
             bottomText.text = noTranslation
+
+            setBottomText()
+        }
+
+        private fun setBottomText(){
+
+            if(splitPages.contains(adapterPosition)){
+                bottomText.visibility = View.VISIBLE
+            }else{
+                bottomText.visibility = View.GONE
+            }
         }
 
     }

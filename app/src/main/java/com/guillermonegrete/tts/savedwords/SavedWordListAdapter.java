@@ -26,7 +26,7 @@ import java.util.List;
 public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdapter.WordsViewHolder> {
 
     private LayoutInflater layoutInflater;
-    private List<Words> wordsList;
+    private List<Words> wordsList = new ArrayList<>();
     private Context context;
 
     private boolean multiSelect = false;
@@ -67,11 +67,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
     @Override
     public int getItemCount() {
-        if (wordsList == null) {
-            return 0;
-        } else {
-            return wordsList.size();
-        }
+        return wordsList.size();
     }
 
     // Taken from: https://blog.teamtreehouse.com/contextual-action-bars-removing-items-recyclerview
@@ -122,6 +118,14 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             translationText = itemView.findViewById(R.id.saved_word_translation_text);
             notesText = itemView.findViewById(R.id.saved_word_notes_text);
             container = itemView.findViewById(R.id.saved_word_item_container);
+
+            itemView.setOnLongClickListener(view -> {
+                ((AppCompatActivity) view.getContext()).startSupportActionMode(actionModeCallback);
+                selectItem(word);
+                return true;
+            });
+
+            itemView.setOnClickListener(view -> selectItem(word));
         }
 
         void update(){
@@ -131,14 +135,6 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                 int defaultBGColor = ColorUtilsKt.getThemeColor(itemView.getContext(), R.attr.colorSurface);
                 container.setBackgroundColor(defaultBGColor);
             }
-
-            itemView.setOnLongClickListener(view -> {
-                ((AppCompatActivity) view.getContext()).startSupportActionMode(actionModeCallback);
-                selectItem(word);
-                return true;
-            });
-
-            itemView.setOnClickListener(view -> selectItem(word));
         }
 
         void setWord(Words word){
