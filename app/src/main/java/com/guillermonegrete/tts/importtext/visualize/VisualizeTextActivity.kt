@@ -214,6 +214,10 @@ class VisualizeTextActivity: AppCompatActivity() {
                     showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
                 }
             })
+
+            translatedPageIndex.observe(this@VisualizeTextActivity, Observer {
+                pagesAdapter.notifyItemChanged(it)
+            })
         }
     }
 

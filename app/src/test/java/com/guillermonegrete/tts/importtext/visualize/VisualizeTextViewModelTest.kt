@@ -314,20 +314,20 @@ class VisualizeTextViewModelTest {
     @Test
     fun `Translates page first time`(){
 
+        // Setup
         val pages = listOf("", "", "Página para traducir", "", "")
         `when`(pageSplitter.getPages()).thenReturn(pages)
         parse_book(DEFAULT_BOOK)
 
         val pageIndex = 2
-        val expectedWord = Words(pages[pageIndex], "ES", "Page to translate")
-        wordRepository.addTranslation(expectedWord)
+        val expectedTranslation = "Page to translate"
+        wordRepository.addTranslation(Words(pages[pageIndex], "ES", expectedTranslation))
 
-        // Tell view model to translate page 3
+        // Request translation
         viewModel.translatePage(pageIndex)
 
-        // Assert expected result
-        val resultWord = getUnitLiveDataValue(viewModel.pageTranslation)
-        assertEquals(expectedWord, resultWord)
+        val resultIndex = getUnitLiveDataValue(viewModel.translatedPageIndex)
+        assertEquals(expectedTranslation, viewModel.translatedPages[resultIndex])
     }
 
     private fun parse_book(book: Book){

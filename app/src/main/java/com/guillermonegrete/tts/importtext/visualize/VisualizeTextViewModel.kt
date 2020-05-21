@@ -57,13 +57,16 @@ class VisualizeTextViewModel @Inject constructor(
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
 
-    private val _pageTranslation = MutableLiveData<Words>()
-    val pageTranslation: LiveData<Words> = _pageTranslation
+    private var _translatedPages = mutableListOf<CharSequence?>()
+    val translatedPages: List<CharSequence?>
+        get() = _translatedPages
+
+    private val _translatedPageIndex = MutableLiveData<Int>()
+    val translatedPageIndex: LiveData<Int> = _translatedPageIndex
 
 
     fun parseEpub() {
-        val reader = fileReader
-        reader ?: return
+        val reader = fileReader ?: return
 
         _dataLoading.value = true
         viewModelScope.launch {
@@ -106,8 +109,7 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun swipeChapter(position: Int){
-        val tempBook = _book.value
-        tempBook ?: return
+        val tempBook = _book.value ?: return
 
         val spineSize = tempBook.spine.size
         if (position in 0 until spineSize) {
@@ -155,8 +157,7 @@ class VisualizeTextViewModel @Inject constructor(
      * Used when you have the file path to the chapter e.g. changing chapters with the table of contents
      */
     fun jumpToChapter(path: String){
-        val tempBook = _book.value
-        tempBook ?: return
+        val tempBook = _book.value ?: return
 
         val key = tempBook.manifest.filterValues { value -> value == path }.keys.first()
         val index = tempBook.spine.indexOfFirst { item -> item.idRef == key }
@@ -172,12 +173,14 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun translatePage(index: Int){
-        val text = currentPages[index]
+        val text = currentPages[index].toString()
+
         getTranslationInteractor(
-            text.toString(),
+            text,
             object : GetLangAndTranslation.Callback {
                 override fun onTranslationAndLanguage(word: Words) {
-                    _pageTranslation.value = word
+                    _translatedPages[index] = word.definition // In this case is a translation
+                    _translatedPageIndex.value = index
                 }
 
                 override fun onDataNotAvailable() {}
@@ -188,8 +191,7 @@ class VisualizeTextViewModel @Inject constructor(
      * Used when you have the index, using the order defined in the spine. E.g. index saved from recent files list
      */
     private suspend fun jumpToChapter(index: Int){
-        val tempBook = currentBook
-        tempBook ?: return
+        val tempBook = currentBook ?: return
 
         val chapterPath = tempBook.spine[index].href
 
@@ -201,15 +203,17 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private suspend fun splitToPages() {
-        pageSplitter?.let {
-            it.setText(text)
-            it.split()
-            val mutablePages = it.getPages().toMutableList()
-            if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
-            pagesSize = mutablePages.size
-            _pages.value = mutablePages
-            currentPages = mutablePages
-        }
+        val splitter = pageSplitter ?: return
+
+        splitter.setText(text)
+        splitter.split()
+        val mutablePages = splitter.getPages().toMutableList()
+        if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
+        pagesSize = mutablePages.size
+        _pages.value = mutablePages
+
+        currentPages = mutablePages
+        _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
     }
 
     /**
@@ -222,8 +226,7 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun saveBookFileData(date: Calendar){
-        val uri = fileUri
-        uri ?: return
+        val uri = fileUri ?: return
 
         // This operation is intended to be synchronous
         runBlocking{

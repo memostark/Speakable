@@ -7,8 +7,6 @@ import android.view.*
 import android.widget.Button
 import android.widget.TextView
 import androidx.core.widget.TextViewCompat
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import java.text.BreakIterator
@@ -37,7 +35,7 @@ class VisualizerAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when(holder){
             is PageViewHolder -> holder.bind(pages[position])
-            is SplitPageViewHolder -> holder.bind(pages[position])
+            is SplitPageViewHolder -> holder.bind(pages[position], viewModel.translatedPages[position])
         }
     }
 
@@ -150,20 +148,20 @@ class VisualizerAdapter(
                 if(splitPages.contains(position)) splitPages.remove(position)
                 else splitPages.add(position)
 
-                viewModel.translatePage(position)
+                val translatedText = viewModel.translatedPages[position]
+                if(translatedText != null){
+                    bottomText.text = translatedText
+                } else {
+                    viewModel.translatePage(position)
+                }
 
                 setBottomText()
             }
-
-            // Move this code later to activity/fragment
-            viewModel.pageTranslation.observe(itemView.context as LifecycleOwner, Observer {
-                bottomText.text = it.definition
-            })
         }
 
-        fun bind(text: CharSequence){
+        fun bind(text: CharSequence, translatedText: CharSequence?){
             topText.text = text
-            bottomText.text = noTranslation
+            bottomText.text = translatedText ?: noTranslation
 
             setBottomText()
         }
