@@ -44,8 +44,8 @@ class VisualizerAdapter(
         return R.layout.visualizer_page_item
     }
 
-    inner class PageViewHolder(isExpanded: Boolean, view: View): RecyclerView.ViewHolder(view){
-        private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
+    open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
+        protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         private val actionModeCallback = object : ActionMode.Callback{
 
@@ -89,19 +89,6 @@ class VisualizerAdapter(
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
             pageTextView.movementMethod = LinkMovementMethod.getInstance()
-
-            if(isExpanded){
-                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
-            }else{
-                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE)
-            }
-        }
-
-        fun bind(text: CharSequence){
-            pageTextView.movementMethod = LinkMovementMethod.getInstance()
-
-            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
-            setSpannables(pageTextView)
         }
 
         // Based on: https://stackoverflow.com/questions/8612652/select-a-word-on-a-tap-in-textview-edittext
@@ -131,10 +118,32 @@ class VisualizerAdapter(
                 end = iterator.next()
             }
         }
+
+        protected fun setPageText(text: CharSequence){
+            pageTextView.movementMethod = LinkMovementMethod.getInstance()
+
+            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
+            setSpannables(pageTextView)
+        }
+
     }
 
-    inner class SplitPageViewHolder(view: View): RecyclerView.ViewHolder(view){
-        private val topText: TextView = view.findViewById(R.id.page_text_view)
+    inner class PageViewHolder(isExpanded: Boolean, view: View): ViewHolder(view){
+
+        init {
+            if(isExpanded){
+                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+            }else{
+                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE)
+            }
+        }
+
+        fun bind(text: CharSequence){
+            setPageText(text)
+        }
+    }
+
+    inner class SplitPageViewHolder(view: View): ViewHolder(view){
         private val bottomText: TextView = view.findViewById(R.id.page_bottom_text_view)
 
         private val translateBtn: Button = view.findViewById(R.id.page_translate_btn)
@@ -160,9 +169,9 @@ class VisualizerAdapter(
         }
 
         fun bind(text: CharSequence, translatedText: CharSequence?){
-            topText.text = text
-            bottomText.text = translatedText ?: noTranslation
+            setPageText(text)
 
+            bottomText.text = translatedText ?: noTranslation
             setBottomText()
         }
 

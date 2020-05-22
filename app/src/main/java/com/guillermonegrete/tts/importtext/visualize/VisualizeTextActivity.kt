@@ -37,7 +37,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
 
-    private var pageTextView: TextView? = null
+    private var pageItemView: View? = null
 
     private lateinit var pagesAdapter: VisualizerAdapter
 
@@ -83,7 +83,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.adapter = VisualizerAdapter(listOf(""),
             {}, viewModel) // Empty callback, not necessary at the moment
         viewPager.setPageTransformer { view, position ->
-            pageTextView = view as? TextView
+            pageItemView = view
 
             setUpPageParsing(view)
 
@@ -113,10 +113,10 @@ class VisualizeTextActivity: AppCompatActivity() {
         val actionId = ev?.actionMasked ?: -1
 
         if(eventInProgress){
-            if(pageTextView?.isShown == true) scaleDetector.onTouchEvent(ev)
+            if(pageItemView?.isShown == true) scaleDetector.onTouchEvent(ev)
             if(scaleDetector.isInProgress) {
                 // Cancel long press to avoid showing contextual action menu
-                pageTextView?.cancelLongPress()
+                pageItemView?.cancelLongPress()
                 scaleInProgress = true
                 // Don't pass event when scaling
                 return true
@@ -127,10 +127,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             MotionEvent.ACTION_DOWN -> eventInProgress = true
             MotionEvent.ACTION_UP -> {
                 eventInProgress = false
+
                 if(scaleInProgress){
                     // Removes lingering highlight from text
-                    val span = pageTextView?.text as? Spannable
-                    Selection.removeSelection(span)
+                    val item = pageItemView
+                    if(item is TextView){
+                        val span = item.text as? Spannable
+                        Selection.removeSelection(span)
+                    }
                     scaleInProgress = false
                 }
             }
