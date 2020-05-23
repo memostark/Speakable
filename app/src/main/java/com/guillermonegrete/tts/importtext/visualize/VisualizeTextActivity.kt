@@ -16,10 +16,12 @@ import androidx.core.content.edit
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
+import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.android.AndroidInjection
 import javax.inject.Inject
 
@@ -36,6 +38,11 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var pagesSeekBar: SeekBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
+
+    // Bottom sheet layout
+    private lateinit var bottomSheet: ViewGroup
+    private lateinit var bottomText: TextView
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<ViewGroup>
 
     private var pageItemView: View? = null
 
@@ -60,6 +67,12 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         progressBar = findViewById(R.id.visualizer_progress_bar)
         pagesSeekBar = findViewById(R.id.pages_seekBar)
+
+        // Bottom sheet
+        bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
+        bottomText = findViewById(R.id.page_bottom_text_view)
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+
         rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
 
         contractedConstraintSet.clone(rootConstraintLayout)
@@ -93,6 +106,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
         viewPager.post{
             addPagerCallback()
+
+            setBottomSheetPeekHeight()
+            setBottomSheetCallbacks()
         }
 
         scaleDetector = ScaleGestureDetector(this, PinchListener())
@@ -209,7 +225,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                     currentChapterLabel.visibility = View.VISIBLE
                 }
 
-                val showTOCBtn = findViewById<ImageButton>(R.id.show_toc_btn)
+                val showTOCBtn: ImageButton = findViewById(R.id.show_toc_btn)
                 val navPoints = it.tableOfContents.navPoints
                 if(navPoints.isEmpty()){
                     showTOCBtn.visibility = View.GONE
@@ -220,6 +236,8 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             translatedPageIndex.observe(this@VisualizeTextActivity, Observer {
+                val text = viewModel.translatedPages[it]
+                bottomText.text = text
                 pagesAdapter.notifyItemChanged(it)
             })
         }
@@ -296,6 +314,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         pagesAdapter.isSplit = splitPage
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
+
+        bottomSheet.visibility = if(splitPage) View.VISIBLE else View.GONE
     }
 
     private fun setBackgroundColor(theme: BrightnessTheme){
@@ -474,6 +494,8 @@ class VisualizeTextActivity: AppCompatActivity() {
             pagesAdapter.isExpanded = false
         }
 
+        viewPager.post { setBottomSheetPeekHeight() }
+
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
 
@@ -491,6 +513,47 @@ class VisualizeTextActivity: AppCompatActivity() {
                 or View.SYSTEM_UI_FLAG_FULLSCREEN)
 
         actionBar?.hide()
+    }
+
+    private fun setBottomSheetCallbacks(){
+        val translateBtn: Button = findViewById(R.id.page_translate_btn)
+        translateBtn.setOnClickListener {
+            val position = viewPager.currentItem
+            val translatedText = viewModel.translatedPages[position]
+            if(translatedText == null) {
+                viewModel.translatePage(position)
+            }
+            setFullBottomSheet(true)
+        }
+
+        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+
+                when(newState){
+                    BottomSheetBehavior.STATE_EXPANDED -> setSplitMode(true)
+                    BottomSheetBehavior.STATE_COLLAPSED -> setSplitMode(false)
+                    BottomSheetBehavior.STATE_SETTLING -> println("STATE_SETTLING")
+                    else -> {}
+                }
+            }
+
+            private fun setSplitMode(isSplit: Boolean){
+                pagesAdapter.notifyItemRangeChanged(0, pagesAdapter.itemCount, isSplit)
+                println("Should hide: $isSplit")
+            }
+        })
+    }
+
+    private fun setFullBottomSheet(full: Boolean){
+        bottomSheetBehavior.state = if(full) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
+    }
+
+    private fun setBottomSheetPeekHeight(){
+        val peekHeight = this.dpToPixel(30) + viewPager.height / 2
+
+        bottomSheetBehavior.peekHeight = peekHeight
     }
 
     companion object{

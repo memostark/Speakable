@@ -4,11 +4,12 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.method.LinkMovementMethod
 import android.view.*
-import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.utils.dpToPixel
 import java.text.BreakIterator
 import java.util.*
 
@@ -20,7 +21,6 @@ class VisualizerAdapter(
 
     var isExpanded = false
     var isSplit = false
-    val splitPages = mutableSetOf<Int>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
@@ -36,6 +36,19 @@ class VisualizerAdapter(
         when(holder){
             is PageViewHolder -> holder.bind(pages[position])
             is SplitPageViewHolder -> holder.bind(pages[position], viewModel.translatedPages[position])
+        }
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        println("Binding view holder $position, payload: $payloads")
+        if(payloads.isEmpty()){
+            onBindViewHolder(holder, position)
+        }else{
+            if(holder is SplitPageViewHolder) holder.updateLayoutParams(payloads.first() as Boolean)
         }
     }
 
@@ -144,44 +157,23 @@ class VisualizerAdapter(
     }
 
     inner class SplitPageViewHolder(view: View): ViewHolder(view){
-        private val bottomText: TextView = view.findViewById(R.id.page_bottom_text_view)
-
-        private val translateBtn: Button = view.findViewById(R.id.page_translate_btn)
+        private val bottomText: View = view.findViewById(R.id.page_bottom_text_view)
 
         private val noTranslation = itemView.context.getString(R.string.translation_not_found)
 
-        init {
-            translateBtn.setOnClickListener {
+        private val pageMarginsSize = itemView.context.dpToPixel(40)
 
-                val position = adapterPosition
-                if(splitPages.contains(position)) splitPages.remove(position)
-                else splitPages.add(position)
-
-                val translatedText = viewModel.translatedPages[position]
-                if(translatedText != null){
-                    bottomText.text = translatedText
-                } else {
-                    viewModel.translatePage(position)
-                }
-
-                setBottomText()
-            }
+        private val hiddenParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, pageMarginsSize, 0f)
+        private val halfShownParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 0.5f).apply {
+            setMargins(0, 0, 0, pageMarginsSize)
         }
 
         fun bind(text: CharSequence, translatedText: CharSequence?){
             setPageText(text)
-
-            bottomText.text = translatedText ?: noTranslation
-            setBottomText()
         }
 
-        private fun setBottomText(){
-
-            if(splitPages.contains(adapterPosition)){
-                bottomText.visibility = View.VISIBLE
-            }else{
-                bottomText.visibility = View.GONE
-            }
+        fun updateLayoutParams(splitPage: Boolean){
+            bottomText.layoutParams = if(splitPage) halfShownParams else hiddenParams
         }
 
     }

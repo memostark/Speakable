@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:layout_weight="1">
     <TextView
         android:id="@+id/page_text_view"
         android:layout_width="match_parent"
@@ -11,38 +12,17 @@
         android:layout_marginTop="40dp"
         android:layout_marginEnd="40dp"
         android:layout_marginStart="40dp"
-        android:layout_weight="1"
+        android:layout_weight="0.5"
         android:textIsSelectable="true"
         app:autoSizeTextType="uniform">
         <requestFocus />
     </TextView>
     <View
-        android:background="?iconTintColor"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"/>
-    <TextView
         android:id="@+id/page_bottom_text_view"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginEnd="40dp"
-        android:layout_marginStart="40dp"
-        android:layout_weight="1"
-        android:visibility="gone"
-        app:autoSizeTextType="uniform"
-        app:autoSizeMaxTextSize="30sp"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/page_translate_btn"
-        android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_gravity="end"
-        android:contentDescription="@string/translate_description"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        app:iconTint="?iconTintColor"
-        app:icon="@drawable/ic_translate_black_24dp"
-        app:iconGravity="textStart"
-        app:iconPadding="0dp"
-        app:cornerRadius="4dp"/>
+        android:layout_weight="0.0"
+        android:layout_marginEnd="40dp"
+        android:layout_marginStart="40dp"/>
 
 </LinearLayout>
