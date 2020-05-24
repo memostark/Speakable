@@ -82,5 +82,6 @@
     <string name="page_setting">Page mode</string>
     <string name="translation_not_found">No translation found.</string>
     <string name="single_page_setting">Single page</string>
+    <string name="click_to_translate_msg">Page not translated yet. Click button to translate</string>
 
 </resources>

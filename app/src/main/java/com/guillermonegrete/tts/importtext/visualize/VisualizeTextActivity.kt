@@ -294,8 +294,8 @@ class VisualizeTextActivity: AppCompatActivity() {
             singlePagePref.isSelected = true
         }
 
-        splitPref.isSelected = pagesAdapter.isSplit
-        singlePagePref.isSelected = !pagesAdapter.isSplit
+        splitPref.isSelected = pagesAdapter.hasBottomSheet
+        singlePagePref.isSelected = !pagesAdapter.hasBottomSheet
 
         PopupWindow(
             layout,
@@ -311,7 +311,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setSplitPageMode(splitPage: Boolean){
         val position = viewModel.currentPage
 
-        pagesAdapter.isSplit = splitPage
+        pagesAdapter.hasBottomSheet = splitPage
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
 
@@ -342,6 +342,10 @@ class VisualizeTextActivity: AppCompatActivity() {
                 currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
 
                 pagesSeekBar.progress = position
+
+                if(pagesAdapter.hasBottomSheet)
+                    bottomText.text = viewModel.translatedPages[position] ?: getString(R.string.click_to_translate_msg)
+
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -388,7 +392,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun createPageSplitter(textView: TextView): PageSplitter {
         val lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
         val lineSpacingMultiplier = 1f
-        val pageItemPadding = (80 * resources.displayMetrics.density + 0.5f).toInt() // Convert dp to px, 0.5 is for rounding to closest integer
+        val pageItemPadding = this.dpToPixel(80 )
 
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
@@ -526,22 +530,27 @@ class VisualizeTextActivity: AppCompatActivity() {
             setFullBottomSheet(true)
         }
 
+        val arrowBtn: Button = findViewById(R.id.arrow_btn)
+        arrowBtn.setOnClickListener {
+            val isFull = pagesAdapter.isPageSplit
+            setFullBottomSheet(!isFull)
+        }
+
         bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+            override fun onSlide(bottomSheet: View, slideOffset: Float) { arrowBtn.rotation = slideOffset * 180 }
 
             override fun onStateChanged(bottomSheet: View, newState: Int) {
 
                 when(newState){
                     BottomSheetBehavior.STATE_EXPANDED -> setSplitMode(true)
                     BottomSheetBehavior.STATE_COLLAPSED -> setSplitMode(false)
-                    BottomSheetBehavior.STATE_SETTLING -> println("STATE_SETTLING")
                     else -> {}
                 }
             }
 
             private fun setSplitMode(isSplit: Boolean){
                 pagesAdapter.notifyItemRangeChanged(0, pagesAdapter.itemCount, isSplit)
-                println("Should hide: $isSplit")
+                pagesAdapter.isPageSplit = isSplit
             }
         })
     }
