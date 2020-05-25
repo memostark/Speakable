@@ -59,6 +59,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private lateinit var scaleDetector: ScaleGestureDetector
 
+    private lateinit var languagesISO: Array<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         setPreferenceTheme()
@@ -115,6 +117,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         setUIChangesListener()
         setUpSeekBar()
+
+        languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
     }
 
     /**
@@ -296,6 +300,32 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         splitPref.isSelected = pagesAdapter.hasBottomSheet
         singlePagePref.isSelected = !pagesAdapter.hasBottomSheet
+
+        // Languages preferences
+        val fromAdapter = ArrayAdapter.createFromResource(
+            this,
+            R.array.googleTranslateLangsWithAutoArray,
+            android.R.layout.simple_spinner_dropdown_item
+        )
+        val toAdapter = ArrayAdapter.createFromResource(
+            this,
+            R.array.googleTranslateLanguagesArray,
+            android.R.layout.simple_spinner_dropdown_item
+        )
+        val spinnerListener = SpinnerListener(viewModel, languagesISO)
+
+        val fromMenu: Spinner = layout.findViewById(R.id.spinner_language_from)
+        fromMenu.adapter = fromAdapter
+        var index = languagesISO.indexOf(viewModel.languageFrom) + 1 // Increment because the list we searched is missing one element "auto"
+        fromMenu.setSelection(index, false)
+        fromMenu.onItemSelectedListener = spinnerListener
+
+        val toMenu: Spinner = layout.findViewById(R.id.spinner_language_to)
+        toMenu.adapter = toAdapter
+        index = languagesISO.indexOf(viewModel.languageTo)
+        if(index == -1) index = 15 // 15 is English, the default.
+        toMenu.setSelection(index, false)
+        toMenu.onItemSelectedListener = spinnerListener
 
         PopupWindow(
             layout,
@@ -563,6 +593,25 @@ class VisualizeTextActivity: AppCompatActivity() {
         val peekHeight = this.dpToPixel(30) + viewPager.height / 2
 
         bottomSheetBehavior.peekHeight = peekHeight
+    }
+
+    class SpinnerListener(
+        val viewModel: VisualizeTextViewModel,
+        private val languagesISO: Array<String>
+    ) : AdapterView.OnItemSelectedListener {
+        override fun onNothingSelected(parent: AdapterView<*>?) {}
+
+        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+            parent ?: return
+
+            when (parent.id) {
+                R.id.spinner_language_from -> {
+                    viewModel.languageFrom = if (position == 0) "auto" else languagesISO[position - 1]
+                }
+                R.id.spinner_language_to -> viewModel.languageTo = languagesISO[position]
+                else -> {}
+            }
+        }
     }
 
     companion object{

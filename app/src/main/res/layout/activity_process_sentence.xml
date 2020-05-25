@@ -31,14 +31,14 @@
             android:textColor="?colorOnSurface"
             android:textSize="20sp"
             app:layout_constraintBottom_toTopOf="@+id/translate_to_spinner"
-            app:layout_constraintEnd_toStartOf="@+id/spinner_language_from_code"
+            app:layout_constraintEnd_toStartOf="@+id/spinner_language_from"
             app:layout_constraintHeight_min="40dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Selected text" />
 
         <Spinner
-            android:id="@+id/spinner_language_from_code"
+            android:id="@+id/spinner_language_from"
             style="@android:style/Widget.Material.Spinner"
             android:layout_width="60dp"
             android:layout_height="0dp"

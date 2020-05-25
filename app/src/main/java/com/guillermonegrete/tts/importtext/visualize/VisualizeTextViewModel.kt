@@ -64,6 +64,9 @@ class VisualizeTextViewModel @Inject constructor(
     private val _translatedPageIndex = MutableLiveData<Int>()
     val translatedPageIndex: LiveData<Int> = _translatedPageIndex
 
+    var languageFrom = "auto"
+    var languageTo = "en"
+
 
     fun parseEpub() {
         val reader = fileReader ?: return
@@ -184,7 +187,10 @@ class VisualizeTextViewModel @Inject constructor(
                 }
 
                 override fun onDataNotAvailable() {}
-            })
+            },
+            languageFrom,
+            languageTo
+        )
     }
 
     /**

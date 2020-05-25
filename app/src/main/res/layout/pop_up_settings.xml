@@ -9,7 +9,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
-        android:layout_height="130dp"
+        android:layout_height="160dp"
         android:background="?attr/popUpBackground"
         android:gravity="center">
 
@@ -23,7 +23,7 @@
             android:backgroundTint="#ffff"
             app:layout_constraintEnd_toStartOf="@+id/beige_bg_btn"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/spinner_language_from"
             app:strokeColor="#484848"
             app:strokeWidth="2dp" />
 
@@ -89,6 +89,43 @@
             app:layout_constraintStart_toEndOf="@+id/textView"
             app:layout_constraintTop_toTopOf="@+id/split_page_btn"
             app:srcCompat="@drawable/ic_rect" />
+
+        <Spinner
+            android:id="@+id/spinner_language_from"
+            style="@android:style/Widget.Material.Spinner"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:spinnerMode="dialog"
+            app:layout_constraintEnd_toStartOf="@id/spinner_language_to"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:listitem="@android:layout/simple_list_item_1" />
+
+        <View
+            android:background="?iconTintColor"
+            app:layout_constraintTop_toBottomOf="@id/spinner_language_from"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"/>
+
+        <View
+            android:background="?iconTintColor"
+            app:layout_constraintTop_toTopOf="@id/spinner_language_from"
+            app:layout_constraintBottom_toBottomOf="@id/spinner_language_from"
+            app:layout_constraintEnd_toEndOf="@id/spinner_language_from"
+            android:layout_width="1dp"
+            android:layout_height="0dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_language_to"
+            style="@android:style/Widget.Material.Spinner"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:spinnerMode="dialog"
+            app:layout_constraintBottom_toBottomOf="@+id/spinner_language_from"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/spinner_language_from"
+            app:layout_constraintTop_toTopOf="@id/spinner_language_from"
+            tools:listitem="@android:layout/simple_list_item_1" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
