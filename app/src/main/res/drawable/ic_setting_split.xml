@@ -1,16 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item
-        android:gravity="center">
-        <shape android:shape="line">
-            <stroke android:width="3dp"  android:color="@drawable/pref_button_touch_selector"/>
-        </shape>
-    </item>
-
-    <item
-        android:gravity="center">
-        <shape android:shape="rectangle">
-            <stroke android:width="3dp" android:color="@drawable/pref_button_touch_selector"/>
-        </shape>
-    </item>
-</layer-list>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="27dp"
+    android:height="34dp"
+    android:viewportWidth="7.9810643"
+    android:viewportHeight="9.833148">
+  <path
+      android:pathData="M0.52917,0.52916h6.92273v8.77481h-6.92273z"
+      android:strokeAlpha="1"
+      android:strokeWidth="1.05833328"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"
+      android:fillAlpha="1"/>
+  <path
+      android:pathData="M0.54867,6.89865h6.88373v2.38581h-6.88373z"
+      android:strokeAlpha="1"
+      android:strokeWidth="1.05833328"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"
+      android:fillAlpha="1"/>
+</vector>

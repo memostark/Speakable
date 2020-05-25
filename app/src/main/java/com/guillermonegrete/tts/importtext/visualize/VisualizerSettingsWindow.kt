@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ui.BrightnessTheme
 
@@ -26,24 +27,17 @@ class VisualizerSettingsWindow (
         layout.findViewById<Button>(R.id.black_bg_btn).setOnClickListener{ callback?.onBackgroundColorSet(BrightnessTheme.BLACK) }
 
         // Split view
-        val splitPref: ImageButton = layout.findViewById(R.id.split_page_btn)
-        val singlePagePref: ImageButton = layout.findViewById(R.id.single_page_btn)
+        val pageModeToggle: MaterialButtonToggleGroup = layout.findViewById(R.id.page_toggle_container)
 
-        splitPref.setOnClickListener {
-            callback?.onPageMode(true)
+        val checkedItemId = if(viewModel.hasBottomSheet) R.id.split_page_btn else R.id.single_page_btn
+        pageModeToggle.check(checkedItemId)
 
-            splitPref.isSelected = true
-            singlePagePref.isSelected = false
+        pageModeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            when(checkedId){
+                R.id.single_page_btn -> if(isChecked) callback?.onPageMode(false)
+                R.id.split_page_btn -> if(isChecked) callback?.onPageMode(true)
+            }
         }
-        singlePagePref.setOnClickListener {
-            callback?.onPageMode(false)
-
-            splitPref.isSelected = false
-            singlePagePref.isSelected = true
-        }
-
-        splitPref.isSelected = viewModel.hasBottomSheet
-        singlePagePref.isSelected = !viewModel.hasBottomSheet
 
         // Languages preferences
         val languagesISO = viewModel.languagesISO

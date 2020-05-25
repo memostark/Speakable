@@ -9,7 +9,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
-        android:layout_height="160dp"
+        android:layout_height="180dp"
         android:background="?attr/popUpBackground"
         android:gravity="center">
 
@@ -58,11 +58,40 @@
             android:layout_marginStart="32dp"
             android:text="@string/page_setting"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-            app:layout_constraintBottom_toBottomOf="@+id/split_page_btn"
+            app:layout_constraintBottom_toBottomOf="@+id/page_toggle_container"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/split_page_btn" />
+            app:layout_constraintTop_toTopOf="@+id/page_toggle_container" />
 
-        <ImageButton
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/page_toggle_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/textView"
+            app:layout_constraintTop_toBottomOf="@+id/beige_bg_btn"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <Button
+                android:id="@+id/single_page_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_rect"
+                app:iconTint="?iconTintColor"
+                style="@style/Widget.App.Button.OutlinedButton.IconOnly" />
+
+            <Button
+                android:id="@+id/split_page_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_setting_split"
+                app:iconTint="?iconTintColor"
+                style="@style/Widget.App.Button.OutlinedButton.IconOnly"/>
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!--<ImageButton
             android:id="@+id/split_page_btn"
             android:layout_width="24dp"
             android:layout_height="24dp"
@@ -88,7 +117,7 @@
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toEndOf="@+id/textView"
             app:layout_constraintTop_toTopOf="@+id/split_page_btn"
-            app:srcCompat="@drawable/ic_rect" />
+            app:srcCompat="@drawable/ic_rect" />-->
 
         <Spinner
             android:id="@+id/spinner_language_from"
