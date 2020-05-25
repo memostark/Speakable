@@ -59,8 +59,6 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private lateinit var scaleDetector: ScaleGestureDetector
 
-    private lateinit var languagesISO: Array<String>
-
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         setPreferenceTheme()
@@ -117,8 +115,6 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         setUIChangesListener()
         setUpSeekBar()
-
-        languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
     }
 
     /**
@@ -244,6 +240,8 @@ class VisualizeTextActivity: AppCompatActivity() {
                 bottomText.text = text
                 pagesAdapter.notifyItemChanged(it)
             })
+
+            languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
     }
 
@@ -274,74 +272,38 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun showSettingsPopUp(view: View) {
-        val layout = LayoutInflater.from(this).inflate(R.layout.pop_up_settings, view.rootView as ViewGroup, false)
 
-        // Brightness settings
-        layout.findViewById<Button>(R.id.white_bg_btn).setOnClickListener {setBackgroundColor(BrightnessTheme.WHITE)}
-        layout.findViewById<Button>(R.id.beige_bg_btn).setOnClickListener {setBackgroundColor(BrightnessTheme.BEIGE)}
-        layout.findViewById<Button>(R.id.black_bg_btn).setOnClickListener {setBackgroundColor(BrightnessTheme.BLACK)}
+        val popUpCallback = object: VisualizerSettingsWindow.Callback{
 
-        // Split view
-        val splitPref: ImageButton = layout.findViewById(R.id.split_page_btn)
-        val singlePagePref: ImageButton = layout.findViewById(R.id.single_page_btn)
+            override fun onBackgroundColorSet(theme: BrightnessTheme) {
+                setBackgroundColor(theme)
+            }
 
-        splitPref.setOnClickListener {
-            setSplitPageMode(true)
-
-            splitPref.isSelected = true
-            singlePagePref.isSelected = false
-        }
-        singlePagePref.setOnClickListener {
-            setSplitPageMode(false)
-
-            splitPref.isSelected = false
-            singlePagePref.isSelected = true
+            override fun onPageMode(isSplit: Boolean) {
+                setSplitPageMode(isSplit)
+            }
         }
 
-        splitPref.isSelected = pagesAdapter.hasBottomSheet
-        singlePagePref.isSelected = !pagesAdapter.hasBottomSheet
-
-        // Languages preferences
-        val fromAdapter = ArrayAdapter.createFromResource(
-            this,
-            R.array.googleTranslateLangsWithAutoArray,
-            android.R.layout.simple_spinner_dropdown_item
-        )
-        val toAdapter = ArrayAdapter.createFromResource(
-            this,
-            R.array.googleTranslateLanguagesArray,
-            android.R.layout.simple_spinner_dropdown_item
-        )
-        val spinnerListener = SpinnerListener(viewModel, languagesISO)
-
-        val fromMenu: Spinner = layout.findViewById(R.id.spinner_language_from)
-        fromMenu.adapter = fromAdapter
-        var index = languagesISO.indexOf(viewModel.languageFrom) + 1 // Increment because the list we searched is missing one element "auto"
-        fromMenu.setSelection(index, false)
-        fromMenu.onItemSelectedListener = spinnerListener
-
-        val toMenu: Spinner = layout.findViewById(R.id.spinner_language_to)
-        toMenu.adapter = toAdapter
-        index = languagesISO.indexOf(viewModel.languageTo)
-        if(index == -1) index = 15 // 15 is English, the default.
-        toMenu.setSelection(index, false)
-        toMenu.onItemSelectedListener = spinnerListener
-
-        PopupWindow(
-            layout,
+        VisualizerSettingsWindow(
+            view,
+            viewModel,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             isFocusable = true
             elevation = 8f
+            callback = popUpCallback
             showAtLocation(view, Gravity.START or Gravity.BOTTOM, 24, 24)
         }
+
+
     }
 
     private fun setSplitPageMode(splitPage: Boolean){
         val position = viewModel.currentPage
 
         pagesAdapter.hasBottomSheet = splitPage
+        viewModel.hasBottomSheet = splitPage
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
 
@@ -449,7 +411,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val adapter = ArrayAdapter(this, R.layout.dialog_item, titles)
 
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Table of contents")
+            .setTitle(resources.getString(R.string.table_of_contents))
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setAdapter(adapter) { _, i ->
                 val path = filePaths[i]
@@ -593,25 +555,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         val peekHeight = this.dpToPixel(30) + viewPager.height / 2
 
         bottomSheetBehavior.peekHeight = peekHeight
-    }
-
-    class SpinnerListener(
-        val viewModel: VisualizeTextViewModel,
-        private val languagesISO: Array<String>
-    ) : AdapterView.OnItemSelectedListener {
-        override fun onNothingSelected(parent: AdapterView<*>?) {}
-
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-            parent ?: return
-
-            when (parent.id) {
-                R.id.spinner_language_from -> {
-                    viewModel.languageFrom = if (position == 0) "auto" else languagesISO[position - 1]
-                }
-                R.id.spinner_language_to -> viewModel.languageTo = languagesISO[position]
-                else -> {}
-            }
-        }
     }
 
     companion object{

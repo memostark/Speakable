@@ -64,6 +64,11 @@ class VisualizeTextViewModel @Inject constructor(
     private val _translatedPageIndex = MutableLiveData<Int>()
     val translatedPageIndex: LiveData<Int> = _translatedPageIndex
 
+    // Settings
+    var hasBottomSheet = false
+
+    var languagesISO  = arrayOf<String>()
+
     var languageFrom = "auto"
     var languageTo = "en"
 
