@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.Words
@@ -16,6 +17,7 @@ import javax.inject.Inject
 
 class VisualizeTextViewModel @Inject constructor(
     private val epubParser: EpubParser,
+    private val settings: SettingsRepository,
     private val fileRepository: FileRepository,
     private val getTranslationInteractor: GetLangAndTranslation
 ): ViewModel() {
@@ -69,8 +71,16 @@ class VisualizeTextViewModel @Inject constructor(
 
     var languagesISO  = arrayOf<String>()
 
-    var languageFrom = "auto"
-    var languageTo = "en"
+    var languageFrom = settings.getLanguageFrom()
+        set(value) {
+            field = value
+            settings.setLanguageFrom(value)
+        }
+    var languageTo = settings.getLanguageTo()
+        set(value) {
+            field = value
+            settings.setLanguageTo(value)
+        }
 
 
     fun parseEpub() {

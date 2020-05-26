@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.importtext.visualize
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
+import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.BookFile
@@ -43,6 +45,7 @@ class VisualizeTextViewModelTest {
     @Mock private lateinit var fileReader: DefaultZipFileReader
     private lateinit var fileRepository: FakeFileRepository
     private lateinit var wordRepository: FakeWordRepository
+    private lateinit var settingsRepository: FakeSettingsRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
@@ -54,10 +57,11 @@ class VisualizeTextViewModelTest {
 
         fileRepository = FakeFileRepository()
         wordRepository = FakeWordRepository()
+        settingsRepository = FakeSettingsRepository()
 
         val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
 
-        viewModel = VisualizeTextViewModel(epubParser, fileRepository, getTranslationInteractor)
+        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, getTranslationInteractor)
         viewModel.pageSplitter = pageSplitter
         viewModel.fileReader = fileReader
 
