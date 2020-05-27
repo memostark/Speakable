@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.data.source;
 
 import androidx.lifecycle.LiveData;
 
+import com.guillermonegrete.tts.data.Result;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.di.ApplicationModule;
@@ -93,6 +94,16 @@ public class WordRepository implements WordRepositorySource {
             }
         });
 
+    }
+
+    @Override
+    public Result<Words> getLanguageAndTranslation(String text, String languageFrom, String languageTo) {
+        try{
+            Words wordTranslation = remoteTranslatorSource.getWordLanguageInfo(text, languageFrom, languageTo);
+            return new Result.Success<>(wordTranslation);
+        }catch (Exception e){
+            return new Result.Error<>(e);
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.source.local;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.guillermonegrete.tts.data.source.WordDataSource;
@@ -39,6 +40,12 @@ public class WordLocalDataSource implements WordDataSource {
         }else {
             callback.onWordLoaded(retrieved_word);
         }
+    }
+
+    @Override
+    public Words getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo) {
+        // TODO implement
+        return null;
     }
 
     @Override

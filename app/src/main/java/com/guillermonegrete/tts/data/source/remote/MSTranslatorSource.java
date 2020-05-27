@@ -96,6 +96,12 @@ public class MSTranslatorSource implements WordDataSource {
 
     }
 
+    @Override
+    public Words getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo) {
+        // TODO implement
+        return null;
+    }
+
 
     public static class RequestBody{
         private String Text;

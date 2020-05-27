@@ -11,10 +11,10 @@ class FakeSettingsRepository: SettingsRepository {
     }
 
     override fun getLanguageTo(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return "en"
     }
 
     override fun getLanguageFrom(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return "auto"
     }
 }

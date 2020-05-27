@@ -4,10 +4,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
-import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
@@ -193,19 +193,20 @@ class VisualizeTextViewModel @Inject constructor(
     fun translatePage(index: Int){
         val text = currentPages[index].toString()
 
-        getTranslationInteractor(
-            text,
-            object : GetLangAndTranslation.Callback {
-                override fun onTranslationAndLanguage(word: Words) {
-                    _translatedPages[index] = word.definition // In this case is a translation
+        viewModelScope.launch{
+            val result = withContext(Dispatchers.IO) { getTranslationInteractor(text, languageFrom, languageTo) }
+
+            when(result){
+                is Result.Success -> {
+                    _translatedPages[index] = result.data.definition // In this case is a translation
                     _translatedPageIndex.value = index
                 }
-
-                override fun onDataNotAvailable() {}
-            },
-            languageFrom,
-            languageTo
-        )
+                is Result.Error -> {
+                    val error = result.exception
+                    error.printStackTrace()
+                }
+            }
+        }
     }
 
     /**

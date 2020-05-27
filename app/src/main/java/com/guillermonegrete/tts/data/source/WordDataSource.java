@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.source;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.guillermonegrete.tts.db.Words;
@@ -26,4 +27,6 @@ public interface WordDataSource {
     void deleteWords(Words... words);
 
     void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordCallback callback);
+
+    Words getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo);
 }
