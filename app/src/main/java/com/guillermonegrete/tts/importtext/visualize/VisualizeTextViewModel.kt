@@ -66,6 +66,12 @@ class VisualizeTextViewModel @Inject constructor(
     private val _translatedPageIndex = MutableLiveData<Int>()
     val translatedPageIndex: LiveData<Int> = _translatedPageIndex
 
+    private val _translationLoading = MutableLiveData<Boolean>()
+    val translationLoading: LiveData<Boolean> = _translationLoading
+
+    private val _translationError= MutableLiveData<String>()
+    val translationError: LiveData<String> = _translationError
+
     // Settings
     var hasBottomSheet = false
 
@@ -191,7 +197,10 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun translatePage(index: Int){
+        _translationLoading.value = true
         val text = currentPages[index].toString()
+
+        if(translatedPages[index] != null) return
 
         viewModelScope.launch{
             val result = withContext(Dispatchers.IO) { getTranslationInteractor(text, languageFrom, languageTo) }
@@ -204,8 +213,11 @@ class VisualizeTextViewModel @Inject constructor(
                 is Result.Error -> {
                     val error = result.exception
                     error.printStackTrace()
+                    _translationError.value = error.message
                 }
             }
+
+            _translationLoading.value = false
         }
     }
 

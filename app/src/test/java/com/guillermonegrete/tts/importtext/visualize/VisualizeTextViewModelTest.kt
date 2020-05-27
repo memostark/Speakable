@@ -4,7 +4,6 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
 import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
-import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.BookFile
@@ -320,7 +319,7 @@ class VisualizeTextViewModelTest {
 
         // Setup
         val pages = listOf("", "", "Página para traducir", "", "")
-        `when`(pageSplitter.getPages()).thenReturn(pages)
+        splitPages(pages)
         parse_book(DEFAULT_BOOK)
 
         val pageIndex = 2
@@ -332,6 +331,19 @@ class VisualizeTextViewModelTest {
 
         val resultIndex = getUnitLiveDataValue(viewModel.translatedPageIndex)
         assertEquals(expectedTranslation, viewModel.translatedPages[resultIndex])
+    }
+
+    @Test
+    fun `Translating page error`(){
+        //Set up
+        val pages = listOf("", "", "Página para traducir", "", "")
+        splitPages(pages)
+        parse_book(DEFAULT_BOOK)
+
+        viewModel.translatePage(2)
+
+        val errorMsg = getUnitLiveDataValue(viewModel.translationError)
+        assertEquals("Translation not found", errorMsg)
     }
 
     private fun parse_book(book: Book){
@@ -346,6 +358,10 @@ class VisualizeTextViewModelTest {
 
     private fun splitPages(pagesSize: Int){
         val pages = Array(pagesSize) {"n"}.toList()
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+    }
+
+    private fun splitPages(pages: List<String>){
         `when`(pageSplitter.getPages()).thenReturn(pages)
     }
 

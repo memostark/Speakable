@@ -43,6 +43,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var bottomSheet: ViewGroup
     private lateinit var bottomText: TextView
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<ViewGroup>
+    private lateinit var translationProgress: ProgressBar
 
     private var pageItemView: View? = null
 
@@ -72,6 +73,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
         bottomText = findViewById(R.id.page_bottom_text_view)
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+        translationProgress = findViewById(R.id.page_translation_progress)
 
         rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
 
@@ -239,6 +241,15 @@ class VisualizeTextActivity: AppCompatActivity() {
                 val text = viewModel.translatedPages[it]
                 bottomText.text = text
                 pagesAdapter.notifyItemChanged(it)
+            })
+
+            translationLoading.observe(this@VisualizeTextActivity, Observer {
+                translationProgress.visibility = if(it) View.VISIBLE else View.INVISIBLE
+                bottomText.visibility = if(it) View.INVISIBLE else View.VISIBLE
+            })
+
+            translationError.observe(this@VisualizeTextActivity, Observer {
+                Toast.makeText(this@VisualizeTextActivity, "Couldn't get translation.", Toast.LENGTH_SHORT).show()
             })
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
@@ -515,10 +526,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         val translateBtn: Button = findViewById(R.id.page_translate_btn)
         translateBtn.setOnClickListener {
             val position = viewPager.currentItem
-            val translatedText = viewModel.translatedPages[position]
-            if(translatedText == null) {
-                viewModel.translatePage(position)
-            }
+            viewModel.translatePage(position)
+
             setFullBottomSheet(true)
         }
 

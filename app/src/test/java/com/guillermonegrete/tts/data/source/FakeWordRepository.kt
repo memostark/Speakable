@@ -55,11 +55,11 @@ class FakeWordRepository: WordRepositorySource {
     }
 
     override fun getLanguageAndTranslation(
-        text: String?,
-        languageFrom: String?,
-        languageTo: String?
+        text: String,
+        languageFrom: String,
+        languageTo: String
     ): Result<Words> {
-        val word = translationsData[text] ?: return Result.Error(Exception("Word not found"))
+        val word = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
         return Result.Success(word)
     }
 

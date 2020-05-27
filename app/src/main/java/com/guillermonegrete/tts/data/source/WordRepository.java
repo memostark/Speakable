@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.source;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.guillermonegrete.tts.data.Result;
@@ -97,7 +98,7 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public Result<Words> getLanguageAndTranslation(String text, String languageFrom, String languageTo) {
+    public Result<Words> getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo) {
         try{
             Words wordTranslation = remoteTranslatorSource.getWordLanguageInfo(text, languageFrom, languageTo);
             return new Result.Success<>(wordTranslation);

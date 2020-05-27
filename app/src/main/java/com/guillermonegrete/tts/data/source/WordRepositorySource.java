@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.source;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.guillermonegrete.tts.data.Result;
@@ -44,7 +45,7 @@ public interface WordRepositorySource {
      */
     void getLanguageAndTranslation(String text, String languageFrom, String languageTo, GetTranslationCallback callback);
 
-    Result<Words> getLanguageAndTranslation(String text, String languageFrom, String languageTo);
+    Result<Words> getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo);
 
     void deleteWord(String word);
 
