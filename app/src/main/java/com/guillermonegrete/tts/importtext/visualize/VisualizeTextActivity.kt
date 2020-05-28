@@ -245,11 +245,12 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             translationLoading.observe(this@VisualizeTextActivity, Observer {
                 translationProgress.visibility = if(it) View.VISIBLE else View.INVISIBLE
-                bottomText.visibility = if(it) View.INVISIBLE else View.VISIBLE
+                if(it) bottomText.text = ""
             })
 
             translationError.observe(this@VisualizeTextActivity, Observer {
                 Toast.makeText(this@VisualizeTextActivity, "Couldn't get translation.", Toast.LENGTH_SHORT).show()
+                bottomText.text = getString(R.string.click_to_translate_msg)
             })
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)

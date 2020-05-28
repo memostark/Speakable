@@ -161,9 +161,10 @@ class EpubParser constructor(
     }
 
     private fun readManifest(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_MANIFEST
-        )
+        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_MANIFEST)
+
+        manifest.clear()
+
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             if(parser.name == XML_ELEMENT_MANIFESTITEM) readManifestItem(parser)
@@ -172,26 +173,23 @@ class EpubParser constructor(
     }
 
     private fun readManifestItem(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_MANIFESTITEM
-        )
+        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_MANIFESTITEM)
+
         val id = parser.getAttributeValue(null, "id")
         val href = parser.getAttributeValue(null, "href")
         parser.nextTag()
         manifest[id] = href
-        parser.require(XmlPullParser.END_TAG, ns,
-            XML_ELEMENT_MANIFESTITEM
-        )
+        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_MANIFESTITEM)
     }
 
     private fun readSpine(parser: XmlPullParser) {
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_SPINE
-        )
-        val tocId = parser.getAttributeValue(null,
-            XML_ATTRIBUTE_TOC
-        )
+        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_SPINE)
+
+        val tocId = parser.getAttributeValue(null, XML_ATTRIBUTE_TOC)
         tocPath = manifest[tocId] ?: ""
+
+        spineIdRefs.clear()
+
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             if(parser.name == XML_ELEMENT_ITEMREF) readSpineItem(parser)
@@ -200,17 +198,12 @@ class EpubParser constructor(
     }
 
     private fun readSpineItem(parser: XmlPullParser) {
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_ITEMREF
-        )
-        val idref = parser.getAttributeValue(null,
-            XML_ATTRIBUTE_IDREF
-        )
+        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_ITEMREF)
+        val idRef = parser.getAttributeValue(null, XML_ATTRIBUTE_IDREF)
+
         parser.nextTag()
-        spineIdRefs.add(idref)
-        parser.require(XmlPullParser.END_TAG, ns,
-            XML_ELEMENT_ITEMREF
-        )
+        spineIdRefs.add(idRef)
+        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_ITEMREF)
     }
 
     /**
