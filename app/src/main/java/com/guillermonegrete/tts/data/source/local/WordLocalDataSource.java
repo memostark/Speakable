@@ -44,8 +44,7 @@ public class WordLocalDataSource implements WordDataSource {
 
     @Override
     public Words getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo) {
-        // TODO implement
-        return null;
+        return mWordDAO.findWord(wordText);
     }
 
     @Override
