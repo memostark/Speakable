@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
@@ -28,6 +29,8 @@ class VisualizeTextViewModel @Inject constructor(
     private var isEpub = false
     private var firstLoad = true
     private var leftSwipe = false
+
+    private var cleared = false
 
     private var text = ""
     var currentPage = 0
@@ -69,8 +72,8 @@ class VisualizeTextViewModel @Inject constructor(
     private val _translationLoading = MutableLiveData<Boolean>()
     val translationLoading: LiveData<Boolean> = _translationLoading
 
-    private val _translationError= MutableLiveData<String>()
-    val translationError: LiveData<String> = _translationError
+    private val _translationError= MutableLiveData<Event<String>>()
+    val translationError: LiveData<Event<String>> = _translationError
 
     // Settings
     var hasBottomSheet = false
@@ -213,7 +216,7 @@ class VisualizeTextViewModel @Inject constructor(
                 is Result.Error -> {
                     val error = result.exception
                     error.printStackTrace()
-                    _translationError.value = error.message
+                    _translationError.value = Event(error.message ?: "Unknown error")
                 }
             }
 
@@ -250,13 +253,18 @@ class VisualizeTextViewModel @Inject constructor(
         _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
     }
 
+    override fun onCleared() {
+        if(!cleared) onFinish()
+        super.onCleared()
+    }
+
     /**
-     * Called when view or application is about to be destroyed.
-     * The date is injected only when testing, function should be
-     * called without parameters.
+     * Sometimes is necessary to wrap up before onCleared is called (e.g. when changing theme)
+     * This function can be called before activity/fragment is destroyed.
      */
-    fun onFinish(date: Calendar = Calendar.getInstance()){
+    fun onFinish(date: Calendar = Calendar.getInstance()) {
         saveBookFileData(date)
+        cleared = true
     }
 
     private fun saveBookFileData(date: Calendar){

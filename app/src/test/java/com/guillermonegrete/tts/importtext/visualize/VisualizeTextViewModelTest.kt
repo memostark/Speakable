@@ -310,8 +310,6 @@ class VisualizeTextViewModelTest {
         viewModel.onFinish(lastReadDate)
 
         assertEquals(1, fileRepository.filesServiceData.values.size)
-
-
     }
 
     @Test
@@ -343,7 +341,7 @@ class VisualizeTextViewModelTest {
         viewModel.translatePage(2)
 
         val errorMsg = getUnitLiveDataValue(viewModel.translationError)
-        assertEquals("Translation not found", errorMsg)
+        assertEquals("Translation not found", errorMsg.peekContent())
     }
 
     private fun parse_book(book: Book){

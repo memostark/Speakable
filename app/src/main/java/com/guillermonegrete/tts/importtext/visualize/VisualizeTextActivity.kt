@@ -17,6 +17,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
@@ -166,12 +167,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(hasFocus && isFullScreen) hideSystemUi()
     }
 
-
-    override fun onDestroy() {
-        viewModel.onFinish()
-        super.onDestroy()
-    }
-
     private fun setUIChangesListener() {
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
             if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && isFullScreen) {
@@ -248,8 +243,8 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(it) bottomText.text = ""
             })
 
-            translationError.observe(this@VisualizeTextActivity, Observer {
-                Toast.makeText(this@VisualizeTextActivity, "Couldn't get translation.", Toast.LENGTH_SHORT).show()
+            translationError.observe(this@VisualizeTextActivity, EventObserver {
+                Toast.makeText(this@VisualizeTextActivity, getString(R.string.error_translation), Toast.LENGTH_SHORT).show()
                 bottomText.text = getString(R.string.click_to_translate_msg)
             })
 
