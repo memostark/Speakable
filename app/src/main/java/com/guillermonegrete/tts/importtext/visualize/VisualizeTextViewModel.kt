@@ -87,8 +87,11 @@ class VisualizeTextViewModel @Inject constructor(
         }
     var languageTo = settings.getLanguageTo()
         set(value) {
-            field = value
-            settings.setLanguageTo(value)
+            if(field != value) {
+                field = value
+                settings.setLanguageTo(value)
+                _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
+            }
         }
 
 
@@ -200,10 +203,10 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun translatePage(index: Int){
-        _translationLoading.value = true
         val text = currentPages[index].toString()
 
         if(translatedPages[index] != null) return
+        _translationLoading.value = true
 
         viewModelScope.launch{
             val result = withContext(Dispatchers.IO) { getTranslationInteractor(text, languageFrom, languageTo) }
