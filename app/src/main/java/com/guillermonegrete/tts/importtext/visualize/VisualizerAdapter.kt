@@ -16,13 +16,16 @@ import java.util.*
 class VisualizerAdapter(
     private val pages: List<CharSequence>,
     private val showTextDialog: (CharSequence) -> Unit,
-    val viewModel: VisualizeTextViewModel
+    val viewModel: VisualizeTextViewModel,
+    private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var isExpanded = false
-    var hasBottomSheet = false
+    val hasBottomSheet
+        get() = viewModel.hasBottomSheet
 
-    var isPageSplit = false
+    val isPageSplit
+        get() = viewModel.isSheetExpanded
 
     private var pageMarginsSize = 0
 
@@ -61,7 +64,7 @@ class VisualizerAdapter(
     }
 
     override fun getItemViewType(position: Int): Int {
-        if(hasBottomSheet) return R.layout.visualizer_split_page_item
+        if(hasBottomSheet && !measuringPage) return R.layout.visualizer_split_page_item
         return R.layout.visualizer_page_item
     }
 

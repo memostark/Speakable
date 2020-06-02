@@ -82,7 +82,8 @@
                     app:iconPadding="0dp"
                     app:iconTint="?iconTintColor"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/peek_view" />
+                    app:layout_constraintTop_toTopOf="@id/peek_view"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Button.Circle"/>
 
                 <TextView
                     android:id="@+id/page_bottom_text_view"

@@ -20,6 +20,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -141,6 +142,24 @@ class VisualizeTextViewModelTest {
         assertEquals(0, viewModel.currentChapter)
         // Called twice, when first load and after swiping
         runBlockingTest { verify(epubParser, times(2)).getChapterBodyTextFromPath("ch1.html", fileReader) }
+    }
+
+    @Test
+    fun `Resets translation when swiping to another chapter`(){
+        val pages = listOf("", "", "Página para traducir", "", "")
+        splitPages(pages)
+        parse_book(TWO_CHAPTER_BOOK)
+
+        val pageIndex = 2
+        val expectedTranslation = "Page to translate"
+        wordRepository.addTranslation(Words(pages[pageIndex], "ES", expectedTranslation))
+
+        // Request translation
+        viewModel.translatePage(pageIndex)
+
+        viewModel.swipeChapterRight()
+
+        assertTrue(viewModel.translatedPages[pageIndex] == null)
     }
 
     @Test

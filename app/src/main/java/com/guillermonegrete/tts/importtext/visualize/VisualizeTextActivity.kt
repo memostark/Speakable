@@ -81,8 +81,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         contractedConstraintSet.clone(rootConstraintLayout)
         expandedConstraintSet.clone(this, R.layout.activity_visualize_text_expanded)
 
-        createViewModel()
-
         currentPageLabel = findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
@@ -97,7 +95,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf(""),
-            {}, viewModel) // Empty callback, not necessary at the moment
+            {}, viewModel, true) // Empty callback, not necessary at the moment
         viewPager.setPageTransformer { view, position ->
             pageItemView = view
 
@@ -250,6 +248,10 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
+
+        // Restore UI state in case of config change
+        bottomSheet.visibility = if(viewModel.hasBottomSheet) View.VISIBLE else View.GONE
+        setFullBottomSheet(viewModel.isSheetExpanded)
     }
 
     private fun initParse(){
@@ -309,7 +311,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setSplitPageMode(splitPage: Boolean){
         val position = viewModel.currentPage
 
-        pagesAdapter.hasBottomSheet = splitPage
         viewModel.hasBottomSheet = splitPage
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
@@ -380,6 +381,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setUpPageParsing(focusedView: View){
         // Execute only one time
         if(splitterCreated) {
+
+            createViewModel()
 
             val pageTextView: TextView = focusedView as TextView
             viewModel.pageSplitter = createPageSplitter(pageTextView)
@@ -547,7 +550,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             private fun setSplitMode(isSplit: Boolean){
                 pagesAdapter.notifyItemRangeChanged(0, pagesAdapter.itemCount, isSplit)
-                pagesAdapter.isPageSplit = isSplit
+                viewModel.isSheetExpanded = isSplit
             }
         })
     }

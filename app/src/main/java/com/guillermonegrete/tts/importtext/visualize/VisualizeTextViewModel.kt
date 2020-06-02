@@ -77,6 +77,7 @@ class VisualizeTextViewModel @Inject constructor(
 
     // Settings
     var hasBottomSheet = false
+    var isSheetExpanded = false
 
     var languagesISO  = arrayOf<String>()
 
@@ -250,10 +251,11 @@ class VisualizeTextViewModel @Inject constructor(
         val mutablePages = splitter.getPages().toMutableList()
         if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
         pagesSize = mutablePages.size
-        _pages.value = mutablePages
 
         currentPages = mutablePages
         _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
+
+        _pages.value = mutablePages
     }
 
     override fun onCleared() {
