@@ -102,7 +102,7 @@ class VisualizeTextViewModelTest {
 
         parse_book(DEFAULT_BOOK)
 
-        val resultPages = getUnitLiveDataValue(viewModel.pages)
+        val resultPages = getUnitLiveDataValue(viewModel.pages).getContentIfNotHandled()
         assertEquals(pages, resultPages)
     }
 
@@ -115,7 +115,7 @@ class VisualizeTextViewModelTest {
 
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
-        val resultPages = getUnitLiveDataValue(viewModel.pages)
+        val resultPages = getUnitLiveDataValue(viewModel.pages).getContentIfNotHandled()
         // If it has only one page, then returns two pages (swipe doesn't work with 1 page)
         val expectedPages = listOf("This shouldn't be here", "")
         assertEquals(expectedPages, resultPages)
@@ -239,6 +239,31 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
+    fun `When configuration change keep current chapter and page`(){
+        // Set up with saved values
+        val initialPage = 2
+        val initialChapter = 3
+        bookFile.page = initialPage
+        bookFile.chapter = initialChapter
+        fileRepository.addTasks(bookFile)
+
+        splitPages(5)
+        viewModel.fileId = bookFile.id
+        parse_book(DEFAULT_BOOK)
+        viewModel.getPage()
+
+        // User modifies values
+        viewModel.swipeChapterRight()
+        viewModel.currentPage = initialPage + 1
+
+        // On config change book is parsed again
+        parse_book(DEFAULT_BOOK)
+
+        assertEquals(4, viewModel.currentChapter)
+        assertEquals(3, viewModel.getPage())
+    }
+
+    @Test
     fun saves_current_file_when_finishing(){
         // Set up
         val uri = "empty_uri"
@@ -288,10 +313,10 @@ class VisualizeTextViewModelTest {
         // Initial state
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = bookFile.id
+
+        splitPages(4)
         parse_book(DEFAULT_BOOK)
-
-
-        splitPages(7)
+        viewModel.getPage()
 
         // Swipe to right
         viewModel.swipeChapterRight()
@@ -346,7 +371,7 @@ class VisualizeTextViewModelTest {
         // Request translation
         viewModel.translatePage(pageIndex)
 
-        val resultIndex = getUnitLiveDataValue(viewModel.translatedPageIndex)
+        val resultIndex = getUnitLiveDataValue(viewModel.translatedPageIndex).getContentIfNotHandled() ?: -1
         assertEquals(expectedTranslation, viewModel.translatedPages[resultIndex])
     }
 

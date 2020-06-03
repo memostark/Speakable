@@ -208,7 +208,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(!it) contractedConstraintSet.clone(rootConstraintLayout)
             })
 
-            pages.observe(this@VisualizeTextActivity, Observer {
+            pages.observe(this@VisualizeTextActivity, EventObserver {
                 updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
             })
@@ -230,7 +230,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 }
             })
 
-            translatedPageIndex.observe(this@VisualizeTextActivity, Observer {
+            translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
                 val text = viewModel.translatedPages[it]
                 bottomText.text = text
                 pagesAdapter.notifyItemChanged(it)

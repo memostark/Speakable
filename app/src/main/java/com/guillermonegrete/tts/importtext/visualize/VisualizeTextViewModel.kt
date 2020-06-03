@@ -27,14 +27,14 @@ class VisualizeTextViewModel @Inject constructor(
     var fileReader: ZipFileReader? = null
 
     private var isEpub = false
-    private var firstLoad = true
+    var firstLoad = true
     private var leftSwipe = false
 
     private var cleared = false
 
     private var text = ""
-    var currentPage = 0
-    var currentChapter = 0
+    var currentPage = -1
+    var currentChapter = -1
         private set
 
     var spineSize = 0
@@ -55,8 +55,8 @@ class VisualizeTextViewModel @Inject constructor(
         get() = _book
 
     private var currentPages = listOf<CharSequence>()
-    private val _pages = MutableLiveData<List<CharSequence>>()
-    val pages: LiveData<List<CharSequence>>
+    private val _pages = MutableLiveData<Event<List<CharSequence>>>()
+    val pages: LiveData<Event<List<CharSequence>>>
         get() = _pages
 
     private val _dataLoading = MutableLiveData<Boolean>()
@@ -66,8 +66,8 @@ class VisualizeTextViewModel @Inject constructor(
     val translatedPages: List<CharSequence?>
         get() = _translatedPages
 
-    private val _translatedPageIndex = MutableLiveData<Int>()
-    val translatedPageIndex: LiveData<Int> = _translatedPageIndex
+    private val _translatedPageIndex = MutableLiveData<Event<Int>>()
+    val translatedPageIndex: LiveData<Event<Int>> = _translatedPageIndex
 
     private val _translationLoading = MutableLiveData<Boolean>()
     val translationLoading: LiveData<Boolean> = _translationLoading
@@ -97,6 +97,7 @@ class VisualizeTextViewModel @Inject constructor(
 
 
     fun parseEpub() {
+        firstLoad = true
         val reader = fileReader ?: return
 
         _dataLoading.value = true
@@ -122,6 +123,7 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun parseSimpleText(text: String){
+        firstLoad = true
         viewModelScope.launch {
             fileType = ImportedFileType.TXT
             this@VisualizeTextViewModel.text = text
@@ -160,17 +162,19 @@ class VisualizeTextViewModel @Inject constructor(
     fun getPage(): Int{
         currentPage = if(firstLoad) {
             firstLoad = false
-            val initialPage = databaseBookFile?.page ?: 0
+            val initialPage = if(currentPage == -1) databaseBookFile?.page ?: 0 else currentPage
             if (initialPage >= pagesSize) pagesSize - 1 else initialPage
         } else if(leftSwipe) pagesSize - 1 else 0
+
         return currentPage
     }
 
     private suspend fun initPageSplit() {
         if(isEpub){
             databaseBookFile = getBookFile()
-            val initialChapter = databaseBookFile?.chapter ?: 0
+            val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
             jumpToChapter(initialChapter)
+
         }else{
             splitToPages()
         }
@@ -215,7 +219,7 @@ class VisualizeTextViewModel @Inject constructor(
             when(result){
                 is Result.Success -> {
                     _translatedPages[index] = result.data.definition // In this case is a translation
-                    _translatedPageIndex.value = index
+                    _translatedPageIndex.value = Event(index)
                 }
                 is Result.Error -> {
                     val error = result.exception
@@ -255,7 +259,7 @@ class VisualizeTextViewModel @Inject constructor(
         currentPages = mutablePages
         _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
 
-        _pages.value = mutablePages
+        _pages.value = Event(mutablePages)
     }
 
     override fun onCleared() {
