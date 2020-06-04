@@ -199,5 +199,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         void onSpeakStart();
 
         void onSpeakDone();
+
+        void onError();
     }
 }

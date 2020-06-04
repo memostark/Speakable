@@ -16,10 +16,13 @@ import androidx.core.content.edit
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
+import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.android.AndroidInjection
 import javax.inject.Inject
 
@@ -33,10 +36,17 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var progressBar: ProgressBar
+    private lateinit var pagesSeekBar: SeekBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
 
-    private var pageTextView: TextView? = null
+    // Bottom sheet layout
+    private lateinit var bottomSheet: ViewGroup
+    private lateinit var bottomText: TextView
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<ViewGroup>
+    private lateinit var translationProgress: ProgressBar
+
+    private var pageItemView: View? = null
 
     private lateinit var pagesAdapter: VisualizerAdapter
 
@@ -47,7 +57,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     @Inject lateinit var brightnessTheme: BrightnessTheme
 
     private var splitterCreated = true
-    private var isFullScreen = false
 
     private lateinit var scaleDetector: ScaleGestureDetector
 
@@ -58,18 +67,24 @@ class VisualizeTextActivity: AppCompatActivity() {
         setContentView(R.layout.activity_visualize_text)
 
         progressBar = findViewById(R.id.visualizer_progress_bar)
+        pagesSeekBar = findViewById(R.id.pages_seekBar)
+
+        // Bottom sheet
+        bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
+        bottomText = findViewById(R.id.page_bottom_text_view)
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+        translationProgress = findViewById(R.id.page_translation_progress)
+
         rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
 
         contractedConstraintSet.clone(rootConstraintLayout)
         expandedConstraintSet.clone(this, R.layout.activity_visualize_text_expanded)
 
-        createViewModel()
-
         currentPageLabel = findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
-        brightnessButton.setOnClickListener { showBrightnessSettings(it) }
+        brightnessButton.setOnClickListener { showSettingsPopUp(it) }
 
         if(SHOW_EPUB != intent.action) {
             currentChapterLabel.visibility = View.GONE
@@ -78,9 +93,10 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager = findViewById(R.id.text_reader_viewpager)
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
-        viewPager.adapter = VisualizerAdapter(listOf("")) {} // Empty callback, not necessary at the moment
+        viewPager.adapter = VisualizerAdapter(listOf(""),
+            {}, viewModel, true) // Empty callback, not necessary at the moment
         viewPager.setPageTransformer { view, position ->
-            pageTextView = view as? TextView
+            pageItemView = view
 
             setUpPageParsing(view)
 
@@ -90,11 +106,15 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
         viewPager.post{
             addPagerCallback()
+
+            setBottomSheetPeekHeight()
+            setBottomSheetCallbacks()
         }
 
         scaleDetector = ScaleGestureDetector(this, PinchListener())
 
         setUIChangesListener()
+        setUpSeekBar()
     }
 
     /**
@@ -109,10 +129,10 @@ class VisualizeTextActivity: AppCompatActivity() {
         val actionId = ev?.actionMasked ?: -1
 
         if(eventInProgress){
-            if(pageTextView?.isShown == true) scaleDetector.onTouchEvent(ev)
+            if(pageItemView?.isShown == true) scaleDetector.onTouchEvent(ev)
             if(scaleDetector.isInProgress) {
                 // Cancel long press to avoid showing contextual action menu
-                pageTextView?.cancelLongPress()
+                pageItemView?.cancelLongPress()
                 scaleInProgress = true
                 // Don't pass event when scaling
                 return true
@@ -123,10 +143,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             MotionEvent.ACTION_DOWN -> eventInProgress = true
             MotionEvent.ACTION_UP -> {
                 eventInProgress = false
+
                 if(scaleInProgress){
                     // Removes lingering highlight from text
-                    val span = pageTextView?.text as? Spannable
-                    Selection.removeSelection(span)
+                    val item = pageItemView
+                    if(item is TextView){
+                        val span = item.text as? Spannable
+                        Selection.removeSelection(span)
+                    }
                     scaleInProgress = false
                 }
             }
@@ -137,24 +161,35 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if(hasFocus && isFullScreen) hideSystemUi()
-    }
+        if(hasFocus && viewModel.fullScreen) {
 
-
-    override fun onDestroy() {
-        viewModel.onFinish()
-        super.onDestroy()
+            // Only hide the UI when page splitter has been created to avoid incorrect size measuring
+            if(splitterCreated) hideSystemUi()
+        }
     }
 
     private fun setUIChangesListener() {
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && isFullScreen) {
-                // The system bars are visible. Make any desired
-                Toast.makeText(this, "Bars are visible", Toast.LENGTH_SHORT).show()
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && viewModel.fullScreen) {
+                // The system bars are visible
                 val handler = Handler()
                 handler.postDelayed({ hideSystemUi() }, 3000)
             }
         }
+    }
+
+    private fun setUpSeekBar(){
+
+        pagesSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if(fromUser) viewPager.currentItem = progress
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
     }
 
     // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
@@ -172,9 +207,10 @@ class VisualizeTextActivity: AppCompatActivity() {
                 progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
-            pages.observe(this@VisualizeTextActivity, Observer {
+            pages.observe(this@VisualizeTextActivity, EventObserver {
                 updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
+                updateScreenMode()
             })
 
             book.observe(this@VisualizeTextActivity, Observer {
@@ -184,16 +220,41 @@ class VisualizeTextActivity: AppCompatActivity() {
                     currentChapterLabel.visibility = View.VISIBLE
                 }
 
-                val showTOCBtn = findViewById<ImageButton>(R.id.show_toc_btn)
+                val showTOCBtn: ImageButton = findViewById(R.id.show_toc_btn)
                 val navPoints = it.tableOfContents.navPoints
-                if(navPoints.isEmpty()){
-                    showTOCBtn.visibility = View.GONE
+
+                val tocVisibility = if(navPoints.isEmpty()) {
+                    View.GONE
                 }else{
-                    showTOCBtn.visibility = View.VISIBLE
                     showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
+                    View.VISIBLE
                 }
+                showTOCBtn.visibility = tocVisibility
+                contractedConstraintSet.setVisibility(R.id.show_toc_btn, tocVisibility)
             })
+
+            translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
+                val text = viewModel.translatedPages[it]
+                bottomText.text = text
+                pagesAdapter.notifyItemChanged(it)
+            })
+
+            translationLoading.observe(this@VisualizeTextActivity, Observer {
+                translationProgress.visibility = if(it) View.VISIBLE else View.INVISIBLE
+                if(it) bottomText.text = ""
+            })
+
+            translationError.observe(this@VisualizeTextActivity, EventObserver {
+                Toast.makeText(this@VisualizeTextActivity, getString(R.string.error_translation), Toast.LENGTH_SHORT).show()
+                bottomText.text = getString(R.string.click_to_translate_msg)
+            })
+
+            languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
+
+        // Restore UI state in case of config change
+        bottomSheet.visibility = if(viewModel.hasBottomSheet) View.VISIBLE else View.GONE
+        setFullBottomSheet(viewModel.isSheetExpanded)
     }
 
     private fun initParse(){
@@ -210,33 +271,63 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
-        pagesAdapter = VisualizerAdapter(pages) { showTextDialog(it) }
+        pagesAdapter = VisualizerAdapter(pages, { showTextDialog(it) }, viewModel)
         viewPager.adapter = pagesAdapter
 
         val position = viewModel.getPage()
-        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 of 33
+        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
         viewPager.setCurrentItem(position, false)
 
+        // Subtract 1 because seek bar is zero based numbering
+        pagesSeekBar.max = pages.size - 1
+        pagesSeekBar.progress = position
     }
 
-    private fun showBrightnessSettings(view: View) {
-        val layout = LayoutInflater.from(this).inflate(R.layout.pop_up_brightness_settings, view.rootView as ViewGroup, false)
-        val whiteBtn: Button = layout.findViewById(R.id.white_bg_btn)
-        val beigeBtn: Button = layout.findViewById(R.id.beige_bg_btn)
-        val blackBtn: Button = layout.findViewById(R.id.black_bg_btn)
-        whiteBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.WHITE)}
-        beigeBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BEIGE)}
-        blackBtn.setOnClickListener {setBackgroundColor(BrightnessTheme.BLACK)}
+    private fun updateScreenMode() {
+        if(viewModel.fullScreen) {
+            hideSystemUi()
+            expandedConstraintSet.applyTo(rootConstraintLayout)
 
-        PopupWindow(
-            layout,
+            viewPager.post { setBottomSheetPeekHeight() }
+        }
+    }
+
+    private fun showSettingsPopUp(view: View) {
+
+        val popUpCallback = object: VisualizerSettingsWindow.Callback{
+
+            override fun onBackgroundColorSet(theme: BrightnessTheme) {
+                setBackgroundColor(theme)
+            }
+
+            override fun onPageMode(isSplit: Boolean) {
+                setSplitPageMode(isSplit)
+            }
+        }
+
+        VisualizerSettingsWindow(
+            view,
+            viewModel,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
             isFocusable = true
             elevation = 8f
+            callback = popUpCallback
             showAtLocation(view, Gravity.START or Gravity.BOTTOM, 24, 24)
         }
+
+
+    }
+
+    private fun setSplitPageMode(splitPage: Boolean){
+        val position = viewModel.currentPage
+
+        viewModel.hasBottomSheet = splitPage
+        viewPager.adapter = pagesAdapter
+        viewPager.setCurrentItem(position, false)
+
+        bottomSheet.visibility = if(splitPage) View.VISIBLE else View.GONE
     }
 
     private fun setBackgroundColor(theme: BrightnessTheme){
@@ -255,10 +346,18 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun addPagerCallback(){
         var swipeFirst = false
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
+
             override fun onPageSelected(position: Int) {
                 viewModel.currentPage = position
+
                 val pageNumber = position + 1
                 currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
+
+                pagesSeekBar.progress = position
+
+                if(pagesAdapter.hasBottomSheet)
+                    bottomText.text = viewModel.translatedPages[position] ?: getString(R.string.click_to_translate_msg)
+
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -295,6 +394,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Execute only one time
         if(splitterCreated) {
 
+            createViewModel()
+
             val pageTextView: TextView = focusedView as TextView
             viewModel.pageSplitter = createPageSplitter(pageTextView)
             initParse()
@@ -305,7 +406,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun createPageSplitter(textView: TextView): PageSplitter {
         val lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
         val lineSpacingMultiplier = 1f
-        val pageItemPadding = (80 * resources.displayMetrics.density + 0.5f).toInt() // Convert dp to px, 0.5 is for rounding to closest integer
+        val pageItemPadding = this.dpToPixel(80 )
 
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
@@ -332,7 +433,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val adapter = ArrayAdapter(this, R.layout.dialog_item, titles)
 
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Table of contents")
+            .setTitle(resources.getString(R.string.table_of_contents))
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setAdapter(adapter) { _, i ->
                 val path = filePaths[i]
@@ -371,20 +472,23 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
-            detector?.let {
-                if(!pinchDetected){
-                    if(it.scaleFactor > PINCH_UPPER_LIMIT && !isFullScreen){
-                        toggleImmersiveMode()
-                        pinchDetected = true
-                        return true
-                    }
-                    if(it.scaleFactor < PINCH_LOWER_LIMIT && isFullScreen){
-                        toggleImmersiveMode()
-                        pinchDetected = true
-                        return true
-                    }
+            detector ?: return false
+
+            if(!pinchDetected){
+                val fullScreen = viewModel.fullScreen
+
+                if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
+                    toggleImmersiveMode()
+                    pinchDetected = true
+                    return true
+                }
+                if(detector.scaleFactor < PINCH_LOWER_LIMIT && fullScreen){
+                    toggleImmersiveMode()
+                    pinchDetected = true
+                    return true
                 }
             }
+
             return false
         }
     }
@@ -392,14 +496,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun toggleImmersiveMode() {
         val position = viewModel.currentPage
 
-        isFullScreen = !isFullScreen
-        if(isFullScreen){
+        viewModel.fullScreen = !viewModel.fullScreen
+
+        if(viewModel.fullScreen){
             hideSystemUi()
 
             expandedConstraintSet.applyTo(rootConstraintLayout)
-
-            pagesAdapter.isExpanded = true
-
 
         }else{
             window.decorView.systemUiVisibility = 0
@@ -407,9 +509,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             contractedConstraintSet.applyTo(rootConstraintLayout)
 
-
-            pagesAdapter.isExpanded = false
         }
+
+        viewPager.post { setBottomSheetPeekHeight() }
 
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
@@ -428,6 +530,50 @@ class VisualizeTextActivity: AppCompatActivity() {
                 or View.SYSTEM_UI_FLAG_FULLSCREEN)
 
         actionBar?.hide()
+    }
+
+    private fun setBottomSheetCallbacks(){
+        val translateBtn: Button = findViewById(R.id.page_translate_btn)
+        translateBtn.setOnClickListener {
+            val position = viewPager.currentItem
+            viewModel.translatePage(position)
+
+            setFullBottomSheet(true)
+        }
+
+        val arrowBtn: Button = findViewById(R.id.arrow_btn)
+        arrowBtn.setOnClickListener {
+            val isFull = pagesAdapter.isPageSplit
+            setFullBottomSheet(!isFull)
+        }
+
+        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(bottomSheet: View, slideOffset: Float) { arrowBtn.rotation = slideOffset * 180 }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+
+                when(newState){
+                    BottomSheetBehavior.STATE_EXPANDED -> setSplitMode(true)
+                    BottomSheetBehavior.STATE_COLLAPSED -> setSplitMode(false)
+                    else -> {}
+                }
+            }
+
+            private fun setSplitMode(isSplit: Boolean){
+                pagesAdapter.notifyItemRangeChanged(0, pagesAdapter.itemCount, isSplit)
+                viewModel.isSheetExpanded = isSplit
+            }
+        })
+    }
+
+    private fun setFullBottomSheet(full: Boolean){
+        bottomSheetBehavior.state = if(full) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
+    }
+
+    private fun setBottomSheetPeekHeight(){
+        val peekHeight = this.dpToPixel(30) + viewPager.height / 2
+
+        bottomSheetBehavior.peekHeight = peekHeight
     }
 
     companion object{

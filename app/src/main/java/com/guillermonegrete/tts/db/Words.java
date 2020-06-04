@@ -11,6 +11,8 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
+import java.util.Objects;
+
 @Entity(tableName = "words")
 public class Words implements Parcelable {
     @PrimaryKey(autoGenerate = true)
@@ -44,19 +46,22 @@ public class Words implements Parcelable {
     }
 
 
-    public void setWord(String word){this.word = word;}
-    public void setLang(String lang){this.lang = lang;}
-    public void setDefinition(String definition){this.definition = definition;}
+    public void setWord(@NonNull String word){this.word = word;}
+    public void setLang(@NonNull String lang){this.lang = lang;}
+    public void setDefinition(@NonNull String definition){this.definition = definition;}
 
+    @NonNull
     public String getWord() {return word;}
+    @NonNull
     public String getLang() { return lang; }
+    @NonNull
     public String getDefinition() { return definition; }
 
     protected Words(Parcel in) {
         id = in.readInt();
-        word = in.readString();
-        lang = in.readString();
-        definition = in.readString();
+        word = Objects.requireNonNull(in.readString());
+        lang = Objects.requireNonNull(in.readString());
+        definition = Objects.requireNonNull(in.readString());
         notes = in.readString();
     }
 
@@ -84,5 +89,11 @@ public class Words implements Parcelable {
         dest.writeString(lang);
         dest.writeString(definition);
         dest.writeString(notes);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return String.format("Words(word=%s,lang=%s,definition=%s)", word, lang, definition);
     }
 }

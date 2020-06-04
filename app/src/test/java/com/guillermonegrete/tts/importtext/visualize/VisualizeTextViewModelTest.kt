@@ -2,18 +2,25 @@ package com.guillermonegrete.tts.importtext.visualize
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
+import com.guillermonegrete.tts.TestThreadExecutor
+import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
 import com.guillermonegrete.tts.data.source.FakeFileRepository
+import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -37,6 +44,8 @@ class VisualizeTextViewModelTest {
     @Mock private lateinit var epubParser: EpubParser
     @Mock private lateinit var fileReader: DefaultZipFileReader
     private lateinit var fileRepository: FakeFileRepository
+    private lateinit var wordRepository: FakeWordRepository
+    private lateinit var settingsRepository: FakeSettingsRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
@@ -47,7 +56,12 @@ class VisualizeTextViewModelTest {
         MockitoAnnotations.initMocks(this)
 
         fileRepository = FakeFileRepository()
-        viewModel = VisualizeTextViewModel(epubParser, fileRepository)
+        wordRepository = FakeWordRepository()
+        settingsRepository = FakeSettingsRepository()
+
+        val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
+
+        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, getTranslationInteractor)
         viewModel.pageSplitter = pageSplitter
         viewModel.fileReader = fileReader
 
@@ -88,7 +102,7 @@ class VisualizeTextViewModelTest {
 
         parse_book(DEFAULT_BOOK)
 
-        val resultPages = getUnitLiveDataValue(viewModel.pages)
+        val resultPages = getUnitLiveDataValue(viewModel.pages).getContentIfNotHandled()
         assertEquals(pages, resultPages)
     }
 
@@ -101,7 +115,7 @@ class VisualizeTextViewModelTest {
 
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
-        val resultPages = getUnitLiveDataValue(viewModel.pages)
+        val resultPages = getUnitLiveDataValue(viewModel.pages).getContentIfNotHandled()
         // If it has only one page, then returns two pages (swipe doesn't work with 1 page)
         val expectedPages = listOf("This shouldn't be here", "")
         assertEquals(expectedPages, resultPages)
@@ -128,6 +142,24 @@ class VisualizeTextViewModelTest {
         assertEquals(0, viewModel.currentChapter)
         // Called twice, when first load and after swiping
         runBlockingTest { verify(epubParser, times(2)).getChapterBodyTextFromPath("ch1.html", fileReader) }
+    }
+
+    @Test
+    fun `Resets translation when swiping to another chapter`(){
+        val pages = listOf("", "", "Página para traducir", "", "")
+        splitPages(pages)
+        parse_book(TWO_CHAPTER_BOOK)
+
+        val pageIndex = 2
+        val expectedTranslation = "Page to translate"
+        wordRepository.addTranslation(Words(pages[pageIndex], "ES", expectedTranslation))
+
+        // Request translation
+        viewModel.translatePage(pageIndex)
+
+        viewModel.swipeChapterRight()
+
+        assertTrue(viewModel.translatedPages[pageIndex] == null)
     }
 
     @Test
@@ -207,6 +239,31 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
+    fun `When configuration change keep current chapter and page`(){
+        // Set up with saved values
+        val initialPage = 2
+        val initialChapter = 3
+        bookFile.page = initialPage
+        bookFile.chapter = initialChapter
+        fileRepository.addTasks(bookFile)
+
+        splitPages(5)
+        viewModel.fileId = bookFile.id
+        parse_book(DEFAULT_BOOK)
+        viewModel.getPage()
+
+        // User modifies values
+        viewModel.swipeChapterRight()
+        viewModel.currentPage = initialPage + 1
+
+        // On config change book is parsed again
+        parse_book(DEFAULT_BOOK)
+
+        assertEquals(4, viewModel.currentChapter)
+        assertEquals(3, viewModel.getPage())
+    }
+
+    @Test
     fun saves_current_file_when_finishing(){
         // Set up
         val uri = "empty_uri"
@@ -256,10 +313,10 @@ class VisualizeTextViewModelTest {
         // Initial state
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = bookFile.id
+
+        splitPages(4)
         parse_book(DEFAULT_BOOK)
-
-
-        splitPages(7)
+        viewModel.getPage()
 
         // Swipe to right
         viewModel.swipeChapterRight()
@@ -297,8 +354,38 @@ class VisualizeTextViewModelTest {
         viewModel.onFinish(lastReadDate)
 
         assertEquals(1, fileRepository.filesServiceData.values.size)
+    }
 
+    @Test
+    fun `Translates page first time`(){
 
+        // Setup
+        val pages = listOf("", "", "Página para traducir", "", "")
+        splitPages(pages)
+        parse_book(DEFAULT_BOOK)
+
+        val pageIndex = 2
+        val expectedTranslation = "Page to translate"
+        wordRepository.addTranslation(Words(pages[pageIndex], "ES", expectedTranslation))
+
+        // Request translation
+        viewModel.translatePage(pageIndex)
+
+        val resultIndex = getUnitLiveDataValue(viewModel.translatedPageIndex).getContentIfNotHandled() ?: -1
+        assertEquals(expectedTranslation, viewModel.translatedPages[resultIndex])
+    }
+
+    @Test
+    fun `Translating page error`(){
+        //Set up
+        val pages = listOf("", "", "Página para traducir", "", "")
+        splitPages(pages)
+        parse_book(DEFAULT_BOOK)
+
+        viewModel.translatePage(2)
+
+        val errorMsg = getUnitLiveDataValue(viewModel.translationError)
+        assertEquals("Translation not found", errorMsg.peekContent())
     }
 
     private fun parse_book(book: Book){
@@ -313,6 +400,10 @@ class VisualizeTextViewModelTest {
 
     private fun splitPages(pagesSize: Int){
         val pages = Array(pagesSize) {"n"}.toList()
+        `when`(pageSplitter.getPages()).thenReturn(pages)
+    }
+
+    private fun splitPages(pages: List<String>){
         `when`(pageSplitter.getPages()).thenReturn(pages)
     }
 
@@ -337,7 +428,7 @@ class VisualizeTextViewModelTest {
         private val DEFAULT_BOOK = Book(
             "Test title",
             DEFAULT_CHAPTER,
-            Array(5){SpineItem("$it", "", it + 100)}.toList(),
+            Array(5){SpineItem("$it", "ch${it + 1}.html", it + 100)}.toList(),
             mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
             TableOfContents(listOf())
         )
@@ -345,8 +436,8 @@ class VisualizeTextViewModelTest {
             "title",
             DEFAULT_CHAPTER,
             listOf(
-                SpineItem("chapter1", "", 0),
-                SpineItem("chapter2", "", 0)
+                SpineItem("chapter1", "ch1.html", 0),
+                SpineItem("chapter2", "ch2.html", 0)
             ),
             mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html"),
             TableOfContents(listOf())

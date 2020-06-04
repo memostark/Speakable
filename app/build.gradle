@@ -67,8 +67,6 @@ kapt {
 }
 
 dependencies {
-    releaseImplementation(name: 'speechsdk', ext: 'aar')
-    debugImplementation project(path: ':speechsdk')
 
     // Required -- JUnit 4 framework
     testImplementation 'junit:junit:4.12'
@@ -82,7 +80,7 @@ dependencies {
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta4'
-    implementation 'com.google.android.material:material:1.2.0-alpha01'
+    implementation 'com.google.android.material:material:1.2.0-alpha06'
 
     // KTX core
     implementation "androidx.core:core-ktx:1.2.0"

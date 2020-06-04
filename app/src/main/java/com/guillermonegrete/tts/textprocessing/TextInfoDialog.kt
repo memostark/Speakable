@@ -212,12 +212,16 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         languagePreferenceIndex = -1 // Indicates spinner not visible
 
         // Hides language from spinner, because language is already predefined.
-        val spinner = view?.findViewById<Spinner>(R.id.spinner_language_from_code)
+        val spinner = view?.findViewById<Spinner>(R.id.spinner_language_from)
         spinner?.visibility = View.INVISIBLE
 
         val textViewLanguage = view?.findViewById<TextView>(R.id.text_language_code)
         textViewLanguage?.visibility = View.VISIBLE
 
+    }
+
+    override fun showTranslationError(error: String) {
+        Toast.makeText(context, "No translation found: $error", Toast.LENGTH_SHORT).show()
     }
 
     override fun setTranslationLayout(word: Words) {
@@ -304,6 +308,13 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
         val editIcon = view?.findViewById<ImageButton>(R.id.edit_icon)
         editIcon?.visibility = View.GONE
+    }
+
+    override fun showErrorPlayingAudio() {
+        playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar?.visibility = View.INVISIBLE
+        playButton?.visibility = View.VISIBLE
+        Toast.makeText(context, "Could not play audio", Toast.LENGTH_SHORT).show()
     }
 
     override fun startService() {
@@ -534,7 +545,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         // Sometimes activity can be destroyed before this is called, due to network/DB latency
         if(context == null) return
 
-        val spinner: Spinner? = view?.findViewById(R.id.spinner_language_from_code)
+        val spinner: Spinner = view?.findViewById(R.id.spinner_language_from) ?: return
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLangsWithAutoValue,
@@ -542,16 +553,16 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
             R.layout.spinner_layout_end
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner?.adapter = adapter
+        spinner.adapter = adapter
 
-        spinner?.setSelection(languageFromIndex, false)
-        spinner?.onItemSelectedListener = SpinnerListener()
+        spinner.setSelection(languageFromIndex, false)
+        spinner.onItemSelectedListener = SpinnerListener()
     }
 
     private fun setSpinner() {
         if(context == null) return
 
-        val spinner = view?.findViewById<Spinner>(R.id.translate_to_spinner)
+        val spinner = view?.findViewById<Spinner>(R.id.translate_to_spinner) ?: return
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLanguagesValue,
@@ -559,10 +570,10 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
             android.R.layout.simple_spinner_item
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner?.adapter = adapter
+        spinner.adapter = adapter
 
-        spinner?.setSelection(languagePreferenceIndex, false)
-        spinner?.onItemSelectedListener = SpinnerListener()
+        spinner.setSelection(languagePreferenceIndex, false)
+        spinner.onItemSelectedListener = SpinnerListener()
     }
 
     override fun onWordSaved(word: Words) {
@@ -600,7 +611,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
             val editor = preferences.edit()
             when (parent.id) {
-                R.id.spinner_language_from_code -> {
+                R.id.spinner_language_from -> {
                     languageFrom = if (position == 0)
                         "auto"
                     else
@@ -615,8 +626,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
                     editor.apply()
                     presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
                 }
-                else -> {
-                }
+                else -> {}
             }
         }
 

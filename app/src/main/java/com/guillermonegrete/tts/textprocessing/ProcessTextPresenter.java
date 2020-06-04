@@ -138,6 +138,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onTranslationError(String message) {
                 hasTranslation = false;
+                mView.showTranslationError(message);
             }
         }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
 
@@ -228,7 +229,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
         hasTranslation = true;
-        getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo, new GetLangAndTranslation.Callback() {
+        getTranslationInteractor.invoke(foundWord.word, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
                 customTTS.initializeTTS(word.lang, ttsListener);
@@ -240,7 +241,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 hasTranslation = false;
                 mView.setTranslationErrorMessage();
             }
-        });
+        }, languageFrom, languageTo);
 
         GetExternalLink linkInteractor = new GetExternalLink(
                 mExecutor,
@@ -343,7 +344,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         public void onSpeakStart() {
             isLoading = false;
             isPlaying = true;
-            // TODO move main thread code to interactor
+
             mMainThread.post(() -> mView.showStopIcon());
         }
 
@@ -351,6 +352,12 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         public void onSpeakDone() {
             isPlaying = false;
             mMainThread.post(() -> mView.showPlayIcon());
+        }
+
+        @Override
+        public void onError() {
+            isPlaying = false;
+            mMainThread.post(() -> mView.showErrorPlayingAudio());
         }
     };
 }

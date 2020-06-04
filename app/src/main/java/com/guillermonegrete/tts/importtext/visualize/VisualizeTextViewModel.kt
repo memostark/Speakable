@@ -4,17 +4,23 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guillermonegrete.tts.Event
+import com.guillermonegrete.tts.data.Result
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import kotlinx.coroutines.*
 import java.util.*
 import javax.inject.Inject
 
 class VisualizeTextViewModel @Inject constructor(
     private val epubParser: EpubParser,
-    private val fileRepository: FileRepository
+    private val settings: SettingsRepository,
+    private val fileRepository: FileRepository,
+    private val getTranslationInteractor: GetLangAndTranslation
 ): ViewModel() {
 
     var pageSplitter: PageSplitter? = null
@@ -24,9 +30,11 @@ class VisualizeTextViewModel @Inject constructor(
     private var firstLoad = true
     private var leftSwipe = false
 
+    private var cleared = false
+
     private var text = ""
-    var currentPage = 0
-    var currentChapter = 0
+    var currentPage = -1
+    var currentChapter = -1
         private set
 
     var spineSize = 0
@@ -47,32 +55,67 @@ class VisualizeTextViewModel @Inject constructor(
         get() = _book
 
     private var currentPages = listOf<CharSequence>()
-    private val _pages = MutableLiveData<List<CharSequence>>()
-    val pages: LiveData<List<CharSequence>>
+    private val _pages = MutableLiveData<Event<List<CharSequence>>>()
+    val pages: LiveData<Event<List<CharSequence>>>
         get() = _pages
 
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
 
+    private var _translatedPages = mutableListOf<CharSequence?>()
+    val translatedPages: List<CharSequence?>
+        get() = _translatedPages
+
+    private val _translatedPageIndex = MutableLiveData<Event<Int>>()
+    val translatedPageIndex: LiveData<Event<Int>> = _translatedPageIndex
+
+    private val _translationLoading = MutableLiveData<Boolean>()
+    val translationLoading: LiveData<Boolean> = _translationLoading
+
+    private val _translationError= MutableLiveData<Event<String>>()
+    val translationError: LiveData<Event<String>> = _translationError
+
+    // Settings
+    var hasBottomSheet = false
+    var isSheetExpanded = false
+    var fullScreen = false
+
+    var languagesISO  = arrayOf<String>()
+
+    var languageFrom = settings.getLanguageFrom()
+        set(value) {
+            field = value
+            settings.setLanguageFrom(value)
+        }
+    var languageTo = settings.getLanguageTo()
+        set(value) {
+            if(field != value) {
+                field = value
+                settings.setLanguageTo(value)
+                _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
+            }
+        }
+
 
     fun parseEpub() {
-        fileReader?.let {
-            _dataLoading.value = true
-            viewModelScope.launch {
-                val parsedBook = epubParser.parseBook(it)
-                val imageGetter = pageSplitter?.imageGetter
-                if(imageGetter is InputStreamImageGetter){
-                    imageGetter.basePath = epubParser.basePath
-                }
-                text = parsedBook.currentChapter
-                spineSize = parsedBook.spine.size
-                currentBook = parsedBook
-                fileType = ImportedFileType.EPUB
-                _book.value = parsedBook
-                isEpub = true
-                initPageSplit()
-                _dataLoading.value = false
+        firstLoad = true
+        val reader = fileReader ?: return
+
+        _dataLoading.value = true
+        viewModelScope.launch {
+            val parsedBook = epubParser.parseBook(reader)
+            val imageGetter = pageSplitter?.imageGetter
+            if(imageGetter is InputStreamImageGetter){
+                imageGetter.basePath = epubParser.basePath
             }
+            text = parsedBook.currentChapter
+            spineSize = parsedBook.spine.size
+            currentBook = parsedBook
+            fileType = ImportedFileType.EPUB
+            _book.value = parsedBook
+            isEpub = true
+            initPageSplit()
+            _dataLoading.value = false
         }
     }
 
@@ -81,6 +124,7 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun parseSimpleText(text: String){
+        firstLoad = true
         viewModelScope.launch {
             fileType = ImportedFileType.TXT
             this@VisualizeTextViewModel.text = text
@@ -99,20 +143,19 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private fun swipeChapter(position: Int){
-        currentBook?.let{
-            val spineSize = it.spine.size
-            if (position in 0 until spineSize) {
-                val spineItem = it.spine[position]
-                val newChapterPath = it.manifest[spineItem.idRef]
-                if (newChapterPath != null) {
-                    currentChapter = position
-                    _dataLoading.value = true
-                    viewModelScope.launch {
-                        changeEpubChapter(newChapterPath)
-                        splitToPages()
-                        _dataLoading.value = false
-                    }
-                }
+        val tempBook = _book.value ?: return
+
+        val spineSize = tempBook.spine.size
+        if (position in 0 until spineSize) {
+
+            val newChapterPath = tempBook.spine[position].href
+
+            currentChapter = position
+            _dataLoading.value = true
+            viewModelScope.launch {
+                changeEpubChapter(newChapterPath)
+                splitToPages()
+                _dataLoading.value = false
             }
         }
     }
@@ -120,17 +163,19 @@ class VisualizeTextViewModel @Inject constructor(
     fun getPage(): Int{
         currentPage = if(firstLoad) {
             firstLoad = false
-            val initialPage = databaseBookFile?.page ?: 0
+            val initialPage = if(currentPage == -1) databaseBookFile?.page ?: 0 else currentPage
             if (initialPage >= pagesSize) pagesSize - 1 else initialPage
         } else if(leftSwipe) pagesSize - 1 else 0
+
         return currentPage
     }
 
     private suspend fun initPageSplit() {
         if(isEpub){
             databaseBookFile = getBookFile()
-            val initialChapter = databaseBookFile?.chapter ?: 0
+            val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
             jumpToChapter(initialChapter)
+
         }else{
             splitToPages()
         }
@@ -148,18 +193,43 @@ class VisualizeTextViewModel @Inject constructor(
      * Used when you have the file path to the chapter e.g. changing chapters with the table of contents
      */
     fun jumpToChapter(path: String){
-        _book.value?.let{
-            val key = it.manifest.filterValues { value -> value == path }.keys.first()
-            val index = it.spine.indexOfFirst { item -> item.idRef == key }
-            if(index != -1) {
-                currentChapter = index
-                _dataLoading.value = true
-                viewModelScope.launch {
-                    changeEpubChapter(path)
-                    splitToPages()
-                    _dataLoading.value = false
+        val tempBook = _book.value ?: return
+
+        val key = tempBook.manifest.filterValues { value -> value == path }.keys.first()
+        val index = tempBook.spine.indexOfFirst { item -> item.idRef == key }
+        if(index != -1) {
+            currentChapter = index
+            _dataLoading.value = true
+            viewModelScope.launch {
+                changeEpubChapter(path)
+                splitToPages()
+                _dataLoading.value = false
+            }
+        }
+    }
+
+    fun translatePage(index: Int){
+        val text = currentPages[index].toString()
+
+        if(translatedPages[index] != null) return
+        _translationLoading.value = true
+
+        viewModelScope.launch{
+            val result = withContext(Dispatchers.IO) { getTranslationInteractor(text, languageFrom, languageTo) }
+
+            when(result){
+                is Result.Success -> {
+                    _translatedPages[index] = result.data.definition // In this case is a translation
+                    _translatedPageIndex.value = Event(index)
+                }
+                is Result.Error -> {
+                    val error = result.exception
+                    error.printStackTrace()
+                    _translationError.value = Event(error.message ?: "Unknown error")
                 }
             }
+
+            _translationLoading.value = false
         }
     }
 
@@ -167,63 +237,62 @@ class VisualizeTextViewModel @Inject constructor(
      * Used when you have the index, using the order defined in the spine. E.g. index saved from recent files list
      */
     private suspend fun jumpToChapter(index: Int){
-        currentBook?.let {book ->
-            val spine = book.spine
-            val manifest = book.manifest
+        val tempBook = currentBook ?: return
 
-            println("Manifest: $manifest")
-            println("Spine: $spine")
+        val chapterPath = tempBook.spine[index].href
 
-            val spineItem = spine[index]
-            val chapterPath = manifest[spineItem.idRef]
-
-            println(" Index: $index, Path: $chapterPath")
-
-            if(index != -1 && chapterPath != null) {
-                currentChapter = index
-                changeEpubChapter(chapterPath)
-                splitToPages()
-            }
+        if(index != -1) {
+            currentChapter = index
+            changeEpubChapter(chapterPath)
+            splitToPages()
         }
     }
 
     private suspend fun splitToPages() {
-        pageSplitter?.let {
-            it.setText(text)
-            it.split()
-            val mutablePages = it.getPages().toMutableList()
-            if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
-            pagesSize = mutablePages.size
-            _pages.value = mutablePages
-            currentPages = mutablePages
-        }
+        val splitter = pageSplitter ?: return
+
+        splitter.setText(text)
+        splitter.split()
+        val mutablePages = splitter.getPages().toMutableList()
+        if (mutablePages.size == 1 && _book.value != null) mutablePages.add("")
+        pagesSize = mutablePages.size
+
+        currentPages = mutablePages
+        _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
+
+        _pages.value = Event(mutablePages)
+    }
+
+    override fun onCleared() {
+        if(!cleared) onFinish()
+        super.onCleared()
     }
 
     /**
-     * Called when view or application is about to be destroyed.
-     * The date is injected only when testing, function should be
-     * called without parameters.
+     * Sometimes is necessary to wrap up before onCleared is called (e.g. when changing theme)
+     * This function can be called before activity/fragment is destroyed.
      */
-    fun onFinish(date: Calendar = Calendar.getInstance()){
+    fun onFinish(date: Calendar = Calendar.getInstance()) {
         saveBookFileData(date)
+        cleared = true
     }
 
     private fun saveBookFileData(date: Calendar){
-        fileUri?.let { uri ->
-            // This operation is intended to be synchronous
-            runBlocking{
-                val progress = calculateProgress()
+        val uri = fileUri ?: return
 
-                databaseBookFile?.apply {
-                    page = currentPage
-                    chapter = currentChapter
-                    lastRead = date
-                    percentageDone = progress
-                }
-                val title = currentBook?.title ?: ""
-                val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
-                fileRepository.saveFile(bookFile)
+        // This operation is intended to be synchronous
+        runBlocking{
+            val progress = calculateProgress()
+
+            databaseBookFile?.apply {
+                page = currentPage
+                chapter = currentChapter
+                lastRead = date
+                percentageDone = progress
             }
+            val title = currentBook?.title ?: ""
+            val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
+            fileRepository.saveFile(bookFile)
         }
     }
 

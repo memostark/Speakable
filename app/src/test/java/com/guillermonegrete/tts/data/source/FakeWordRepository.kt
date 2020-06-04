@@ -3,12 +3,15 @@ package com.guillermonegrete.tts.data.source
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.db.Words
+import java.lang.Exception
 import java.util.LinkedHashMap
 
 class FakeWordRepository: WordRepositorySource {
 
     var wordsServiceData: LinkedHashMap<Int, Words> = LinkedHashMap()
+    var translationsData: LinkedHashMap<String, Words> = LinkedHashMap()
 
     var languagesData: MutableSet<String> = mutableSetOf()
 
@@ -47,7 +50,17 @@ class FakeWordRepository: WordRepositorySource {
         languageTo: String?,
         callback: WordRepositorySource.GetTranslationCallback?
     ) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // Need to implement error handling
+        callback?.onTranslationAndLanguage(translationsData[text])
+    }
+
+    override fun getLanguageAndTranslation(
+        text: String,
+        languageFrom: String,
+        languageTo: String
+    ): Result<Words> {
+        val word = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
+        return Result.Success(word)
     }
 
     override fun deleteWord(word: String?) {
@@ -71,6 +84,13 @@ class FakeWordRepository: WordRepositorySource {
         for (word in words) {
             wordsServiceData[word.id] = word
             languagesData.add(word.lang)
+        }
+    }
+
+    @VisibleForTesting
+    fun addTranslation(vararg words: Words) {
+        for (word in words) {
+            translationsData[word.word] = word
         }
     }
 }

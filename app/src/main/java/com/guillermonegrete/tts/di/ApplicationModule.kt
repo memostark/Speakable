@@ -9,6 +9,8 @@ import androidx.room.Room
 import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.ThreadExecutor
+import com.guillermonegrete.tts.data.preferences.DefaultSettingsRepository
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.*
 import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
@@ -170,6 +172,9 @@ abstract class ApplicationModuleBinds {
 
     @Binds
     abstract fun bindFileRepository(repository: DefaultFileRepository): FileRepository
+
+    @Binds
+    abstract fun bindSettingsRepository(repository: DefaultSettingsRepository): SettingsRepository
 }
 
 /**

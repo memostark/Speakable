@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
+import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import dagger.android.support.AndroidSupportInjection
@@ -109,7 +110,7 @@ class ImportTextFragment: Fragment() {
 
     private fun setViewModel(){
         viewModel.apply {
-            openTextVisualizer.observe(viewLifecycleOwner, Observer {
+            openTextVisualizer.observe(viewLifecycleOwner, EventObserver {
                 visualizeEpub(Uri.parse(it.uri), it.id)
             })
 

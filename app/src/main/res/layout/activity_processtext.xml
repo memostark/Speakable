@@ -39,7 +39,7 @@
                 android:textSize="20sp"
                 tools:text="Selected text" />
             <Spinner
-                android:id="@+id/spinner_language_from_code"
+                android:id="@+id/spinner_language_from"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"

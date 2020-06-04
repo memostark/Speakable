@@ -41,6 +41,10 @@ public interface ProcessTextContract {
 
         void showStopIcon();
 
+        void showTranslationError(String error);
+
+        void showErrorPlayingAudio();
+
         void updateTranslation(Words words);
 
         void updateExternalLinks(List<ExternalLink> links);

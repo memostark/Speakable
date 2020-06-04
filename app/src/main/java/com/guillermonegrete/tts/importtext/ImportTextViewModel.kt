@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import kotlinx.coroutines.launch
@@ -11,8 +12,8 @@ import javax.inject.Inject
 
 class ImportTextViewModel @Inject constructor(private val fileRepository: FileRepository): ViewModel() {
 
-    private val _openTextVisualizer = MutableLiveData<BookFile>()
-    val openTextVisualizer: LiveData<BookFile> = _openTextVisualizer
+    private val _openTextVisualizer = MutableLiveData<Event<BookFile>>()
+    val openTextVisualizer: LiveData<Event<BookFile>> = _openTextVisualizer
 
     private val _files = MutableLiveData<List<BookFile>>()
     val files: LiveData<List<BookFile>> = _files
@@ -33,6 +34,6 @@ class ImportTextViewModel @Inject constructor(private val fileRepository: FileRe
     }
 
     fun openVisualizer(book: BookFile){
-        _openTextVisualizer.value = book
+        _openTextVisualizer.value = Event(book)
     }
 }

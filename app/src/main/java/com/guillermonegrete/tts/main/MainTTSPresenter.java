@@ -107,6 +107,11 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
             isPlaying = false;
             mMainThread.post(() -> view.showPlayIcon());
         }
+
+        @Override
+        public void onError() {
+            // TODO implement
+        }
     };
 
     @Override

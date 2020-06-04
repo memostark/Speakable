@@ -7,10 +7,7 @@ import com.google.gson.*
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
 import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
+import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
@@ -60,7 +57,7 @@ import javax.inject.Singleton
 @Singleton
 class GooglePublicSource: WordDataSource {
 
-    private var googlePublicAPI: GooglePublicAPI? = null
+    private var googlePublicAPI: GooglePublicAPI
     private val gson: Gson = GsonBuilder()
             .setLenient()
             .create()
@@ -96,7 +93,7 @@ class GooglePublicSource: WordDataSource {
 
             val rawLanguageFrom = if(languageFrom == "he") "iw" else languageFrom
 
-            googlePublicAPI?.getWord(wordText, rawLanguageFrom, languageTo)?.enqueue(object : Callback<ResponseBody>{
+            googlePublicAPI.getWord(wordText, rawLanguageFrom, languageTo).enqueue(object : Callback<ResponseBody>{
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     callback?.onDataNotAvailable()
                 }
@@ -119,6 +116,21 @@ class GooglePublicSource: WordDataSource {
 
             })
         }
+    }
+
+    override fun getWordLanguageInfo(
+        wordText: String,
+        languageFrom: String,
+        languageTo: String
+    ): Words {
+        val rawLanguageFrom = if(languageFrom == "he") "iw" else languageFrom
+
+        val response = googlePublicAPI.getWord(wordText, rawLanguageFrom, languageTo).execute()
+        val responseBody = response.body()
+
+        if(!response.isSuccessful || responseBody == null) throw HttpException(response)
+
+        return processText(responseBody.string(), wordText)
     }
 
     @VisibleForTesting

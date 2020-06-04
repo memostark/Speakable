@@ -1,7 +1,9 @@
 package com.guillermonegrete.tts.data.source;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
+import com.guillermonegrete.tts.data.Result;
 import com.guillermonegrete.tts.db.Words;
 
 import java.util.List;
@@ -37,7 +39,13 @@ public interface WordRepositorySource {
 
     void getLanguageAndTranslation(String text, GetTranslationCallback callback);
 
+    /**
+     * Avoid usage of this function, only use when you can't use Kotlin Coroutines or RxJava
+     * Use version that returns Result<Words>
+     */
     void getLanguageAndTranslation(String text, String languageFrom, String languageTo, GetTranslationCallback callback);
+
+    Result<Words> getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo);
 
     void deleteWord(String word);
 

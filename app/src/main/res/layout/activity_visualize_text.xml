@@ -30,21 +30,107 @@
         android:layout_marginBottom="16dp"
         app:cardBackgroundColor="?attr/cardBackground"
         android:elevation="4dp">
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/text_reader_viewpager"
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:weightSum="1">
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/text_reader_viewpager"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/visualizer_bottom_sheet"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+                app:behavior_peekHeight="60dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <View
+                    android:id="@+id/peek_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:background="?colorPrimary"
+                    app:layout_constraintTop_toTopOf="@id/guideline_mid_height" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/page_translate_btn"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:contentDescription="@string/translate_description"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null"
+                    app:icon="@drawable/ic_translate_black_24dp"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="?iconTintColor"
+                    app:layout_constraintEnd_toStartOf="@id/arrow_btn"
+                    app:layout_constraintTop_toTopOf="@id/peek_view" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/arrow_btn"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null"
+                    app:icon="@drawable/ic_arrow_drop_up_black_24dp"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="?iconTintColor"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/peek_view"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Button.Circle"/>
+
+                <TextView
+                    android:id="@+id/page_bottom_text_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:paddingStart="40dp"
+                    android:paddingEnd="40dp"
+                    android:paddingBottom="8dp"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                    android:background="?cardBackground"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/page_translate_btn"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMaxTextSize="30sp"
+                    tools:text="Real content to display"/>
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/guideline_mid_height"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_percent="0.5" />
+
+                <ProgressBar
+                    android:id="@+id/page_translation_progress"
+                    style="@android:style/Widget.Material.ProgressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="@+id/page_bottom_text_view"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/peek_view"
+                    android:visibility="invisible"
+                    tools:visibility="visible"/>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
     </androidx.cardview.widget.CardView>
 
     <TextView
         android:id="@+id/reader_current_page"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:text="1 of 30" />
+        app:layout_constraintEnd_toStartOf="@+id/show_toc_btn"
+        tools:text="1 / 30" />
 
     <ImageButton
         android:id="@+id/show_toc_btn"
@@ -71,7 +157,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page"
-        app:srcCompat="@drawable/ic_settings_brightness_grey_24dp"
+        app:srcCompat="@drawable/ic_settings_black_24dp"
         android:tint="?attr/iconTintColor"/>
 
     <ProgressBar
@@ -86,5 +172,16 @@
         app:layout_constraintStart_toStartOf="@+id/text_reader_card_view"
         app:layout_constraintTop_toTopOf="@+id/text_reader_card_view"
         tools:visibility="visible"/>
+
+    <SeekBar
+        android:id="@+id/pages_seekBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
+        app:layout_constraintEnd_toStartOf="@+id/reader_current_page"
+        app:layout_constraintStart_toEndOf="@+id/brightness_settings_btn"
+        app:layout_constraintTop_toTopOf="@+id/reader_current_page" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
