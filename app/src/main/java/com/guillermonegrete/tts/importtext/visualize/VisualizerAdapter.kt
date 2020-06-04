@@ -20,7 +20,8 @@ class VisualizerAdapter(
     private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    var isExpanded = false
+    private val isExpanded
+        get() = viewModel.fullScreen
     val hasBottomSheet
         get() = viewModel.hasBottomSheet
 
@@ -38,7 +39,7 @@ class VisualizerAdapter(
         val layout = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
         return when(viewType){
             R.layout.visualizer_split_page_item -> SplitPageViewHolder(layout)
-            else -> PageViewHolder(isExpanded, layout)
+            else -> if(measuringPage) ViewHolder(layout) else PageViewHolder(isExpanded, layout)
         }
     }
 

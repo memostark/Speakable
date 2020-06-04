@@ -57,7 +57,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     @Inject lateinit var brightnessTheme: BrightnessTheme
 
     private var splitterCreated = true
-    private var isFullScreen = false
 
     private lateinit var scaleDetector: ScaleGestureDetector
 
@@ -162,12 +161,16 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if(hasFocus && isFullScreen) hideSystemUi()
+        if(hasFocus && viewModel.fullScreen) {
+
+            // Only hide the UI when page splitter has been created to avoid incorrect size measuring
+            if(splitterCreated) hideSystemUi()
+        }
     }
 
     private fun setUIChangesListener() {
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && isFullScreen) {
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && viewModel.fullScreen) {
                 // The system bars are visible
                 val handler = Handler()
                 handler.postDelayed({ hideSystemUi() }, 3000)
@@ -202,15 +205,12 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewModel.apply {
             dataLoading.observe(this@VisualizeTextActivity, Observer {
                 progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
-
-                // Update set in case of layout changes
-                // The last layout observer to be called is data loading with value false
-                if(!it) contractedConstraintSet.clone(rootConstraintLayout)
             })
 
             pages.observe(this@VisualizeTextActivity, EventObserver {
                 updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
+                updateScreenMode()
             })
 
             book.observe(this@VisualizeTextActivity, Observer {
@@ -222,12 +222,15 @@ class VisualizeTextActivity: AppCompatActivity() {
 
                 val showTOCBtn: ImageButton = findViewById(R.id.show_toc_btn)
                 val navPoints = it.tableOfContents.navPoints
-                if(navPoints.isEmpty()){
-                    showTOCBtn.visibility = View.GONE
+
+                val tocVisibility = if(navPoints.isEmpty()) {
+                    View.GONE
                 }else{
-                    showTOCBtn.visibility = View.VISIBLE
                     showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
+                    View.VISIBLE
                 }
+                showTOCBtn.visibility = tocVisibility
+                contractedConstraintSet.setVisibility(R.id.show_toc_btn, tocVisibility)
             })
 
             translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
@@ -278,6 +281,15 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Subtract 1 because seek bar is zero based numbering
         pagesSeekBar.max = pages.size - 1
         pagesSeekBar.progress = position
+    }
+
+    private fun updateScreenMode() {
+        if(viewModel.fullScreen) {
+            hideSystemUi()
+            expandedConstraintSet.applyTo(rootConstraintLayout)
+
+            viewPager.post { setBottomSheetPeekHeight() }
+        }
     }
 
     private fun showSettingsPopUp(view: View) {
@@ -463,12 +475,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             detector ?: return false
 
             if(!pinchDetected){
-                if(detector.scaleFactor > PINCH_UPPER_LIMIT && !isFullScreen){
+                val fullScreen = viewModel.fullScreen
+
+                if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
                     return true
                 }
-                if(detector.scaleFactor < PINCH_LOWER_LIMIT && isFullScreen){
+                if(detector.scaleFactor < PINCH_LOWER_LIMIT && fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
                     return true
@@ -482,14 +496,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun toggleImmersiveMode() {
         val position = viewModel.currentPage
 
-        isFullScreen = !isFullScreen
-        if(isFullScreen){
+        viewModel.fullScreen = !viewModel.fullScreen
+
+        if(viewModel.fullScreen){
             hideSystemUi()
 
             expandedConstraintSet.applyTo(rootConstraintLayout)
-
-            pagesAdapter.isExpanded = true
-
 
         }else{
             window.decorView.systemUiVisibility = 0
@@ -497,7 +509,6 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             contractedConstraintSet.applyTo(rootConstraintLayout)
 
-            pagesAdapter.isExpanded = false
         }
 
         viewPager.post { setBottomSheetPeekHeight() }

@@ -27,7 +27,7 @@ class VisualizeTextViewModel @Inject constructor(
     var fileReader: ZipFileReader? = null
 
     private var isEpub = false
-    var firstLoad = true
+    private var firstLoad = true
     private var leftSwipe = false
 
     private var cleared = false
@@ -78,6 +78,7 @@ class VisualizeTextViewModel @Inject constructor(
     // Settings
     var hasBottomSheet = false
     var isSheetExpanded = false
+    var fullScreen = false
 
     var languagesISO  = arrayOf<String>()
 
