@@ -19,7 +19,8 @@ class InputStreamImageGetter(
     override fun getDrawable(source: String?): Drawable? {
         return runBlocking {
             val inputStream = source?.let {
-                val fullPath = if(basePath.isEmpty()) it else "$basePath/$it"
+                val fullPath = it.trimStart('/')
+
                 println("getDrawable source: $source, full path: $fullPath")
                 zipFileReader.getFileStream(fullPath)
             }

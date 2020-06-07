@@ -83,7 +83,24 @@ class EpubParserTest {
         xmlParser.nextTag()
 
         val result = epubParser.getInnerXml(xmlParser)
-        val expected = "<div><br/><img src=\"path.jpg\" />Text input<br/></div>"
+        val expected = "<div><br/><img src=\"/path.jpg\" />Text input<br/></div>"
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun parses_svg_tag() {
+        xmlParser.setInput(StringReader("<body>" +
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"100%\" height=\"100%\" viewBox=\"0 0 1200 1600\" preserveAspectRatio=\"none\">" +
+                "<image width=\"1200\" height=\"1600\" xlink:href=\"cover_image.jpg\"/>" +
+                "</svg>" +
+                "<p><span>start</span></p>" +
+                "</body>"))
+        xmlParser.nextTag()
+
+        val result = epubParser.getInnerXml(xmlParser)
+
+        val expected = """<img src="/cover_image.jpg"/><p><span>start</span></p>""".trimMargin()
+        println("Result: $result, expected: $expected")
         assertEquals(expected, result)
     }
 
@@ -195,7 +212,7 @@ class EpubParserTest {
                     <reference href="wrap0000.html" type="cover" title="Cover"/>
                   </guide>
                 </package>"""
-        const val CHAPTER_XML_TEMPLATE = """<?xml version='1.0' encoding='utf-8'?>
+        private const val CHAPTER_XML_TEMPLATE = """<?xml version='1.0' encoding='utf-8'?>
                 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.1//EN' 'http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd'>
                 <html xmlns="http://www.w3.org/1999/xhtml">
                 <head>

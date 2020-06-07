@@ -33,6 +33,7 @@ class EpubParser constructor(
     private val manifest = mutableMapOf<String, String>()
     private var tocPath = ""
 
+    private var currentFolder = ""
     private var currentChapter = ""
 
     private var title = "Untitled file"
@@ -81,6 +82,8 @@ class EpubParser constructor(
     ): String{
         return withContext(Dispatchers.Default){
             val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
+            currentFolder = File(fullPath).parent
+
             val chapterStream = zipFileReader.getFileStream(fullPath)
             parser.setInput(chapterStream, null)
             parser.nextTag()
@@ -349,16 +352,28 @@ class EpubParser constructor(
                     lastTagWasStart = true
                     depth++
                     val attrs = StringBuilder()
-                    if(parser.name == "img"){
-                        attrs.append(" ")
-                        for (i in 0 until parser.attributeCount){
-                            attrs.append(
-                                parser.getAttributeName(i) + "=\""
-                                + parser.getAttributeValue(i) + "\" "
-                            )
+
+                    when(parser.name){
+                        "img" -> {
+                            attrs.append(" ")
+                            for (i in 0 until parser.attributeCount){
+                                val attrName = parser.getAttributeName(i)
+
+                                val rawValue = parser.getAttributeValue(i)
+                                val attrValue = if(attrName == "src") pathToAbsolute(rawValue) else rawValue
+
+                                attrs.append("$attrName=\"$attrValue\" ")
+                            }
+
+                            sb.append("<" + parser.name + attrs.toString())
                         }
+                        "svg" -> {
+                            replaceSvgTag(parser, sb)
+                            lastTagWasStart = false
+                            depth--
+                        }
+                        else -> sb.append("<" + parser.name + attrs.toString())
                     }
-                    sb.append("<" + parser.name + attrs.toString())
                 }
                 else -> {
                     if(lastTagWasStart) sb.append(">")
@@ -370,15 +385,45 @@ class EpubParser constructor(
         return sb.toString()
     }
 
+    private fun replaceSvgTag(parser: XmlPullParser, sb: StringBuilder){
+        var depth = 1
+        var tagAttrs: String? = null
+
+        while (depth != 0) {
+            when (parser.next()) {
+
+                XmlPullParser.END_TAG -> depth--
+                XmlPullParser.START_TAG -> {
+                    depth++
+
+                    when(parser.name){
+                        "image" -> tagAttrs = parser.getAttributeValue(null, "xlink:href")
+                    }
+                }
+            }
+        }
+
+        if(tagAttrs != null) {
+            val fullPath = pathToAbsolute(tagAttrs)
+            sb.append("<img src=\"$fullPath\"/>")
+        }
+    }
+
+    private fun pathToAbsolute(path: String): String{
+        return  File(currentFolder, path).canonicalPath
+    }
+
     private suspend fun readSpineItemFiles(readers: Map<String, StringReader>) = coroutineScope{
 
         spineIdRefs.mapIndexed { index, idRef ->
             val href = manifest[idRef] ?: ""
             val fullPath = if(basePath.isEmpty()) href else "$basePath/$href"
+            currentFolder = File(fullPath).parent
             val reader = readers[fullPath]
 
             parser.setInput(reader)
             parser.nextTag()
+
             parseChapterHtml(parser, index == 0) // In this case the first item is the current
 
             SpineItem(idRef, href, chapterLength)
