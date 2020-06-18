@@ -34,29 +34,35 @@
 package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
-import com.google.android.material.navigation.NavigationView;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.importtext.ImportTextFragment;
 import com.guillermonegrete.tts.savedwords.SavedWordsFragment;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 
 public class MainActivity extends AppCompatActivity {
     // Note: Sign up at http://www.projectoxford.ai for the client credentials.
 
-
-    private DrawerLayout mDrawerLayout;
     private ActionBar actionbar;
+    private BottomNavigationView navView;
+
+    private String barTitle;
 
 
     @Override
@@ -64,40 +70,33 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
-        mDrawerLayout = findViewById(R.id.main_drawer_layout);
         setActionBar();
 
-        NavigationView navView = findViewById(R.id.nav_view);
-        navView.setCheckedItem(R.id.nav_item_main);
-        navView.setNavigationItemSelectedListener(menuItem -> {
+        navView = findViewById(R.id.bottom_nav_view);
+        navView.setSelectedItemId(R.id.nav_item_main);
+        navView.setOnNavigationItemSelectedListener(menuItem -> {
             menuItem.setChecked(true);
-            mDrawerLayout.closeDrawers();
 
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             Fragment newFragment;
-            String title;
 
             switch (menuItem.getItemId()){
                 case R.id.nav_item_saved:
-                    title = getString(R.string.saved);
+                    barTitle = getString(R.string.saved);
                     newFragment  = new SavedWordsFragment();
                     break;
                 case R.id.nav_item_import:
-                    title = getString(R.string.import_text);
+                    barTitle = getString(R.string.import_text);
                     newFragment = new ImportTextFragment();
                     break;
-                case  R.id.nav_item_settings:
-                    title = "";
-                    newFragment  = new SettingsFragment();
-                    break;
                 default:
-                    title = getString(R.string.main);
+                    barTitle = getString(R.string.main);
                     newFragment = new TextToSpeechFragment();
                     break;
             }
 
-            actionbar.setTitle(title);
+            actionbar.setTitle(barTitle);
             fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
             fragmentTransaction.commit();
 
@@ -119,26 +118,61 @@ public class MainActivity extends AppCompatActivity {
         actionbar = getSupportActionBar();
         if(actionbar != null) {
             actionbar.setDisplayHomeAsUpEnabled(true);
-            actionbar.setTitle(getString(R.string.main));
-            actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
+            barTitle = getString(R.string.main);
+            actionbar.setTitle(barTitle);
+            actionbar.setHomeButtonEnabled(false);
+            actionbar.setDisplayHomeAsUpEnabled(false);
         }
+
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
+            @Override
+            public void onFragmentViewCreated(@NonNull FragmentManager fm, @NonNull Fragment f, @NonNull View v, @Nullable Bundle savedInstanceState) {
+//                TransitionManager.beginDelayedTransition(, Slide(Gravity.BOTTOM).excludeTarget(R.id.nav_host_fragment, true));
+                boolean arrowBtn;
+
+                if( f instanceof SettingsFragment){
+                    navView.setVisibility(View.GONE);
+                    arrowBtn = true;
+                }else {
+                    actionbar.setTitle(barTitle);
+                    navView.setVisibility(View.VISIBLE);
+                    arrowBtn = false;
+                }
+                actionbar.setHomeButtonEnabled(arrowBtn);
+                actionbar.setDisplayHomeAsUpEnabled(arrowBtn);
+            }
+        }, true);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main_activity, menu);
+        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            mDrawerLayout.openDrawer(GravityCompat.START);
-            return true;
+        switch (item.getItemId()) {
+
+            case R.id.settings_menu_item: {
+                Fragment newFragment  = new SettingsFragment();
+                actionbar.setTitle("");
+
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+                return true;
+            }
+
+            case android.R.id.home:{
+                onBackPressed();
+                return true;
+            }
+
+
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
-            mDrawerLayout.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
     }
 }

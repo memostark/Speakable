@@ -33,7 +33,7 @@ class EpubParser constructor(
     private val manifest = mutableMapOf<String, String>()
     private var tocPath = ""
 
-    private var currentFolder = ""
+    private var currentFolder: String? = null
     private var currentChapter = ""
 
     private var title = "Untitled file"
