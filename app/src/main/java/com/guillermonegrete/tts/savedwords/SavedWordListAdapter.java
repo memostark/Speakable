@@ -40,7 +40,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         this.listener = listener;
     }
 
-    void setWordsList(List<Words> wordsList){
+    void setWordsList(@NonNull List<Words> wordsList){
         this.wordsList = wordsList;
         notifyDataSetChanged();
     }

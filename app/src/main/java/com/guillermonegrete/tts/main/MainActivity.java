@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String barTitle;
 
+    Fragment activeFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,43 +73,43 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
         setActionBar();
 
+        final Fragment ttsFrag = new TextToSpeechFragment();
+        final Fragment savedWordsFrag = new SavedWordsFragment();
+        final Fragment importTextFrag = new ImportTextFragment();
+
+
+        activeFragment = ttsFrag;
+
         navView = findViewById(R.id.bottom_nav_view);
         navView.setSelectedItemId(R.id.nav_item_main);
         navView.setOnNavigationItemSelectedListener(menuItem -> {
             menuItem.setChecked(true);
 
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            Fragment newFragment;
-
             switch (menuItem.getItemId()){
                 case R.id.nav_item_saved:
                     barTitle = getString(R.string.saved);
-                    newFragment  = new SavedWordsFragment();
-                    break;
+                    changeFragment(savedWordsFrag);
+                    return true;
                 case R.id.nav_item_import:
                     barTitle = getString(R.string.import_text);
-                    newFragment = new ImportTextFragment();
-                    break;
-                default:
+                    changeFragment(importTextFrag);
+                    return true;
+                case R.id.nav_item_main:
                     barTitle = getString(R.string.main);
-                    newFragment = new TextToSpeechFragment();
-                    break;
+                    changeFragment(ttsFrag);
+                    return true;
             }
 
-            actionbar.setTitle(barTitle);
-            fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
-            fragmentTransaction.commit();
-
-            return true;
+            return false;
         });
+
+        navView.setOnNavigationItemReselectedListener(item -> {});
 
         if(savedInstanceState == null){
             FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            TextToSpeechFragment fragment = new TextToSpeechFragment();
-            fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
-            fragmentTransaction.commit();
+            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, importTextFrag, "3").hide(importTextFrag).commit();
+            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, savedWordsFrag, "2").hide(savedWordsFrag).commit();
+            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, ttsFrag, "1").commit();
         }
     }
 
@@ -124,24 +125,36 @@ public class MainActivity extends AppCompatActivity {
             actionbar.setDisplayHomeAsUpEnabled(false);
         }
 
-        getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
+        /*getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
             @Override
             public void onFragmentViewCreated(@NonNull FragmentManager fm, @NonNull Fragment f, @NonNull View v, @Nullable Bundle savedInstanceState) {
 //                TransitionManager.beginDelayedTransition(, Slide(Gravity.BOTTOM).excludeTarget(R.id.nav_host_fragment, true));
                 boolean arrowBtn;
+                System.out.println("Lifecycle callback registered called");
 
                 if( f instanceof SettingsFragment){
                     navView.setVisibility(View.GONE);
                     arrowBtn = true;
                 }else {
-                    actionbar.setTitle(barTitle);
-                    navView.setVisibility(View.VISIBLE);
+
+                    getSupportFragmentManager().beginTransaction().show(activeFragment).commit();
+
                     arrowBtn = false;
                 }
                 actionbar.setHomeButtonEnabled(arrowBtn);
                 actionbar.setDisplayHomeAsUpEnabled(arrowBtn);
             }
-        }, true);
+        }, true);*/
+    }
+
+    private void changeFragment(Fragment newFragment){
+        actionbar.setTitle(barTitle);
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        fragmentTransaction.hide(activeFragment).show(newFragment).commit();
+        activeFragment = newFragment;
     }
 
     @Override
@@ -156,13 +169,18 @@ public class MainActivity extends AppCompatActivity {
 
             case R.id.settings_menu_item: {
                 Fragment newFragment  = new SettingsFragment();
-                actionbar.setTitle("");
 
-                FragmentManager fragmentManager = getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
+                FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                fragmentTransaction.hide(activeFragment);
+                fragmentTransaction.add(R.id.main_tts_fragment_container, newFragment);
                 fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
+
+                // Config bars
+                actionbar.setTitle("");
+                actionbar.setHomeButtonEnabled(true);
+                actionbar.setDisplayHomeAsUpEnabled(true);
+                navView.setVisibility(View.GONE);
                 return true;
             }
 
@@ -174,5 +192,21 @@ public class MainActivity extends AppCompatActivity {
 
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        FragmentManager fm = getSupportFragmentManager();
+        System.out.println("Stack size " + fm.getBackStackEntryCount());
+
+        if (fm.getBackStackEntryCount() > 0){
+            fm.popBackStackImmediate();
+            actionbar.setTitle(barTitle);
+            navView.setVisibility(View.VISIBLE);
+            fm.beginTransaction().show(activeFragment).commit();
+
+            actionbar.setHomeButtonEnabled(false);
+            actionbar.setDisplayHomeAsUpEnabled(false);
+        } else super.onBackPressed();
     }
 }

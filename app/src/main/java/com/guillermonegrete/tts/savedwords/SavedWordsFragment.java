@@ -47,7 +47,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private String language_filter;
 
-    private List<Words> words;
+    private List<Words> words = new ArrayList<>();
 
     private static final String ALL_OPTION = "All";
 
