@@ -44,7 +44,7 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
     private lateinit var webview: WebView
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<*>
 
-    private lateinit var playButton: ImageButton
+    private lateinit var playButton: Button
     private lateinit var ttsProgressBar: ProgressBar
 
     private lateinit var clipboardButton: Button
@@ -109,10 +109,10 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
             ttsProgressBar = findViewById(R.id.play_loading_icon)
         }
 
-        val browseBtn = fragmentLayout.findViewById<ImageButton>(R.id.browse_btn)
-        val pasteBtn = fragmentLayout.findViewById<ImageButton>(R.id.paste_btn)
+        val browseBtn = fragmentLayout.findViewById<Button>(R.id.browse_btn)
+        val pasteBtn = fragmentLayout.findViewById<Button>(R.id.paste_btn)
 
-        editText = fragmentLayout.findViewById(R.id.tts_ev)
+        editText = fragmentLayout.findViewById(R.id.tts_edit_text)
         editText.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus -> if (hasFocus) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN }
 
         webview = fragmentLayout.findViewById(R.id.webview_wiktionary)
@@ -221,22 +221,22 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
 
     override fun showLanguageNotAvailable() {
         Toast.makeText(context, "Detected language not available for Text to Speech", Toast.LENGTH_SHORT).show()
-        ttsProgressBar.visibility = View.GONE
+        ttsProgressBar.visibility = View.INVISIBLE
         playButton.visibility = View.VISIBLE
     }
 
     override fun showLoadingTTS() {
         ttsProgressBar.visibility = View.VISIBLE
-        playButton.visibility = View.GONE
+        playButton.visibility = View.INVISIBLE
     }
 
     override fun showPlayIcon() {
-        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playButton.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_volume_up_black_24dp, 0, 0)
     }
 
     override fun showStopIcon() {
-        playButton.setImageResource(R.drawable.ic_stop_black_24dp)
-        ttsProgressBar.visibility = View.GONE
+        playButton.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_stop_black_24dp, 0, 0)
+        ttsProgressBar.visibility = View.INVISIBLE
         playButton.visibility = View.VISIBLE
     }
 
