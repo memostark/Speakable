@@ -20,9 +20,15 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputEditText
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.importtext.tabs.EnterTextFragment
+import com.guillermonegrete.tts.importtext.tabs.FilesFragment
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import dagger.android.support.AndroidSupportInjection
 import java.io.*
@@ -39,6 +45,7 @@ class ImportTextFragment: Fragment() {
     private lateinit var adapter: RecentFilesAdapter
 
     private lateinit var progressBar: ProgressBar
+    private lateinit var pager: ViewPager2
 
     @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
     private val viewModel by lazy {
@@ -53,7 +60,7 @@ class ImportTextFragment: Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val root = inflater.inflate(R.layout.fragment_import_text, container, false)
-        val editText: TextInputEditText = root.findViewById(R.id.import_text_edit)
+        /*val editText: TextInputEditText = root.findViewById(R.id.import_text_edit)
 
         val pasteButton: Button = root.findViewById(R.id.paste_btn)
         pasteButton.setOnClickListener { editText.setText(getClipboardText()) }
@@ -77,12 +84,24 @@ class ImportTextFragment: Fragment() {
             }
         }
 
-        progressBar = root.findViewById(R.id.recent_files_progress_bar)
+        progressBar = root.findViewById(R.id.recent_files_progress_bar)*/
+        pager = root.findViewById(R.id.import_text_pager)
+        pager.adapter = ImportAdapter(this)
+
+        val tabLayout: TabLayout = root.findViewById(R.id.import_tab_layout)
+        TabLayoutMediator(tabLayout, pager,
+            TabLayoutMediator.TabConfigurationStrategy { tab, position ->
+                tab.text = when(position){
+                    0 -> "Files"
+                    1 -> "Text"
+                    else -> ""
+                }
+            }).attach()
 
         setViewModel()
 
-        recentFilesList = root.findViewById(R.id.recent_files_list)
-        recentFilesList.layoutManager = LinearLayoutManager(context)
+        /*recentFilesList = root.findViewById(R.id.recent_files_list)
+        recentFilesList.layoutManager = LinearLayoutManager(context)*/
 
         return root
     }
@@ -115,13 +134,13 @@ class ImportTextFragment: Fragment() {
             })
 
             dataLoading.observe(viewLifecycleOwner, Observer {
-                progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
+//                progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
             loadRecentFiles()
             files.observe(viewLifecycleOwner, Observer {
                 adapter = RecentFilesAdapter(it, viewModel)
-                recentFilesList.adapter = adapter
+//                recentFilesList.adapter = adapter
             })
         }
     }
@@ -234,6 +253,19 @@ class ImportTextFragment: Fragment() {
         if (clip.itemCount <= 0) return ""
         val pasteData = clip.getItemAt(0).text
         return pasteData?.toString() ?: ""
+    }
+
+    class ImportAdapter(fragment: Fragment): FragmentStateAdapter(fragment){
+
+        override fun getItemCount() = 2
+
+        override fun createFragment(position: Int): Fragment {
+            return when(position){
+                0 -> FilesFragment()
+                1 -> EnterTextFragment()
+                else -> throw IllegalStateException("Out of position: $position")
+            }
+        }
     }
 
     companion object{
