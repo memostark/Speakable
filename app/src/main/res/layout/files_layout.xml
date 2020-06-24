@@ -33,15 +33,19 @@
         android:layout_gravity="bottom|end">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/pick_txt_file_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
+            app:srcCompat="@drawable/ic_txt_file_icon"
             app:fabSize="mini"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/pick_epub_file_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
+            app:srcCompat="@drawable/ic_epub_icon"
             app:fabSize="mini"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
