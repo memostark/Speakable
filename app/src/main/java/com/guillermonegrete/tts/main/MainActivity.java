@@ -36,7 +36,6 @@ package com.guillermonegrete.tts.main;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
@@ -63,8 +62,12 @@ public class MainActivity extends AppCompatActivity {
     private BottomNavigationView navView;
 
     private String barTitle;
+    private int currentTab;
 
     Fragment activeFragment;
+    FragmentManager fragmentManager = getSupportFragmentManager();
+
+    private static String CURRENT_SELECTED_FRAGMENT = "current fragment";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,19 +76,55 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
         setActionBar();
 
-        final Fragment ttsFrag = new TextToSpeechFragment();
-        final Fragment savedWordsFrag = new SavedWordsFragment();
-        final Fragment importTextFrag = new ImportTextFragment();
-
-
-        activeFragment = ttsFrag;
+        final Fragment ttsFrag;
+        final Fragment savedWordsFrag;
+        final Fragment importTextFrag;
 
         navView = findViewById(R.id.bottom_nav_view);
-        navView.setSelectedItemId(R.id.nav_item_main);
+
+        if(savedInstanceState == null){
+            ttsFrag = new TextToSpeechFragment();
+            savedWordsFrag = new SavedWordsFragment();
+            importTextFrag = new ImportTextFragment();
+
+            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, importTextFrag, "3").hide(importTextFrag).commit();
+            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, savedWordsFrag, "2").hide(savedWordsFrag).commit();
+            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, ttsFrag, "1").commit();
+
+            activeFragment = ttsFrag;
+        } else {
+            ttsFrag = fragmentManager.findFragmentByTag("1");
+            savedWordsFrag = fragmentManager.findFragmentByTag("2");
+            importTextFrag = fragmentManager.findFragmentByTag("3");
+
+            String item;
+            currentTab = savedInstanceState.getInt(CURRENT_SELECTED_FRAGMENT);
+            switch (currentTab){
+                case R.id.nav_item_import:
+                    activeFragment = importTextFrag;
+                    break;
+                case R.id.nav_item_saved:
+                    activeFragment = savedWordsFrag;
+                    break;
+                case R.id.nav_item_main:
+                default:
+                    activeFragment = ttsFrag;
+                    break;
+            }
+
+            Fragment settingsFrag = fragmentManager.findFragmentById(R.id.main_tts_fragment_container);
+            if(settingsFrag instanceof SettingsFragment){
+                setHiddenNavView();
+            }
+        }
+
         navView.setOnNavigationItemSelectedListener(menuItem -> {
             menuItem.setChecked(true);
 
-            switch (menuItem.getItemId()){
+            int tabId = menuItem.getItemId();
+            currentTab = tabId;
+
+            switch (tabId){
                 case R.id.nav_item_saved:
                     barTitle = getString(R.string.saved);
                     changeFragment(savedWordsFrag);
@@ -104,13 +143,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         navView.setOnNavigationItemReselectedListener(item -> {});
-
-        if(savedInstanceState == null){
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, importTextFrag, "3").hide(importTextFrag).commit();
-            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, savedWordsFrag, "2").hide(savedWordsFrag).commit();
-            fragmentManager.beginTransaction().add(R.id.main_tts_fragment_container, ttsFrag, "1").commit();
-        }
     }
 
     private void setActionBar(){
@@ -124,27 +156,6 @@ public class MainActivity extends AppCompatActivity {
             actionbar.setHomeButtonEnabled(false);
             actionbar.setDisplayHomeAsUpEnabled(false);
         }
-
-        /*getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
-            @Override
-            public void onFragmentViewCreated(@NonNull FragmentManager fm, @NonNull Fragment f, @NonNull View v, @Nullable Bundle savedInstanceState) {
-//                TransitionManager.beginDelayedTransition(, Slide(Gravity.BOTTOM).excludeTarget(R.id.nav_host_fragment, true));
-                boolean arrowBtn;
-                System.out.println("Lifecycle callback registered called");
-
-                if( f instanceof SettingsFragment){
-                    navView.setVisibility(View.GONE);
-                    arrowBtn = true;
-                }else {
-
-                    getSupportFragmentManager().beginTransaction().show(activeFragment).commit();
-
-                    arrowBtn = false;
-                }
-                actionbar.setHomeButtonEnabled(arrowBtn);
-                actionbar.setDisplayHomeAsUpEnabled(arrowBtn);
-            }
-        }, true);*/
     }
 
     private void changeFragment(Fragment newFragment){
@@ -176,11 +187,7 @@ public class MainActivity extends AppCompatActivity {
                 fragmentTransaction.addToBackStack(null);
                 fragmentTransaction.commit();
 
-                // Config bars
-                actionbar.setTitle("");
-                actionbar.setHomeButtonEnabled(true);
-                actionbar.setDisplayHomeAsUpEnabled(true);
-                navView.setVisibility(View.GONE);
+                setHiddenNavView();
                 return true;
             }
 
@@ -194,10 +201,17 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void setHiddenNavView(){
+        // Config bars
+        actionbar.setTitle("");
+        actionbar.setHomeButtonEnabled(true);
+        actionbar.setDisplayHomeAsUpEnabled(true);
+        navView.setVisibility(View.GONE);
+    }
+
     @Override
     public void onBackPressed() {
         FragmentManager fm = getSupportFragmentManager();
-        System.out.println("Stack size " + fm.getBackStackEntryCount());
 
         if (fm.getBackStackEntryCount() > 0){
             fm.popBackStackImmediate();
@@ -208,5 +222,11 @@ public class MainActivity extends AppCompatActivity {
             actionbar.setHomeButtonEnabled(false);
             actionbar.setDisplayHomeAsUpEnabled(false);
         } else super.onBackPressed();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(CURRENT_SELECTED_FRAGMENT, currentTab);
     }
 }
