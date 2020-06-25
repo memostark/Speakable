@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.importtext.tabs
 
 import android.Manifest
+import android.animation.Animator
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -10,7 +11,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -44,10 +44,15 @@ class FilesFragment: Fragment() {
     private lateinit var recentFilesList: RecyclerView
     private lateinit var progressBar: ProgressBar
 
+    private lateinit var pickEpubBtn: FloatingActionButton
+    private lateinit var pickTxtBtn: FloatingActionButton
+
     @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
     private val viewModel by lazy {
         ViewModelProvider(this, viewModelFactory).get(ImportTextViewModel::class.java)
     }
+
+    private var fabOpen = false
 
     override fun onAttach(context: Context) {
         AndroidSupportInjection.inject(this)
@@ -63,18 +68,24 @@ class FilesFragment: Fragment() {
 
         progressBar = root.findViewById(R.id.recent_files_progress_bar)
 
-        root.findViewById<FloatingActionButton>(R.id.pick_txt_file_btn).apply {
+        root.findViewById<FloatingActionButton>(R.id.pick_file_fab).apply {
+            setOnClickListener { toggleButtons() }
+        }
+
+        pickTxtBtn = root.findViewById<FloatingActionButton>(R.id.pick_txt_file_btn).apply {
             setOnClickListener {
                 fileType = ImportedFileType.TXT
                 checkFileReadPermission()
             }
+            post { translationY = height.toFloat() }
         }
 
-        root.findViewById<FloatingActionButton>(R.id.pick_epub_file_btn).apply {
+        pickEpubBtn = root.findViewById<FloatingActionButton>(R.id.pick_epub_file_btn).apply {
             setOnClickListener {
                 fileType = ImportedFileType.EPUB
                 checkFileReadPermission()
             }
+            post { translationY = height.toFloat() }
         }
 
         recentFilesList = root.findViewById(R.id.recent_files_list)
@@ -226,6 +237,67 @@ class FilesFragment: Fragment() {
             startActivity(intent)
         }else{
             Toast.makeText(context, "Couldn't open file", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun toggleButtons(){
+        fabOpen = !fabOpen
+
+        if(fabOpen) {
+            ViewAnimation.showIn(pickEpubBtn)
+            ViewAnimation.showIn(pickTxtBtn)
+        }else{
+            ViewAnimation.showOut(pickEpubBtn)
+            ViewAnimation.showOut(pickTxtBtn)
+        }
+    }
+
+    object ViewAnimation{
+
+        fun showIn(view: View){
+
+            with(view){
+                visibility = View.VISIBLE
+                alpha = 0f
+                translationY = view.height.toFloat()
+                animate()
+                    .setDuration(200)
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setListener(SimpleAnimatorListener())
+                    .start()
+            }
+        }
+
+        fun showOut(view: View){
+
+            with(view){
+                visibility = View.VISIBLE
+                alpha = 1f
+                translationY = 0f
+                animate()
+                    .setDuration(200)
+                    .translationY(view.height.toFloat())
+                    .alpha(0f)
+                    .setListener(object : SimpleAnimatorListener(){
+                        override fun onAnimationEnd(animation: Animator?) {
+                            view.visibility = View.GONE
+                            super.onAnimationEnd(animation)
+                        }
+                    })
+                    .start()
+            }
+        }
+
+        open class SimpleAnimatorListener: Animator.AnimatorListener{
+
+            override fun onAnimationRepeat(animation: Animator?) {}
+
+            override fun onAnimationEnd(animation: Animator?) {}
+
+            override fun onAnimationCancel(animation: Animator?) {}
+
+            override fun onAnimationStart(animation: Animator?) {}
         }
     }
 

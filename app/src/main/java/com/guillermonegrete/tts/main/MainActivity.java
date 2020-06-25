@@ -97,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
             savedWordsFrag = fragmentManager.findFragmentByTag("2");
             importTextFrag = fragmentManager.findFragmentByTag("3");
 
-            String item;
             currentTab = savedInstanceState.getInt(CURRENT_SELECTED_FRAGMENT);
             switch (currentTab){
                 case R.id.nav_item_import:
