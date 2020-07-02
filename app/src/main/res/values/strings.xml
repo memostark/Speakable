@@ -85,5 +85,8 @@
     <string name="click_to_translate_msg">Page not translated yet. Click button to translate</string>
     <string name="search">Search</string>
     <string name="no_file_read_permission">Read storage permission is necessary to load images</string>
+    <string name="more_options">More options</string>
+    <string name="cover_image">Cover image</string>
+    <string name="delete">Delete</string>
 
 </resources>

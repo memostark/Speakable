@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -19,6 +20,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
@@ -110,6 +112,10 @@ class FilesFragment: Fragment() {
             files.observe(viewLifecycleOwner, Observer {
                 adapter = RecentFilesAdapter(it, viewModel)
                 recentFilesList.adapter = adapter
+            })
+
+            openItemMenu.observe(viewLifecycleOwner, EventObserver{
+                RecentFileMenu.newInstance(it).show(childFragmentManager, "Item menu")
             })
         }
     }
@@ -299,6 +305,40 @@ class FilesFragment: Fragment() {
 
             override fun onAnimationStart(animation: Animator?) {}
         }
+    }
+
+    class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
+
+        private var itemPos: Int? = null
+
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+            itemPos = arguments?.getInt(item_pos_key)
+        }
+
+        override fun onCreateView(
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+        ): View? {
+            val root = inflater.inflate(R.layout.recent_files_menu, container, false)
+
+            val menu = root.findViewById<Button>(R.id.delete_button)
+            menu.setOnClickListener { Toast.makeText(context, "Delete item: $itemPos", Toast.LENGTH_SHORT).show() }
+
+            return root
+        }
+
+        companion object{
+            fun newInstance(itemPos: Int) = RecentFileMenu().apply {
+                arguments = Bundle().apply {
+                    putInt(item_pos_key, itemPos)
+                }
+            }
+
+            private const val item_pos_key = "item_pos"
+        }
+
     }
 
     companion object{

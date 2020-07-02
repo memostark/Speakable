@@ -15,6 +15,9 @@ class ImportTextViewModel @Inject constructor(private val fileRepository: FileRe
     private val _openTextVisualizer = MutableLiveData<Event<BookFile>>()
     val openTextVisualizer: LiveData<Event<BookFile>> = _openTextVisualizer
 
+    private val _openItemMenu = MutableLiveData<Event<Int>>()
+    val openItemMenu: LiveData<Event<Int>> = _openItemMenu
+
     private val _files = MutableLiveData<List<BookFile>>()
     val files: LiveData<List<BookFile>> = _files
 
@@ -35,5 +38,9 @@ class ImportTextViewModel @Inject constructor(private val fileRepository: FileRe
 
     fun openVisualizer(book: BookFile){
         _openTextVisualizer.value = Event(book)
+    }
+
+    fun openItemMenu(itemPos: Int){
+        _openItemMenu.value = Event(itemPos)
     }
 }
