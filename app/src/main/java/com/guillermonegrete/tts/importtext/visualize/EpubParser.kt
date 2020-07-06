@@ -104,14 +104,11 @@ class EpubParser constructor(
      */
     private fun parseContainerFile(parser: XmlPullParser): String{
 
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_CONTAINER
-        )
+        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_CONTAINER)
+
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == XML_ELEMENT_ROOTFILE) return parser.getAttributeValue(null,
-                XML_ATTRIBUTE_FULLPATH
-            )
+            if(parser.name == XML_ELEMENT_ROOTFILE) return parser.getAttributeValue(null, XML_ATTRIBUTE_FULLPATH)
         }
         return ""
     }

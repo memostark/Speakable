@@ -26,7 +26,6 @@ class VisualizeTextViewModel @Inject constructor(
     var pageSplitter: PageSplitter? = null
     var fileReader: ZipFileReader? = null
 
-    private var isEpub = false
     private var firstLoad = true
     private var leftSwipe = false
 
@@ -104,6 +103,7 @@ class VisualizeTextViewModel @Inject constructor(
         _dataLoading.value = true
         viewModelScope.launch {
             val parsedBook = epubParser.parseBook(reader)
+
             val imageGetter = pageSplitter?.imageGetter
             if(imageGetter is InputStreamImageGetter){
                 imageGetter.basePath = epubParser.basePath
@@ -113,8 +113,8 @@ class VisualizeTextViewModel @Inject constructor(
             currentBook = parsedBook
             fileType = ImportedFileType.EPUB
             _book.value = parsedBook
-            isEpub = true
-            initPageSplit()
+
+            initPageSplit(true)
             _dataLoading.value = false
         }
     }
@@ -170,7 +170,7 @@ class VisualizeTextViewModel @Inject constructor(
         return currentPage
     }
 
-    private suspend fun initPageSplit() {
+    private suspend fun initPageSplit(isEpub: Boolean = false) {
         if(isEpub){
             databaseBookFile = getBookFile()
             val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
@@ -272,15 +272,16 @@ class VisualizeTextViewModel @Inject constructor(
      * Sometimes is necessary to wrap up before onCleared is called (e.g. when changing theme)
      * This function can be called before activity/fragment is destroyed.
      */
-    fun onFinish(date: Calendar = Calendar.getInstance()) {
-        saveBookFileData(date)
+    fun onFinish(date: Calendar = Calendar.getInstance(), folderPath: String = UUID.randomUUID().toString()) {
+        saveBookFileData(date, folderPath)
         cleared = true
     }
 
-    private fun saveBookFileData(date: Calendar){
+    private fun saveBookFileData(date: Calendar, folderPath: String){
         val uri = fileUri ?: return
 
         // This operation is intended to be synchronous
+        // TODO: Change to async, with context call or work manager.
         runBlocking{
             val progress = calculateProgress()
 
@@ -291,7 +292,17 @@ class VisualizeTextViewModel @Inject constructor(
                 percentageDone = progress
             }
             val title = currentBook?.title ?: ""
-            val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
+            val bookFile = databaseBookFile ?: BookFile(
+                uri,
+                title,
+                fileType,
+                folderPath = folderPath,
+                page = currentPage,
+                chapter = currentChapter,
+                percentageDone =  calculateProgress(),
+                lastRead =  date
+            )
+
             fileRepository.saveFile(bookFile)
         }
     }

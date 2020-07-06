@@ -49,7 +49,7 @@ class VisualizeTextViewModelTest {
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
-    private val bookFile = BookFile("empty_uri", "Title", ImportedFileType.EPUB, id = 1)
+    private val bookFile = BookFile("empty_uri", "Title", ImportedFileType.EPUB, id = 1, folderPath = "random_path")
 
     @Before
     fun setUp(){
@@ -83,7 +83,7 @@ class VisualizeTextViewModelTest {
         }
 
         // Then progress indicator is shown
-        Assert.assertTrue(getUnitLiveDataValue(viewModel.dataLoading))
+        assertTrue(getUnitLiveDataValue(viewModel.dataLoading))
 
         mainCoroutineRule.resumeDispatcher()
 
@@ -283,7 +283,8 @@ class VisualizeTextViewModelTest {
         viewModel.currentPage = initialPage
 
         val lastReadDate = Calendar.getInstance()
-        viewModel.onFinish(lastReadDate)
+        val uuid = "random"
+        viewModel.onFinish(lastReadDate, uuid)
 
         val sumPreviousChars = sumCharacters(3, initialPage)
         println("Total chars ${DEFAULT_BOOK.totalChars} ")
@@ -292,6 +293,7 @@ class VisualizeTextViewModelTest {
             uri,
             DEFAULT_BOOK.title,
             ImportedFileType.EPUB,
+            folderPath = uuid,
             page = initialPage,
             chapter = 3,
             lastRead = lastReadDate,
@@ -329,6 +331,7 @@ class VisualizeTextViewModelTest {
             bookFile.uri,
             bookFile.title,
             bookFile.fileType,
+            folderPath = bookFile.folderPath,
             id = bookFile.id,
             chapter = initialChapter + 1,
             lastRead = lastReadDate,
@@ -341,7 +344,7 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun parses_book_from_picker_with_uri_already_in_db(){
+    fun `Parses book with uri already in db`(){
         // Setup
         fileRepository.addTasks(bookFile)
         viewModel.fileUri = bookFile.uri

@@ -47,6 +47,11 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
+
+    sourceSets {
+        // Adds exported schema location as test app assets.
+        androidTest.assets.srcDirs += files("$projectDir/schemas".toString())
+    }
 }
 
 repositories {
@@ -110,6 +115,7 @@ dependencies {
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
+    androidTestImplementation "androidx.room:room-testing:2.2.5"
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
