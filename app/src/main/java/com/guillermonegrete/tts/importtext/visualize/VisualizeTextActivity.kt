@@ -261,7 +261,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(SHOW_EPUB == intent.action) {
             val uri: Uri = intent.getParcelableExtra(EPUB_URI)
             val rootStream = contentResolver.openInputStream(uri)
-            viewModel.fileReader = DefaultZipFileReader(rootStream)
+            viewModel.fileReader = DefaultZipFileReader(rootStream, this)
             viewModel.fileUri = uri.toString()
             viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
             viewModel.parseEpub()
@@ -410,7 +410,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
-            val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri))
+            val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri), this)
             InputStreamImageGetter( this, zipReader)
         } else null
 

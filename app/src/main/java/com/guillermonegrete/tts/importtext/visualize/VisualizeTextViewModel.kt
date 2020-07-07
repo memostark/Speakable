@@ -174,6 +174,11 @@ class VisualizeTextViewModel @Inject constructor(
         if(isEpub){
             databaseBookFile = getBookFile()
             val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
+
+            databaseBookFile?.let {
+                fileReader?.createFileFolder(it.folderPath)
+            }
+
             jumpToChapter(initialChapter)
 
         }else{
