@@ -10,10 +10,7 @@ import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
-import com.guillermonegrete.tts.importtext.epub.Book
-import com.guillermonegrete.tts.importtext.epub.NavPoint
-import com.guillermonegrete.tts.importtext.epub.SpineItem
-import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import com.guillermonegrete.tts.importtext.epub.*
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -291,7 +288,7 @@ class VisualizeTextViewModelTest {
 
         val expectedFile = BookFile(
             uri,
-            DEFAULT_BOOK.title,
+            DEFAULT_BOOK.metadata.title,
             ImportedFileType.EPUB,
             folderPath = uuid,
             page = initialPage,
@@ -428,15 +425,17 @@ class VisualizeTextViewModelTest {
 
     companion object{
         const val DEFAULT_CHAPTER = "Chapter text"
+
+        private val defaultMetadata = EPUBMetadata("title", "", "", "")
         private val DEFAULT_BOOK = Book(
-            "Test title",
+            EPUBMetadata("Test title", "", "", ""),
             DEFAULT_CHAPTER,
             Array(5){SpineItem("$it", "ch${it + 1}.html", it + 100)}.toList(),
             mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
             TableOfContents(listOf())
         )
         private val TWO_CHAPTER_BOOK = Book(
-            "title",
+            defaultMetadata,
             DEFAULT_CHAPTER,
             listOf(
                 SpineItem("chapter1", "ch1.html", 0),
@@ -446,7 +445,7 @@ class VisualizeTextViewModelTest {
             TableOfContents(listOf())
         )
         private val THREE_CHAPTER_BOOK = Book(
-            "title",
+            defaultMetadata,
             DEFAULT_CHAPTER,
             listOf(
                 SpineItem("chapter1", "", 0),

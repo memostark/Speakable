@@ -4,6 +4,7 @@ import android.util.Xml
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.guillermonegrete.tts.InstMainCoroutineRule
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.epub.EPUBMetadata
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
@@ -60,7 +61,7 @@ class EpubParserTest {
 
         val book = epubParser.parseBook(zipFileReader)
 
-        val expectedBook = Book("Hunger: Book One", chapterBodies.first(),
+        val expectedBook = Book(metadata, chapterBodies.first(),
             listOf(
                 SpineItem("coverpage-wrapper", "wrap0000.html", chapterBodies.first().length),
                 SpineItem("item4", "18291-h@18291-h-0.htm.html", chapterBodies[1].length),
@@ -124,7 +125,7 @@ class EpubParserTest {
     }
 
     private fun assertBook(expected: Book, actual: Book){
-        assertEquals(expected.title, actual.title)
+        assertEquals(expected.metadata, actual.metadata)
         assertEquals(expected.currentChapter, actual.currentChapter)
         assertEquals(expected.spine, actual.spine)
         assertEquals(expected.manifest, actual.manifest)
@@ -180,6 +181,7 @@ class EpubParserTest {
                   </rootfiles>
                 </container>"""
         const val tocPath = "toc.ncx"
+        val metadata = EPUBMetadata("Hunger: Book One", "Knut Hamsun", "en", "item13")
         const val OPF_FILE_XML =
             """<package xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id">
                   <metadata>

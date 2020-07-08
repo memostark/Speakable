@@ -296,7 +296,7 @@ class VisualizeTextViewModel @Inject constructor(
                 lastRead = date
                 percentageDone = progress
             }
-            val title = currentBook?.title ?: ""
+            val title = currentBook?.metadata?.title ?: ""
             val bookFile = databaseBookFile ?: BookFile(
                 uri,
                 title,

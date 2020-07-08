@@ -1,7 +1,7 @@
 package com.guillermonegrete.tts.importtext.epub
 
 data class Book(
-    val title: String,
+    val metadata: EPUBMetadata,
     var currentChapter: String,
     val spine: List<SpineItem>,
     val manifest: Map<String, String>,

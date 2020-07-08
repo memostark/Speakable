@@ -9,6 +9,16 @@ abstract class PullParser(val parser: XmlPullParser) {
     protected val ns: String? = null
 
     @Throws(IOException::class, XmlPullParserException::class)
+    protected fun readTagText(tag: String): String {
+        parser.require(XmlPullParser.START_TAG, ns, tag)
+
+        val result = readText()
+        parser.require(XmlPullParser.END_TAG, ns, tag)
+
+        return result
+    }
+
+    @Throws(IOException::class, XmlPullParserException::class)
     protected fun readText(): String {
         var result = ""
         if (parser.next() == XmlPullParser.TEXT) {
