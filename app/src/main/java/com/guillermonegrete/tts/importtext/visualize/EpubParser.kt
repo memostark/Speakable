@@ -5,9 +5,8 @@ import android.text.Html
 import android.text.Spanned
 import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.importtext.epub.Book
-import com.guillermonegrete.tts.importtext.epub.NavPoint
-import com.guillermonegrete.tts.importtext.epub.SpineItem
-import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import com.guillermonegrete.tts.importtext.visualize.epub.NCXParser
+import com.guillermonegrete.tts.importtext.visualize.epub.OPFParser
 import kotlinx.coroutines.*
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
@@ -27,20 +26,14 @@ class EpubParser constructor(
     var basePath = ""
         private set
 
-    private var opfPath = ""
-    private val spineIdRefs = mutableListOf<String>()
-    private var chapterLength = 0
-    private val manifest = mutableMapOf<String, String>()
-    private var tocPath = ""
-
     private var currentFolder: String? = null
+    private var chapterLength = 0
     private var currentChapter = ""
 
-    private var title = "Untitled file"
-
-    private val navPoints = mutableListOf<NavPoint>()
-
     private val ns: String? = null
+
+    private val opfParser = OPFParser(parser)
+    private val ncxParser = NCXParser(parser)
 
     init {
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
@@ -56,23 +49,32 @@ class EpubParser constructor(
             val containerReader = readers[CONTAINER_FILE_PATH]
             parser.setInput(containerReader)
             parser.nextTag()
-            opfPath = parseContainerFile(parser)
+            val opfPath = parseContainerFile(parser)
             extractBasePath(opfPath)
 
             val opfReader = readers[opfPath]
             parser.setInput(opfReader)
             parser.nextTag()
-            parseOpfFile(parser)
+
+            val tempBook = opfParser.parse()
+
+            // TODO add media-type field to manifest and get path by searching for media-type: "application/x-dtbncx+xml"
+            val tocPath = tempBook.manifest["ncx"] ?: ""
 
             val fullTocPath = if(basePath.isEmpty()) tocPath else "$basePath/$tocPath"
             val tocReader = readers[fullTocPath]
             parser.setInput(tocReader)
             parser.nextTag()
-            val toc = parseTableOfContents(parser)
 
-            val spine = readSpineItemFiles(readers)
+            val toc = ncxParser.parse()
+            toc.navPoints.forEach {
+                tempBook.tableOfContents.add(it)
+            }
 
-            return@withContext Book(title, currentChapter, spine, manifest, toc)
+            readSpineItemFiles(readers, tempBook)
+            tempBook.currentChapter = currentChapter
+
+            return@withContext tempBook
         }
     }
 
@@ -114,99 +116,6 @@ class EpubParser constructor(
     }
 
     /**
-     *  Gets path of table of contents file, manifest items and spine
-     *  Tag hierarchy:
-     *  package -> metadata -> dc:title
-     *             manifest -> item (id, href, media-type)
-     *             spine (toc) -> itemref (idref)
-     */
-    private fun parseOpfFile(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_PACKAGE
-        )
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.eventType != XmlPullParser.START_TAG) continue
-            when(parser.name){
-                XML_ELEMENT_METADATA -> readMetadata()
-                XML_ELEMENT_MANIFEST -> readManifest(parser)
-                XML_ELEMENT_SPINE -> readSpine(parser)
-                else -> skip(parser)
-            }
-        }
-    }
-
-    private fun readMetadata() {
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_METADATA
-        )
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == XML_ELEMENT_DCTITLE) readTitle()
-            else skip(parser)
-        }
-    }
-
-    /**
-     * Reads text inside dc:title tag
-     * Example tag: <dc:title>Hunger: Book One</dc:title>
-     */
-    private fun readTitle() {
-        parser.require(XmlPullParser.START_TAG, ns,
-            XML_ELEMENT_DCTITLE
-        )
-        title = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns,
-            XML_ELEMENT_DCTITLE
-        )
-    }
-
-    private fun readManifest(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_MANIFEST)
-
-        manifest.clear()
-
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == XML_ELEMENT_MANIFESTITEM) readManifestItem(parser)
-            else skip(parser)
-        }
-    }
-
-    private fun readManifestItem(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_MANIFESTITEM)
-
-        val id = parser.getAttributeValue(null, "id")
-        val href = parser.getAttributeValue(null, "href")
-        parser.nextTag()
-        manifest[id] = href
-        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_MANIFESTITEM)
-    }
-
-    private fun readSpine(parser: XmlPullParser) {
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_SPINE)
-
-        val tocId = parser.getAttributeValue(null, XML_ATTRIBUTE_TOC)
-        tocPath = manifest[tocId] ?: ""
-
-        spineIdRefs.clear()
-
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == XML_ELEMENT_ITEMREF) readSpineItem(parser)
-            else skip(parser)
-        }
-    }
-
-    private fun readSpineItem(parser: XmlPullParser) {
-        parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_ITEMREF)
-        val idRef = parser.getAttributeValue(null, XML_ATTRIBUTE_IDREF)
-
-        parser.nextTag()
-        spineIdRefs.add(idRef)
-        parser.require(XmlPullParser.END_TAG, ns, XML_ELEMENT_ITEMREF)
-    }
-
-    /**
      *  Get contents of body tag in html/xhtml
      *  Tags hierarchy:
      *  html -> head
@@ -237,77 +146,6 @@ class EpubParser constructor(
             @Suppress("DEPRECATION")
             Html.fromHtml(text.toString(), null, null)
         }
-    }
-
-
-    @VisibleForTesting
-    @Throws(XmlPullParserException::class, IOException::class)
-    fun parseTableOfContents(parser: XmlPullParser): TableOfContents{
-        navPoints.clear()
-
-        parser.require(XmlPullParser.START_TAG, ns, "ncx")
-        while (parser.next() != XmlPullParser.END_TAG){
-            if (parser.eventType != XmlPullParser.START_TAG) continue
-            if(parser.name == "navMap") readMapTag(parser)
-            else skip(parser)
-        }
-        return TableOfContents(navPoints)
-    }
-
-    private fun readMapTag(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns, "navMap")
-        while (parser.next() != XmlPullParser.END_TAG){
-            if (parser.eventType != XmlPullParser.START_TAG) continue
-            when(parser.name){
-                "navPoint" -> readPoint(parser)
-                else -> skip(parser)
-            }
-        }
-        parser.require(XmlPullParser.END_TAG, ns, "navMap")
-    }
-
-    private fun readPoint(parser: XmlPullParser){
-        parser.require(XmlPullParser.START_TAG, ns, "navPoint")
-
-        parser.nextTag()
-        val label = readLabel(parser)
-        parser.nextTag()
-        parser.require(XmlPullParser.START_TAG, ns, "content")
-        val content = parser.getAttributeValue(null, "src")
-        parser.nextTag()
-        parser.require(XmlPullParser.END_TAG, ns, "content")
-        navPoints.add(NavPoint(label, content))
-
-        while (parser.next() != XmlPullParser.END_TAG){
-            if (parser.eventType != XmlPullParser.START_TAG) continue
-            when(parser.name){
-                "navPoint" -> readPoint(parser)
-                else -> skip(parser) // Don't read nested nav points, implement later
-            }
-        }
-
-        parser.require(XmlPullParser.END_TAG, ns, "navPoint")
-    }
-
-    private fun readLabel(parser: XmlPullParser): String{
-        parser.require(XmlPullParser.START_TAG, ns, "navLabel")
-        parser.nextTag()
-        parser.require(XmlPullParser.START_TAG, ns, "text")
-        val result = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns, "text")
-        parser.nextTag()
-        parser.require(XmlPullParser.END_TAG, ns, "navLabel")
-        return result
-    }
-
-    @Throws(IOException::class, XmlPullParserException::class)
-    private fun readText(parser: XmlPullParser): String {
-        var result = ""
-        if (parser.next() == XmlPullParser.TEXT) {
-            result = parser.text
-            parser.nextTag()
-        }
-        return result
     }
 
 
@@ -410,10 +248,10 @@ class EpubParser constructor(
         return  File(currentFolder, path).canonicalPath
     }
 
-    private suspend fun readSpineItemFiles(readers: Map<String, StringReader>) = coroutineScope{
+    private suspend fun readSpineItemFiles(readers: Map<String, StringReader>, book: Book) = coroutineScope{
 
-        spineIdRefs.mapIndexed { index, idRef ->
-            val href = manifest[idRef] ?: ""
+        book.spine.mapIndexed { index, item ->
+            val href = item.href
             val fullPath = if(basePath.isEmpty()) href else "$basePath/$href"
             currentFolder = File(fullPath).parent
             val reader = readers[fullPath]
@@ -423,7 +261,7 @@ class EpubParser constructor(
 
             parseChapterHtml(parser, index == 0) // In this case the first item is the current
 
-            SpineItem(idRef, href, chapterLength)
+            item.charCount = chapterLength
         }
     }
 
@@ -434,16 +272,5 @@ class EpubParser constructor(
         const val XML_ELEMENT_CONTAINER = "container"
         const val XML_ELEMENT_ROOTFILE = "rootfile"
         const val XML_ATTRIBUTE_FULLPATH = "full-path"
-
-        // .opf XML
-        const val XML_ELEMENT_PACKAGE = "package"
-        const val XML_ELEMENT_METADATA = "metadata"
-        const val XML_ELEMENT_DCTITLE = "dc:title"
-        const val XML_ELEMENT_MANIFEST = "manifest"
-        const val XML_ELEMENT_MANIFESTITEM = "item"
-        const val XML_ELEMENT_SPINE = "spine"
-        const val XML_ATTRIBUTE_TOC = "toc"
-        const val XML_ELEMENT_ITEMREF = "itemref"
-        const val XML_ATTRIBUTE_IDREF = "idref"
     }
 }

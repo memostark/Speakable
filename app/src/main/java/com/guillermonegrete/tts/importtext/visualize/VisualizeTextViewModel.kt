@@ -315,21 +315,21 @@ class VisualizeTextViewModel @Inject constructor(
     private fun calculateProgress(): Int{
         var percentage = 0
 
-        currentBook?.let {
-            var sumPreviousChars = 0
+        val book = currentBook ?: return percentage
+        var sumPreviousChars = 0
 
-            // Sum of previous spine items (chapters)
-            for (i in 0 until currentChapter){
-                sumPreviousChars += it.spine[i].charCount
-            }
-
-            // Sum of previous and current pages
-            for(i in 0..currentPage){
-                sumPreviousChars += currentPages[i].length
-            }
-
-            percentage = 100 * sumPreviousChars / it.totalChars
+        // Sum of previous spine items (chapters)
+        for (i in 0 until currentChapter){
+            sumPreviousChars += book.spine[i].charCount
         }
+
+        // Sum of previous and current pages
+        for(i in 0..currentPage){
+            sumPreviousChars += currentPages[i].length
+        }
+
+        percentage = 100 * sumPreviousChars / book.totalChars
+
         return percentage
     }
 

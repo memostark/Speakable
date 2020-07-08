@@ -1,6 +1,12 @@
 package com.guillermonegrete.tts.importtext.epub
 
-class TableOfContents(val navPoints: List<NavPoint>) {
+class TableOfContents(points: List<NavPoint> = listOf()) {
 
-    constructor(): this(listOf<NavPoint>())
+    private val _navPoints = points.toMutableList()
+    val navPoints: List<NavPoint>
+        get() = _navPoints
+
+    fun add(navPoint: NavPoint){
+        _navPoints.add(navPoint)
+    }
 }

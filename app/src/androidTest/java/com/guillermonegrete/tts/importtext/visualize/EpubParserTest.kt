@@ -7,6 +7,7 @@ import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import com.guillermonegrete.tts.importtext.visualize.epub.NCXParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
@@ -58,7 +59,6 @@ class EpubParserTest {
         }
 
         val book = epubParser.parseBook(zipFileReader)
-        println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
 
         val expectedBook = Book("Hunger: Book One", chapterBodies.first(),
             listOf(
@@ -109,7 +109,7 @@ class EpubParserTest {
         xmlParser.setInput(StringReader(TABLE_OF_CONTENTS_XML))
         xmlParser.nextTag()
 
-        val result = epubParser.parseTableOfContents(xmlParser)
+        val result = NCXParser(xmlParser).parse()
         val expected = TableOfContents(listOf(
             NavPoint("Volume 1", "volume1.html"),
             NavPoint("Chapter 1", "volume1/chapter001.html"),
