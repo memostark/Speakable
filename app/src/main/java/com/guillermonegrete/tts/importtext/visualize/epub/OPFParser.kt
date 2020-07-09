@@ -54,7 +54,10 @@ class OPFParser(parser: XmlPullParser): PullParser(parser) {
                 XML_ELEMENT_DCTITLE -> title = readTagText(XML_ELEMENT_DCTITLE)
                 XML_ELEMENT_CREATOR -> author = readTagText(XML_ELEMENT_CREATOR)
                 XML_ELEMENT_LANGUAGE -> language = readTagText(XML_ELEMENT_LANGUAGE)
-                XML_ELEMENT_META -> cover = readMetaItem("cover")
+                XML_ELEMENT_META -> {
+                    val item = readMetaItem("cover")
+                    if(item != null) cover = item
+                }
                 else -> skip()
             }
         }
@@ -62,7 +65,7 @@ class OPFParser(parser: XmlPullParser): PullParser(parser) {
         return EPUBMetadata(title, author, language, cover)
     }
 
-    private fun readMetaItem(name: String): String{
+    private fun readMetaItem(name: String): String?{
         parser.require(XmlPullParser.START_TAG, ns, XML_ELEMENT_META)
 
         val id = parser.getAttributeValue(null, "name")
@@ -75,7 +78,7 @@ class OPFParser(parser: XmlPullParser): PullParser(parser) {
 
         }else{
             skip()
-            ""
+            null
         }
     }
 

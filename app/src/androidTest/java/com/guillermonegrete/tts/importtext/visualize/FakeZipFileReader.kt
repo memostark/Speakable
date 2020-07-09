@@ -24,4 +24,6 @@ class FakeZipFileReader: ZipFileReader {
     }
 
     override suspend fun createFileFolder(path: String) {}
+
+    override suspend fun saveCoverBitmap(coverPath: String, outputDir: String) {}
 }

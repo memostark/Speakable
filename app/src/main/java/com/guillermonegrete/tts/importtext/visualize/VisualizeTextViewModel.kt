@@ -13,6 +13,7 @@ import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import kotlinx.coroutines.*
+import java.io.File
 import java.util.*
 import javax.inject.Inject
 
@@ -175,8 +176,21 @@ class VisualizeTextViewModel @Inject constructor(
             databaseBookFile = getBookFile()
             val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
 
+            // Create files folder and save image cover
             databaseBookFile?.let {
-                fileReader?.createFileFolder(it.folderPath)
+                val folderPath = it.folderPath
+                fileReader?.createFileFolder(folderPath)
+
+                val book = currentBook ?: return@let
+
+                val coverId = book.metadata.cover
+                val coverPath = book.manifest[coverId]
+
+                coverPath?.let {path ->
+                    val absCoverPath = File(epubParser.basePath, path).absolutePath.trimStart('/')
+                    fileReader?.saveCoverBitmap(absCoverPath, folderPath)
+                }
+
             }
 
             jumpToChapter(initialChapter)

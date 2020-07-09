@@ -389,6 +389,8 @@ class VisualizeTextViewModelTest {
     }
 
     private fun parse_book(book: Book){
+        `when`(epubParser.basePath).thenReturn("")
+
         runBlockingTest {
             `when`(epubParser.parseBook(fileReader)).thenReturn(book)
             viewModel.parseEpub()
@@ -426,12 +428,12 @@ class VisualizeTextViewModelTest {
     companion object{
         const val DEFAULT_CHAPTER = "Chapter text"
 
-        private val defaultMetadata = EPUBMetadata("title", "", "", "")
+        private val defaultMetadata = EPUBMetadata("title", "", "", "coverId")
         private val DEFAULT_BOOK = Book(
-            EPUBMetadata("Test title", "", "", ""),
+            EPUBMetadata("Test title", "", "", "coverId"),
             DEFAULT_CHAPTER,
             Array(5){SpineItem("$it", "ch${it + 1}.html", it + 100)}.toList(),
-            mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
+            mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html", "coverId" to "cover-jpg"),
             TableOfContents(listOf())
         )
         private val TWO_CHAPTER_BOOK = Book(
@@ -452,7 +454,7 @@ class VisualizeTextViewModelTest {
                 SpineItem("chapter2", "", 0),
                 SpineItem("chapter3", "", 0)
             ),
-            mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html", "chapter3" to "ch3.html"),
+            mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html", "chapter3" to "ch3.html", "coverId" to "cover-jpg"),
             TableOfContents(listOf(
                 NavPoint("chapter1", "ch1.html"),
                 NavPoint("chapter2", "ch2.html"),

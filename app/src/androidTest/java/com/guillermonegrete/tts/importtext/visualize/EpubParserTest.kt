@@ -194,6 +194,7 @@ class EpubParserTest {
                     <dc:date opf:event="conversion">2018-10-19T08:31:38.121210+00:00</dc:date>
                     <dc:source>18291-h/18291-h.htm</dc:source>
                     <meta content="item13" name="cover"/>
+                    <meta content="0.4.2" name="Sigil version"/>
                   </metadata>
                   <manifest>
                     <item href="pgepub.css" id="item1" media-type="text/css"/>

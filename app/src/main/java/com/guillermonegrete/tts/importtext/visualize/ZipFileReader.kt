@@ -10,4 +10,6 @@ interface ZipFileReader {
     suspend fun getAllReaders(): Map<String, StringReader>
 
     suspend fun createFileFolder(path: String)
+
+    suspend fun saveCoverBitmap(coverPath: String, outputDir: String)
 }
