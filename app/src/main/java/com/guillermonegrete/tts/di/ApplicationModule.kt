@@ -25,6 +25,8 @@ import com.guillermonegrete.tts.db.FilesDatabase
 import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.db.WordsDatabase
 import com.guillermonegrete.tts.imageprocessing.*
+import com.guillermonegrete.tts.importtext.visualize.io.DefaultEpubFileManager
+import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import com.guillermonegrete.tts.main.TranslatorEnumKey
 import com.guillermonegrete.tts.main.TranslatorType
 import com.guillermonegrete.tts.threading.MainThreadImpl
@@ -181,6 +183,9 @@ abstract class ApplicationModuleBinds {
 
     @Binds
     abstract fun bindSettingsRepository(repository: DefaultSettingsRepository): SettingsRepository
+
+    @Binds
+    abstract fun bindEpubFileManager(manager: DefaultEpubFileManager): EpubFileManager
 }
 
 /**

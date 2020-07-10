@@ -7,10 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ImportTextViewModel @Inject constructor(private val fileRepository: FileRepository): ViewModel() {
+class ImportTextViewModel @Inject constructor(
+    private val fileRepository: FileRepository,
+    fileManager: EpubFileManager
+): ViewModel() {
 
     private val _openTextVisualizer = MutableLiveData<Event<BookFile>>()
     val openTextVisualizer: LiveData<Event<BookFile>> = _openTextVisualizer
@@ -23,6 +27,8 @@ class ImportTextViewModel @Inject constructor(private val fileRepository: FileRe
 
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
+
+    val filesPath = fileManager.filesDir
 
     fun loadRecentFiles(){
         _dataLoading.value = true

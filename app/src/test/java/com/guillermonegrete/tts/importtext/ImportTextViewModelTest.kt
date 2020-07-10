@@ -5,6 +5,7 @@ import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.getUnitLiveDataValue
+import com.guillermonegrete.tts.importtext.visualize.io.FakeEpubFileManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.*
 import org.junit.Before
@@ -33,7 +34,7 @@ class ImportTextViewModelTest {
 
         fileRepository.addTasks(files1, files2)
 
-        viewModel = ImportTextViewModel(fileRepository)
+        viewModel = ImportTextViewModel(fileRepository, FakeEpubFileManager())
     }
 
     @Test

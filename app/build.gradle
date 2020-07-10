@@ -164,6 +164,9 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "androidx.arch.core:core-testing:2.1.0"
 
+    // Glide Image Library
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+
     // How to use app library
     implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {
         transitive=true
