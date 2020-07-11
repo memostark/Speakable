@@ -24,6 +24,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.databinding.FilesLayoutBinding
 import com.guillermonegrete.tts.importtext.ImportTextViewModel
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.RecentFilesAdapter
@@ -37,7 +38,10 @@ import java.io.InputStreamReader
 import java.lang.StringBuilder
 import javax.inject.Inject
 
-class FilesFragment: Fragment() {
+class FilesFragment: Fragment(R.layout.files_layout) {
+
+    private  var _binding: FilesLayoutBinding? = null
+    private val binding get() = _binding!!
 
     private var fileType = ImportedFileType.TXT
 
@@ -61,20 +65,15 @@ class FilesFragment: Fragment() {
         super.onAttach(context)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val root = inflater.inflate(R.layout.files_layout, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        _binding = FilesLayoutBinding.bind(view)
 
-        progressBar = root.findViewById(R.id.recent_files_progress_bar)
+        progressBar = binding.recentFilesProgressBar
 
-        root.findViewById<FloatingActionButton>(R.id.pick_file_fab).apply {
-            setOnClickListener { toggleButtons() }
-        }
+        binding.pickFileFab.setOnClickListener { toggleButtons() }
 
-        pickTxtBtn = root.findViewById<FloatingActionButton>(R.id.pick_txt_file_btn).apply {
+        pickTxtBtn = binding.pickTxtFileBtn.apply {
             setOnClickListener {
                 fileType = ImportedFileType.TXT
                 checkFileReadPermission()
@@ -82,7 +81,7 @@ class FilesFragment: Fragment() {
             post { translationY = height.toFloat() }
         }
 
-        pickEpubBtn = root.findViewById<FloatingActionButton>(R.id.pick_epub_file_btn).apply {
+        pickEpubBtn = binding.pickEpubFileBtn.apply {
             setOnClickListener {
                 fileType = ImportedFileType.EPUB
                 checkFileReadPermission()
@@ -90,12 +89,15 @@ class FilesFragment: Fragment() {
             post { translationY = height.toFloat() }
         }
 
-        recentFilesList = root.findViewById(R.id.recent_files_list)
+        recentFilesList = binding.recentFilesList
         recentFilesList.layoutManager = LinearLayoutManager(context)
 
         setViewModel()
+    }
 
-        return root
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     private fun setViewModel(){

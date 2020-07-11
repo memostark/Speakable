@@ -52,6 +52,11 @@ android {
         // Adds exported schema location as test app assets.
         androidTest.assets.srcDirs += files("$projectDir/schemas".toString())
     }
+
+    viewBinding {
+        enabled = true
+    }
+
 }
 
 repositories {

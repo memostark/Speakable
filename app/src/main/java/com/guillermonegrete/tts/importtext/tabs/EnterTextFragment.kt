@@ -4,16 +4,17 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
 import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.databinding.EnterTextLayoutBinding
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 
-class EnterTextFragment: Fragment() {
+class EnterTextFragment: Fragment(R.layout.enter_text_layout) {
+
+    private  var _binding: EnterTextLayoutBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var clipboardManager: ClipboardManager
 
@@ -22,24 +23,20 @@ class EnterTextFragment: Fragment() {
         clipboardManager = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val root = inflater.inflate(R.layout.enter_text_layout, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        _binding = EnterTextLayoutBinding.bind(view)
 
-        val editText: EditText = root.findViewById(R.id.import_text_edit)
+        val editText: EditText = binding.importTextEdit
 
-        val pasteButton: Button = root.findViewById(R.id.paste_btn)
-        pasteButton.setOnClickListener { editText.setText(getClipboardText()) }
+        binding.pasteBtn.setOnClickListener { editText.setText(getClipboardText()) }
 
-        val visualizeButton: Button = root.findViewById(R.id.visualize_btn)
-        visualizeButton.setOnClickListener {
-            visualizeText(editText.text.toString())
-        }
+        binding.visualizeBtn.setOnClickListener { visualizeText(editText.text.toString()) }
+    }
 
-        return root
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     private fun getClipboardText(): String{
