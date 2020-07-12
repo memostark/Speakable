@@ -16,7 +16,7 @@ data class BookFile(
     val title: String,
     val fileType: ImportedFileType,
     val language: String = "und",
-    val folderPath: String =  UUID.randomUUID().toString(),
+    var folderPath: String =  UUID.randomUUID().toString(),
     /**
      *  TODO page is not a good indicator of the current position because page size varies, replace with last character.
      *  This is problematic specially when rotating screen because the number of pages changes.

@@ -44,6 +44,7 @@ class VisualizeTextViewModel @Inject constructor(
         private set
 
     var fileUri: String? = null
+    var uuid: String = UUID.randomUUID().toString()
     var fileId: Int = -1
     private var databaseBookFile: BookFile? = null
 
@@ -177,21 +178,7 @@ class VisualizeTextViewModel @Inject constructor(
             val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
 
             // Create files folder and save image cover
-            databaseBookFile?.let {
-                val folderPath = it.folderPath
-                fileReader?.createFileFolder(folderPath)
-
-                val book = currentBook ?: return@let
-
-                val coverId = book.metadata.cover
-                val coverPath = book.manifest[coverId]
-
-                coverPath?.let {path ->
-                    val absCoverPath = File(epubParser.basePath, path).absolutePath.trimStart('/')
-                    fileReader?.saveCoverBitmap(absCoverPath, folderPath)
-                }
-
-            }
+            createFolderForBook()
 
             jumpToChapter(initialChapter)
 
@@ -206,6 +193,30 @@ class VisualizeTextViewModel @Inject constructor(
         } else {
             fileRepository.getFile(fileId)
         }
+    }
+
+    private suspend fun createFolderForBook(){
+        withContext(Dispatchers.IO){
+            databaseBookFile?.let {
+
+                // Verify folderPath is not empty
+                val folderPath = if(it.folderPath.isBlank()) uuid else it.folderPath
+
+                fileReader?.createFileFolder(folderPath)
+
+                val book = currentBook ?: return@let
+
+                val coverId = book.metadata.cover
+                val coverPath = book.manifest[coverId]
+
+                coverPath?.let {path ->
+                    val absCoverPath = File(epubParser.basePath, path).absolutePath.trimStart('/')
+                    fileReader?.saveCoverBitmap(absCoverPath, folderPath)
+                }
+
+            }
+        }
+
     }
 
     /**
@@ -291,12 +302,12 @@ class VisualizeTextViewModel @Inject constructor(
      * Sometimes is necessary to wrap up before onCleared is called (e.g. when changing theme)
      * This function can be called before activity/fragment is destroyed.
      */
-    fun onFinish(date: Calendar = Calendar.getInstance(), folderPath: String = UUID.randomUUID().toString()) {
+    fun onFinish(date: Calendar = Calendar.getInstance(), folderPath: String = uuid) {
         saveBookFileData(date, folderPath)
         cleared = true
     }
 
-    private fun saveBookFileData(date: Calendar, folderPath: String){
+    private fun saveBookFileData(date: Calendar, path: String){
         val uri = fileUri ?: return
 
         // This operation is intended to be synchronous
@@ -309,13 +320,15 @@ class VisualizeTextViewModel @Inject constructor(
                 chapter = currentChapter
                 lastRead = date
                 percentageDone = progress
+                if(folderPath.isBlank()) folderPath = path
             }
+
             val title = currentBook?.metadata?.title ?: ""
             val bookFile = databaseBookFile ?: BookFile(
                 uri,
                 title,
                 fileType,
-                folderPath = folderPath,
+                folderPath = path,
                 page = currentPage,
                 chapter = currentChapter,
                 percentageDone =  calculateProgress(),

@@ -284,7 +284,6 @@ class VisualizeTextViewModelTest {
         viewModel.onFinish(lastReadDate, uuid)
 
         val sumPreviousChars = sumCharacters(3, initialPage)
-        println("Total chars ${DEFAULT_BOOK.totalChars} ")
 
         val expectedFile = BookFile(
             uri,
@@ -303,7 +302,7 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun updates_book_file(){
+    fun `Updates book files`(){
         // Set up
         val initialChapter = 2
         bookFile.chapter = initialChapter
@@ -334,6 +333,37 @@ class VisualizeTextViewModelTest {
             lastRead = lastReadDate,
             percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars
         )
+        val resultFile = fileRepository.filesServiceData.values.first()
+        assertEquals(1, fileRepository.filesServiceData.values.size)
+        assertEquals(expectedFile, resultFile)
+
+    }
+
+    @Test
+    fun `Creates new folder path for book file if empty`(){
+        // TODO this test and "Updates book files" test are very similar, try to refactor
+        val book = BookFile("default_uri", "Title", ImportedFileType.EPUB, id = 1, folderPath = "")
+
+        fileRepository.addTasks(book)
+        viewModel.fileUri = bookFile.uri
+        viewModel.fileId = bookFile.id
+
+        splitPages(4)
+        parse_book(DEFAULT_BOOK)
+        viewModel.getPage()
+
+        val lastReadDate = Calendar.getInstance()
+        val uuid = "random"
+        viewModel.onFinish(lastReadDate, uuid)
+
+        val expectedFile = BookFile(
+            book.uri,
+            book.title,
+            book.fileType,
+            folderPath = uuid,
+            id = book.id
+        )
+
         val resultFile = fileRepository.filesServiceData.values.first()
         assertEquals(1, fileRepository.filesServiceData.values.size)
         assertEquals(expectedFile, resultFile)
