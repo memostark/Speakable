@@ -25,6 +25,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FilesLayoutBinding
+import com.guillermonegrete.tts.databinding.RecentFilesMenuBinding
 import com.guillermonegrete.tts.importtext.ImportTextViewModel
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.RecentFilesAdapter
@@ -38,7 +39,7 @@ import java.io.InputStreamReader
 import java.lang.StringBuilder
 import javax.inject.Inject
 
-class FilesFragment: Fragment(R.layout.files_layout) {
+class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
     private  var _binding: FilesLayoutBinding? = null
     private val binding get() = _binding!!
@@ -98,6 +99,10 @@ class FilesFragment: Fragment(R.layout.files_layout) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onSelection(position: Int) {
+        viewModel.deleteFile(position)
     }
 
     private fun setViewModel(){
@@ -309,42 +314,63 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         }
     }
 
-    class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
-
-        private var itemPos: Int? = null
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            itemPos = arguments?.getInt(item_pos_key)
-        }
-
-        override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
-        ): View? {
-            val root = inflater.inflate(R.layout.recent_files_menu, container, false)
-
-            val menu = root.findViewById<Button>(R.id.delete_button)
-            menu.setOnClickListener { Toast.makeText(context, "Delete item: $itemPos", Toast.LENGTH_SHORT).show() }
-
-            return root
-        }
-
-        companion object{
-            fun newInstance(itemPos: Int) = RecentFileMenu().apply {
-                arguments = Bundle().apply {
-                    putInt(item_pos_key, itemPos)
-                }
-            }
-
-            private const val item_pos_key = "item_pos"
-        }
-
-    }
-
     companion object{
         private const val REQUEST_PICK_FILE = 112
         private const val READ_STORAGE_PERMISSION_REQUEST = 113
+    }
+}
+
+class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
+
+    private  var _binding: RecentFilesMenuBinding? = null
+    private val binding get() = _binding!!
+
+    private lateinit var callback: Callback
+
+    private var itemPos: Int? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        itemPos = arguments?.getInt(item_pos_key)
+
+        try{
+            callback = parentFragment as Callback
+        }catch (e: ClassCastException) {
+            throw ClassCastException("Calling fragment must implement Callback interface");
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        _binding = RecentFilesMenuBinding.inflate(inflater, container, false)
+
+        binding.deleteButton.setOnClickListener {
+            callback.onSelection(itemPos ?: -1)
+            dismiss()
+        }
+
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    companion object{
+        fun newInstance(itemPos: Int) = RecentFileMenu().apply {
+            arguments = Bundle().apply {
+                putInt(item_pos_key, itemPos)
+            }
+        }
+
+        private const val item_pos_key = "item_pos"
+    }
+
+    interface Callback{
+        fun onSelection(position: Int)
     }
 }

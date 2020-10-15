@@ -12,4 +12,6 @@ interface FileRepository{
     suspend fun getFile(uri: String): BookFile?
 
     suspend fun saveFile(file: BookFile)
+
+    suspend fun deleteFile(file: BookFile)
 }

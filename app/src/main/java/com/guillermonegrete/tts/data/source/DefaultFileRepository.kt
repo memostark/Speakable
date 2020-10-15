@@ -39,4 +39,10 @@ class DefaultFileRepository @Inject constructor(private val fileDAO: FileDAO): F
             fileDAO.upsert(file)
         }
     }
+
+    override suspend fun deleteFile(file: BookFile) {
+        withContext(Dispatchers.IO){
+            fileDAO.delete(file)
+        }
+    }
 }

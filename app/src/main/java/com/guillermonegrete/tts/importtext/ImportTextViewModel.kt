@@ -49,4 +49,10 @@ class ImportTextViewModel @Inject constructor(
     fun openItemMenu(itemPos: Int){
         _openItemMenu.value = Event(itemPos)
     }
+
+    fun deleteFile(filePos: Int) = viewModelScope.launch {
+        _files.value?.let {files ->
+            fileRepository.deleteFile(files[filePos])
+        }
+    }
 }

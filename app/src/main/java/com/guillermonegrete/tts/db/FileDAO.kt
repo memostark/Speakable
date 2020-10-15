@@ -11,6 +11,9 @@ abstract class FileDAO {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract fun insert(file: BookFile): Long
 
+    @Delete
+    abstract fun delete(file: BookFile)
+
     @Update
     abstract fun update(file: BookFile)
 
