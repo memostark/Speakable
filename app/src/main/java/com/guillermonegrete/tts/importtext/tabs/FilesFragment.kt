@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -115,10 +114,12 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
                 progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
+            adapter = RecentFilesAdapter(viewModel)
+            recentFilesList.adapter = adapter
+
             loadRecentFiles()
             files.observe(viewLifecycleOwner, Observer {
-                adapter = RecentFilesAdapter(it, viewModel)
-                recentFilesList.adapter = adapter
+                adapter.submitList(it)
             })
 
             openItemMenu.observe(viewLifecycleOwner, EventObserver{

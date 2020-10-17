@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.importtext
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.guillermonegrete.tts.R
@@ -13,19 +15,16 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class RecentFilesAdapter(
-    private val files: List<BookFile>,
     private val viewModel: ImportTextViewModel
-): RecyclerView.Adapter<RecentFilesAdapter.ViewHolder>() {
+): ListAdapter<BookFile, RecentFilesAdapter.ViewHolder>(BookFileDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(R.layout.recent_file_item, parent, false)
         return ViewHolder(viewModel, layout)
     }
 
-    override fun getItemCount() = files.size
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val file =  files[position]
+        val file =  getItem(position)
         holder.bind(file)
     }
 
@@ -60,5 +59,16 @@ class RecentFilesAdapter(
                     .into(coverImage)
             }
         }
+    }
+}
+
+class BookFileDiffCallback: DiffUtil.ItemCallback<BookFile>(){
+
+    override fun areItemsTheSame(oldItem: BookFile, newItem: BookFile): Boolean {
+        return oldItem.id == newItem.id
+    }
+
+    override fun areContentsTheSame(oldItem: BookFile, newItem: BookFile): Boolean {
+        return oldItem == newItem
     }
 }

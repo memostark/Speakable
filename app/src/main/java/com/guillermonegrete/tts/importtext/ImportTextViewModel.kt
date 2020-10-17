@@ -51,8 +51,13 @@ class ImportTextViewModel @Inject constructor(
     }
 
     fun deleteFile(filePos: Int) = viewModelScope.launch {
-        _files.value?.let {files ->
+        _files.value?.let {
+            val files = it.toMutableList()
+
             fileRepository.deleteFile(files[filePos])
+            files.removeAt(filePos)
+
+            _files.value = files
         }
     }
 }
