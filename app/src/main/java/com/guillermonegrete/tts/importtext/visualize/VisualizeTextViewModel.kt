@@ -196,27 +196,25 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     private suspend fun createFolderForBook(){
-        withContext(Dispatchers.IO){
-            databaseBookFile?.let {
+        databaseBookFile?.let {
 
-                // Verify folderPath is not empty
-                val folderPath = if(it.folderPath.isBlank()) uuid else it.folderPath
+            // Verify folderPath is not empty
+            val folderPath = if (it.folderPath.isBlank()) uuid else it.folderPath
 
-                fileReader?.createFileFolder(folderPath)
+            fileReader?.createFileFolder(folderPath)
 
-                val book = currentBook ?: return@let
+            val book = currentBook ?: return@let
 
-                val coverId = book.metadata.cover
-                val coverPath = book.manifest[coverId]
+            val coverId = book.metadata.cover
+            val coverPath = book.manifest[coverId]
 
-                coverPath?.let {path ->
-                    val absCoverPath = File(epubParser.basePath, path).absolutePath.trimStart('/')
-                    fileReader?.saveCoverBitmap(absCoverPath, folderPath)
-                }
 
+            coverPath?.let { path ->
+                val absCoverPath =
+                    File(epubParser.basePath, path).absolutePath.trimStart('/')
+                fileReader?.saveCoverBitmap(absCoverPath, folderPath)
             }
         }
-
     }
 
     /**

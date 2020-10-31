@@ -28,6 +28,10 @@ class FakeFileRepository: FileRepository {
         filesServiceData[file.id] = file
     }
 
+    override suspend fun deleteFile(file: BookFile) {
+        filesServiceData.remove(file.id)
+    }
+
     @VisibleForTesting
     fun addTasks(vararg files: BookFile) {
         for (file in files) {

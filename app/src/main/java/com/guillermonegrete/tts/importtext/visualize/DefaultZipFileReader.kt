@@ -97,50 +97,55 @@ class DefaultZipFileReader(inputStream: InputStream?, context: Context): ZipFile
     }
 
     override suspend fun createFileFolder(path: String) {
-
-        val dir = File(rootDir.absolutePath + File.separator + volumes_folder, path)
-        if(!dir.exists()) dir.mkdirs()
+        withContext(Dispatchers.IO) {
+            val dir = File(rootDir.absolutePath + File.separator + volumes_folder, path)
+            if (!dir.exists()) dir.mkdirs()
+        }
     }
 
     override suspend fun saveCoverBitmap(coverPath: String, outputDir: String){
 
-        var bitmap: Bitmap? = null
-
         val absOutputDir = File(filesDir, outputDir)
 
         val file = File(absOutputDir, "cover.png")
-        if(!file.exists()){
-            val stream = getFileStream(coverPath)
-            if(stream != null){
 
-                bitmap = BitmapFactory.decodeStream(stream)
-                file.outputStream().use {outStream ->
-                    bitmap?.compress(Bitmap.CompressFormat.PNG, 85, outStream)
-                    outStream.flush()
+        withContext(Dispatchers.IO) {
+
+            var bitmap: Bitmap? = null
+
+            if (!file.exists()) {
+                val stream = getFileStream(coverPath)
+                if (stream != null) {
+
+                    bitmap = BitmapFactory.decodeStream(stream)
+                    file.outputStream().use { outStream ->
+                        bitmap?.compress(Bitmap.CompressFormat.PNG, 85, outStream)
+                        outStream.flush()
+                    }
                 }
             }
-        }
 
-        val thumbFile = File(absOutputDir, "cover_thumbnail.png")
+            val thumbFile = File(absOutputDir, "cover_thumbnail.png")
 
-        if(!thumbFile.exists()){
+            if (!thumbFile.exists()) {
 
-            if(bitmap == null) {
-                val stream = getFileStream(coverPath)
-                if(stream != null) bitmap = BitmapFactory.decodeStream(stream)
-            }
+                if (bitmap == null) {
+                    val stream = getFileStream(coverPath)
+                    if (stream != null) bitmap = BitmapFactory.decodeStream(stream)
+                }
 
-            if(bitmap != null){
+                if (bitmap != null) {
 
-                // Calculate new dimension keeping aspect ratio
-                val aspectRatio: Float = bitmap.width / bitmap.height.toFloat()
-                val width = 150
-                val height = (width / aspectRatio).roundToInt()
-                val thumbBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false)
+                    // Calculate new dimension keeping aspect ratio
+                    val aspectRatio: Float = bitmap.width / bitmap.height.toFloat()
+                    val width = 150
+                    val height = (width / aspectRatio).roundToInt()
+                    val thumbBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false)
 
-                thumbFile.outputStream().use {outStream ->
-                    thumbBitmap.compress(Bitmap.CompressFormat.PNG, 85, outStream)
-                    outStream.flush()
+                    thumbFile.outputStream().use { outStream ->
+                        thumbBitmap.compress(Bitmap.CompressFormat.PNG, 85, outStream)
+                        outStream.flush()
+                    }
                 }
             }
         }
