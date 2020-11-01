@@ -307,6 +307,7 @@ class VisualizeTextViewModel @Inject constructor(
 
     private fun saveBookFileData(date: Calendar, path: String){
         val uri = fileUri ?: return
+        val book = currentBook ?: return
 
         // This operation is intended to be synchronous
         // TODO: Change to async, with context call or work manager.
@@ -321,7 +322,7 @@ class VisualizeTextViewModel @Inject constructor(
                 if(folderPath.isBlank()) folderPath = path
             }
 
-            val title = currentBook?.metadata?.title ?: ""
+            val title = book.metadata.title
             val bookFile = databaseBookFile ?: BookFile(
                 uri,
                 title,

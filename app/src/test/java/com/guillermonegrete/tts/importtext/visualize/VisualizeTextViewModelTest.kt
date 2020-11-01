@@ -14,6 +14,7 @@ import com.guillermonegrete.tts.importtext.epub.*
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -261,7 +262,7 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun saves_current_file_when_finishing(){
+    fun `Saves current file when finishing`(){
         // Set up
         val uri = "empty_uri"
         parse_book(DEFAULT_BOOK)
@@ -299,6 +300,36 @@ class VisualizeTextViewModelTest {
         assertEquals(1, fileRepository.filesServiceData.values.size)
         assertEquals(expectedFile, resultFile)
 
+    }
+
+    @Test
+    fun `Does not save file if initial parse isn't complete`(){
+
+        // Stop the coroutine that is parsing the book
+        // We do this in order to simulate closing the activity before the parsing finishes
+        mainCoroutineRule.pauseDispatcher()
+
+        // Book parsing
+        `when`(epubParser.basePath).thenReturn("")
+
+        runBlocking {
+            `when`(epubParser.parseBook(fileReader)).thenReturn(DEFAULT_BOOK)
+            viewModel.parseEpub()
+        }
+
+        // Initial state
+        val uri = "empty_uri"
+        viewModel.fileUri = uri
+
+        splitPages(7)
+
+        val lastReadDate = Calendar.getInstance()
+        val uuid = "random"
+        viewModel.onFinish(lastReadDate, uuid)
+
+        mainCoroutineRule.resumeDispatcher()
+
+        assertEquals(0, fileRepository.filesServiceData.values.size)
     }
 
     @Test
@@ -421,7 +452,7 @@ class VisualizeTextViewModelTest {
     private fun parse_book(book: Book){
         `when`(epubParser.basePath).thenReturn("")
 
-        runBlockingTest {
+        runBlocking {
             `when`(epubParser.parseBook(fileReader)).thenReturn(book)
             viewModel.parseEpub()
         }
