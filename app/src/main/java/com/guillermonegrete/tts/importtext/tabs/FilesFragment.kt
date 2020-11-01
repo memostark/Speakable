@@ -31,6 +31,8 @@ import com.guillermonegrete.tts.importtext.RecentFilesAdapter
 import com.guillermonegrete.tts.importtext.UriValidator
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import dagger.android.support.AndroidSupportInjection
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
@@ -38,6 +40,8 @@ import java.io.InputStreamReader
 import java.lang.StringBuilder
 import javax.inject.Inject
 
+@ExperimentalCoroutinesApi
+@FlowPreview
 class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
     private  var _binding: FilesLayoutBinding? = null
@@ -117,7 +121,6 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
             adapter = RecentFilesAdapter(viewModel)
             recentFilesList.adapter = adapter
 
-            loadRecentFiles()
             files.observe(viewLifecycleOwner, Observer {
                 adapter.submitList(it)
             })
@@ -337,7 +340,7 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
         try{
             callback = parentFragment as Callback
         }catch (e: ClassCastException) {
-            throw ClassCastException("Calling fragment must implement Callback interface");
+            throw ClassCastException("Calling fragment must implement Callback interface")
         }
     }
 

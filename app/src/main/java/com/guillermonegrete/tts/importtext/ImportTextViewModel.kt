@@ -1,16 +1,19 @@
 package com.guillermonegrete.tts.importtext
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@FlowPreview
+@ExperimentalCoroutinesApi
 class ImportTextViewModel @Inject constructor(
     private val fileRepository: FileRepository,
     fileManager: EpubFileManager
@@ -22,24 +25,25 @@ class ImportTextViewModel @Inject constructor(
     private val _openItemMenu = MutableLiveData<Event<Int>>()
     val openItemMenu: LiveData<Event<Int>> = _openItemMenu
 
-    private val _files = MutableLiveData<List<BookFile>>()
-    val files: LiveData<List<BookFile>> = _files
+    private val _forceUpdate = ConflatedBroadcastChannel<Boolean>()
+
+    val files = _forceUpdate.asFlow()
+        .flatMapLatest {
+            _dataLoading.value = true
+            val files = fileRepository.getRecentFiles()
+            _dataLoading.value = false
+            files
+        }
+        .onCompletion { _dataLoading.value = false }
+        .asLiveData()
 
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
 
     val filesPath = fileManager.filesDir
 
-    fun loadRecentFiles(){
-        _dataLoading.value = true
-
-        viewModelScope.launch {
-            val files = fileRepository.getRecentFiles()
-            _files.value = files
-
-            _dataLoading.value = false
-        }
-
+    init {
+        _forceUpdate.offer(true)
     }
 
     fun openVisualizer(book: BookFile){
@@ -51,13 +55,9 @@ class ImportTextViewModel @Inject constructor(
     }
 
     fun deleteFile(filePos: Int) = viewModelScope.launch {
-        _files.value?.let {
+        files.value?.let {
             val files = it.toMutableList()
-
             fileRepository.deleteFile(files[filePos])
-            files.removeAt(filePos)
-
-            _files.value = files
         }
     }
 }
