@@ -325,6 +325,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     override fun showLanguageNotAvailable() {
         if (playIconsContainer != null) { // Why do you need to check this?
+
+            // This is function is sometimes called multiple times
+            // Don't show toast if container is already gone
+            if(playIconsContainer?.visibility == View.GONE) return
+
             playIconsContainer?.visibility = View.GONE
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
         }
