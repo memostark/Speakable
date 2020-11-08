@@ -36,7 +36,7 @@ import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
+class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
 
     private var window: Window? = null
 

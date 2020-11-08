@@ -14,6 +14,7 @@
     tools:context=".textprocessing.ProcessTextActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sentence_root"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/black_border">

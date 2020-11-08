@@ -22,6 +22,8 @@ import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.db.Words;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.utils.EspressoIdlingResource;
+
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -30,12 +32,12 @@ import java.util.List;
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
     private ProcessTextContract.View mView;
-    private WordRepository mRepository;
-    private DictionaryRepository dictionaryRepository;
-    private ExternalLinksDataSource linksRepository;
-    private SharedPreferences sharedPreferences;
-    private CustomTTS customTTS;
-    private GetLangAndTranslation getTranslationInteractor;
+    private final WordRepository mRepository;
+    private final DictionaryRepository dictionaryRepository;
+    private final ExternalLinksDataSource linksRepository;
+    private final SharedPreferences sharedPreferences;
+    private final CustomTTS customTTS;
+    private final GetLangAndTranslation getTranslationInteractor;
 
     private boolean insideLocalDatabase;
     private Words foundWord;
@@ -105,6 +107,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         hasTranslation = true;
         viewIsActive = true;
 
+        EspressoIdlingResource.INSTANCE.increment();
+
         GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
@@ -125,6 +129,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                         mView.setSentenceLayout(word);
                         break;
                 }
+
+                EspressoIdlingResource.INSTANCE.decrement();
             }
 
             @Override
@@ -133,12 +139,16 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 checkTTSInitialization();
                 getExternalLinks(word.lang);
                 mView.setWiktionaryLayout(word, items);
+
+                EspressoIdlingResource.INSTANCE.decrement();
             }
 
             @Override
             public void onTranslationError(String message) {
                 hasTranslation = false;
                 mView.showTranslationError(message);
+
+                EspressoIdlingResource.INSTANCE.decrement();
             }
         }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
 
@@ -254,6 +264,12 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         linkInteractor.execute();
     }
 
+
+    /**
+     * This kind of a hack,
+     * This is called when the layout has been finally created to show status of the play button icon
+     *
+     */
     @Override
     public void onPlayIconSet() {
         if(isLoading){
@@ -317,7 +333,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         return sharedPreferences.getBoolean(SettingsFragment.PREF_AUTO_TEST_SWITCH, true);
     }
 
-    private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+    private final CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
 
         @Override
         public void onEngineReady() {
