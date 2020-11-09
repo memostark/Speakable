@@ -10,12 +10,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
+import org.hamcrest.CoreMatchers.*
 import org.junit.After
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
@@ -34,9 +36,9 @@ class TextInfoDialogTest {
 
     @Test
     fun wordInput_showWordDialogLayout(){
-//        launch
+
         val bundle = Bundle()
-        val inputText = "test"
+        val inputText = "prueba"
         bundle.putString(TextInfoDialog.TEXT_KEY, inputText)
 
         val scenario = launchFragment<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
@@ -49,15 +51,31 @@ class TextInfoDialogTest {
         // Specific container of word layout
         onView(withId(R.id.testLayout)).check(matches(isDisplayed()))
 
+        // Check view with input text
         onView(withId(R.id.text_tts)).check(matches(isDisplayed()))
         onView(withId(R.id.text_tts)).check(matches(withText(inputText)))
+
+        // Default language preference is "Auto detect"
+        onView(withId(R.id.spinner_language_from))
+            .check(matches(withSpinnerText(containsString("Auto detect"))))
+
+        // Because is in "Auto detect" this view shows the detected language
+        onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
+        onView(withId(R.id.text_language_code)).check(matches(withText("es")))
+
+        // Play button is visible
+        onView(withId(R.id.play_icons_container)).check(matches(isDisplayed()))
+        onView(withId(R.id.play_tts_icon)).check(matches(isDisplayed()))
+
+        // Save button is visible
+        onView(withId(R.id.save_icon)).check(matches(isDisplayed()))
     }
 
     @Test
     fun sentenceInput_showSentenceDialogLayout(){
-//        launch
+
         val bundle = Bundle()
-        val inputText = "test sentence"
+        val inputText = "oración de prueba"
         bundle.putString(TextInfoDialog.TEXT_KEY, inputText)
         val scenario = launchFragment<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
 
@@ -69,8 +87,21 @@ class TextInfoDialogTest {
         // Specific container of word layout
         onView(withId(R.id.sentence_root)).check(matches(isDisplayed()))
 
+        // Check view with input text
         onView(withId(R.id.text_tts)).check(matches(isDisplayed()))
         onView(withId(R.id.text_tts)).check(matches(withText(inputText)))
+
+        // Default language preference is "Auto detect"
+        onView(withId(R.id.spinner_language_from))
+            .check(matches(withSpinnerText(containsString("Auto detect"))))
+
+        // Because is in "Auto detect" this view shows the detected language
+        onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
+        onView(withId(R.id.text_language_code)).check(matches(withText("es")))
+
+        // Play button is visible
+        onView(withId(R.id.play_icons_container)).check(matches(isDisplayed()))
+        onView(withId(R.id.play_tts_icon)).check(matches(isDisplayed()))
     }
 
 }

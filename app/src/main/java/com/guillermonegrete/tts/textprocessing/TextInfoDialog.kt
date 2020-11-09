@@ -9,7 +9,6 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.*
 import android.widget.*
-import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.DialogFragment
@@ -52,10 +51,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private var pager: ViewPager2? = null
     private var pagerAdapter: MyPageAdapter? = null
 
-    private var playButton: ImageButton? = null
-    private var playProgressBar: ProgressBar? = null
+    private lateinit var playButton: ImageButton
+    private lateinit var playProgressBar: ProgressBar
+    private lateinit var playIconsContainer: View
 
-    private var playIconsContainer: View? = null
+    private lateinit var spinnerLanguageFrom: Spinner
+    private lateinit var textFromLanguage: TextView
 
     @Inject
     internal lateinit var preferences: SharedPreferences
@@ -108,8 +109,36 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         savedInstanceState: Bundle?
     ): View? {
         keepImmersiveMode()
+        setBrightnessTheme()
 
-        return inflater.inflate(R.layout.placeholder_layout, container, false)
+        val text = inputText ?: ""
+
+        val splitText = text.split(" ")
+        val layoutRes =
+            if(splitText.size > 1)
+                R.layout.activity_process_sentence
+            else
+                R.layout.activity_processtext
+
+        val layout = inflater.inflate(layoutRes, container, false)
+
+        val mTextTTS = layout.findViewById<TextView>(R.id.text_tts)
+        mTextTTS.text = text
+
+        spinnerLanguageFrom = layout.findViewById(R.id.spinner_language_from)
+        setLanguageFromSpinner(spinnerLanguageFrom)
+
+        textFromLanguage = layout.findViewById(R.id.text_language_code)
+        textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
+
+        setPlayButton(layout, text)
+
+        return layout
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setSwipeListener(view)
     }
 
     override fun onStop() {
@@ -163,18 +192,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun setWordLayout(word: Words) {
-        setContentView(R.layout.activity_processtext)
-        val textString = word.word
-
-        val mTextTTS = view?.findViewById<TextView>(R.id.text_tts)
-        mTextTTS?.text = textString
-
-        val textViewLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textViewLanguage?.visibility = if(languageFrom == "auto") View.VISIBLE else View.GONE
-        textViewLanguage?.text = word.lang
-
-        setPlayButton(textString)
-        setLanguageFromSpinner()
+        textFromLanguage.text = word.lang
 
         view?.findViewById<View>(R.id.save_icon)?.setOnClickListener { presenter.onClickBookmark() }
     }
@@ -212,11 +230,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         languagePreferenceIndex = -1 // Indicates spinner not visible
 
         // Hides language from spinner, because language is already predefined.
-        val spinner = view?.findViewById<Spinner>(R.id.spinner_language_from)
-        spinner?.visibility = View.INVISIBLE
+        spinnerLanguageFrom.visibility = View.INVISIBLE
 
-        val textViewLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textViewLanguage?.visibility = View.VISIBLE
+        textFromLanguage.visibility = View.VISIBLE
 
     }
 
@@ -233,18 +249,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     override fun setSentenceLayout(word: Words) {
         setBottomDialog()
-        val text = word.word
-        setContentView(R.layout.activity_process_sentence)
-        val mTextTTS = view?.findViewById<TextView>(R.id.text_tts)
-        mTextTTS?.text = text
+
         val mTextTranslation = view?.findViewById<TextView>(R.id.text_translation)
         mTextTranslation?.text = word.definition
-        val textLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textLanguage?.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
-        textLanguage?.text = word.lang
-        setPlayButton(text)
+        textFromLanguage.text = word.lang
 
-        setLanguageFromSpinner()
         setSpinner()
     }
 
@@ -291,6 +300,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     override fun showDeleteDialog(word: String) {
 
         val builder = AlertDialog.Builder(requireContext())
+        // TODO use sting resource for these messages
         builder.setMessage("Do you want to delete this word?")
             .setPositiveButton("Yes") { dialog, _ ->
                 presenter.onClickDeleteWord(word)
@@ -311,9 +321,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showErrorPlayingAudio() {
-        playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar?.visibility = View.INVISIBLE
-        playButton?.visibility = View.VISIBLE
+        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
         Toast.makeText(context, "Could not play audio", Toast.LENGTH_SHORT).show()
     }
 
@@ -324,37 +334,35 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showLanguageNotAvailable() {
-        if (playIconsContainer != null) { // Why do you need to check this?
+        // Why do you need to check this?
 
-            // This is function is sometimes called multiple times
-            // Don't show toast if container is already gone
-            if(playIconsContainer?.visibility == View.GONE) return
+        // This is function is sometimes called multiple times
+        // Don't show toast if container is already gone
+        if(playIconsContainer.visibility == View.GONE) return
 
-            playIconsContainer?.visibility = View.GONE
-            Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
-        }
+        playIconsContainer.visibility = View.GONE
+        Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
     }
 
     override fun showLoadingTTS() {
-        playProgressBar?.visibility = View.VISIBLE
-        playButton?.visibility = View.INVISIBLE
+        playProgressBar.visibility = View.VISIBLE
+        playButton.visibility = View.INVISIBLE
     }
 
     override fun showPlayIcon() {
-        playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar?.visibility = View.INVISIBLE
-        playButton?.visibility = View.VISIBLE
+        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
     }
 
     override fun showStopIcon() {
-        playButton?.setImageResource(R.drawable.ic_stop_black_24dp)
-        playProgressBar?.visibility = View.INVISIBLE
-        playButton?.visibility = View.VISIBLE
+        playButton.setImageResource(R.drawable.ic_stop_black_24dp)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
     }
 
     override fun updateTranslation(word: Words) {
-        val textLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textLanguage?.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
+        textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
 
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
@@ -381,18 +389,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     override fun setPresenter(presenter: ProcessTextContract.Presenter) {
         this.presenter = presenter
-    }
-
-    private fun setContentView(@LayoutRes id: Int){
-        setBrightnessTheme()
-        val inflater = activity?.layoutInflater
-        inflater ?: return
-        val newView = inflater.inflate(id, null)
-        val rootView = view as? ViewGroup
-        rootView?.removeAllViews()
-        rootView?.addView(newView)
-
-        setSwipeListener(newView)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -525,12 +521,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     }
 
-    private fun setPlayButton(text: String) {
-        playButton = view?.findViewById(R.id.play_tts_icon)
-        playButton?.setOnClickListener { presenter.onClickReproduce(text) }
+    private fun setPlayButton(layout: View, text: String) {
+        playButton = layout.findViewById(R.id.play_tts_icon)
+        playButton.setOnClickListener { presenter.onClickReproduce(text) }
 
-        playProgressBar = view?.findViewById(R.id.play_loading_icon)
-        playIconsContainer = view?.findViewById(R.id.play_icons_container)
+        playProgressBar = layout.findViewById(R.id.play_loading_icon)
+        playIconsContainer = layout.findViewById(R.id.play_icons_container)
 
         presenter.onPlayIconSet()
     }
@@ -546,11 +542,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         pager?.layoutParams = params
     }
 
-    private fun setLanguageFromSpinner() {
-        // Sometimes activity can be destroyed before this is called, due to network/DB latency
-        if(context == null) return
+    private fun setLanguageFromSpinner(spinner: Spinner) {
 
-        val spinner: Spinner = view?.findViewById(R.id.spinner_language_from) ?: return
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLangsWithAutoValue,
