@@ -161,6 +161,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         foundWord = word;
         hasTranslation = true;
         viewIsActive = true;
+
+        EspressoIdlingResource.INSTANCE.increment();
+
         checkTTSInitialization();
 
         GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
@@ -170,6 +173,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 getExternalLinks(word.lang);
                 mView.setSavedWordLayout(word);
                 if(!isAvailable) mView.showLanguageNotAvailable();
+
+                EspressoIdlingResource.INSTANCE.decrement();
             }
 
             @Override
@@ -177,6 +182,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 getExternalLinks(word.lang);
                 mView.setDictWithSaveWordLayout(word, items);
                 if(!isAvailable) mView.showLanguageNotAvailable();
+
+                EspressoIdlingResource.INSTANCE.decrement();
             }
 
 

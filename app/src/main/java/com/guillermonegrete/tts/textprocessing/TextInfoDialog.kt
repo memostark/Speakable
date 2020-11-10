@@ -83,17 +83,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         languageFrom = getLanguageFromPreference()
 
         presenter.setView(this)
-        val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
-        if(extraWord != null){
-            presenter.start(extraWord)
-        }else{
-            val action = arguments?.getString(ACTION_KEY)
-            if(NO_SERVICE == action){
-                presenter.getLayout(inputText, languageFrom, languageToISO)
-            }else{
-                presenter.startWithService(inputText, languageFrom, languageToISO)
-            }
-        }
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -134,6 +123,22 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         setPlayButton(layout, text)
 
         return layout
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
+        if(extraWord != null){
+            presenter.start(extraWord)
+        }else{
+            val action = arguments?.getString(ACTION_KEY)
+            if(NO_SERVICE == action){
+                presenter.getLayout(inputText, languageFrom, languageToISO)
+            }else{
+                presenter.startWithService(inputText, languageFrom, languageToISO)
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

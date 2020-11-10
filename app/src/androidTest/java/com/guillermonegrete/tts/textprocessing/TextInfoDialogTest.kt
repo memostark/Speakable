@@ -9,6 +9,7 @@ import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import org.hamcrest.CoreMatchers.*
 import org.junit.After
@@ -102,6 +103,33 @@ class TextInfoDialogTest {
         // Play button is visible
         onView(withId(R.id.play_icons_container)).check(matches(isDisplayed()))
         onView(withId(R.id.play_tts_icon)).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun extraWord_showDictWithWordLayout(){
+
+        val inputWord = Words("prueba", "ES", "test")
+
+        val bundle = Bundle().apply {
+            putString(TextInfoDialog.TEXT_KEY, inputWord.word)
+            putParcelable(TextInfoDialog.WORD_KEY, inputWord)
+            putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
+        }
+
+        val scenario = launchFragment<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
+
+        scenario.onFragment { fragment ->
+            assertNotNull(fragment.dialog)
+            assertTrue(fragment.requireDialog().isShowing)
+        }
+
+        // Check pre-set language
+        onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
+        onView(withId(R.id.text_language_code)).check(matches(withText("ES")))
+
+        // Save and edit icon should be visible
+        onView(withId(R.id.save_icon)).check(matches(isDisplayed()))
+        onView(withId(R.id.edit_icon)).check(matches(isDisplayed()))
     }
 
 }
