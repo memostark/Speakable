@@ -1,13 +1,15 @@
 package com.guillermonegrete.tts.utils
 
-import androidx.test.espresso.idling.CountingIdlingResource
-
+/**
+ * Taken from Google's Android Architecture samples:
+ * https://github.com/android/architecture-samples/blob/main/app/src/main/java/com/example/android/architecture/blueprints/todoapp/util/EspressoIdlingResource.kt
+ */
 object EspressoIdlingResource {
 
     private const val RESOURCE = "GLOBAL"
 
     @JvmField
-    val countingIdlingResource = CountingIdlingResource(RESOURCE)
+    val countingIdlingResource = SimpleCountingIdlingResource(RESOURCE)
 
     fun increment() {
         countingIdlingResource.increment()
