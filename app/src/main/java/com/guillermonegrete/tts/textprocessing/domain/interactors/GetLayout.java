@@ -17,7 +17,7 @@ import java.util.List;
 public class GetLayout extends AbstractInteractor implements GetLayoutInteractor {
 
     private GetLayoutInteractor.Callback mCallback;
-    private WordRepository wordRepository;
+    private WordRepositorySource wordRepository;
     private DictionaryRepository dictionaryRepository;
     private String mText;
     private String languageFrom;
@@ -32,7 +32,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
 
     public GetLayout(Executor threadExecutor, MainThread mainThread,
-                     Callback callback, WordRepository repository,
+                     Callback callback, WordRepositorySource repository,
                      DictionaryRepository dictRepository, String text,
                      String languageFrom,
                      String preferenceLanguage){

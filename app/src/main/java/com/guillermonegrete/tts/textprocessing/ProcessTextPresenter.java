@@ -9,6 +9,7 @@ import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
+import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntry;
@@ -32,7 +33,7 @@ import java.util.List;
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
     private ProcessTextContract.View mView;
-    private final WordRepository mRepository;
+    private final WordRepositorySource mRepository;
     private final DictionaryRepository dictionaryRepository;
     private final ExternalLinksDataSource linksRepository;
     private final SharedPreferences sharedPreferences;
@@ -53,7 +54,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     ProcessTextPresenter(
             Executor executor,
             MainThread mainThread,
-            WordRepository repository,
+            WordRepositorySource repository,
             DictionaryRepository dictRepository,
             ExternalLinksDataSource linksRepository,
             SharedPreferences sharedPreferences,

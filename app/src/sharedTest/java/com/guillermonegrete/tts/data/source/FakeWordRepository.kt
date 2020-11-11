@@ -7,8 +7,9 @@ import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.db.Words
 import java.lang.Exception
 import java.util.LinkedHashMap
+import javax.inject.Inject
 
-class FakeWordRepository: WordRepositorySource {
+class FakeWordRepository @Inject constructor(): WordRepositorySource {
 
     var wordsServiceData: LinkedHashMap<Int, Words> = LinkedHashMap()
     var translationsData: LinkedHashMap<String, Words> = LinkedHashMap()
