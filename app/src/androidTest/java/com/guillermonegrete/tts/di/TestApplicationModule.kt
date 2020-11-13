@@ -18,7 +18,6 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ApplicationComponent
-import javax.inject.Qualifier
 import javax.inject.Singleton
 
 /**
@@ -50,10 +49,6 @@ object TestApplicationModule {
 @Module
 @InstallIn(ApplicationComponent::class)
 abstract class TestApplicationModuleBinds {
-
-    /*@Singleton
-    @Provides
-    fun provideSharedPreferences(context: Context): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)*/
 
     @Singleton
     @Binds

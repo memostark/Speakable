@@ -35,7 +35,7 @@ public interface WordRepositorySource {
 
     void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback);
 
-    void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordRepositoryCallback callback);
+    void getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo, @NonNull GetWordRepositoryCallback callback);
 
     void getLanguageAndTranslation(String text, GetTranslationCallback callback);
 
@@ -43,7 +43,7 @@ public interface WordRepositorySource {
      * Avoid usage of this function, only use when you can't use Kotlin Coroutines or RxJava
      * Use version that returns Result<Words>
      */
-    void getLanguageAndTranslation(String text, String languageFrom, String languageTo, GetTranslationCallback callback);
+    void getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo, @NonNull GetTranslationCallback callback);
 
     Result<Words> getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo);
 

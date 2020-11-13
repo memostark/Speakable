@@ -18,24 +18,25 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     private TextToSpeech localTTS;
 
-    private Boolean isInitialized;
+    private boolean localInitialized = false;
+    private Boolean langInitialized;
     private Boolean isShutdown = false;
 
     private String language;
 
     private Listener listener = null;
 
-    private HashMap<String, String> map = new HashMap<>();
-    private Bundle params = new Bundle();
+    private final HashMap<String, String> map = new HashMap<>();
+    private final Bundle params = new Bundle();
 
-    private Context context;
+    private final Context context;
 
     @Inject
     public CustomTTS(Context context){
         this.context = context.getApplicationContext();
 
         localTTS = new TextToSpeech(this.context, this);
-        isInitialized = false;
+        langInitialized = false;
         map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CustomTTSID");
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
@@ -50,7 +51,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     public void speak(String text, Listener listener){
         this.listener = listener;
-        if(isInitialized) speak(text);
+        if(langInitialized) speak(text);
         else listener.onLanguageUnavailable();
     }
 
@@ -65,12 +66,12 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     }
 
      public void initializeTTS(String langCode, Listener listener) {
-        boolean ttsReady = isInitialized && language.equals(langCode);
+        boolean ttsReady = langInitialized && language.equals(langCode);
 
         if(!ttsReady){
             this.listener = listener;
             language = langCode;
-            isInitialized = false;
+            langInitialized = false;
 
             initializeGoogleLocalService(langCode);
             localTTS.setOnUtteranceProgressListener(new CustomUtteranceListener());
@@ -85,7 +86,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             // Recreate and set language on init method
             localTTS = new TextToSpeech(context.getApplicationContext(), this);
         } else {
-            setLocalLanguage(langCode);
+            if(localInitialized) setLocalLanguage(langCode);
         }
     }
 
@@ -99,9 +100,11 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
             case TextToSpeech.SUCCESS:
                 message = "Success";
 
-                // If true, it was called from initializeGoogleLocalService method, set language
-                if(isShutdown) setLocalLanguage(language);
+                // If is shutdown, it was called from initializeGoogleLocalService method, set language
+                // or if language is different from null, initializeTTS() was called but onInit wasn't ready, then set language
+                if(isShutdown || language != null) setLocalLanguage(language);
                 isShutdown = false;
+                localInitialized = true;
                 break;
             default:
                 message = "Unknown";
@@ -116,11 +119,11 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         if (result == TextToSpeech.LANG_MISSING_DATA ||
                 result == TextToSpeech.LANG_NOT_SUPPORTED) {
             System.out.println("Error code: " + result);
-            System.out.println("Initialize TTS Error, This Language is not supported");
+            System.out.println("Initialize TTS Error, This Language is not supported: " + langCode);
             if(listener != null) listener.onLanguageUnavailable();
 
         } else {
-            isInitialized = true;
+            langInitialized = true;
 
             if(listener != null) listener.onEngineReady();
         }
@@ -183,7 +186,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     public void finishTTS(){
         System.out.println("Destroying localTTS");
-        isInitialized = false;
+        langInitialized = false;
+        localInitialized = false;
         isShutdown = true;
         if(localTTS != null){
             localTTS.stop();

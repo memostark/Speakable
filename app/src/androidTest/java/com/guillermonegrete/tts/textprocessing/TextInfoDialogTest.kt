@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.textprocessing
 
 import android.os.Bundle
-import androidx.fragment.app.testing.launchFragment
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -9,20 +8,38 @@ import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.launchFragmentInHiltContainer
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import org.hamcrest.CoreMatchers.*
 import org.junit.After
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import javax.inject.Inject
 
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@HiltAndroidTest
 class TextInfoDialogTest {
+
+    @get:Rule
+    var hiltRule = HiltAndroidRule(this)
+
+    @Inject
+    lateinit var repository: FakeWordRepository
+
+    @Before
+    fun init() {
+        // Populate @Inject fields in test class
+        hiltRule.inject()
+    }
+
 
     @Before
     fun registerIdlingResource() {
@@ -34,20 +51,17 @@ class TextInfoDialogTest {
         IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
     }
 
-
     @Test
     fun wordInput_showWordDialogLayout(){
+        repository.addRemoteWords(Words("prueba", "es", "test"))
 
-        val bundle = Bundle()
         val inputText = "prueba"
-        bundle.putString(TextInfoDialog.TEXT_KEY, inputText)
-
-        val scenario = launchFragment<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
-
-        scenario.onFragment { fragment ->
-            assertNotNull(fragment.dialog)
-            assertTrue(fragment.requireDialog().isShowing)
+        val bundle = Bundle().apply {
+            putString(TextInfoDialog.TEXT_KEY, inputText)
+            putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
         }
+
+        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
 
         // Specific container of word layout
         onView(withId(R.id.testLayout)).check(matches(isDisplayed()))
@@ -74,16 +88,14 @@ class TextInfoDialogTest {
 
     @Test
     fun sentenceInput_showSentenceDialogLayout(){
+        repository.addTranslation(Words("oración de prueba", "en", "test sentence"))
 
-        val bundle = Bundle()
         val inputText = "oración de prueba"
-        bundle.putString(TextInfoDialog.TEXT_KEY, inputText)
-        val scenario = launchFragment<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
-
-        scenario.onFragment { fragment ->
-            assertNotNull(fragment.dialog)
-            assertTrue(fragment.requireDialog().isShowing)
+        val bundle = Bundle().apply {
+            putString(TextInfoDialog.TEXT_KEY, inputText)
+            putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
         }
+        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
 
         // Specific container of word layout
         onView(withId(R.id.sentence_root)).check(matches(isDisplayed()))
@@ -98,7 +110,7 @@ class TextInfoDialogTest {
 
         // Because is in "Auto detect" this view shows the detected language
         onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
-        onView(withId(R.id.text_language_code)).check(matches(withText("es")))
+        onView(withId(R.id.text_language_code)).check(matches(withText("en")))
 
         // Play button is visible
         onView(withId(R.id.play_icons_container)).check(matches(isDisplayed()))
@@ -116,12 +128,7 @@ class TextInfoDialogTest {
             putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
         }
 
-        val scenario = launchFragment<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
-
-        scenario.onFragment { fragment ->
-            assertNotNull(fragment.dialog)
-            assertTrue(fragment.requireDialog().isShowing)
-        }
+        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
 
         // Check pre-set language
         onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))

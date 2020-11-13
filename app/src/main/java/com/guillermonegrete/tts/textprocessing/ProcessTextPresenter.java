@@ -334,6 +334,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private void checkTTSInitialization(){
         isAvailable = true;
         String lang = foundWord.lang;
+        EspressoIdlingResource.INSTANCE.increment();
         customTTS.initializeTTS(lang, ttsListener);
     }
 
@@ -361,7 +362,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isLoading = false;
             isPlaying = false;
             isAvailable = false;
-            mMainThread.post(() -> mView.showLanguageNotAvailable());
+            mMainThread.post(() -> {
+                mView.showLanguageNotAvailable();
+                EspressoIdlingResource.INSTANCE.decrement();
+            });
         }
 
         @Override
@@ -375,13 +379,19 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         @Override
         public void onSpeakDone() {
             isPlaying = false;
-            mMainThread.post(() -> mView.showPlayIcon());
+            mMainThread.post(() -> {
+                mView.showPlayIcon();
+                EspressoIdlingResource.INSTANCE.decrement();
+            });
         }
 
         @Override
         public void onError() {
             isPlaying = false;
-            mMainThread.post(() -> mView.showErrorPlayingAudio());
+            mMainThread.post(() -> {
+                mView.showErrorPlayingAudio();
+                EspressoIdlingResource.INSTANCE.decrement();
+            });
         }
     };
 }

@@ -30,11 +30,13 @@ import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERV
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.sqrt
 
+@AndroidEntryPoint
 class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
 
     private var window: Window? = null
@@ -70,7 +72,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private var yAxis = 1
 
     override fun onAttach(context: Context) {
-        (context.applicationContext as SpeakableApplication).appComponent.inject(this)
+        val app = context.applicationContext
+        if(app is SpeakableApplication) app.appComponent.inject(this)
         super.onAttach(context)
     }
 
@@ -532,8 +535,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         playProgressBar = layout.findViewById(R.id.play_loading_icon)
         playIconsContainer = layout.findViewById(R.id.play_icons_container)
-
-        presenter.onPlayIconSet()
     }
 
     private fun createViewPager() {
