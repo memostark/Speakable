@@ -18,7 +18,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.SpeakableApplication
 import com.guillermonegrete.tts.customviews.ButtonsPreference
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
@@ -70,12 +69,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private var languageToISO: String? = null
 
     private var yAxis = 1
-
-    override fun onAttach(context: Context) {
-        val app = context.applicationContext
-        if(app is SpeakableApplication) app.appComponent.inject(this)
-        super.onAttach(context)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -638,7 +631,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
 
-    private inner class MyPageAdapter internal constructor(fragment: Fragment) :
+    private inner class MyPageAdapter(fragment: Fragment) :
         FragmentStateAdapter(fragment) {
 
         val fragments = ArrayList<Fragment>()

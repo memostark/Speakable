@@ -31,12 +31,13 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
 
-import dagger.android.support.AndroidSupportInjection;
+import dagger.hilt.android.AndroidEntryPoint;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
+@AndroidEntryPoint
 public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener, SavedWordListAdapter.Listener {
 
     private SavedWordListAdapter wordListAdapter;
@@ -53,7 +54,6 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     @Override
     public void onAttach(@NonNull Context context) {
-        AndroidSupportInjection.inject(this);
         super.onAttach(context);
         wordListAdapter = new SavedWordListAdapter(context, this);
     }

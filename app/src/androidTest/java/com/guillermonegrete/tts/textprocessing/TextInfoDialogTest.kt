@@ -10,10 +10,12 @@ import androidx.test.filters.MediumTest
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.di.WordRepositorySourceModule
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
 import org.hamcrest.CoreMatchers.*
 import org.junit.After
 import org.junit.Before
@@ -25,6 +27,7 @@ import javax.inject.Inject
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@UninstallModules(WordRepositorySourceModule::class)
 @HiltAndroidTest
 class TextInfoDialogTest {
 

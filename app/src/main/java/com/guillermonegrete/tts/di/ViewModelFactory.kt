@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import dagger.Binds
 import dagger.MapKey
 import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import java.lang.Exception
 import javax.inject.Inject
 import javax.inject.Provider
@@ -37,6 +39,7 @@ class ViewModelFactory @Inject constructor(
     }
 }
 
+@InstallIn(SingletonComponent::class)
 @Module
 internal abstract class ViewModelBuilder{
     @Binds

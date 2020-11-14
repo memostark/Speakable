@@ -32,10 +32,11 @@ import com.guillermonegrete.tts.services.ScreenTextService
 
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
-import dagger.android.support.AndroidSupportInjection
+import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 
+@AndroidEntryPoint
 class TextToSpeechFragment: Fragment(), MainTTSContract.View {
 
     @Inject lateinit var presenter: MainTTSPresenter
@@ -63,11 +64,6 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
             val pasteData = clip.getItemAt(0).text
             return pasteData?.toString() ?: ""
         }
-
-    override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this)
-        super.onAttach(context)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

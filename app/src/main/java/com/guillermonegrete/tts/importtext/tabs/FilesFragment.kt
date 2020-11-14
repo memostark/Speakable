@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.importtext.tabs
 import android.Manifest
 import android.animation.Animator
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -30,7 +29,7 @@ import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.RecentFilesAdapter
 import com.guillermonegrete.tts.importtext.UriValidator
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
-import dagger.android.support.AndroidSupportInjection
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import java.io.BufferedReader
@@ -42,6 +41,7 @@ import javax.inject.Inject
 
 @ExperimentalCoroutinesApi
 @FlowPreview
+@AndroidEntryPoint
 class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
     private  var _binding: FilesLayoutBinding? = null
@@ -63,11 +63,6 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
     }
 
     private var fabOpen = false
-
-    override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this)
-        super.onAttach(context)
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

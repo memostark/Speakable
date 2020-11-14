@@ -23,9 +23,10 @@ import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
-import dagger.android.AndroidInjection
+import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class VisualizeTextActivity: AppCompatActivity() {
 
     @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
@@ -61,7 +62,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var scaleDetector: ScaleGestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AndroidInjection.inject(this)
         setPreferenceTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_visualize_text)

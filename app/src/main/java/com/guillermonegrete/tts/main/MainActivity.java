@@ -54,7 +54,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import dagger.hilt.android.AndroidEntryPoint;
 
+
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
     // Note: Sign up at http://www.projectoxford.ai for the client credentials.
 

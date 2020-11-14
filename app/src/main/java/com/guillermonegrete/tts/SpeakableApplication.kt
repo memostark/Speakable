@@ -1,20 +1,14 @@
 package com.guillermonegrete.tts
 
-import com.guillermonegrete.tts.di.DaggerApplicationComponent
-import dagger.android.AndroidInjector
-import dagger.android.DaggerApplication
+import android.app.Application
 import androidx.preference.PreferenceManager
-import com.guillermonegrete.tts.di.ApplicationComponent
 import com.guillermonegrete.tts.main.SettingsFragment
 import com.guillermonegrete.tts.utils.DEFAULT_MODE
 import com.guillermonegrete.tts.utils.applyTheme
+import dagger.hilt.android.HiltAndroidApp
 
-
-class SpeakableApplication: DaggerApplication() {
-
-    val appComponent: ApplicationComponent by lazy {
-        DaggerApplicationComponent.factory().create(this)
-    }
+@HiltAndroidApp
+class SpeakableApplication: Application() {
 
     override fun onCreate() {
         super.onCreate()
@@ -23,6 +17,4 @@ class SpeakableApplication: DaggerApplication() {
         val themePref = sharedPreferences.getString(SettingsFragment.PREF_THEME, DEFAULT_MODE)
         themePref?.let { applyTheme(themePref) }
     }
-
-    override fun applicationInjector(): AndroidInjector<out DaggerApplication> = appComponent
 }
