@@ -38,19 +38,13 @@ import javax.inject.Singleton
 import dagger.Binds
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
 import org.xmlpull.v1.XmlPullParser
 
-
-@Module(
-    includes = [
-        ApplicationModuleBinds::class,
-        GoogleSourceModule::class,
-        MicrosoftSourceModule::class,
-        FirebaseLocalModule::class,
-        FirebaseCloudModule::class
-    ])
+@InstallIn(SingletonComponent::class)
+@Module
 object ApplicationModule {
 
     @Singleton
@@ -152,6 +146,7 @@ object ApplicationModule {
     fun provideXmlParser(): XmlPullParser = Xml.newPullParser()
 }
 
+@InstallIn(ApplicationComponent::class)
 @Module
 abstract class ApplicationModuleBinds {
 
@@ -174,8 +169,8 @@ abstract class ApplicationModuleBinds {
 /**
  * The binding for WordRepositorySource is on its own module so that we can replace it easily in tests.
  */
-@Module
 @InstallIn(ApplicationComponent::class)
+@Module
 abstract class WordRepositorySourceModule {
     @Binds
     abstract fun bindRepository(repository: WordRepository): WordRepositorySource
@@ -186,6 +181,7 @@ abstract class WordRepositorySourceModule {
  * dagger can't determine how to create the instance if multiple methods return
  * the same type in the same module.
  */
+@InstallIn(ApplicationComponent::class)
 @Module
 class GoogleSourceModule{
     @Provides
@@ -195,6 +191,7 @@ class GoogleSourceModule{
     fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
 }
 
+@InstallIn(ApplicationComponent::class)
 @Module
 class MicrosoftSourceModule{
     @Provides
@@ -204,6 +201,7 @@ class MicrosoftSourceModule{
     fun provideMicrosoftSource(): WordDataSource = MSTranslatorSource(BuildConfig.TranslatorApiKey)
 }
 
+@InstallIn(ApplicationComponent::class)
 @Module
 class FirebaseLocalModule{
     @Provides
@@ -213,6 +211,7 @@ class FirebaseLocalModule{
     fun provideLocalTextRecognizer(): ImageProcessingSource = FirebaseTextProcessor()
 }
 
+@InstallIn(ApplicationComponent::class)
 @Module
 class FirebaseCloudModule{
     @Provides

@@ -14,8 +14,7 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -37,7 +36,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.lang.StringBuilder
-import javax.inject.Inject
 
 @ExperimentalCoroutinesApi
 @FlowPreview
@@ -57,10 +55,7 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
     private lateinit var pickEpubBtn: FloatingActionButton
     private lateinit var pickTxtBtn: FloatingActionButton
 
-    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
-    private val viewModel by lazy {
-        ViewModelProvider(this, viewModelFactory).get(ImportTextViewModel::class.java)
-    }
+    private val viewModel: ImportTextViewModel by viewModels()
 
     private var fabOpen = false
 
@@ -109,14 +104,14 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
                 visualizeEpub(Uri.parse(it.uri), it.id)
             })
 
-            dataLoading.observe(viewLifecycleOwner, Observer {
+            dataLoading.observe(viewLifecycleOwner, {
                 progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
             adapter = RecentFilesAdapter(viewModel)
             recentFilesList.adapter = adapter
 
-            files.observe(viewLifecycleOwner, Observer {
+            files.observe(viewLifecycleOwner, {
                 adapter.submitList(it)
             })
 

@@ -33,7 +33,6 @@ import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +40,6 @@ import java.util.List;
 public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener, SavedWordListAdapter.Listener {
 
     private SavedWordListAdapter wordListAdapter;
-    @Inject ViewModelProvider.Factory viewModelFactory;
     private SavedWordsViewModel wordsViewModel;
     private RecyclerView mRecyclerView;
     private Spinner spinnerLang;
@@ -78,7 +76,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     }
 
     private void initData(){
-        wordsViewModel = new ViewModelProvider(this, viewModelFactory).get(SavedWordsViewModel.class);
+        wordsViewModel = new ViewModelProvider(this).get(SavedWordsViewModel.class);
 
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
             ArrayList<String> spinnerItems = new ArrayList<>(languages);

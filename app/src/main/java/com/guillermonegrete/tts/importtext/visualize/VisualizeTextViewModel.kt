@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -15,9 +16,8 @@ import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
-import javax.inject.Inject
 
-class VisualizeTextViewModel @Inject constructor(
+class VisualizeTextViewModel @ViewModelInject constructor(
     private val epubParser: EpubParser,
     private val settings: SettingsRepository,
     private val fileRepository: FileRepository,
@@ -44,7 +44,7 @@ class VisualizeTextViewModel @Inject constructor(
         private set
 
     var fileUri: String? = null
-    var uuid: String = UUID.randomUUID().toString()
+    private var uuid: String = UUID.randomUUID().toString()
     var fileId: Int = -1
     private var databaseBookFile: BookFile? = null
 

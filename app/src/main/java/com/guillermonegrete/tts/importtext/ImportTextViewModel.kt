@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext
 
+import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.source.FileRepository
@@ -10,11 +11,10 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @FlowPreview
 @ExperimentalCoroutinesApi
-class ImportTextViewModel @Inject constructor(
+class ImportTextViewModel @ViewModelInject constructor(
     private val fileRepository: FileRepository,
     fileManager: EpubFileManager
 ): ViewModel() {
