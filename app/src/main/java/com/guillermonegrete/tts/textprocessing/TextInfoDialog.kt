@@ -15,10 +15,11 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.customviews.ButtonsPreference
+import com.guillermonegrete.tts.databinding.DialogFragmentSentenceBinding
+import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.main.SettingsFragment
@@ -48,6 +49,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     @Inject
     internal lateinit var presenter: ProcessTextContract.Presenter
+
+    private  var _bindingSentence: DialogFragmentSentenceBinding? = null
+    private val bindingSentence get() = _bindingSentence!!
+
+    private  var _bindingWord: DialogFragmentWordBinding? = null
+    private val bindingWord get() = _bindingWord!!
 
     private var pager: ViewPager2? = null
     private var pagerAdapter: MyPageAdapter? = null
@@ -99,13 +106,15 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         val text = inputText ?: ""
 
         val splitText = text.split(" ")
-        val layoutRes =
-            if(splitText.size > 1)
-                R.layout.activity_process_sentence
-            else
-                R.layout.activity_processtext
-
-        val layout = inflater.inflate(layoutRes, container, false)
+        val layout =
+            if(splitText.size > 1) {
+                _bindingSentence = DialogFragmentSentenceBinding.inflate(inflater, container, false)
+                createSentenceLayout()
+                bindingSentence.root
+            } else {
+                _bindingWord = DialogFragmentWordBinding.inflate(inflater, container, false)
+                bindingWord.root
+            }
 
         val mTextTTS = layout.findViewById<TextView>(R.id.text_tts)
         mTextTTS.text = text
@@ -119,6 +128,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         setPlayButton(layout, text)
 
         return layout
+    }
+
+    private fun createSentenceLayout() {
+        setBottomDialog()
+        setSpinner()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -152,6 +166,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         presenter.destroy()
         val parent = activity
         if(parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _bindingSentence = null
+        _bindingWord = null
     }
 
     private fun getPreferenceISO(): String {
@@ -195,14 +215,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private fun setWordLayout(word: Words) {
         textFromLanguage.text = word.lang
 
-        view?.findViewById<View>(R.id.save_icon)?.setOnClickListener { presenter.onClickBookmark() }
+        bindingWord.saveIcon.setOnClickListener { presenter.onClickBookmark() }
     }
 
     override fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
-        val isLargeWindow = preferences.getBoolean(
-            SettingsFragment.PREF_WINDOW_SIZE,
-            ButtonsPreference.DEFAULT_VALUE
-        )
+        val isLargeWindow = preferences.getBoolean(SettingsFragment.PREF_WINDOW_SIZE, ButtonsPreference.DEFAULT_VALUE)
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
         setWordLayout(word)
         dictionaryAdapter = WiktionaryAdapter(items)
@@ -249,40 +266,34 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun setSentenceLayout(word: Words) {
-        setBottomDialog()
-
-        val mTextTranslation = view?.findViewById<TextView>(R.id.text_translation)
-        mTextTranslation?.text = word.definition
+        bindingSentence.textTranslation.text = word.definition
         textFromLanguage.text = word.lang
-
-        setSpinner()
     }
 
     override fun setExternalDictionary(links: List<ExternalLink>) {
         if(!isAdded) return
 
-        pagerAdapter = MyPageAdapter(this)
-        if (dictionaryAdapter != null) pagerAdapter?.addFragment(
+        val pagerAdapter = MyPageAdapter(this)
+        if (dictionaryAdapter != null) pagerAdapter.addFragment(
             DefinitionFragment.newInstance(dictionaryAdapter)
         )
         val translationFragment = TranslationFragment.newInstance(mFoundWords, languagePreferenceIndex)
         translationFragment.setListener(translationFragListener)
-        pagerAdapter?.addFragment(translationFragment)
-        pagerAdapter?.addFragment(
+        pagerAdapter.addFragment(translationFragment)
+        pagerAdapter.addFragment(
             ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
         )
-        pager?.adapter = pagerAdapter
 
-        val tabLayout = view?.findViewById<TabLayout>(R.id.pager_menu_dots)
-        if(tabLayout != null){
-            pager?.let {
-                TabLayoutMediator(tabLayout, it, true) { _, _ -> }.attach() // Tab without text
-            }
+        pager?.let {
+            it.adapter = pagerAdapter
+            TabLayoutMediator(bindingWord.pagerMenuDots, it, true) { _, _ -> }.attach() // Tab without text
         }
+
+        this.pagerAdapter = pagerAdapter
     }
 
     override fun setTranslationErrorMessage() {
-        // If pager is not null, means we are using activity_processtext layout,
+        // If pager is not null, means we are using word layout,
         // otherwise is sentence layout
         pagerAdapter?.let {
             // Check if the adapter has dictionary fragment
@@ -301,12 +312,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     override fun showDeleteDialog(word: String) {
 
         val builder = AlertDialog.Builder(requireContext())
-        // TODO use sting resource for these messages
-        builder.setMessage("Do you want to delete this word?")
-            .setPositiveButton("Yes") { dialog, _ ->
+        builder.setMessage(getString(R.string.delete_word_message))
+            .setPositiveButton(R.string.yes) { dialog, _ ->
                 presenter.onClickDeleteWord(word)
                 dialog.dismiss()
-
             }
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
 
@@ -314,11 +323,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showWordDeleted() {
-        val saveIcon = view?.findViewById<ImageButton>(R.id.save_icon)
-        saveIcon?.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
-
-        val editIcon = view?.findViewById<ImageButton>(R.id.edit_icon)
-        editIcon?.visibility = View.GONE
+        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
+        bindingWord.editIcon.visibility = View.GONE
     }
 
     override fun showErrorPlayingAudio() {
@@ -373,8 +379,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
             if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
-            val translationTextView = view?.findViewById<TextView>(R.id.text_translation)
-            translationTextView?.text = word.definition
+            bindingSentence.textTranslation.text = word.definition
         }
     }
 
@@ -510,14 +515,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun setSavedWordToolbar(word: Words) {
-        val saveIcon = view?.findViewById<ImageButton>(R.id.save_icon)
-        saveIcon?.setImageResource(R.drawable.ic_bookmark_black_24dp)
+        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
 
-        val editIcon = view?.findViewById<ImageButton>(R.id.edit_icon)
-        editIcon?.visibility = View.VISIBLE
-        editIcon?.setOnClickListener {
-            val dialogFragment = SaveWordDialogFragment.newInstance(word)
-            dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
+        with(bindingWord.editIcon) {
+            visibility = View.VISIBLE
+            setOnClickListener {
+                val dialogFragment = SaveWordDialogFragment.newInstance(word)
+                dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
+            }
         }
 
     }
@@ -531,11 +536,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun createViewPager() {
-        pager = view?.findViewById(R.id.process_view_pager)
+        pager = bindingWord.processViewPager
     }
 
     private fun createSmallViewPager() {
-        pager = view?.findViewById(R.id.process_view_pager)
+        pager = bindingWord.processViewPager
         val params = pager?.layoutParams
         params?.height = 250
         pager?.layoutParams = params
@@ -557,9 +562,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun setSpinner() {
-        if(context == null) return
 
-        val spinner = view?.findViewById<Spinner>(R.id.translate_to_spinner) ?: return
+        val spinner = bindingSentence.translateToSpinner
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLanguagesValue,
@@ -575,12 +579,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     override fun onWordSaved(word: Words) {
         presenter.onClickSaveWord(word)
-        val saveIcon = view?.findViewById<ImageButton>(R.id.save_icon)
-        saveIcon?.setImageResource(R.drawable.ic_bookmark_black_24dp)
+        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
 
-        val editIcon = view?.findViewById<ImageButton>(R.id.edit_icon)
-        editIcon?.visibility = View.VISIBLE
-        editIcon?.setOnClickListener {
+        val editIcon = bindingWord.editIcon
+        editIcon.visibility = View.VISIBLE
+        editIcon.setOnClickListener {
             val dialogFragment = SaveWordDialogFragment.newInstance(word)
             dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
         }
