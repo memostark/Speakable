@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     Fragment activeFragment;
     FragmentManager fragmentManager = getSupportFragmentManager();
 
-    private static String CURRENT_SELECTED_FRAGMENT = "current fragment";
+    private static final String CURRENT_SELECTED_FRAGMENT = "current fragment";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

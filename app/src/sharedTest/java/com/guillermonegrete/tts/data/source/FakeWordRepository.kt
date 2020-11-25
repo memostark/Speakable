@@ -55,8 +55,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         }
     }
 
-    override fun getLanguageAndTranslation(text: String?, callback: WordRepositorySource.GetTranslationCallback?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getLanguageAndTranslation(text: String, callback: WordRepositorySource.GetTranslationCallback) {
+        getLanguageAndTranslation(text, "auto", "en", callback)
     }
 
     override fun getLanguageAndTranslation(

@@ -76,7 +76,7 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public void getLanguageAndTranslation(String text, GetTranslationCallback callback) {
+    public void getLanguageAndTranslation(@NonNull String text, @NonNull GetTranslationCallback callback) {
         getLanguageAndTranslation(text, "auto", "en", callback);
     }
 

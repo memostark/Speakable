@@ -6,7 +6,6 @@ import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
-import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
 
@@ -16,8 +15,8 @@ import javax.inject.Singleton;
 @Singleton
 public class MainTTSPresenter extends AbstractPresenter implements MainTTSContract.Presenter {
 
-    private CustomTTS tts;
-    private WordRepository wordRepository;
+    private final CustomTTS tts;
+    private final WordRepositorySource wordRepository;
     private MainTTSContract.View view;
 
     private boolean isPlaying;
@@ -25,7 +24,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private String text;
 
     @Inject
-    MainTTSPresenter(Executor executor, MainThread mainThread, WordRepository wordRepository, CustomTTS tts) {
+    MainTTSPresenter(Executor executor, MainThread mainThread, WordRepositorySource wordRepository, CustomTTS tts) {
         super(executor, mainThread);
         this.tts = tts;
         this.wordRepository = wordRepository;
@@ -78,7 +77,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         view.startClipboardService();
     }
 
-    private CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
+    private final CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
 
         @Override
         public void onEngineReady() {
