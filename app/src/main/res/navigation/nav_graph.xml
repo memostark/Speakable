@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_item_main">
+
+    <fragment
+        android:id="@+id/nav_item_main"
+        android:name="com.guillermonegrete.tts.main.TextToSpeechFragment"
+        android:label="Text To Speech"
+        tools:layout="@layout/fragment_main_tts"/>
+    <fragment
+        android:id="@+id/nav_item_saved"
+        android:name="com.guillermonegrete.tts.savedwords.SavedWordsFragment"
+        android:label="Saved Words"
+        tools:layout="@layout/fragment_saved_words"/>
+    <fragment
+        android:id="@+id/nav_item_import"
+        android:name="com.guillermonegrete.tts.importtext.ImportTextFragment"
+        android:label="Import Text"
+        tools:layout="@layout/fragment_import_text"/>
+    <fragment
+        android:id="@+id/settingsFragmentDest"
+        android:name="com.guillermonegrete.tts.main.SettingsFragment"
+        android:label=""
+        tools:layout=""/>
+
+    <action android:id="@+id/action_global_settingsFragment" app:destination="@id/settingsFragmentDest"/>
+</navigation>

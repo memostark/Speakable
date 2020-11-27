@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.main
 
 
 import android.os.Bundle
+import android.view.Menu
 import androidx.preference.ListPreference
 
 import com.guillermonegrete.tts.R
@@ -11,6 +12,16 @@ import com.guillermonegrete.tts.utils.applyTheme
 
 
 class SettingsFragment : PreferenceFragmentCompat() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        menu.findItem(R.id.settings_menu_item).isVisible = false
+        super.onPrepareOptionsMenu(menu)
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences_main, rootKey)
