@@ -35,14 +35,14 @@ package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
 
+import androidx.lifecycle.LiveData;
 import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.utils.NavigationExtensionsKt;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -51,13 +51,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import java.util.Arrays;
+import java.util.List;
+
 import dagger.hilt.android.AndroidEntryPoint;
 
 
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
-
-    private BottomNavigationView navView;
 
     NavController navController;
 
@@ -68,16 +69,7 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
         setActionBar();
 
-        navView = findViewById(R.id.bottom_nav_view);
-
-        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_fragment_container);
-
-        if (navHostFragment != null) {
-            navController = navHostFragment.getNavController();
-            setupNavController();
-        }
-
-        navView.setOnNavigationItemReselectedListener(item -> {});
+        setupNavController();
     }
 
     private void setActionBar(){
@@ -86,18 +78,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNavController(){
+        BottomNavigationView navView = findViewById(R.id.bottom_nav_view);
 
-        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(R.id.nav_item_main, R.id.nav_item_saved, R.id.nav_item_import).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+        List<Integer> navGraphIds = Arrays.asList(R.navigation.main, R.navigation.saved, R.navigation.importtext);
+        LiveData<NavController> controllerObservable = NavigationExtensionsKt.setupWithNavController(navView, navGraphIds, getSupportFragmentManager(), R.id.main_fragment_container, getIntent());
 
-        NavigationUI.setupWithNavController(navView, navController);
+        controllerObservable.observe(this, controller -> {
+            navController = controller;
+            NavigationUI.setupActionBarWithNavController(this, controller);
 
-        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-            if (destination.getId() == R.id.settingsFragmentDest) {
-                navView.setVisibility(View.GONE);
-            } else {
-                navView.setVisibility(View.VISIBLE);
-            }
+            controller.addOnDestinationChangedListener((nController, destination, arguments) -> {
+
+                if (destination.getId() == R.id.settingsFragmentDest) {
+                    navView.setVisibility(View.GONE);
+                } else {
+                    navView.setVisibility(View.VISIBLE);
+                }
+            });
         });
     }
 

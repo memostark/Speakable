@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/importtext"
+    app:startDestination="@id/importTextFragment">
+    <fragment
+        android:id="@+id/importTextFragment"
+        android:name="com.guillermonegrete.tts.importtext.ImportTextFragment"
+        android:label="Import Text"
+        tools:layout="@layout/fragment_import_text"/>
+    <fragment
+        android:id="@+id/settingsFragmentDest"
+        android:name="com.guillermonegrete.tts.main.SettingsFragment"/>
+    <action android:id="@+id/action_global_settingsFragment" app:destination="@id/settingsFragmentDest"/>
+</navigation>
