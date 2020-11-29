@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.databinding.FragmentSavedWordsBinding;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
 
@@ -41,8 +42,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private SavedWordListAdapter wordListAdapter;
     private SavedWordsViewModel wordsViewModel;
-    private RecyclerView mRecyclerView;
-    private Spinner spinnerLang;
+
+    private FragmentSavedWordsBinding binding;
 
     private String language_filter;
 
@@ -50,29 +51,37 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private static final String ALL_OPTION = "All";
 
+    public SavedWordsFragment(){
+        super(R.layout.fragment_saved_words);
+    }
+
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         wordListAdapter = new SavedWordListAdapter(context, this);
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        final View fragment_layout = inflater.inflate(R.layout.fragment_saved_words, container, false);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        binding = FragmentSavedWordsBinding.bind(view);
 
-        mRecyclerView = fragment_layout.findViewById(R.id.recyclerview_saved_words);
-        mRecyclerView.setAdapter(wordListAdapter);
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(requireActivity(), DividerItemDecoration.VERTICAL));
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        RecyclerView wordsList = binding.recyclerviewSavedWords;
+        wordsList.setAdapter(wordListAdapter);
+        wordsList.addItemDecoration(new DividerItemDecoration(requireActivity(), DividerItemDecoration.VERTICAL));
+        wordsList.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        setUpItemTouchHelper();
+        setUpItemTouchHelper(wordsList);
 
-        spinnerLang = fragment_layout.findViewById(R.id.select_language_spinner);
-
-        fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(view -> showSaveDialog());
+        binding.newWordButton.setOnClickListener(v -> showSaveDialog());
         initData();
-        return fragment_layout;
+    }
+
+    @Override
+    public void onDestroyView() {
+        binding.recyclerviewSavedWords.setAdapter(null);
+        binding = null;
+        super.onDestroyView();
     }
 
     private void initData(){
@@ -83,6 +92,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             spinnerItems.add(0, ALL_OPTION);
             ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, spinnerItems);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            Spinner spinnerLang = binding.selectLanguageSpinner;
             spinnerLang.setOnItemSelectedListener(SavedWordsFragment.this);
             spinnerLang.setAdapter(adapter);
         });
@@ -101,7 +112,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         dialogFragment.show(requireActivity().getSupportFragmentManager(), "New word");
     }
 
-    private void setUpItemTouchHelper(){
+    private void setUpItemTouchHelper(RecyclerView recyclerView){
         ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
 
             Drawable deleteIcon ;
@@ -169,7 +180,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             }
         };
         ItemTouchHelper mItemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
-        mItemTouchHelper.attachToRecyclerView(mRecyclerView);
+        mItemTouchHelper.attachToRecyclerView(recyclerView);
     }
 
     @Override

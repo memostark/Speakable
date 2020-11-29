@@ -10,15 +10,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FilesLayoutBinding
@@ -47,14 +44,6 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
     private var fileType = ImportedFileType.TXT
 
-    private lateinit var adapter: RecentFilesAdapter
-
-    private lateinit var recentFilesList: RecyclerView
-    private lateinit var progressBar: ProgressBar
-
-    private lateinit var pickEpubBtn: FloatingActionButton
-    private lateinit var pickTxtBtn: FloatingActionButton
-
     private val viewModel: ImportTextViewModel by viewModels()
 
     private var fabOpen = false
@@ -63,28 +52,28 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
         super.onViewCreated(view, savedInstanceState)
         _binding = FilesLayoutBinding.bind(view)
 
-        progressBar = binding.recentFilesProgressBar
+        with(binding){
 
-        binding.pickFileFab.setOnClickListener { toggleButtons() }
+            pickFileFab.setOnClickListener { toggleButtons() }
 
-        pickTxtBtn = binding.pickTxtFileBtn.apply {
-            setOnClickListener {
-                fileType = ImportedFileType.TXT
-                checkFileReadPermission()
+            pickTxtFileBtn.apply {
+                setOnClickListener {
+                    fileType = ImportedFileType.TXT
+                    checkFileReadPermission()
+                }
+                post { translationY = height.toFloat() }
             }
-            post { translationY = height.toFloat() }
-        }
 
-        pickEpubBtn = binding.pickEpubFileBtn.apply {
-            setOnClickListener {
-                fileType = ImportedFileType.EPUB
-                checkFileReadPermission()
+            pickEpubFileBtn.apply {
+                setOnClickListener {
+                    fileType = ImportedFileType.EPUB
+                    checkFileReadPermission()
+                }
+                post { translationY = height.toFloat() }
             }
-            post { translationY = height.toFloat() }
-        }
 
-        recentFilesList = binding.recentFilesList
-        recentFilesList.layoutManager = LinearLayoutManager(context)
+            recentFilesList.layoutManager = LinearLayoutManager(context)
+        }
 
         setViewModel()
     }
@@ -105,11 +94,11 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
             })
 
             dataLoading.observe(viewLifecycleOwner, {
-                progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
+                binding.recentFilesProgressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
-            adapter = RecentFilesAdapter(viewModel)
-            recentFilesList.adapter = adapter
+            val adapter = RecentFilesAdapter(viewModel)
+            binding.recentFilesList.adapter = adapter
 
             files.observe(viewLifecycleOwner, {
                 adapter.submitList(it)
@@ -250,12 +239,15 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
     private fun toggleButtons(){
         fabOpen = !fabOpen
 
+        val pickEpub = binding.pickEpubFileBtn
+        val pickText = binding.pickTxtFileBtn
+
         if(fabOpen) {
-            ViewAnimation.showIn(pickEpubBtn)
-            ViewAnimation.showIn(pickTxtBtn)
+            ViewAnimation.showIn(pickEpub)
+            ViewAnimation.showIn(pickText)
         }else{
-            ViewAnimation.showOut(pickEpubBtn)
-            ViewAnimation.showOut(pickTxtBtn)
+            ViewAnimation.showOut(pickEpub)
+            ViewAnimation.showOut(pickText)
         }
     }
 
