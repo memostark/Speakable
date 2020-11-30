@@ -15,15 +15,27 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
         android:paddingStart="16dp"
+        android:paddingTop="8dp"
         android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
         android:textAllCaps="true"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        app:layout_constraintBottom_toBottomOf="@+id/pick_language"
+        app:layout_constraintStart_toEndOf="@+id/pick_language"
+        app:layout_constraintTop_toTopOf="@+id/pick_language"
+        tools:text="EN" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/pick_language"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        app:icon="@drawable/ic_baseline_arrow_drop_down_24"
+        app:iconGravity="end"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="English" />
+        tools:text="Auto detect"/>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tts_text_layout"
@@ -33,18 +45,18 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         app:endIconMode="clear_text"
-        app:layout_constraintTop_toBottomOf="@id/text_language_code"
+        app:layout_constraintTop_toBottomOf="@+id/pick_language"
         tools:style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/tts_edit_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:gravity="top"
             android:inputType="textMultiLine"
             android:maxLines="3"
-            android:minLines="2" />
+            android:minLines="2"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
     </com.google.android.material.textfield.TextInputLayout>
 
 

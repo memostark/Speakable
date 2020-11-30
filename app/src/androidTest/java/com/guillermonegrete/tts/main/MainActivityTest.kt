@@ -1,13 +1,12 @@
 package com.guillermonegrete.tts.main;
 
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions
+import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.replaceText
-import androidx.test.espresso.assertion.ViewAssertions
-import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest
 import com.guillermonegrete.tts.R
@@ -17,6 +16,8 @@ import com.guillermonegrete.tts.di.WordRepositorySourceModule
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
+import org.hamcrest.Matchers.hasToString
+import org.hamcrest.Matchers.startsWith
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -51,10 +52,26 @@ class MainActivityTest {
 
         // Insert text and click play button
         onView(withId(R.id.tts_edit_text)).perform(replaceText(testTranslation.word))
-        onView(withId(R.id.play_btn)).perform(ViewActions.click())
+        onView(withId(R.id.play_btn)).perform(click())
 
         // Language detected
-        onView(withText(testTranslation.lang)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
+        onView(withText(testTranslation.lang)).check(matches(isDisplayed()))
+
+        activityScenario.close()
+    }
+
+    @Test
+    fun changeLanguageFrom(){
+        val activityScenario = ActivityScenario.launch(MainActivity::class.java)
+
+        onView(withId(R.id.pick_language)).check(matches(withText("AUTO DETECT")))
+        onView(withId(R.id.pick_language)).perform(click())
+
+        onData(hasToString(startsWith("English")))
+            .inAdapterView(withId(R.id.languages_list))
+            .perform(click())
+
+        onView(withId(R.id.pick_language)).check(matches(withText("English")))
 
         activityScenario.close()
     }
