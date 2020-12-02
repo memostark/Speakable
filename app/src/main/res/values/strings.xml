@@ -90,5 +90,6 @@
     <string name="cover_image">Cover image</string>
     <string name="delete">Delete</string>
     <string name="delete_word_message">Do you want to delete this word?</string>
+    <string name="auto_detect">AUTO DETECT</string>
 
 </resources>

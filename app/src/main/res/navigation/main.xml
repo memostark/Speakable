@@ -9,9 +9,18 @@
         android:id="@+id/textToSpeechFragment"
         android:name="com.guillermonegrete.tts.main.TextToSpeechFragment"
         android:label="Text To Speech"
-        tools:layout="@layout/fragment_main_tts"/>
+        tools:layout="@layout/fragment_main_tts">
+        <action
+            android:id="@+id/action_textToSpeech_to_pickLanguageFragment"
+            app:destination="@id/pickLanguageFragment" />
+    </fragment>
     <fragment
         android:id="@+id/settingsFragmentDest"
         android:name="com.guillermonegrete.tts.main.SettingsFragment"/>
     <action android:id="@+id/action_global_settingsFragment" app:destination="@id/settingsFragmentDest"/>
+    <fragment
+        android:id="@+id/pickLanguageFragment"
+        android:name="com.guillermonegrete.tts.main.PickLanguageFragment"
+        android:label="fragment_pick_language"
+        tools:layout="@layout/fragment_pick_language" />
 </navigation>

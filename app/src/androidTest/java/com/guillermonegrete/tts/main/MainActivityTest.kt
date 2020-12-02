@@ -1,13 +1,14 @@
 package com.guillermonegrete.tts.main;
 
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers.*
-import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.source.FakeWordRepository
@@ -16,12 +17,9 @@ import com.guillermonegrete.tts.di.WordRepositorySourceModule
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
-import org.hamcrest.Matchers.hasToString
-import org.hamcrest.Matchers.startsWith
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-
 import org.junit.runner.RunWith
 import javax.inject.Inject
 
@@ -67,9 +65,10 @@ class MainActivityTest {
         onView(withId(R.id.pick_language)).check(matches(withText("AUTO DETECT")))
         onView(withId(R.id.pick_language)).perform(click())
 
-        onData(hasToString(startsWith("English")))
-            .inAdapterView(withId(R.id.languages_list))
-            .perform(click())
+        onView(withId(R.id.languages_list))
+            .perform(
+                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(1, click())
+            )
 
         onView(withId(R.id.pick_language)).check(matches(withText("English")))
 

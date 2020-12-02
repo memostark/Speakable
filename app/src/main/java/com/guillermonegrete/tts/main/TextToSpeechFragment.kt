@@ -23,6 +23,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
 import androidx.annotation.DrawableRes
+import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -112,6 +113,9 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 val text = ttsEditText.text.toString()
                 presenter.onClickReproduce(text)
             }
+
+            pickLanguage.text = getString(R.string.auto_detect)
+            pickLanguage.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_pickLanguageFragment) }
         }
 
         val webview = binding.bottom.webviewWiktionary
@@ -120,6 +124,10 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
             false
         }
         webview.webViewClient = HelloWebViewClient()
+
+        setFragmentResultListener("requestKey") { _, bundle ->
+            binding.main.pickLanguage.text = bundle.getString("lang")
+        }
     }
 
     override fun onDestroyView() {
