@@ -9,8 +9,13 @@ import android.speech.tts.UtteranceProgressListener;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 
 @Singleton
@@ -182,6 +187,21 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
 
     public String getLanguage() {
         return language;
+    }
+
+    public List<String> getAvailableLanguages(){
+        Locale[] locales = Locale.getAvailableLocales();
+        Set<String> localeList = new HashSet<>();
+
+        for (Locale locale : locales) {
+            int res = localTTS.isLanguageAvailable(locale);
+            if (res == TextToSpeech.LANG_COUNTRY_AVAILABLE) {
+                System.out.println(locale);
+                localeList.add(locale.getLanguage());
+            }
+        }
+
+        return new ArrayList<>(localeList);
     }
 
     public void finishTTS(){

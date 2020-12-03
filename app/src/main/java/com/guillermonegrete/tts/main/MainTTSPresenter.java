@@ -32,7 +32,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     }
 
     @Override
-    public void onClickReproduce(final String text) {
+    public void onClickReproduce(final String text, final String lang) {
 
         if(isPlaying) {
             tts.stop();
@@ -43,17 +43,21 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
             this.text = text;
 
             // TODO this request should be done in a background thread
-            wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
-                @Override
-                public void onTranslationAndLanguage(Words word) {
-                    String language = word.lang;
-                    tts.initializeTTS(language, ttsListener);
-                    view.showDetectedLanguage(language);
-                }
+            if(lang == null) {
+                wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
+                    @Override
+                    public void onTranslationAndLanguage(Words word) {
+                        String language = word.lang;
+                        tts.initializeTTS(language, ttsListener);
+                        view.showDetectedLanguage(language);
+                    }
 
-                @Override
-                public void onDataNotAvailable() {}
-            });
+                    @Override
+                    public void onDataNotAvailable() {}
+                });
+            } else {
+                tts.initializeTTS(lang, ttsListener);
+            }
         }
     }
 

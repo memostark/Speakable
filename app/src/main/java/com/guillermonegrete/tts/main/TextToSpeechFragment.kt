@@ -109,13 +109,17 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
             clipboardBtn.setOnClickListener { presenter.onStartClipboardMode() }
 
+            val autoText = getString(R.string.auto_detect)
+            pickLanguage.text = autoText
+            pickLanguage.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_pickLanguageFragment) }
+
             playBtn.setOnClickListener {
                 val text = ttsEditText.text.toString()
-                presenter.onClickReproduce(text)
-            }
 
-            pickLanguage.text = getString(R.string.auto_detect)
-            pickLanguage.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_pickLanguageFragment) }
+                val selectedLang = pickLanguage.text.toString()
+                val lang = if(selectedLang == autoText) null else selectedLang
+                presenter.onClickReproduce(text, lang)
+            }
         }
 
         val webview = binding.bottom.webviewWiktionary
