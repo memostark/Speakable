@@ -70,8 +70,8 @@ class MainActivityTest {
                 RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(1, click())
             )
 
-        // TODO DE is the option at index 1, should mock list to guarantee deterministic behaviour
-        onView(withId(R.id.pick_language)).check(matches(withText("DE")))
+        // TODO JA is the option at index 1, should mock list to guarantee deterministic behaviour
+        onView(withId(R.id.pick_language)).check(matches(withText("JA")))
 
         activityScenario.close()
     }

@@ -18,9 +18,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -58,7 +56,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        wordListAdapter = new SavedWordListAdapter(context, this);
+        wordListAdapter = new SavedWordListAdapter(this);
     }
 
     @Override
