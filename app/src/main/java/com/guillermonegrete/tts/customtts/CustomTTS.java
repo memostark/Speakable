@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import dagger.hilt.android.qualifiers.ApplicationContext;
+
 
 @Singleton
 public class CustomTTS implements TextToSpeech.OnInitListener{
@@ -37,8 +39,8 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
     private final Context context;
 
     @Inject
-    public CustomTTS(Context context){
-        this.context = context.getApplicationContext();
+    public CustomTTS(@ApplicationContext Context context){
+        this.context = context;
 
         localTTS = new TextToSpeech(this.context, this);
         langInitialized = false;

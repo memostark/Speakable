@@ -38,6 +38,7 @@ import javax.inject.Singleton
 import dagger.Binds
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
@@ -49,11 +50,7 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideAppContext(app: Application): Context = app.applicationContext
-
-    @Singleton
-    @Provides
-    fun provideSharedPreferences(context: Context): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
     @Qualifier
     @Retention(AnnotationRetention.RUNTIME)
@@ -93,9 +90,9 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideWordsDatabase(context: Context): WordsDatabase{
+    fun provideWordsDatabase(@ApplicationContext context: Context): WordsDatabase{
         return Room.databaseBuilder(
-            context.applicationContext,
+            context,
             WordsDatabase::class.java,
             "words.db"
         ).build()
@@ -107,7 +104,7 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideFilesDatabase(context: Context): FilesDatabase{
+    fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase{
         return FilesDatabase.getDatabase(context)
     }
 

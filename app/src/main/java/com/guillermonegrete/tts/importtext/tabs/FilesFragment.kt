@@ -330,7 +330,7 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = RecentFilesMenuBinding.inflate(inflater, container, false)
 
         binding.deleteButton.setOnClickListener {

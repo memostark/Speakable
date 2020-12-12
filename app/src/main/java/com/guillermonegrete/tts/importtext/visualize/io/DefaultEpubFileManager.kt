@@ -3,10 +3,11 @@ package com.guillermonegrete.tts.importtext.visualize.io
 import android.content.Context
 import android.os.Environment
 import androidx.core.content.ContextCompat
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 
-class DefaultEpubFileManager @Inject constructor(context: Context) : EpubFileManager {
+class DefaultEpubFileManager @Inject constructor(@ApplicationContext context: Context) : EpubFileManager {
 
     override val rootDir: File
 
