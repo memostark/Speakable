@@ -5,12 +5,16 @@ import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.getUnitLiveDataValue
+import com.guillermonegrete.tts.importtext.visualize.io.FakeEpubFileManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+@FlowPreview
 @ExperimentalCoroutinesApi
 class ImportTextViewModelTest {
 
@@ -33,25 +37,16 @@ class ImportTextViewModelTest {
 
         fileRepository.addTasks(files1, files2)
 
-        viewModel = ImportTextViewModel(fileRepository)
+        viewModel = ImportTextViewModel(fileRepository, FakeEpubFileManager())
     }
 
     @Test
-    fun load_files_and_show_loading_icon(){
-        // Pause dispatcher so we can verify initial values
-        mainCoroutineRule.pauseDispatcher()
+    fun load_files() = runBlockingTest{
+        // TODO find how to test the status of the loading icon as well
 
-        viewModel.loadRecentFiles()
+        val files = viewModel.files
 
-        // Then progress indicator is shown
-        assertTrue(getUnitLiveDataValue(viewModel.dataLoading))
-
-        mainCoroutineRule.resumeDispatcher()
-
-        // Then progress indicator is hidden
-        assertFalse(getUnitLiveDataValue(viewModel.dataLoading))
-
-        assertEquals(2, getUnitLiveDataValue(viewModel.files).size)
+        assertEquals(2, getUnitLiveDataValue(files).size)
 
     }
 }

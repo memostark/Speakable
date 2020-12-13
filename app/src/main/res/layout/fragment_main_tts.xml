@@ -4,10 +4,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- include main content -->
-    <include layout="@layout/main_tts_layout" />
+    <include android:id="@+id/main" layout="@layout/main_tts_layout" />
 
     <!-- include bottom sheet Taken from: https://medium.com/android-bits/android-bottom-sheet-30284293f066 -->
-    <include layout="@layout/main_tts_bottom" />
+    <include android:id="@+id/bottom" layout="@layout/main_tts_bottom" />
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

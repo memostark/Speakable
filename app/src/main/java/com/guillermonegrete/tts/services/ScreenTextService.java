@@ -57,7 +57,6 @@ import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
-import dagger.android.AndroidInjection;
 
 import javax.inject.Inject;
 
@@ -133,7 +132,6 @@ public class ScreenTextService extends Service {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate() {
-        AndroidInjection.inject(this);
         super.onCreate();
 
         service_layout = View.inflate(this, R.layout.service_processtext, null);
@@ -348,7 +346,7 @@ public class ScreenTextService extends Service {
         return snipView.getVisibility() == View.VISIBLE;
     }
 
-    private ClipboardManager.OnPrimaryClipChangedListener clipboardListener = new ClipboardManager.OnPrimaryClipChangedListener(){
+    private final ClipboardManager.OnPrimaryClipChangedListener clipboardListener = new ClipboardManager.OnPrimaryClipChangedListener(){
 
         @Override
         public void onPrimaryClipChanged() {

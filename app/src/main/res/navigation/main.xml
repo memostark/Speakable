@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    app:startDestination="@id/textToSpeechFragment">
+
+    <fragment
+        android:id="@+id/textToSpeechFragment"
+        android:name="com.guillermonegrete.tts.main.TextToSpeechFragment"
+        android:label="Text To Speech"
+        tools:layout="@layout/fragment_main_tts">
+        <action
+            android:id="@+id/action_textToSpeech_to_pickLanguageFragment"
+            app:destination="@id/pickLanguageFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/settingsFragmentDest"
+        android:name="com.guillermonegrete.tts.main.SettingsFragment"
+        android:label=""/>
+    <action android:id="@+id/action_global_settingsFragment" app:destination="@id/settingsFragmentDest"/>
+    <fragment
+        android:id="@+id/pickLanguageFragment"
+        android:name="com.guillermonegrete.tts.main.PickLanguageFragment"
+        android:label="Pick Language"
+        tools:layout="@layout/fragment_pick_language" />
+</navigation>

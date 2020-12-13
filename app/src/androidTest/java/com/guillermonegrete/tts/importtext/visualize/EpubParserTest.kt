@@ -4,9 +4,11 @@ import android.util.Xml
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.guillermonegrete.tts.InstMainCoroutineRule
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.epub.EPUBMetadata
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.epub.SpineItem
 import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import com.guillermonegrete.tts.importtext.visualize.epub.NCXParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
@@ -58,9 +60,8 @@ class EpubParserTest {
         }
 
         val book = epubParser.parseBook(zipFileReader)
-        println("Book: $book, table of contents: ${book.tableOfContents.navPoints}")
 
-        val expectedBook = Book("Hunger: Book One", chapterBodies.first(),
+        val expectedBook = Book(metadata, chapterBodies.first(),
             listOf(
                 SpineItem("coverpage-wrapper", "wrap0000.html", chapterBodies.first().length),
                 SpineItem("item4", "18291-h@18291-h-0.htm.html", chapterBodies[1].length),
@@ -83,7 +84,24 @@ class EpubParserTest {
         xmlParser.nextTag()
 
         val result = epubParser.getInnerXml(xmlParser)
-        val expected = "<div><br/><img src=\"path.jpg\" />Text input<br/></div>"
+        val expected = "<div><br/><img src=\"/path.jpg\" />Text input<br/></div>"
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun parses_svg_tag() {
+        xmlParser.setInput(StringReader("<body>" +
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"100%\" height=\"100%\" viewBox=\"0 0 1200 1600\" preserveAspectRatio=\"none\">" +
+                "<image width=\"1200\" height=\"1600\" xlink:href=\"cover_image.jpg\"/>" +
+                "</svg>" +
+                "<p><span>start</span></p>" +
+                "</body>"))
+        xmlParser.nextTag()
+
+        val result = epubParser.getInnerXml(xmlParser)
+
+        val expected = """<img src="/cover_image.jpg"/><p><span>start</span></p>""".trimMargin()
+        println("Result: $result, expected: $expected")
         assertEquals(expected, result)
     }
 
@@ -92,7 +110,7 @@ class EpubParserTest {
         xmlParser.setInput(StringReader(TABLE_OF_CONTENTS_XML))
         xmlParser.nextTag()
 
-        val result = epubParser.parseTableOfContents(xmlParser)
+        val result = NCXParser(xmlParser).parse()
         val expected = TableOfContents(listOf(
             NavPoint("Volume 1", "volume1.html"),
             NavPoint("Chapter 1", "volume1/chapter001.html"),
@@ -107,7 +125,7 @@ class EpubParserTest {
     }
 
     private fun assertBook(expected: Book, actual: Book){
-        assertEquals(expected.title, actual.title)
+        assertEquals(expected.metadata, actual.metadata)
         assertEquals(expected.currentChapter, actual.currentChapter)
         assertEquals(expected.spine, actual.spine)
         assertEquals(expected.manifest, actual.manifest)
@@ -163,6 +181,7 @@ class EpubParserTest {
                   </rootfiles>
                 </container>"""
         const val tocPath = "toc.ncx"
+        val metadata = EPUBMetadata("Hunger: Book One", "Knut Hamsun", "en", "item13")
         const val OPF_FILE_XML =
             """<package xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id">
                   <metadata>
@@ -175,6 +194,7 @@ class EpubParserTest {
                     <dc:date opf:event="conversion">2018-10-19T08:31:38.121210+00:00</dc:date>
                     <dc:source>18291-h/18291-h.htm</dc:source>
                     <meta content="item13" name="cover"/>
+                    <meta content="0.4.2" name="Sigil version"/>
                   </metadata>
                   <manifest>
                     <item href="pgepub.css" id="item1" media-type="text/css"/>
@@ -195,7 +215,7 @@ class EpubParserTest {
                     <reference href="wrap0000.html" type="cover" title="Cover"/>
                   </guide>
                 </package>"""
-        const val CHAPTER_XML_TEMPLATE = """<?xml version='1.0' encoding='utf-8'?>
+        private const val CHAPTER_XML_TEMPLATE = """<?xml version='1.0' encoding='utf-8'?>
                 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.1//EN' 'http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd'>
                 <html xmlns="http://www.w3.org/1999/xhtml">
                 <head>

@@ -21,6 +21,8 @@ import com.guillermonegrete.tts.db.FilesDatabase
 import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.db.WordsDatabase
 import com.guillermonegrete.tts.imageprocessing.*
+import com.guillermonegrete.tts.importtext.visualize.io.DefaultEpubFileManager
+import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import com.guillermonegrete.tts.main.TranslatorEnumKey
 import com.guillermonegrete.tts.main.TranslatorType
 import com.guillermonegrete.tts.threading.MainThreadImpl
@@ -30,28 +32,21 @@ import dagger.Provides
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import dagger.Binds
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
 import org.xmlpull.v1.XmlPullParser
 
-
-@Module(
-    includes = [
-        ApplicationModuleBinds::class,
-        GoogleSourceModule::class,
-        FirebaseLocalModule::class
-    ])
+@InstallIn(SingletonComponent::class)
+@Module
 object ApplicationModule {
 
-    @JvmStatic
     @Singleton
     @Provides
-    fun provideAppContext(app: Application): Context = app.applicationContext
-
-    @JvmStatic
-    @Singleton
-    @Provides
-    fun provideSharedPreferences(context: Context): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
     @Qualifier
     @Retention(AnnotationRetention.RUNTIME)
@@ -61,7 +56,6 @@ object ApplicationModule {
     @Retention(AnnotationRetention.RUNTIME)
     annotation class WordsLocalDataSource
 
-    @JvmStatic
     @Provides
     fun provideTranslatorEnum(preferences: SharedPreferences): TranslatorType{
         val value = TranslatorType.GOOGLE_PUBLIC.value
@@ -70,7 +64,6 @@ object ApplicationModule {
         return TranslatorType.valueOf(translatorPreference)
     }
 
-    @JvmStatic
     @Provides
     fun provideRecognizerEnum(preferences: SharedPreferences): TextRecognizerType{
         val defaultType = TextRecognizerType.FIREBASE_LOCAL.value
@@ -79,7 +72,6 @@ object ApplicationModule {
         return TextRecognizerType.valueOf(recognizerPreference)
     }
 
-    @JvmStatic
     @Provides
     fun provideBrightnessTheme(preferences: SharedPreferences): BrightnessTheme{
         val defaultType = BrightnessTheme.WHITE.value
@@ -87,58 +79,49 @@ object ApplicationModule {
         return BrightnessTheme.get(recognizerPreference)
     }
 
-    @JvmStatic
     @Singleton
     @WordsLocalDataSource
     @Provides
     fun provideLocalSource(database: WordsDatabase): WordDataSource = WordLocalDataSource(database.wordsDAO())
 
-    @JvmStatic
     @Singleton
     @Provides
-    fun provideWordsDatabase(context: Context): WordsDatabase{
+    fun provideWordsDatabase(@ApplicationContext context: Context): WordsDatabase{
         return Room.databaseBuilder(
-            context.applicationContext,
+            context,
             WordsDatabase::class.java,
             "words.db"
         ).build()
     }
 
-    @JvmStatic
     @Singleton
     @Provides
     fun provideWordsDAO(database: WordsDatabase): WordsDAO = database.wordsDAO()
 
-    @JvmStatic
     @Singleton
     @Provides
-    fun provideFilesDatabase(context: Context): FilesDatabase{
+    fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase{
         return FilesDatabase.getDatabase(context)
     }
 
-    @JvmStatic
     @Singleton
     @Provides
     fun provideFileDAO(database: FilesDatabase): FileDAO = database.fileDao()
 
-    @JvmStatic
     @RemoteTranslationDataSource
     @Provides
     fun provideRemoteTranslationSource(type: TranslatorType, map: @JvmSuppressWildcards Map<TranslatorType, WordDataSource>): WordDataSource{
         return map[type] ?: GooglePublicSource()
     }
 
-    @JvmStatic
     @Singleton
     @Provides
     fun provideExternalLinksSource(app: Application): ExternalLinksDataSource = AssetsExternalLinksSource(app)
 
-    @JvmStatic
     @Singleton
     @Provides
     fun provideWiktionarySource(): DictionaryDataSource = WiktionarySource()
 
-    @JvmStatic
     @Provides
     fun provideTextDetectorSource(
         type: TextRecognizerType,
@@ -147,17 +130,16 @@ object ApplicationModule {
         return map[type] ?: FirebaseTextProcessor()
     }
 
-    @JvmStatic
     @Singleton
     @Provides
     fun provideIoDispatcher() = Dispatchers.IO
 
-    @JvmStatic
     @Singleton
     @Provides
     fun provideXmlParser(): XmlPullParser = Xml.newPullParser()
 }
 
+@InstallIn(ApplicationComponent::class)
 @Module
 abstract class ApplicationModuleBinds {
 
@@ -168,13 +150,23 @@ abstract class ApplicationModuleBinds {
     abstract fun bindThread(executor: MainThreadImpl): MainThread
 
     @Binds
-    abstract fun bindRepository(repository: WordRepository): WordRepositorySource
-
-    @Binds
     abstract fun bindFileRepository(repository: DefaultFileRepository): FileRepository
 
     @Binds
     abstract fun bindSettingsRepository(repository: DefaultSettingsRepository): SettingsRepository
+
+    @Binds
+    abstract fun bindEpubFileManager(manager: DefaultEpubFileManager): EpubFileManager
+}
+
+/**
+ * The binding for WordRepositorySource is on its own module so that we can replace it easily in tests.
+ */
+@InstallIn(ApplicationComponent::class)
+@Module
+abstract class WordRepositorySourceModule {
+    @Binds
+    abstract fun bindRepository(repository: WordRepository): WordRepositorySource
 }
 
 /**
@@ -182,6 +174,7 @@ abstract class ApplicationModuleBinds {
  * dagger can't determine how to create the instance if multiple methods return
  * the same type in the same module.
  */
+@InstallIn(ApplicationComponent::class)
 @Module
 class GoogleSourceModule{
     @Provides
@@ -191,6 +184,7 @@ class GoogleSourceModule{
     fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
 }
 
+@InstallIn(ApplicationComponent::class)
 @Module
 class FirebaseLocalModule{
     @Provides

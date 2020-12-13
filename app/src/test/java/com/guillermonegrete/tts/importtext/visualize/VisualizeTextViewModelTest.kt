@@ -10,13 +10,11 @@ import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
-import com.guillermonegrete.tts.importtext.epub.Book
-import com.guillermonegrete.tts.importtext.epub.NavPoint
-import com.guillermonegrete.tts.importtext.epub.SpineItem
-import com.guillermonegrete.tts.importtext.epub.TableOfContents
+import com.guillermonegrete.tts.importtext.epub.*
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -49,7 +47,7 @@ class VisualizeTextViewModelTest {
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
-    private val bookFile = BookFile("empty_uri", "Title", ImportedFileType.EPUB, id = 1)
+    private val bookFile = BookFile("empty_uri", "Title", ImportedFileType.EPUB, id = 1, folderPath = "random_path")
 
     @Before
     fun setUp(){
@@ -83,7 +81,7 @@ class VisualizeTextViewModelTest {
         }
 
         // Then progress indicator is shown
-        Assert.assertTrue(getUnitLiveDataValue(viewModel.dataLoading))
+        assertTrue(getUnitLiveDataValue(viewModel.dataLoading))
 
         mainCoroutineRule.resumeDispatcher()
 
@@ -264,7 +262,7 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun saves_current_file_when_finishing(){
+    fun `Saves current file when finishing`(){
         // Set up
         val uri = "empty_uri"
         parse_book(DEFAULT_BOOK)
@@ -283,15 +281,16 @@ class VisualizeTextViewModelTest {
         viewModel.currentPage = initialPage
 
         val lastReadDate = Calendar.getInstance()
-        viewModel.onFinish(lastReadDate)
+        val uuid = "random"
+        viewModel.onFinish(lastReadDate, uuid)
 
         val sumPreviousChars = sumCharacters(3, initialPage)
-        println("Total chars ${DEFAULT_BOOK.totalChars} ")
 
         val expectedFile = BookFile(
             uri,
-            DEFAULT_BOOK.title,
+            DEFAULT_BOOK.metadata.title,
             ImportedFileType.EPUB,
+            folderPath = uuid,
             page = initialPage,
             chapter = 3,
             lastRead = lastReadDate,
@@ -304,7 +303,37 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun updates_book_file(){
+    fun `Does not save file if initial parse isn't complete`(){
+
+        // Stop the coroutine that is parsing the book
+        // We do this in order to simulate closing the activity before the parsing finishes
+        mainCoroutineRule.pauseDispatcher()
+
+        // Book parsing
+        `when`(epubParser.basePath).thenReturn("")
+
+        runBlocking {
+            `when`(epubParser.parseBook(fileReader)).thenReturn(DEFAULT_BOOK)
+            viewModel.parseEpub()
+        }
+
+        // Initial state
+        val uri = "empty_uri"
+        viewModel.fileUri = uri
+
+        splitPages(7)
+
+        val lastReadDate = Calendar.getInstance()
+        val uuid = "random"
+        viewModel.onFinish(lastReadDate, uuid)
+
+        mainCoroutineRule.resumeDispatcher()
+
+        assertEquals(0, fileRepository.filesServiceData.values.size)
+    }
+
+    @Test
+    fun `Updates book files`(){
         // Set up
         val initialChapter = 2
         bookFile.chapter = initialChapter
@@ -329,6 +358,7 @@ class VisualizeTextViewModelTest {
             bookFile.uri,
             bookFile.title,
             bookFile.fileType,
+            folderPath = bookFile.folderPath,
             id = bookFile.id,
             chapter = initialChapter + 1,
             lastRead = lastReadDate,
@@ -341,7 +371,38 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun parses_book_from_picker_with_uri_already_in_db(){
+    fun `Creates new folder path for book file if empty`(){
+        // TODO this test and "Updates book files" test are very similar, try to refactor
+        val book = BookFile("default_uri", "Title", ImportedFileType.EPUB, id = 1, folderPath = "")
+
+        fileRepository.addTasks(book)
+        viewModel.fileUri = bookFile.uri
+        viewModel.fileId = bookFile.id
+
+        splitPages(4)
+        parse_book(DEFAULT_BOOK)
+        viewModel.getPage()
+
+        val lastReadDate = Calendar.getInstance()
+        val uuid = "random"
+        viewModel.onFinish(lastReadDate, uuid)
+
+        val expectedFile = BookFile(
+            book.uri,
+            book.title,
+            book.fileType,
+            folderPath = uuid,
+            id = book.id
+        )
+
+        val resultFile = fileRepository.filesServiceData.values.first()
+        assertEquals(1, fileRepository.filesServiceData.values.size)
+        assertEquals(expectedFile, resultFile)
+
+    }
+
+    @Test
+    fun `Parses book with uri already in db`(){
         // Setup
         fileRepository.addTasks(bookFile)
         viewModel.fileUri = bookFile.uri
@@ -389,7 +450,9 @@ class VisualizeTextViewModelTest {
     }
 
     private fun parse_book(book: Book){
-        runBlockingTest {
+        `when`(epubParser.basePath).thenReturn("")
+
+        runBlocking {
             `when`(epubParser.parseBook(fileReader)).thenReturn(book)
             viewModel.parseEpub()
         }
@@ -425,15 +488,17 @@ class VisualizeTextViewModelTest {
 
     companion object{
         const val DEFAULT_CHAPTER = "Chapter text"
+
+        private val defaultMetadata = EPUBMetadata("title", "", "", "coverId")
         private val DEFAULT_BOOK = Book(
-            "Test title",
+            EPUBMetadata("Test title", "", "", "coverId"),
             DEFAULT_CHAPTER,
             Array(5){SpineItem("$it", "ch${it + 1}.html", it + 100)}.toList(),
-            mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html"),
+            mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html", "coverId" to "cover-jpg"),
             TableOfContents(listOf())
         )
         private val TWO_CHAPTER_BOOK = Book(
-            "title",
+            defaultMetadata,
             DEFAULT_CHAPTER,
             listOf(
                 SpineItem("chapter1", "ch1.html", 0),
@@ -443,14 +508,14 @@ class VisualizeTextViewModelTest {
             TableOfContents(listOf())
         )
         private val THREE_CHAPTER_BOOK = Book(
-            "title",
+            defaultMetadata,
             DEFAULT_CHAPTER,
             listOf(
                 SpineItem("chapter1", "", 0),
                 SpineItem("chapter2", "", 0),
                 SpineItem("chapter3", "", 0)
             ),
-            mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html", "chapter3" to "ch3.html"),
+            mapOf("chapter1" to "ch1.html", "chapter2" to "ch2.html", "chapter3" to "ch3.html", "coverId" to "cover-jpg"),
             TableOfContents(listOf(
                 NavPoint("chapter1", "ch1.html"),
                 NavPoint("chapter2", "ch2.html"),

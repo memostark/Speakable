@@ -2,7 +2,7 @@ package com.guillermonegrete.tts.db
 
 import androidx.room.*
 import androidx.room.Transaction
-
+import kotlinx.coroutines.flow.Flow
 
 
 @Dao
@@ -11,11 +11,14 @@ abstract class FileDAO {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract fun insert(file: BookFile): Long
 
+    @Delete
+    abstract fun delete(file: BookFile)
+
     @Update
     abstract fun update(file: BookFile)
 
     @Query("SELECT * FROM book_files ORDER BY lastRead DESC")
-    abstract fun getRecentFiles(): List<BookFile>
+    abstract fun getRecentFiles(): Flow<List<BookFile>>
 
     @Query("SELECT * FROM book_files")
     abstract fun getFiles(): List<BookFile>

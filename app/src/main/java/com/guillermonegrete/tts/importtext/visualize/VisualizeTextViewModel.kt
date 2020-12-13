@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -13,10 +14,10 @@ import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import kotlinx.coroutines.*
+import java.io.File
 import java.util.*
-import javax.inject.Inject
 
-class VisualizeTextViewModel @Inject constructor(
+class VisualizeTextViewModel @ViewModelInject constructor(
     private val epubParser: EpubParser,
     private val settings: SettingsRepository,
     private val fileRepository: FileRepository,
@@ -26,7 +27,6 @@ class VisualizeTextViewModel @Inject constructor(
     var pageSplitter: PageSplitter? = null
     var fileReader: ZipFileReader? = null
 
-    private var isEpub = false
     private var firstLoad = true
     private var leftSwipe = false
 
@@ -44,6 +44,7 @@ class VisualizeTextViewModel @Inject constructor(
         private set
 
     var fileUri: String? = null
+    private var uuid: String = UUID.randomUUID().toString()
     var fileId: Int = -1
     private var databaseBookFile: BookFile? = null
 
@@ -104,6 +105,7 @@ class VisualizeTextViewModel @Inject constructor(
         _dataLoading.value = true
         viewModelScope.launch {
             val parsedBook = epubParser.parseBook(reader)
+
             val imageGetter = pageSplitter?.imageGetter
             if(imageGetter is InputStreamImageGetter){
                 imageGetter.basePath = epubParser.basePath
@@ -113,8 +115,8 @@ class VisualizeTextViewModel @Inject constructor(
             currentBook = parsedBook
             fileType = ImportedFileType.EPUB
             _book.value = parsedBook
-            isEpub = true
-            initPageSplit()
+
+            initPageSplit(true)
             _dataLoading.value = false
         }
     }
@@ -170,10 +172,14 @@ class VisualizeTextViewModel @Inject constructor(
         return currentPage
     }
 
-    private suspend fun initPageSplit() {
+    private suspend fun initPageSplit(isEpub: Boolean = false) {
         if(isEpub){
             databaseBookFile = getBookFile()
             val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
+
+            // Create files folder and save image cover
+            createFolderForBook()
+
             jumpToChapter(initialChapter)
 
         }else{
@@ -186,6 +192,28 @@ class VisualizeTextViewModel @Inject constructor(
             fileUri?.let { fileRepository.getFile(it) }
         } else {
             fileRepository.getFile(fileId)
+        }
+    }
+
+    private suspend fun createFolderForBook(){
+        databaseBookFile?.let {
+
+            // Verify folderPath is not empty
+            val folderPath = if (it.folderPath.isBlank()) uuid else it.folderPath
+
+            fileReader?.createFileFolder(folderPath)
+
+            val book = currentBook ?: return@let
+
+            val coverId = book.metadata.cover
+            val coverPath = book.manifest[coverId]
+
+
+            coverPath?.let { path ->
+                val absCoverPath =
+                    File(epubParser.basePath, path).absolutePath.trimStart('/')
+                fileReader?.saveCoverBitmap(absCoverPath, folderPath)
+            }
         }
     }
 
@@ -272,15 +300,17 @@ class VisualizeTextViewModel @Inject constructor(
      * Sometimes is necessary to wrap up before onCleared is called (e.g. when changing theme)
      * This function can be called before activity/fragment is destroyed.
      */
-    fun onFinish(date: Calendar = Calendar.getInstance()) {
-        saveBookFileData(date)
+    fun onFinish(date: Calendar = Calendar.getInstance(), folderPath: String = uuid) {
+        saveBookFileData(date, folderPath)
         cleared = true
     }
 
-    private fun saveBookFileData(date: Calendar){
+    private fun saveBookFileData(date: Calendar, path: String){
         val uri = fileUri ?: return
+        val book = currentBook ?: return
 
         // This operation is intended to be synchronous
+        // TODO: Change to async, with context call or work manager.
         runBlocking{
             val progress = calculateProgress()
 
@@ -289,9 +319,21 @@ class VisualizeTextViewModel @Inject constructor(
                 chapter = currentChapter
                 lastRead = date
                 percentageDone = progress
+                if(folderPath.isBlank()) folderPath = path
             }
-            val title = currentBook?.title ?: ""
-            val bookFile = databaseBookFile ?: BookFile(uri, title, fileType, "und", currentPage, currentChapter, calculateProgress(), date)
+
+            val title = book.metadata.title
+            val bookFile = databaseBookFile ?: BookFile(
+                uri,
+                title,
+                fileType,
+                folderPath = path,
+                page = currentPage,
+                chapter = currentChapter,
+                percentageDone =  calculateProgress(),
+                lastRead =  date
+            )
+
             fileRepository.saveFile(bookFile)
         }
     }
@@ -299,21 +341,21 @@ class VisualizeTextViewModel @Inject constructor(
     private fun calculateProgress(): Int{
         var percentage = 0
 
-        currentBook?.let {
-            var sumPreviousChars = 0
+        val book = currentBook ?: return percentage
+        var sumPreviousChars = 0
 
-            // Sum of previous spine items (chapters)
-            for (i in 0 until currentChapter){
-                sumPreviousChars += it.spine[i].charCount
-            }
-
-            // Sum of previous and current pages
-            for(i in 0..currentPage){
-                sumPreviousChars += currentPages[i].length
-            }
-
-            percentage = 100 * sumPreviousChars / it.totalChars
+        // Sum of previous spine items (chapters)
+        for (i in 0 until currentChapter){
+            sumPreviousChars += book.spine[i].charCount
         }
+
+        // Sum of previous and current pages
+        for(i in 0..currentPage){
+            sumPreviousChars += currentPages[i].length
+        }
+
+        percentage = 100 * sumPreviousChars / book.totalChars
+
         return percentage
     }
 

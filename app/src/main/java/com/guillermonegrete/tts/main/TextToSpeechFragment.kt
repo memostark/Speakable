@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.main
 
-
 import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.content.Context
@@ -15,42 +14,36 @@ import androidx.fragment.app.Fragment
 import androidx.appcompat.app.AppCompatActivity
 import tourguide.tourguide.TourGuide
 
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
+import androidx.annotation.DrawableRes
+import androidx.fragment.app.setFragmentResultListener
+import androidx.navigation.fragment.findNavController
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.databinding.FragmentMainTtsBinding
 import com.guillermonegrete.tts.services.ScreenTextService
 
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
-import dagger.android.support.AndroidSupportInjection
+import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 
-class TextToSpeechFragment: Fragment(), MainTTSContract.View {
+@AndroidEntryPoint
+class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContract.View {
 
     @Inject lateinit var presenter: MainTTSPresenter
 
-    private lateinit var editText: EditText
-    private lateinit var webview: WebView
-    private lateinit var bottomSheetBehavior: BottomSheetBehavior<*>
-
-    private lateinit var playButton: ImageButton
-    private lateinit var ttsProgressBar: ProgressBar
-
-    private lateinit var clipboardButton: Button
-    private lateinit var overlayButton: Button
-
-    private lateinit var languageTextView: TextView
+    private  var _binding: FragmentMainTtsBinding? = null
+    private val binding get() = _binding!!
 
     private val clipText: String
         get() {
@@ -63,11 +56,6 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
             val pasteData = clip.getItemAt(0).text
             return pasteData?.toString() ?: ""
         }
-
-    override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this)
-        super.onAttach(context)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,59 +83,60 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val fragmentLayout = inflater.inflate(R.layout.fragment_main_tts, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentMainTtsBinding.bind(view)
 
-        val bottomSheet = fragmentLayout.findViewById<LinearLayout>(R.id.bottom_sheet)
-        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
-        languageTextView = fragmentLayout.findViewById(R.id.text_language_code)
+        with(binding.main){
 
-        with(fragmentLayout){
-            playButton = findViewById(R.id.play_btn)
-            ttsProgressBar = findViewById(R.id.play_loading_icon)
+            browseBtn.setOnClickListener {
+                hideKeyboard()
+                val text = ttsEditText.text.toString()
+                presenter.onClickShowBrowser(text)
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+
+            pasteBtn.setOnClickListener { presenter.onClickPaste(clipText) }
+
+            ttsEditText.setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            }
+
+            startBubbleBtn.setOnClickListener { presenter.onStartOverlayMode() }
+
+            clipboardBtn.setOnClickListener { presenter.onStartClipboardMode() }
+
+            val autoText = getString(R.string.auto_detect)
+            pickLanguage.text = autoText
+            pickLanguage.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_pickLanguageFragment) }
+
+            playBtn.setOnClickListener {
+                val text = ttsEditText.text.toString()
+
+                val selectedLang = pickLanguage.text.toString()
+                val lang = if(selectedLang == autoText) null else selectedLang
+                presenter.onClickReproduce(text, lang)
+            }
         }
 
-        val browseBtn = fragmentLayout.findViewById<ImageButton>(R.id.browse_btn)
-        val pasteBtn = fragmentLayout.findViewById<ImageButton>(R.id.paste_btn)
-
-        editText = fragmentLayout.findViewById(R.id.tts_ev)
-        editText.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus -> if (hasFocus) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN }
-
-        webview = fragmentLayout.findViewById(R.id.webview_wiktionary)
-        webview.setOnTouchListener { view, _ ->
-            view.parent.requestDisallowInterceptTouchEvent(true)
+        val webview = binding.bottom.webviewWiktionary
+        webview.setOnTouchListener { webView, _ ->
+            webView.parent.requestDisallowInterceptTouchEvent(true)
             false
         }
         webview.webViewClient = HelloWebViewClient()
 
-
-        playButton.setOnClickListener {
-            val text = editText.text.toString()
-            presenter.onClickReproduce(text)
+        setFragmentResultListener("requestKey") { _, bundle ->
+            binding.main.pickLanguage.text = bundle.getString("lang")
         }
+    }
 
-        browseBtn.setOnClickListener {
-            hideKeyboard()
-            val text = editText.text.toString()
-            presenter.onClickShowBrowser(text)
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-        }
-
-        pasteBtn.setOnClickListener { presenter.onClickPaste(clipText) }
-
-
-
-        overlayButton = fragmentLayout.findViewById<Button>(R.id.startBubble_btn).apply {
-            setOnClickListener { presenter.onStartOverlayMode() }
-        }
-
-        clipboardButton = fragmentLayout.findViewById<Button>(R.id.clipboard_btn).apply {
-            setOnClickListener { presenter.onStartClipboardMode() }
-        }
-
-        return fragmentLayout
+    override fun onDestroyView() {
+        _binding = null
+        super.onDestroyView()
     }
 
     override fun onStart() {
@@ -187,11 +176,11 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
     }
 
     override fun setDictionaryWebPage(word: String) {
-        webview.loadUrl("https://en.m.wiktionary.org/wiki/$word")
+        binding.bottom.webviewWiktionary.loadUrl("https://en.m.wiktionary.org/wiki/$word")
     }
 
     override fun setEditText(text: String) {
-        editText.setText(text)
+        binding.main.ttsEditText.setText(text)
     }
 
     override fun startClipboardService() {
@@ -216,28 +205,36 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
     }
 
     override fun showDetectedLanguage(language: String?) {
-        languageTextView.text = language
+        binding.main.textLanguageCode.text = language
     }
 
     override fun showLanguageNotAvailable() {
         Toast.makeText(context, "Detected language not available for Text to Speech", Toast.LENGTH_SHORT).show()
-        ttsProgressBar.visibility = View.GONE
-        playButton.visibility = View.VISIBLE
+        setPlayIcons(true)
     }
 
     override fun showLoadingTTS() {
-        ttsProgressBar.visibility = View.VISIBLE
-        playButton.visibility = View.GONE
+        setPlayIcons(false)
     }
 
     override fun showPlayIcon() {
-        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        setIcon(R.drawable.ic_volume_up_black_24dp)
     }
 
     override fun showStopIcon() {
-        playButton.setImageResource(R.drawable.ic_stop_black_24dp)
-        ttsProgressBar.visibility = View.GONE
-        playButton.visibility = View.VISIBLE
+        setIcon(R.drawable.ic_stop_black_24dp)
+        setPlayIcons(true)
+    }
+
+    private fun setPlayIcons(visible: Boolean){
+        with(binding.main){
+            playLoadingIcon.visibility = if(visible) View.INVISIBLE else View.VISIBLE
+            playBtn.visibility = if(visible) View.VISIBLE else View.INVISIBLE
+        }
+    }
+
+    private fun setIcon(@DrawableRes icon: Int){
+        binding.main.playBtn.setCompoundDrawablesWithIntrinsicBounds(0, icon, 0, 0)
     }
 
     private fun hideKeyboard() {
@@ -262,7 +259,7 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
                 overlay {
                     backgroundColor { Color.parseColor("#66FF0000") }
                     disableClickThroughHole(true)
-                    setOnClickListener(View.OnClickListener { this@create.cleanUp() })
+                    setOnClickListener { this@create.cleanUp() }
                 }
             }
 
@@ -274,13 +271,12 @@ class TextToSpeechFragment: Fragment(), MainTTSContract.View {
                 overlay {
                     backgroundColor { Color.parseColor("#66FF0000") }
                     disableClickThroughHole(true)
-                    setOnClickListener(View.OnClickListener {
+                    setOnClickListener {
                         this@create.cleanUp()
-                        guideOverlay.playOn(overlayButton)
-                    })
+                        guideOverlay.playOn(binding.main.startBubbleBtn)
+                    }
                 }
-            }.playOn(clipboardButton)
-
+            }.playOn(binding.main.clipboardBtn)
         }
     }
 

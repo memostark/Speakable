@@ -25,7 +25,7 @@ public class WordRepository implements WordRepositorySource {
 
     private final WordDataSource mWordLocalDataSource;
 
-    private ConcurrentMap<String, Words> cachedWords;
+    private final ConcurrentMap<String, Words> cachedWords;
 
 
     @Inject
@@ -58,7 +58,7 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public void getWordLanguageInfo(final String wordText, final String languageFrom, final String languageTo, final GetWordRepositoryCallback callback) {
+    public void getWordLanguageInfo(final @NonNull String wordText, final @NonNull String languageFrom, final @NonNull String languageTo, final @NonNull GetWordRepositoryCallback callback) {
         mWordLocalDataSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback(){
 
             @Override
@@ -76,12 +76,12 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public void getLanguageAndTranslation(String text, GetTranslationCallback callback) {
+    public void getLanguageAndTranslation(@NonNull String text, @NonNull GetTranslationCallback callback) {
         getLanguageAndTranslation(text, "auto", "en", callback);
     }
 
     @Override
-    public void getLanguageAndTranslation(String text, String languageFrom, String languageTo, final GetTranslationCallback callback) {
+    public void getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo, final @NonNull GetTranslationCallback callback) {
         remoteTranslatorSource.getWordLanguageInfo(text, languageFrom , languageTo, new WordDataSource.GetWordCallback() {
             @Override
             public void onWordLoaded(Words word) {

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/linearLayout"
@@ -9,19 +10,54 @@
     android:focusable="true"
     android:focusableInTouchMode="true">
 
-    <EditText
-        android:id="@+id/tts_ev"
-        android:layout_width="0dp"
-        android:layout_height="96dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
-        android:hint="@string/tts_edit_text_hint"
-        android:inputType="text"
-        app:layout_constraintEnd_toStartOf="@+id/play_icons_container"
-        app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintHorizontal_weight="1"
+    <TextView
+        android:id="@+id/text_language_code"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:textAllCaps="true"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        app:layout_constraintBottom_toBottomOf="@+id/pick_language"
+        app:layout_constraintStart_toEndOf="@+id/pick_language"
+        app:layout_constraintTop_toTopOf="@+id/pick_language"
+        tools:text="EN" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/pick_language"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        app:icon="@drawable/ic_baseline_arrow_drop_down_24"
+        app:iconGravity="end"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Auto detect"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tts_text_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/tts_edit_text_hint"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        app:endIconMode="clear_text"
+        app:layout_constraintTop_toBottomOf="@+id/pick_language"
+        tools:style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/tts_edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:inputType="textMultiLine"
+            android:maxLines="3"
+            android:minLines="2"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+    </com.google.android.material.textfield.TextInputLayout>
 
 
     <Button
@@ -29,12 +65,11 @@
         style="@style/Widget.MaterialComponents.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
         android:text="@string/startBubble_button_name"
         app:layout_constraintEnd_toStartOf="@+id/clipboard_btn"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tts_ev" />
-
+        app:layout_constraintTop_toBottomOf="@+id/browse_btn" />
 
     <Button
         android:id="@+id/clipboard_btn"
@@ -42,78 +77,70 @@
         android:layout_width="wrap_content"
         android:layout_height="48dp"
         android:text="@string/clipboard_btn_caption"
+        app:layout_constraintBottom_toBottomOf="@+id/startBubble_btn"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/startBubble_btn"
         app:layout_constraintTop_toTopOf="@+id/startBubble_btn" />
 
-
     <FrameLayout
         android:id="@+id/play_icons_container"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="@+id/tts_ev"
-        app:layout_constraintDimensionRatio="w,1:1"
         app:layout_constraintEnd_toStartOf="@+id/browse_btn"
-        app:layout_constraintStart_toEndOf="@+id/tts_ev"
-        app:layout_constraintTop_toTopOf="@+id/tts_ev"
-        app:layout_constraintHorizontal_weight="0">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tts_text_layout">
 
-        <ImageButton
+        <Button
             android:id="@+id/play_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/reproduce_description"
-            android:tint="?colorOnSurface"
-            android:src="@drawable/ic_volume_up_black_24dp"
-            tools:visibility="gone" />
+            android:drawableTop="@drawable/ic_volume_up_black_24dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:text="@string/reproduce_description"
+            app:textAllCaps="false"/>
 
         <ProgressBar
             android:id="@+id/play_loading_icon"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:visibility="invisible" />
+
     </FrameLayout>
 
-    <ImageButton
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?colorOnSurface"
+        app:layout_constraintTop_toBottomOf="@+id/paste_btn" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/browse_btn"
-        android:layout_width="0dp"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/browse_icon_description"
-        android:tint="?colorOnSurface"
-        app:layout_constraintBottom_toBottomOf="@+id/play_icons_container"
-        app:layout_constraintDimensionRatio="1:1"
+        android:drawableTop="@drawable/ic_public_black_24dp"
+        android:text="@string/search"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
         app:layout_constraintEnd_toStartOf="@+id/paste_btn"
         app:layout_constraintStart_toEndOf="@+id/play_icons_container"
-        app:layout_constraintTop_toTopOf="@+id/play_icons_container"
-        app:srcCompat="@drawable/ic_public_black_24dp"/>
+        app:layout_constraintTop_toBottomOf="@+id/tts_text_layout"
+        app:textAllCaps="false" />
 
-
-    <ImageButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/paste_btn"
-        android:layout_width="0dp"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
         android:contentDescription="@string/paste_icon_description"
-        android:tint="?colorOnSurface"
+        android:drawableTop="@drawable/ic_content_paste_black_24dp"
+        android:text="@string/paste_icon_description"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
         app:layout_constraintBottom_toBottomOf="@+id/browse_btn"
-        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/browse_btn"
-        app:layout_constraintTop_toTopOf="@+id/browse_btn"
-        app:srcCompat="@drawable/ic_content_paste_black_24dp" />
-
-
-    <TextView
-        android:id="@+id/text_language_code"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        tools:text="EN"
-        android:gravity="center"
-        app:layout_constraintBottom_toTopOf="@+id/play_icons_container"
-        app:layout_constraintEnd_toEndOf="@id/play_icons_container"
-        app:layout_constraintStart_toStartOf="@+id/play_icons_container" />
+        app:textAllCaps="false" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -22,4 +22,8 @@ class FakeZipFileReader: ZipFileReader {
     fun addFileStream(path: String, stream: InputStream){
         fileStreamService[path] = stream
     }
+
+    override suspend fun createFileFolder(path: String) {}
+
+    override suspend fun saveCoverBitmap(coverPath: String, outputDir: String) {}
 }

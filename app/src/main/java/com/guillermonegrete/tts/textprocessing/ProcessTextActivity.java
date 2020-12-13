@@ -26,7 +26,10 @@ import android.view.WindowManager;
 
 import com.guillermonegrete.tts.R;
 
+import dagger.hilt.android.AndroidEntryPoint;
 
+
+@AndroidEntryPoint
 public class ProcessTextActivity extends AppCompatActivity implements DialogInterface.OnDismissListener {
 
     @Override

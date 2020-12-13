@@ -18,9 +18,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -28,63 +26,72 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.databinding.FragmentSavedWordsBinding;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
 
-import dagger.android.support.AndroidSupportInjection;
+import dagger.hilt.android.AndroidEntryPoint;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
+@AndroidEntryPoint
 public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener, SavedWordListAdapter.Listener {
 
     private SavedWordListAdapter wordListAdapter;
-    @Inject ViewModelProvider.Factory viewModelFactory;
     private SavedWordsViewModel wordsViewModel;
-    private RecyclerView mRecyclerView;
-    private Spinner spinnerLang;
+
+    private FragmentSavedWordsBinding binding;
 
     private String language_filter;
 
-    private List<Words> words;
+    private List<Words> words = new ArrayList<>();
 
     private static final String ALL_OPTION = "All";
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        AndroidSupportInjection.inject(this);
-        super.onAttach(context);
-        wordListAdapter = new SavedWordListAdapter(context, this);
+    public SavedWordsFragment(){
+        super(R.layout.fragment_saved_words);
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        final View fragment_layout = inflater.inflate(R.layout.fragment_saved_words, container, false);
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        wordListAdapter = new SavedWordListAdapter(this);
+    }
 
-        mRecyclerView = fragment_layout.findViewById(R.id.recyclerview_saved_words);
-        mRecyclerView.setAdapter(wordListAdapter);
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(requireActivity(), DividerItemDecoration.VERTICAL));
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        binding = FragmentSavedWordsBinding.bind(view);
 
-        setUpItemTouchHelper();
+        RecyclerView wordsList = binding.recyclerviewSavedWords;
+        wordsList.setAdapter(wordListAdapter);
+        wordsList.addItemDecoration(new DividerItemDecoration(requireActivity(), DividerItemDecoration.VERTICAL));
+        wordsList.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        spinnerLang = fragment_layout.findViewById(R.id.select_language_spinner);
+        setUpItemTouchHelper(wordsList);
 
-        fragment_layout.findViewById(R.id.new_word_button).setOnClickListener(view -> showSaveDialog());
+        binding.newWordButton.setOnClickListener(v -> showSaveDialog());
         initData();
-        return fragment_layout;
+    }
+
+    @Override
+    public void onDestroyView() {
+        binding.recyclerviewSavedWords.setAdapter(null);
+        binding = null;
+        super.onDestroyView();
     }
 
     private void initData(){
-        wordsViewModel = new ViewModelProvider(this, viewModelFactory).get(SavedWordsViewModel.class);
+        wordsViewModel = new ViewModelProvider(this).get(SavedWordsViewModel.class);
 
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
             ArrayList<String> spinnerItems = new ArrayList<>(languages);
             spinnerItems.add(0, ALL_OPTION);
             ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, spinnerItems);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+            Spinner spinnerLang = binding.selectLanguageSpinner;
             spinnerLang.setOnItemSelectedListener(SavedWordsFragment.this);
             spinnerLang.setAdapter(adapter);
         });
@@ -103,7 +110,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         dialogFragment.show(requireActivity().getSupportFragmentManager(), "New word");
     }
 
-    private void setUpItemTouchHelper(){
+    private void setUpItemTouchHelper(RecyclerView recyclerView){
         ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
 
             Drawable deleteIcon ;
@@ -171,7 +178,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             }
         };
         ItemTouchHelper mItemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
-        mItemTouchHelper.attachToRecyclerView(mRecyclerView);
+        mItemTouchHelper.attachToRecyclerView(recyclerView);
     }
 
     @Override

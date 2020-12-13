@@ -7,10 +7,15 @@ import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.db.Words
 import java.lang.Exception
 import java.util.LinkedHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class FakeWordRepository: WordRepositorySource {
+@Singleton
+class FakeWordRepository @Inject constructor(): WordRepositorySource {
 
-    var wordsServiceData: LinkedHashMap<Int, Words> = LinkedHashMap()
+    var wordsServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
+    var remoteWordServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
+
     var translationsData: LinkedHashMap<String, Words> = LinkedHashMap()
 
     var languagesData: MutableSet<String> = mutableSetOf()
@@ -32,26 +37,37 @@ class FakeWordRepository: WordRepositorySource {
     }
 
     override fun getWordLanguageInfo(
-        wordText: String?,
-        languageFrom: String?,
-        languageTo: String?,
-        callback: WordRepositorySource.GetWordRepositoryCallback?
+        wordText: String,
+        languageFrom: String,
+        languageTo: String,
+        callback: WordRepositorySource.GetWordRepositoryCallback
     ) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+        val localWord = wordsServiceData[wordText]
+        if(localWord != null){
+            callback.onLocalWordLoaded(localWord)
+        } else {
+            callback.onLocalWordNotAvailable()
+
+            val remoteWord = remoteWordServiceData[wordText]
+            if(remoteWord != null) callback.onRemoteWordLoaded(remoteWord)
+            else callback.onDataNotAvailable(Words(wordText, "un", "un"))
+        }
     }
 
-    override fun getLanguageAndTranslation(text: String?, callback: WordRepositorySource.GetTranslationCallback?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getLanguageAndTranslation(text: String, callback: WordRepositorySource.GetTranslationCallback) {
+        getLanguageAndTranslation(text, "auto", "en", callback)
     }
 
     override fun getLanguageAndTranslation(
-        text: String?,
-        languageFrom: String?,
-        languageTo: String?,
-        callback: WordRepositorySource.GetTranslationCallback?
+        text: String,
+        languageFrom: String,
+        languageTo: String,
+        callback: WordRepositorySource.GetTranslationCallback
     ) {
-        // Need to implement error handling
-        callback?.onTranslationAndLanguage(translationsData[text])
+        val translation = translationsData[text]
+        if(translation != null) callback.onTranslationAndLanguage(translation)
+        else callback.onDataNotAvailable()
     }
 
     override fun getLanguageAndTranslation(
@@ -82,8 +98,15 @@ class FakeWordRepository: WordRepositorySource {
     @VisibleForTesting
     fun addWords(vararg words: Words) {
         for (word in words) {
-            wordsServiceData[word.id] = word
+            wordsServiceData[word.word] = word
             languagesData.add(word.lang)
+        }
+    }
+
+    @VisibleForTesting
+    fun addRemoteWords(vararg words: Words) {
+        for (word in words) {
+            remoteWordServiceData[word.word] = word
         }
     }
 

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "d5bf8f37feae9ad85747583e6fc16238",
+    "identityHash": "6355581043c485572c90c3fb3cd395f1",
     "entities": [
       {
         "tableName": "book_files",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `title` TEXT NOT NULL, `fileType` TEXT NOT NULL, `language` TEXT NOT NULL, `page` INTEGER NOT NULL, `chapter` INTEGER NOT NULL, `percentageDone` INTEGER NOT NULL, `lastRead` INTEGER NOT NULL, `bookFileId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `title` TEXT NOT NULL, `fileType` TEXT NOT NULL, `language` TEXT NOT NULL, `folderPath` TEXT NOT NULL, `page` INTEGER NOT NULL, `chapter` INTEGER NOT NULL, `percentageDone` INTEGER NOT NULL, `lastRead` INTEGER NOT NULL, `bookFileId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
           {
             "fieldPath": "uri",
@@ -29,6 +29,12 @@
           {
             "fieldPath": "language",
             "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "folderPath",
+            "columnName": "folderPath",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -76,7 +82,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd5bf8f37feae9ad85747583e6fc16238')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6355581043c485572c90c3fb3cd395f1')"
     ]
   }
 }

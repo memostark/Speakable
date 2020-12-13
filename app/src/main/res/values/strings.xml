@@ -33,6 +33,7 @@
     <string name="notes_edit_text">Notes</string>
 
     <string name="save">Save</string>
+    <string name="yes">Yes</string>
     <string name="cancel">Cancel</string>
 
     <string name="play_tts_icon_description">Play TTS</string>
@@ -83,5 +84,12 @@
     <string name="translation_not_found">No translation found.</string>
     <string name="single_page_setting">Single page</string>
     <string name="click_to_translate_msg">Page not translated yet. Click button to translate</string>
+    <string name="search">Search</string>
+    <string name="no_file_read_permission">Read storage permission is necessary to load images</string>
+    <string name="more_options">More options</string>
+    <string name="cover_image">Cover image</string>
+    <string name="delete">Delete</string>
+    <string name="delete_word_message">Do you want to delete this word?</string>
+    <string name="auto_detect">AUTO DETECT</string>
 
 </resources>

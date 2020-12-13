@@ -4,31 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?android:selectableItemBackground"
     android:orientation="vertical"
-    android:padding="8dp"
-    android:background="?android:selectableItemBackground">
-
-    <TextView
-        android:id="@+id/book_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        app:layout_constraintEnd_toStartOf="@+id/file_progressBar"
-        app:layout_constraintStart_toStartOf="@+id/start_guideline"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Epub file title" />
-
-    <TextView
-        android:id="@+id/last_read"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:layout_constraintEnd_toEndOf="@+id/book_title"
-        app:layout_constraintStart_toStartOf="@+id/start_guideline"
-        app:layout_constraintTop_toBottomOf="@+id/book_title"
-        tools:text="Last read 2 days ago" />
+    android:padding="8dp">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/start_guideline"
@@ -37,23 +15,61 @@
         android:orientation="vertical"
         app:layout_constraintGuide_begin="20dp" />
 
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline5"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_end="20dp" />
+    <ImageView
+        android:id="@+id/cover_image"
+        android:layout_width="40dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/cover_image"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/start_guideline"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/ic_broken_image_black_24dp"/>
 
     <TextView
+        android:id="@+id/book_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        app:layout_constraintBottom_toTopOf="@+id/book_author"
+        app:layout_constraintEnd_toStartOf="@+id/file_progressBar"
+        app:layout_constraintStart_toEndOf="@id/cover_image"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Epub file title" />
+
+    <TextView
+        android:id="@+id/book_author"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/last_read"
+        app:layout_constraintEnd_toEndOf="@+id/book_title"
+        app:layout_constraintStart_toStartOf="@+id/book_title"
+        app:layout_constraintTop_toBottomOf="@+id/book_title"
+        tools:text="Your favorite author" />
+
+    <TextView
+        android:id="@+id/last_read"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/book_title"
+        app:layout_constraintStart_toStartOf="@+id/book_title"
+        app:layout_constraintTop_toBottomOf="@+id/book_author"
+        tools:text="Last read 2 days ago" />
+
+
+    <!--<TextView
         android:id="@+id/file_type_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        tools:text="EPUB"
         app:layout_constraintBottom_toBottomOf="@+id/last_read"
-        app:layout_constraintEnd_toStartOf="@+id/guideline5"
-        app:layout_constraintTop_toTopOf="@+id/book_title" />
+        app:layout_constraintEnd_toStartOf="@+id/end_guideline"
+        app:layout_constraintTop_toTopOf="@+id/book_title"
+        tools:text="EPUB" />-->
 
     <ProgressBar
         android:id="@+id/file_progressBar"
@@ -61,12 +77,31 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginEnd="8dp"
-        android:progressDrawable="@drawable/circular_progress_bar"
         android:background="@drawable/circle_shape"
         android:indeterminate="false"
         android:max="100"
+        android:progressDrawable="@drawable/circular_progress_bar"
         app:layout_constraintBottom_toBottomOf="@+id/last_read"
-        app:layout_constraintEnd_toStartOf="@+id/file_type_text"
+        app:layout_constraintEnd_toStartOf="@+id/menu_button"
         app:layout_constraintTop_toTopOf="@+id/book_title" />
+
+    <ImageButton
+        android:id="@+id/menu_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?selectableItemBackgroundBorderless"
+        android:contentDescription="@string/more_options"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/end_guideline"
+        app:layout_constraintTop_toTopOf="parent"
+        android:tint="?colorOnSurface"
+        app:srcCompat="@drawable/ic_more_vert_black_24dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/end_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="20dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

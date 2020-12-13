@@ -9,18 +9,17 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.*
 import android.widget.*
-import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.SpeakableApplication
 import com.guillermonegrete.tts.customviews.ButtonsPreference
+import com.guillermonegrete.tts.databinding.DialogFragmentSentenceBinding
+import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.main.SettingsFragment
@@ -31,12 +30,14 @@ import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERV
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
+@AndroidEntryPoint
+class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
 
     private var window: Window? = null
 
@@ -49,13 +50,21 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     @Inject
     internal lateinit var presenter: ProcessTextContract.Presenter
 
+    private  var _bindingSentence: DialogFragmentSentenceBinding? = null
+    private val bindingSentence get() = _bindingSentence!!
+
+    private  var _bindingWord: DialogFragmentWordBinding? = null
+    private val bindingWord get() = _bindingWord!!
+
     private var pager: ViewPager2? = null
     private var pagerAdapter: MyPageAdapter? = null
 
-    private var playButton: ImageButton? = null
-    private var playProgressBar: ProgressBar? = null
+    private lateinit var playButton: ImageButton
+    private lateinit var playProgressBar: ProgressBar
+    private lateinit var playIconsContainer: View
 
-    private var playIconsContainer: View? = null
+    private lateinit var spinnerLanguageFrom: Spinner
+    private lateinit var textFromLanguage: TextView
 
     @Inject
     internal lateinit var preferences: SharedPreferences
@@ -68,11 +77,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     private var yAxis = 1
 
-    override fun onAttach(context: Context) {
-        (context.applicationContext as SpeakableApplication).appComponent.inject(this)
-        super.onAttach(context)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -82,17 +86,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         languageFrom = getLanguageFromPreference()
 
         presenter.setView(this)
-        val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
-        if(extraWord != null){
-            presenter.start(extraWord)
-        }else{
-            val action = arguments?.getString(ACTION_KEY)
-            if(NO_SERVICE == action){
-                presenter.getLayout(inputText, languageFrom, languageToISO)
-            }else{
-                presenter.startWithService(inputText, languageFrom, languageToISO)
-            }
-        }
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -108,8 +101,59 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         savedInstanceState: Bundle?
     ): View? {
         keepImmersiveMode()
+        setBrightnessTheme()
 
-        return inflater.inflate(R.layout.placeholder_layout, container, false)
+        val text = inputText ?: ""
+
+        val splitText = text.split(" ")
+        val layout =
+            if(splitText.size > 1) {
+                _bindingSentence = DialogFragmentSentenceBinding.inflate(inflater, container, false)
+                createSentenceLayout()
+                bindingSentence.root
+            } else {
+                _bindingWord = DialogFragmentWordBinding.inflate(inflater, container, false)
+                bindingWord.root
+            }
+
+        val mTextTTS = layout.findViewById<TextView>(R.id.text_tts)
+        mTextTTS.text = text
+
+        spinnerLanguageFrom = layout.findViewById(R.id.spinner_language_from)
+        setLanguageFromSpinner(spinnerLanguageFrom)
+
+        textFromLanguage = layout.findViewById(R.id.text_language_code)
+        textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
+
+        setPlayButton(layout, text)
+
+        return layout
+    }
+
+    private fun createSentenceLayout() {
+        setBottomDialog()
+        setSpinner()
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
+        if(extraWord != null){
+            presenter.start(extraWord)
+        }else{
+            val action = arguments?.getString(ACTION_KEY)
+            if(NO_SERVICE == action){
+                presenter.getLayout(inputText, languageFrom, languageToISO)
+            }else{
+                presenter.startWithService(inputText, languageFrom, languageToISO)
+            }
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setSwipeListener(view)
     }
 
     override fun onStop() {
@@ -122,6 +166,12 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         presenter.destroy()
         val parent = activity
         if(parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _bindingSentence = null
+        _bindingWord = null
     }
 
     private fun getPreferenceISO(): String {
@@ -163,27 +213,13 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setWordLayout(word: Words) {
-        setContentView(R.layout.activity_processtext)
-        val textString = word.word
+        textFromLanguage.text = word.lang
 
-        val mTextTTS = view?.findViewById<TextView>(R.id.text_tts)
-        mTextTTS?.text = textString
-
-        val textViewLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textViewLanguage?.visibility = if(languageFrom == "auto") View.VISIBLE else View.GONE
-        textViewLanguage?.text = word.lang
-
-        setPlayButton(textString)
-        setLanguageFromSpinner()
-
-        view?.findViewById<View>(R.id.save_icon)?.setOnClickListener { presenter.onClickBookmark() }
+        bindingWord.saveIcon.setOnClickListener { presenter.onClickBookmark() }
     }
 
     override fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
-        val isLargeWindow = preferences.getBoolean(
-            SettingsFragment.PREF_WINDOW_SIZE,
-            ButtonsPreference.DEFAULT_VALUE
-        )
+        val isLargeWindow = preferences.getBoolean(SettingsFragment.PREF_WINDOW_SIZE, ButtonsPreference.DEFAULT_VALUE)
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
         setWordLayout(word)
         dictionaryAdapter = WiktionaryAdapter(items)
@@ -212,11 +248,9 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
         languagePreferenceIndex = -1 // Indicates spinner not visible
 
         // Hides language from spinner, because language is already predefined.
-        val spinner = view?.findViewById<Spinner>(R.id.spinner_language_from)
-        spinner?.visibility = View.INVISIBLE
+        spinnerLanguageFrom.visibility = View.INVISIBLE
 
-        val textViewLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textViewLanguage?.visibility = View.VISIBLE
+        textFromLanguage.visibility = View.VISIBLE
 
     }
 
@@ -232,47 +266,34 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     override fun setSentenceLayout(word: Words) {
-        setBottomDialog()
-        val text = word.word
-        setContentView(R.layout.activity_process_sentence)
-        val mTextTTS = view?.findViewById<TextView>(R.id.text_tts)
-        mTextTTS?.text = text
-        val mTextTranslation = view?.findViewById<TextView>(R.id.text_translation)
-        mTextTranslation?.text = word.definition
-        val textLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textLanguage?.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
-        textLanguage?.text = word.lang
-        setPlayButton(text)
-
-        setLanguageFromSpinner()
-        setSpinner()
+        bindingSentence.textTranslation.text = word.definition
+        textFromLanguage.text = word.lang
     }
 
     override fun setExternalDictionary(links: List<ExternalLink>) {
         if(!isAdded) return
 
-        pagerAdapter = MyPageAdapter(this)
-        if (dictionaryAdapter != null) pagerAdapter?.addFragment(
+        val pagerAdapter = MyPageAdapter(this)
+        if (dictionaryAdapter != null) pagerAdapter.addFragment(
             DefinitionFragment.newInstance(dictionaryAdapter)
         )
         val translationFragment = TranslationFragment.newInstance(mFoundWords, languagePreferenceIndex)
         translationFragment.setListener(translationFragListener)
-        pagerAdapter?.addFragment(translationFragment)
-        pagerAdapter?.addFragment(
+        pagerAdapter.addFragment(translationFragment)
+        pagerAdapter.addFragment(
             ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
         )
-        pager?.adapter = pagerAdapter
 
-        val tabLayout = view?.findViewById<TabLayout>(R.id.pager_menu_dots)
-        if(tabLayout != null){
-            pager?.let {
-                TabLayoutMediator(tabLayout, it, true) { _, _ -> }.attach() // Tab without text
-            }
+        pager?.let {
+            it.adapter = pagerAdapter
+            TabLayoutMediator(bindingWord.pagerMenuDots, it, true) { _, _ -> }.attach() // Tab without text
         }
+
+        this.pagerAdapter = pagerAdapter
     }
 
     override fun setTranslationErrorMessage() {
-        // If pager is not null, means we are using activity_processtext layout,
+        // If pager is not null, means we are using word layout,
         // otherwise is sentence layout
         pagerAdapter?.let {
             // Check if the adapter has dictionary fragment
@@ -291,11 +312,10 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     override fun showDeleteDialog(word: String) {
 
         val builder = AlertDialog.Builder(requireContext())
-        builder.setMessage("Do you want to delete this word?")
-            .setPositiveButton("Yes") { dialog, _ ->
+        builder.setMessage(getString(R.string.delete_word_message))
+            .setPositiveButton(R.string.yes) { dialog, _ ->
                 presenter.onClickDeleteWord(word)
                 dialog.dismiss()
-
             }
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
 
@@ -303,17 +323,14 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     override fun showWordDeleted() {
-        val saveIcon = view?.findViewById<ImageButton>(R.id.save_icon)
-        saveIcon?.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
-
-        val editIcon = view?.findViewById<ImageButton>(R.id.edit_icon)
-        editIcon?.visibility = View.GONE
+        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
+        bindingWord.editIcon.visibility = View.GONE
     }
 
     override fun showErrorPlayingAudio() {
-        playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar?.visibility = View.INVISIBLE
-        playButton?.visibility = View.VISIBLE
+        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
         Toast.makeText(context, "Could not play audio", Toast.LENGTH_SHORT).show()
     }
 
@@ -324,32 +341,35 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     override fun showLanguageNotAvailable() {
-        if (playIconsContainer != null) { // Why do you need to check this?
-            playIconsContainer?.visibility = View.GONE
-            Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
-        }
+        // Why do you need to check this?
+
+        // This is function is sometimes called multiple times
+        // Don't show toast if container is already gone
+        if(playIconsContainer.visibility == View.GONE) return
+
+        playIconsContainer.visibility = View.GONE
+        Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
     }
 
     override fun showLoadingTTS() {
-        playProgressBar?.visibility = View.VISIBLE
-        playButton?.visibility = View.INVISIBLE
+        playProgressBar.visibility = View.VISIBLE
+        playButton.visibility = View.INVISIBLE
     }
 
     override fun showPlayIcon() {
-        playButton?.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar?.visibility = View.INVISIBLE
-        playButton?.visibility = View.VISIBLE
+        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
     }
 
     override fun showStopIcon() {
-        playButton?.setImageResource(R.drawable.ic_stop_black_24dp)
-        playProgressBar?.visibility = View.INVISIBLE
-        playButton?.visibility = View.VISIBLE
+        playButton.setImageResource(R.drawable.ic_stop_black_24dp)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
     }
 
     override fun updateTranslation(word: Words) {
-        val textLanguage = view?.findViewById<TextView>(R.id.text_language_code)
-        textLanguage?.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
+        textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
 
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
@@ -359,8 +379,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
             if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
-            val translationTextView = view?.findViewById<TextView>(R.id.text_translation)
-            translationTextView?.text = word.definition
+            bindingSentence.textTranslation.text = word.definition
         }
     }
 
@@ -376,18 +395,6 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     override fun setPresenter(presenter: ProcessTextContract.Presenter) {
         this.presenter = presenter
-    }
-
-    private fun setContentView(@LayoutRes id: Int){
-        setBrightnessTheme()
-        val inflater = activity?.layoutInflater
-        inflater ?: return
-        val newView = inflater.inflate(id, null)
-        val rootView = view as? ViewGroup
-        rootView?.removeAllViews()
-        rootView?.addView(newView)
-
-        setSwipeListener(newView)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -508,44 +515,39 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setSavedWordToolbar(word: Words) {
-        val saveIcon = view?.findViewById<ImageButton>(R.id.save_icon)
-        saveIcon?.setImageResource(R.drawable.ic_bookmark_black_24dp)
+        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
 
-        val editIcon = view?.findViewById<ImageButton>(R.id.edit_icon)
-        editIcon?.visibility = View.VISIBLE
-        editIcon?.setOnClickListener {
-            val dialogFragment = SaveWordDialogFragment.newInstance(word)
-            dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
+        with(bindingWord.editIcon) {
+            visibility = View.VISIBLE
+            setOnClickListener {
+                val dialogFragment = SaveWordDialogFragment.newInstance(word)
+                dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
+            }
         }
 
     }
 
-    private fun setPlayButton(text: String) {
-        playButton = view?.findViewById(R.id.play_tts_icon)
-        playButton?.setOnClickListener { presenter.onClickReproduce(text) }
+    private fun setPlayButton(layout: View, text: String) {
+        playButton = layout.findViewById(R.id.play_tts_icon)
+        playButton.setOnClickListener { presenter.onClickReproduce(text) }
 
-        playProgressBar = view?.findViewById(R.id.play_loading_icon)
-        playIconsContainer = view?.findViewById(R.id.play_icons_container)
-
-        presenter.onPlayIconSet()
+        playProgressBar = layout.findViewById(R.id.play_loading_icon)
+        playIconsContainer = layout.findViewById(R.id.play_icons_container)
     }
 
     private fun createViewPager() {
-        pager = view?.findViewById(R.id.process_view_pager)
+        pager = bindingWord.processViewPager
     }
 
     private fun createSmallViewPager() {
-        pager = view?.findViewById(R.id.process_view_pager)
+        pager = bindingWord.processViewPager
         val params = pager?.layoutParams
         params?.height = 250
         pager?.layoutParams = params
     }
 
-    private fun setLanguageFromSpinner() {
-        // Sometimes activity can be destroyed before this is called, due to network/DB latency
-        if(context == null) return
+    private fun setLanguageFromSpinner(spinner: Spinner) {
 
-        val spinner: Spinner = view?.findViewById(R.id.spinner_language_from) ?: return
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLangsWithAutoValue,
@@ -560,9 +562,8 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
     private fun setSpinner() {
-        if(context == null) return
 
-        val spinner = view?.findViewById<Spinner>(R.id.translate_to_spinner) ?: return
+        val spinner = bindingSentence.translateToSpinner
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLanguagesValue,
@@ -578,12 +579,11 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
 
     override fun onWordSaved(word: Words) {
         presenter.onClickSaveWord(word)
-        val saveIcon = view?.findViewById<ImageButton>(R.id.save_icon)
-        saveIcon?.setImageResource(R.drawable.ic_bookmark_black_24dp)
+        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
 
-        val editIcon = view?.findViewById<ImageButton>(R.id.edit_icon)
-        editIcon?.visibility = View.VISIBLE
-        editIcon?.setOnClickListener {
+        val editIcon = bindingWord.editIcon
+        editIcon.visibility = View.VISIBLE
+        editIcon.setOnClickListener {
             val dialogFragment = SaveWordDialogFragment.newInstance(word)
             dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
         }
@@ -634,7 +634,7 @@ class TextInfoDialog private constructor(): DialogFragment(), ProcessTextContrac
     }
 
 
-    private inner class MyPageAdapter internal constructor(fragment: Fragment) :
+    private inner class MyPageAdapter(fragment: Fragment) :
         FragmentStateAdapter(fragment) {
 
         val fragments = ArrayList<Fragment>()

@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.savedwords;
 
-import android.content.Context;
 import android.graphics.Color;
 
 import androidx.annotation.NonNull;
@@ -25,22 +24,18 @@ import java.util.List;
 
 public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdapter.WordsViewHolder> {
 
-    private LayoutInflater layoutInflater;
     private List<Words> wordsList = new ArrayList<>();
-    private Context context;
 
     private boolean multiSelect = false;
-    private ArrayList<Words> selectedItems = new ArrayList<>();
+    private final ArrayList<Words> selectedItems = new ArrayList<>();
 
-    private Listener listener;
+    private final Listener listener;
 
-    SavedWordListAdapter(Context context, Listener listener){
-        this.layoutInflater = LayoutInflater.from(context);
-        this.context = context;
+    SavedWordListAdapter(Listener listener){
         this.listener = listener;
     }
 
-    void setWordsList(List<Words> wordsList){
+    void setWordsList(@NonNull List<Words> wordsList){
         this.wordsList = wordsList;
         notifyDataSetChanged();
     }
@@ -48,7 +43,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     @NonNull
     @Override
     public WordsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        final View itemView = layoutInflater.inflate(R.layout.saved_word_item, parent, false);
+        final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.saved_word_item, parent, false);
         return new WordsViewHolder(itemView);
     }
 
@@ -71,7 +66,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     }
 
     // Taken from: https://blog.teamtreehouse.com/contextual-action-bars-removing-items-recyclerview
-    private ActionMode.Callback actionModeCallback =  new ActionMode.Callback() {
+    private final ActionMode.Callback actionModeCallback =  new ActionMode.Callback() {
         @Override
         public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
             multiSelect = true;
@@ -102,6 +97,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         }
     };
 
+    // TODO Implement View Binding
     class WordsViewHolder extends RecyclerView.ViewHolder{
         private TextView wordText;
         private TextView languageText;
@@ -144,7 +140,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             translationText.setText(word.definition);
             if (word.notes != null) {
                 notesText.setVisibility(View.VISIBLE);
-                notesText.setText(context.getString(R.string.notes_item_label, word.notes));
+                notesText.setText(itemView.getContext().getString(R.string.notes_item_label, word.notes));
             }else {
                 notesText.setVisibility(View.GONE);
             }

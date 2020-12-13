@@ -8,4 +8,8 @@ interface ZipFileReader {
     suspend fun getFileStream(filePath: String): InputStream?
 
     suspend fun getAllReaders(): Map<String, StringReader>
+
+    suspend fun createFileFolder(path: String)
+
+    suspend fun saveCoverBitmap(coverPath: String, outputDir: String)
 }

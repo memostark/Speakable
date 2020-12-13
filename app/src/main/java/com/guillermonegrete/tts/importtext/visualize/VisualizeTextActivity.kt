@@ -8,13 +8,12 @@ import android.text.Selection
 import android.text.Spannable
 import android.view.*
 import android.widget.*
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.edit
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
@@ -23,15 +22,13 @@ import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
-import dagger.android.AndroidInjection
+import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class VisualizeTextActivity: AppCompatActivity() {
 
-    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
-    private val viewModel by lazy {
-        ViewModelProvider(this, viewModelFactory).get(VisualizeTextViewModel::class.java)
-    }
+    private val viewModel: VisualizeTextViewModel by viewModels()
 
     private lateinit var viewPager: ViewPager2
     private lateinit var rootConstraintLayout: ConstraintLayout
@@ -61,9 +58,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var scaleDetector: ScaleGestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AndroidInjection.inject(this)
-        setPreferenceTheme()
         super.onCreate(savedInstanceState)
+        setPreferenceTheme()
         setContentView(R.layout.activity_visualize_text)
 
         progressBar = findViewById(R.id.visualizer_progress_bar)
@@ -203,7 +199,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun createViewModel() {
         viewModel.apply {
-            dataLoading.observe(this@VisualizeTextActivity, Observer {
+            dataLoading.observe(this@VisualizeTextActivity, {
                 progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
             })
 
@@ -213,7 +209,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 updateScreenMode()
             })
 
-            book.observe(this@VisualizeTextActivity, Observer {
+            book.observe(this@VisualizeTextActivity, {
                 if(it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
                 else{
                     updateCurrentChapterLabel()
@@ -239,7 +235,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 pagesAdapter.notifyItemChanged(it)
             })
 
-            translationLoading.observe(this@VisualizeTextActivity, Observer {
+            translationLoading.observe(this@VisualizeTextActivity, {
                 translationProgress.visibility = if(it) View.VISIBLE else View.INVISIBLE
                 if(it) bottomText.text = ""
             })
@@ -261,7 +257,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(SHOW_EPUB == intent.action) {
             val uri: Uri = intent.getParcelableExtra(EPUB_URI)
             val rootStream = contentResolver.openInputStream(uri)
-            viewModel.fileReader = DefaultZipFileReader(rootStream)
+            viewModel.fileReader = DefaultZipFileReader(rootStream, this)
             viewModel.fileUri = uri.toString()
             viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
             viewModel.parseEpub()
@@ -410,7 +406,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
-            val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri))
+            val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri), this)
             InputStreamImageGetter( this, zipReader)
         } else null
 

@@ -7,7 +7,6 @@ import com.guillermonegrete.tts.textprocessing.ProcessTextLayoutType;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
-import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
 
@@ -16,12 +15,12 @@ import java.util.List;
 
 public class GetLayout extends AbstractInteractor implements GetLayoutInteractor {
 
-    private GetLayoutInteractor.Callback mCallback;
-    private WordRepository wordRepository;
-    private DictionaryRepository dictionaryRepository;
-    private String mText;
-    private String languageFrom;
-    private String preferenceLanguage;
+    private final GetLayoutInteractor.Callback mCallback;
+    private final WordRepositorySource wordRepository;
+    private final DictionaryRepository dictionaryRepository;
+    private final String mText;
+    private final String languageFrom;
+    private final String preferenceLanguage;
 
     private boolean insideDictionary;
     private boolean dictionaryRequestDone;
@@ -32,7 +31,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
 
     public GetLayout(Executor threadExecutor, MainThread mainThread,
-                     Callback callback, WordRepository repository,
+                     Callback callback, WordRepositorySource repository,
                      DictionaryRepository dictRepository, String text,
                      String languageFrom,
                      String preferenceLanguage){
@@ -63,7 +62,9 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
                 }
 
                 @Override
-                public void onDataNotAvailable() {}
+                public void onDataNotAvailable() {
+                    mMainThread.post(() -> mCallback.onTranslationError("Error"));
+                }
             });
         }else{
             // Search in database

@@ -15,7 +15,6 @@ import android.widget.Toast;
 
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.SpeakableApplication;
 import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
@@ -23,7 +22,11 @@ import com.guillermonegrete.tts.threading.MainThreadImpl;
 
 import javax.inject.Inject;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class SaveWordDialogFragment extends DialogFragment {
+    // TODO create view model for this, remove these dependencies
     @Inject WordsDAO wordsDAO;
     @Inject ThreadExecutor executor;
     @Inject MainThreadImpl mainThread;
@@ -48,7 +51,6 @@ public class SaveWordDialogFragment extends DialogFragment {
 
     @Override
     public void onAttach(@NonNull Context context) {
-        ((SpeakableApplication)context.getApplicationContext()).getAppComponent().inject(this);
         super.onAttach(context);
         this.context = context;
     }

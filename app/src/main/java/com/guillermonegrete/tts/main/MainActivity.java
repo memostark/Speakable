@@ -34,111 +34,88 @@
 package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
-import androidx.fragment.app.Fragment;
-import androidx.preference.PreferenceManager;
-import com.google.android.material.navigation.NavigationView;
-import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.importtext.ImportTextFragment;
-import com.guillermonegrete.tts.savedwords.SavedWordsFragment;
 
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.appcompat.app.ActionBar;
+import androidx.lifecycle.LiveData;
+import androidx.navigation.NavController;
+import androidx.navigation.ui.NavigationUI;
+import androidx.preference.PreferenceManager;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.utils.NavigationExtensionsKt;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+
+import java.util.Arrays;
+import java.util.List;
+
+import dagger.hilt.android.AndroidEntryPoint;
 
 
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
-    // Note: Sign up at http://www.projectoxford.ai for the client credentials.
 
-
-    private DrawerLayout mDrawerLayout;
-    private ActionBar actionbar;
-
+    NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
-        mDrawerLayout = findViewById(R.id.main_drawer_layout);
         setActionBar();
 
-        NavigationView navView = findViewById(R.id.nav_view);
-        navView.setCheckedItem(R.id.nav_item_main);
-        navView.setNavigationItemSelectedListener(menuItem -> {
-            menuItem.setChecked(true);
-            mDrawerLayout.closeDrawers();
-
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            Fragment newFragment;
-            String title;
-
-            switch (menuItem.getItemId()){
-                case R.id.nav_item_saved:
-                    title = getString(R.string.saved);
-                    newFragment  = new SavedWordsFragment();
-                    break;
-                case R.id.nav_item_import:
-                    title = getString(R.string.import_text);
-                    newFragment = new ImportTextFragment();
-                    break;
-                case  R.id.nav_item_settings:
-                    title = "";
-                    newFragment  = new SettingsFragment();
-                    break;
-                default:
-                    title = getString(R.string.main);
-                    newFragment = new TextToSpeechFragment();
-                    break;
-            }
-
-            actionbar.setTitle(title);
-            fragmentTransaction.replace(R.id.main_tts_fragment_container, newFragment);
-            fragmentTransaction.commit();
-
-            return true;
-        });
-
-        if(savedInstanceState == null){
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            TextToSpeechFragment fragment = new TextToSpeechFragment();
-            fragmentTransaction.add(R.id.main_tts_fragment_container, fragment);
-            fragmentTransaction.commit();
-        }
+        setupNavController();
     }
 
     private void setActionBar(){
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        actionbar = getSupportActionBar();
-        if(actionbar != null) {
-            actionbar.setDisplayHomeAsUpEnabled(true);
-            actionbar.setTitle(getString(R.string.main));
-            actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
-        }
+    }
+
+    private void setupNavController(){
+        BottomNavigationView navView = findViewById(R.id.bottom_nav_view);
+
+        List<Integer> navGraphIds = Arrays.asList(R.navigation.main, R.navigation.saved, R.navigation.importtext);
+        LiveData<NavController> controllerObservable = NavigationExtensionsKt.setupWithNavController(navView, navGraphIds, getSupportFragmentManager(), R.id.main_fragment_container, getIntent());
+
+        controllerObservable.observe(this, controller -> {
+            navController = controller;
+            NavigationUI.setupActionBarWithNavController(this, controller);
+
+            controller.addOnDestinationChangedListener((nController, destination, arguments) -> {
+
+                if (destination.getId() == R.id.settingsFragmentDest) {
+                    navView.setVisibility(View.GONE);
+                } else {
+                    navView.setVisibility(View.VISIBLE);
+                }
+            });
+        });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main_activity, menu);
+        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            mDrawerLayout.openDrawer(GravityCompat.START);
+        if (item.getItemId() == R.id.settings_menu_item) {
+            navController.navigate(R.id.action_global_settingsFragment);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
-    public void onBackPressed() {
-        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
-            mDrawerLayout.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+    public boolean onSupportNavigateUp() {
+        // Necessary for making the back button in the action bar work
+        return navController.navigateUp();
     }
 }
