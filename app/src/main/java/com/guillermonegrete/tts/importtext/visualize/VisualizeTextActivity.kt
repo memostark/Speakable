@@ -6,18 +6,22 @@ import android.os.Bundle
 import android.os.Handler
 import android.text.Selection
 import android.text.Spannable
+import android.util.TypedValue
 import android.view.*
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.edit
+import androidx.core.view.*
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.customviews.NonScrollingTextView
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
@@ -36,6 +40,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var pagesSeekBar: SeekBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
+    private lateinit var textCardView: CardView
 
     // Bottom sheet layout
     private lateinit var bottomSheet: ViewGroup
@@ -64,6 +69,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         progressBar = findViewById(R.id.visualizer_progress_bar)
         pagesSeekBar = findViewById(R.id.pages_seekBar)
+
+        textCardView = findViewById(R.id.text_reader_card_view)
 
         // Bottom sheet
         bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
@@ -453,9 +460,32 @@ class VisualizeTextActivity: AppCompatActivity() {
         dialog.show(supportFragmentManager, "Text_info")
     }
 
+    data class PageMeasures(
+        val width: Int,
+        val height: Int,
+        val textSize: Float,
+        val leftMargin: Int,
+        val topMargin: Int,
+        val bottomMargin: Int,
+        val rightMargin: Int,
+    )
+
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
+        private var pageMeasures: PageMeasures? = null
 
         private var pinchDetected = false
+
+        init {
+            textCardView.doOnPreDraw {
+                val item = pageItemView as? TextView ?: return@doOnPreDraw
+                pageMeasures = PageMeasures(textCardView.width, textCardView.height, (pageItemView as TextView).textSize,
+                    item.marginLeft,
+                    item.marginTop,
+                    item.marginBottom,
+                    item.marginRight,
+                )
+            }
+        }
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
             viewPager.isUserInputEnabled = false
@@ -471,6 +501,24 @@ class VisualizeTextActivity: AppCompatActivity() {
             detector ?: return false
 
             if(!pinchDetected){
+
+                val pageView = pageItemView
+                if (pageView is NonScrollingTextView){
+                    // Don't let the object get too small or too large.
+                    val factor = detector.scaleFactor
+                    println("Scale factor: ${detector.scaleFactor}")
+
+                    val measures = pageMeasures ?: return false
+                    val params = textCardView.layoutParams as ViewGroup.MarginLayoutParams
+
+                    params.height = (measures.height * factor).toInt()
+                    params.width = (measures.width * factor).toInt()
+                    println("After Width: ${params.width}, Height: ${params.height}")
+                    textCardView.layoutParams = params
+
+                    pageView.setTextSize(TypedValue.COMPLEX_UNIT_PX, measures.textSize * factor)
+                }
+
                 val fullScreen = viewModel.fullScreen
 
                 if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
