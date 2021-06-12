@@ -4,7 +4,7 @@
     android:id="@+id/page_text_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="40dp"
+    android:padding="40dp"
     android:textIsSelectable="true"
     android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
     android:textAppearance="?android:attr/textAppearanceLarge"

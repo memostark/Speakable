@@ -11,13 +11,16 @@ import android.widget.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.edit
+import androidx.core.view.*
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.customviews.NonScrollingTextView
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
@@ -36,6 +39,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var pagesSeekBar: SeekBar
     private lateinit var currentPageLabel: TextView
     private lateinit var currentChapterLabel: TextView
+    private lateinit var textCardView: CardView
 
     // Bottom sheet layout
     private lateinit var bottomSheet: ViewGroup
@@ -64,6 +68,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         progressBar = findViewById(R.id.visualizer_progress_bar)
         pagesSeekBar = findViewById(R.id.pages_seekBar)
+
+        textCardView = findViewById(R.id.text_reader_card_view)
 
         // Bottom sheet
         bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
@@ -148,11 +154,13 @@ class VisualizeTextActivity: AppCompatActivity() {
                         Selection.removeSelection(span)
                     }
                     scaleInProgress = false
+                    return true
                 }
             }
         }
 
-        return super.dispatchTouchEvent(ev)
+        // When scaling don't handle other events, this avoids unexpected click and changes of page
+        return if(scaleInProgress) true else super.dispatchTouchEvent(ev)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -456,6 +464,18 @@ class VisualizeTextActivity: AppCompatActivity() {
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
 
         private var pinchDetected = false
+        private var cardWidth = 0
+
+        private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
+
+        private var initialWidth = 0
+
+        init {
+            textCardView.doOnPreDraw {
+                cardWidth = textCardView.width
+                initialWidth = cardWidth
+            }
+        }
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
             viewPager.isUserInputEnabled = false
@@ -465,22 +485,36 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         override fun onScaleEnd(detector: ScaleGestureDetector?) {
             viewPager.isUserInputEnabled = true
+            textCardView.scaleX = 1f
+            textCardView.scaleY = 1f
         }
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
             detector ?: return false
 
             if(!pinchDetected){
+
+                val factor = detector.scaleFactor
+                val newWidth = initialWidth * factor
+
+                if (newWidth >= cardWidth) {
+                    textCardView.scaleX = factor
+                    textCardView.scaleY = factor
+                    textCardView.invalidate()
+                }
+
                 val fullScreen = viewModel.fullScreen
 
                 if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
+                    initialWidth = screenWidth
                     return true
                 }
                 if(detector.scaleFactor < PINCH_LOWER_LIMIT && fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
+                    initialWidth = cardWidth
                     return true
                 }
             }
@@ -579,7 +613,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val SHOW_EPUB = "epub"
         const val FILE_ID = "fileId"
 
-        const val PINCH_UPPER_LIMIT = 1.3f
+        const val PINCH_UPPER_LIMIT = 1.15f
         const val PINCH_LOWER_LIMIT = 0.8f
     }
 }
