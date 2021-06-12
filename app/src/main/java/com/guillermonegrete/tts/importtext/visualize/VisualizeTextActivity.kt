@@ -464,10 +464,10 @@ class VisualizeTextActivity: AppCompatActivity() {
         val width: Int,
         val height: Int,
         val textSize: Float,
-        val leftMargin: Int,
-        val topMargin: Int,
-        val bottomMargin: Int,
-        val rightMargin: Int,
+        val leftPadding: Int,
+        val topPadding: Int,
+        val bottomPadding: Int,
+        val rightPadding: Int,
     )
 
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
@@ -479,10 +479,10 @@ class VisualizeTextActivity: AppCompatActivity() {
             textCardView.doOnPreDraw {
                 val item = pageItemView as? TextView ?: return@doOnPreDraw
                 pageMeasures = PageMeasures(textCardView.width, textCardView.height, (pageItemView as TextView).textSize,
-                    item.marginLeft,
-                    item.marginTop,
-                    item.marginBottom,
-                    item.marginRight,
+                    item.paddingLeft,
+                    item.paddingTop,
+                    item.paddingBottom,
+                    item.paddingRight,
                 )
             }
         }
@@ -517,6 +517,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                     textCardView.layoutParams = params
 
                     pageView.setTextSize(TypedValue.COMPLEX_UNIT_PX, measures.textSize * factor)
+                    pageView.setPadding((measures.leftPadding * factor).toInt())
                 }
 
                 val fullScreen = viewModel.fullScreen
