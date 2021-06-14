@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.text.Selection
 import android.text.Spannable
-import android.util.TypedValue
 import android.view.*
 import android.widget.*
 import androidx.activity.viewModels
@@ -460,32 +459,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         dialog.show(supportFragmentManager, "Text_info")
     }
 
-    data class PageMeasures(
-        val width: Int,
-        val height: Int,
-        val textSize: Float,
-        val leftPadding: Int,
-        val topPadding: Int,
-        val bottomPadding: Int,
-        val rightPadding: Int,
-    )
-
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
-        private var pageMeasures: PageMeasures? = null
 
         private var pinchDetected = false
-
-        init {
-            textCardView.doOnPreDraw {
-                val item = pageItemView as? TextView ?: return@doOnPreDraw
-                pageMeasures = PageMeasures(textCardView.width, textCardView.height, (pageItemView as TextView).textSize,
-                    item.paddingLeft,
-                    item.paddingTop,
-                    item.paddingBottom,
-                    item.paddingRight,
-                )
-            }
-        }
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
             viewPager.isUserInputEnabled = false
@@ -502,23 +478,10 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             if(!pinchDetected){
 
-                val pageView = pageItemView
-                if (pageView is NonScrollingTextView){
-                    // Don't let the object get too small or too large.
-                    val factor = detector.scaleFactor
-                    println("Scale factor: ${detector.scaleFactor}")
-
-                    val measures = pageMeasures ?: return false
-                    val params = textCardView.layoutParams as ViewGroup.MarginLayoutParams
-
-                    params.height = (measures.height * factor).toInt()
-                    params.width = (measures.width * factor).toInt()
-                    println("After Width: ${params.width}, Height: ${params.height}")
-                    textCardView.layoutParams = params
-
-                    pageView.setTextSize(TypedValue.COMPLEX_UNIT_PX, measures.textSize * factor)
-                    pageView.setPadding((measures.leftPadding * factor).toInt())
-                }
+                val factor = detector.scaleFactor
+                textCardView.scaleX = factor
+                textCardView.scaleY = factor
+                textCardView.invalidate()
 
                 val fullScreen = viewModel.fullScreen
 
