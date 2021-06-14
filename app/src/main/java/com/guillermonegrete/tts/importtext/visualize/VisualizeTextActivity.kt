@@ -154,6 +154,8 @@ class VisualizeTextActivity: AppCompatActivity() {
                         Selection.removeSelection(span)
                     }
                     scaleInProgress = false
+                    // When scaling don't handle other events, this avoids unexpected click and changes of page
+                    return true
                 }
             }
         }
