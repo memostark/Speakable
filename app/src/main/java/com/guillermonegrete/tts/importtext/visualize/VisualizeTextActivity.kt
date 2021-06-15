@@ -464,6 +464,18 @@ class VisualizeTextActivity: AppCompatActivity() {
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
 
         private var pinchDetected = false
+        private var cardWidth = 0
+
+        private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
+
+        private var initialWidth = 0
+
+        init {
+            textCardView.doOnPreDraw {
+                cardWidth = textCardView.width
+                initialWidth = cardWidth
+            }
+        }
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
             viewPager.isUserInputEnabled = false
@@ -473,6 +485,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         override fun onScaleEnd(detector: ScaleGestureDetector?) {
             viewPager.isUserInputEnabled = true
+            textCardView.scaleX = 1f
+            textCardView.scaleY = 1f
         }
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
@@ -481,20 +495,26 @@ class VisualizeTextActivity: AppCompatActivity() {
             if(!pinchDetected){
 
                 val factor = detector.scaleFactor
-                textCardView.scaleX = factor
-                textCardView.scaleY = factor
-                textCardView.invalidate()
+                val newWidth = initialWidth * factor
+
+                if (newWidth >= cardWidth) {
+                    textCardView.scaleX = factor
+                    textCardView.scaleY = factor
+                    textCardView.invalidate()
+                }
 
                 val fullScreen = viewModel.fullScreen
 
                 if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
+                    initialWidth = screenWidth
                     return true
                 }
                 if(detector.scaleFactor < PINCH_LOWER_LIMIT && fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
+                    initialWidth = cardWidth
                     return true
                 }
             }
@@ -593,7 +613,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val SHOW_EPUB = "epub"
         const val FILE_ID = "fileId"
 
-        const val PINCH_UPPER_LIMIT = 1.3f
+        const val PINCH_UPPER_LIMIT = 1.15f
         const val PINCH_LOWER_LIMIT = 0.8f
     }
 }
