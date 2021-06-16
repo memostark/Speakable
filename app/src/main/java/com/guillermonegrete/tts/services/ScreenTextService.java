@@ -60,6 +60,9 @@ import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 
 import javax.inject.Inject;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class ScreenTextService extends Service {
 
     private WindowManager windowManager;
