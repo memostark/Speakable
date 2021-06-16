@@ -154,13 +154,13 @@ class VisualizeTextActivity: AppCompatActivity() {
                         Selection.removeSelection(span)
                     }
                     scaleInProgress = false
-                    // When scaling don't handle other events, this avoids unexpected click and changes of page
                     return true
                 }
             }
         }
 
-        return super.dispatchTouchEvent(ev)
+        // When scaling don't handle other events, this avoids unexpected click and changes of page
+        return if(scaleInProgress) true else super.dispatchTouchEvent(ev)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
