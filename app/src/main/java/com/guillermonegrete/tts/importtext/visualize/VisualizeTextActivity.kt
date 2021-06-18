@@ -20,7 +20,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.customviews.NonScrollingTextView
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
@@ -102,6 +101,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             setUpPageParsing(view)
 
+            removeSelection()
+
             // A new page is shown when position is 0.0f,
             // so we request focus in order to highlight text correctly.
             if(position == 0.0f) setPageTextFocus()
@@ -148,11 +149,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
                 if(scaleInProgress){
                     // Removes lingering highlight from text
-                    val item = pageItemView
-                    if(item is TextView){
-                        val span = item.text as? Spannable
-                        Selection.removeSelection(span)
-                    }
+                    removeSelection()
                     scaleInProgress = false
                     return true
                 }
@@ -161,6 +158,14 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         // When scaling don't handle other events, this avoids unexpected click and changes of page
         return if(scaleInProgress) true else super.dispatchTouchEvent(ev)
+    }
+
+    private fun removeSelection(){
+        val item = pageItemView
+        if(item is TextView && item.hasSelection()){
+            val span = item.text as? Spannable
+            Selection.removeSelection(span)
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
