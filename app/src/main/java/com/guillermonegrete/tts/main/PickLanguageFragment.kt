@@ -9,7 +9,7 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.setFragmentResult
 import androidx.navigation.findNavController
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.customtts.CustomTTS
+import com.guillermonegrete.tts.customtts.TTS
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -19,7 +19,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class PickLanguageFragment : Fragment(R.layout.fragment_pick_language) {
 
-    @Inject lateinit var tts: CustomTTS
+    @Inject lateinit var tts: TTS
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -27,7 +27,7 @@ class PickLanguageFragment : Fragment(R.layout.fragment_pick_language) {
             with(view) {
                 val auto = context.getString(R.string.auto_detect)
                 val values = mutableListOf(auto)
-                values.addAll(tts.availableLanguages)
+                values.addAll(tts.getAvailableLanguages())
 
                 layoutManager =  LinearLayoutManager(context)
                 adapter = LanguageAdapter(values) {
