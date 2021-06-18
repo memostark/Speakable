@@ -7,6 +7,8 @@ import android.speech.tts.TextToSpeech;
 
 import android.speech.tts.UtteranceProgressListener;
 
+import androidx.annotation.NonNull;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -21,7 +23,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext;
 
 
 @Singleton
-public class CustomTTS implements TextToSpeech.OnInitListener{
+public class CustomTTS implements TextToSpeech.OnInitListener, TTS{
 
     private TextToSpeech localTTS;
 
@@ -191,6 +193,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener{
         return language;
     }
 
+    @NonNull
     public List<String> getAvailableLanguages(){
         Locale[] locales = Locale.getAvailableLocales();
         Set<String> localeList = new HashSet<>();

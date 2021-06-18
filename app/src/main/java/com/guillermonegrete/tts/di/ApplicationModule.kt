@@ -9,6 +9,8 @@ import androidx.room.Room
 import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.ThreadExecutor
+import com.guillermonegrete.tts.customtts.CustomTTS
+import com.guillermonegrete.tts.customtts.TTS
 import com.guillermonegrete.tts.data.preferences.DefaultSettingsRepository
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.*
@@ -167,6 +169,9 @@ abstract class ApplicationModuleBinds {
 abstract class WordRepositorySourceModule {
     @Binds
     abstract fun bindRepository(repository: WordRepository): WordRepositorySource
+
+    @Binds
+    abstract fun bindTTS(tts: CustomTTS): TTS
 }
 
 /**

@@ -1,11 +1,12 @@
 package com.guillermonegrete.tts.di
 
+import com.guillermonegrete.tts.customtts.FakeTTS
+import com.guillermonegrete.tts.customtts.TTS
 import com.guillermonegrete.tts.data.source.*
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ApplicationComponent
-import javax.inject.Singleton
 
 /**
  * WordRepositorySource binding to use in tests.
@@ -16,7 +17,9 @@ import javax.inject.Singleton
 @InstallIn(ApplicationComponent::class)
 abstract class TestApplicationModuleBinds {
 
-    @Singleton
     @Binds
     abstract fun bindWordRepo(repo: FakeWordRepository): WordRepositorySource
+
+    @Binds
+    abstract fun bindTTS(tts: FakeTTS): TTS
 }

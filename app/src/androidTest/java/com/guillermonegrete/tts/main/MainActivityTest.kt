@@ -11,6 +11,7 @@ import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.customtts.FakeTTS
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.di.WordRepositorySourceModule
@@ -34,6 +35,8 @@ class MainActivityTest {
 
     @Inject
     lateinit var repository: FakeWordRepository
+    @Inject
+    lateinit var tts: FakeTTS
 
     @Before
     fun init() {
@@ -60,6 +63,7 @@ class MainActivityTest {
 
     @Test
     fun changeLanguageFrom(){
+        tts.languages = arrayListOf("JA")
         val activityScenario = ActivityScenario.launch(MainActivity::class.java)
 
         onView(withId(R.id.pick_language)).check(matches(withText("AUTO DETECT")))
@@ -70,7 +74,6 @@ class MainActivityTest {
                 RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(1, click())
             )
 
-        // TODO JA is the option at index 1, should mock list to guarantee deterministic behaviour
         onView(withId(R.id.pick_language)).check(matches(withText("JA")))
 
         activityScenario.close()
