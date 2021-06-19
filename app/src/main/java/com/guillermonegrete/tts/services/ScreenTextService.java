@@ -136,7 +136,7 @@ public class ScreenTextService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        setTheme(R.style.AppTheme);
         service_layout = View.inflate(this, R.layout.service_processtext, null);
         trash_layout = new TrashView(this);
         hasPermission = false;
