@@ -1,5 +1,7 @@
 # Speakable (Text to Speech)
-Speakable is a language learning android application that allows you to enter or select words and reproduce them with Text to Speech. You can also save words, translate to different languages and search definitions.
+Speakable is a language learning android application that allows you to enter or select words and reproduce them with Text to Speech. You can also save words, translate to different languages, search definitions and open EPUB/text files within the app.
+
+![](app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png)
 
 # How to use
 
@@ -11,11 +13,12 @@ You can enter text in the main screen, the screenschot below shows the functiona
 ## Clipboard mode
 When you enable clipboard mode, you can use various features outside the app. When you highlight text and copy to the clipboard a dialog will show the Wiktionary definition (if available) and a page with a translation.
 
-<img src="readme_images/text_highlight.png" alt="drawing" width="350"/>
+<img src="readme_images/clipboard-mode-gif.gif" alt="drawing" width="350"/><br/>
 
+<p float="left">
 <img src="readme_images/process_text_dictionary.png" alt="drawing" width="350"/>
-
 <img src="readme_images/process_text_translation.png" alt="drawing" width="350"/>
+</p>
 
 1. Selected text
 1. Detected language
@@ -32,9 +35,21 @@ You can also save words and additional notes with this dialog.
 
 If you can't highlight text you can use overlay mode instead. When active, shows a floating icon anywhere outside the app. Clic on the icon and it shows a rectangle (similar to Windows' snipping tool) that you can drag and resize around the text you want to reproduce/translate.
 
-<img src="screenshots/floating_icon.png" alt="drawing" width="350"/>
+<img src="readme_images/overlay-mode-gif.gif" alt="drawing" width="350"/><br/>
 
 <img src="readme_images/snipping_view.png" alt="drawing" width="350"/>
+
+## File viewer
+
+Speakable includes a text viewer that allows you to use all the app features (such as TTS, text translation and definition) in easier way.
+
+You can either enter the text you want to view or import it from an external file like and epub and txt.
+
+<img src="readme_images/import_text_screen.jpg" alt="drawing" width="350"/>
+
+Inside the viewer you can click any word to see translation, definition and more!
+
+<img src="readme_images/text-viewer-gif.gif" alt="drawing" width="350"/>
 
 # How to install
 

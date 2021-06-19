@@ -10,12 +10,10 @@
 
     <string-array name="translatorArray">
         <item>Google public</item>
-        <item>Microsoft</item>
     </string-array>
 
     <string-array name="translatorValues">
         <item>10</item>
-        <item>11</item>
     </string-array>
 
     <string-array name="defaultBrowserArray">
