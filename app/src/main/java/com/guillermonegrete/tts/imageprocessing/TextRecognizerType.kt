@@ -3,8 +3,7 @@ package com.guillermonegrete.tts.imageprocessing
 import dagger.MapKey
 
 enum class TextRecognizerType(val value: Int) {
-    FIREBASE_LOCAL(0),
-    FIREBASE_CLOUD(1);
+    FIREBASE_LOCAL(0);
 
     companion object{
         const val PREFERENCE_KEY = "textRecognizerPref"

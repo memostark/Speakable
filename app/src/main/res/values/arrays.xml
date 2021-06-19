@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="textRecognizerArray">
-        <item>Firabase Local</item>
-        <item>Firebase Cloud</item>
+        <item>Firebase Local</item>
     </string-array>
 
     <string-array name="textRecognizerValues">
         <item>0</item>
-        <item>1</item>
     </string-array>
 
     <string-array name="translatorArray">

@@ -119,7 +119,6 @@ dependencies {
 
     // Firebase OCR
     implementation 'com.google.firebase:firebase-core:16.0.9'
-    implementation 'com.google.firebase:firebase-ml-vision:20.0.0'
     implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.2.0'
 
     // Firebase language detection

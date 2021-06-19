@@ -6,8 +6,6 @@ import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import android.util.Xml
 import androidx.room.Room
-import com.google.firebase.ml.vision.FirebaseVision
-import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
 import com.guillermonegrete.tts.BuildConfig
 import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
@@ -211,18 +209,4 @@ class FirebaseLocalModule{
     @IntoMap
     @TextRecognizerEnumKey(TextRecognizerType.FIREBASE_LOCAL)
     fun provideLocalTextRecognizer(): ImageProcessingSource = FirebaseTextProcessor()
-}
-
-@InstallIn(ApplicationComponent::class)
-@Module
-class FirebaseCloudModule{
-    @Provides
-    @Singleton
-    fun providesVisionRecognizer(): FirebaseVisionTextRecognizer = FirebaseVision.getInstance().cloudTextRecognizer
-
-    @Provides
-    @Singleton
-    @IntoMap
-    @TextRecognizerEnumKey(TextRecognizerType.FIREBASE_CLOUD)
-    fun provideCloudTextRecognizer(visionRecognizer: FirebaseVisionTextRecognizer): ImageProcessingSource = FirebaseCloudTextProcessor(visionRecognizer)
 }
