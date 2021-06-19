@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="textRecognizerArray">
+        <item>Firebase Local</item>
+    </string-array>
+
+    <string-array name="textRecognizerValues">
+        <item>0</item>
+    </string-array>
+
+    <string-array name="translatorArray">
+        <item>Google public</item>
+    </string-array>
+
+    <string-array name="translatorValues">
+        <item>10</item>
+    </string-array>
 
     <string-array name="defaultBrowserArray">
         <item>Chrome custom tabs</item>
