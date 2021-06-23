@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Patterns
 import androidx.fragment.app.Fragment
 import androidx.appcompat.app.AppCompatActivity
 import tourguide.tourguide.TourGuide
@@ -23,6 +24,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
 import androidx.annotation.DrawableRes
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
 
@@ -103,6 +106,10 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
             ttsEditText.setOnFocusChangeListener { _, hasFocus ->
                 if (hasFocus) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            }
+
+            ttsEditText.doAfterTextChanged {
+                webReaderBtn.isVisible = Patterns.WEB_URL.matcher(it.toString()).matches()
             }
 
             startBubbleBtn.setOnClickListener { presenter.onStartOverlayMode() }
