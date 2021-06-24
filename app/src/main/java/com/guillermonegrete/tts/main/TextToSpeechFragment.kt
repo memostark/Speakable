@@ -88,6 +88,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? AppCompatActivity)?.supportActionBar?.show()
         _binding = FragmentMainTtsBinding.bind(view)
 
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
@@ -127,6 +128,8 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 val lang = if(selectedLang == autoText) null else selectedLang
                 presenter.onClickReproduce(text, lang)
             }
+
+            webReaderBtn.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_webReaderFragment) }
         }
 
         val webview = binding.bottom.webviewWiktionary
@@ -245,14 +248,10 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     }
 
     private fun hideKeyboard() {
-        val context = activity
-        if (context != null) {
-            val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            val focusedView = context.currentFocus
-            if (focusedView != null) {
-                inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
-            }
-        }
+        val context = activity ?: return
+        val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val focusedView = context.currentFocus ?: return
+        inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
     }
 
     private fun playTutorial(){

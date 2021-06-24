@@ -89,7 +89,9 @@ public class MainActivity extends AppCompatActivity {
 
             controller.addOnDestinationChangedListener((nController, destination, arguments) -> {
 
-                if (destination.getId() == R.id.settingsFragmentDest) {
+                int destId = destination.getId();
+                if (destId == R.id.settingsFragmentDest
+                        || destId == R.id.webReaderFragment) {
                     navView.setVisibility(View.GONE);
                 } else {
                     navView.setVisibility(View.VISIBLE);
