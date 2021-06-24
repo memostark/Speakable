@@ -129,7 +129,11 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 presenter.onClickReproduce(text, lang)
             }
 
-            webReaderBtn.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_webReaderFragment) }
+            webReaderBtn.setOnClickListener {
+                val url = ttsEditText.text.toString()
+                val action = TextToSpeechFragmentDirections.toWebReaderFragmentAction(url)
+                findNavController().navigate(action)
+            }
         }
 
         val webview = binding.bottom.webviewWiktionary
