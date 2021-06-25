@@ -6,8 +6,7 @@ import dagger.MapKey
  * Value must be the same as the array resource in arrays.xml
  */
 enum class TranslatorType(val value: Int) {
-    GOOGLE_PUBLIC(10),
-    MICROSOFT(11);
+    GOOGLE_PUBLIC(10);
 
     companion object{
         const val PREFERENCE_KEY = "translator_pref_key"

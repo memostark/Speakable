@@ -18,7 +18,6 @@ import com.guillermonegrete.tts.data.source.*
 import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
-import com.guillermonegrete.tts.data.source.remote.MSTranslatorSource
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource
 import com.guillermonegrete.tts.db.FileDAO
 import com.guillermonegrete.tts.db.FilesDatabase
@@ -189,16 +188,6 @@ class GoogleSourceModule{
     @IntoMap
     @TranslatorEnumKey(TranslatorType.GOOGLE_PUBLIC)
     fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
-}
-
-@InstallIn(ApplicationComponent::class)
-@Module
-class MicrosoftSourceModule{
-    @Provides
-    @Singleton
-    @IntoMap
-    @TranslatorEnumKey(TranslatorType.MICROSOFT)
-    fun provideMicrosoftSource(): WordDataSource = MSTranslatorSource(BuildConfig.TranslatorApiKey)
 }
 
 @InstallIn(ApplicationComponent::class)
