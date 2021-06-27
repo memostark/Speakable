@@ -6,9 +6,9 @@
     tools:context=".webreader.WebReaderFragment">
 
     <TextView
-        android:id="@+id/url_text"
+        android:id="@+id/body_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
-        android:text="@string/large_text" />
+        tools:text="@string/large_text"/>
 </androidx.core.widget.NestedScrollView>
