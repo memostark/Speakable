@@ -13,6 +13,9 @@
         <action
             android:id="@+id/action_textToSpeech_to_pickLanguageFragment"
             app:destination="@id/pickLanguageFragment" />
+        <action
+            android:id="@+id/to_webReaderFragment_action"
+            app:destination="@id/webReaderFragment" />
     </fragment>
     <fragment
         android:id="@+id/settingsFragmentDest"
@@ -24,4 +27,13 @@
         android:name="com.guillermonegrete.tts.main.PickLanguageFragment"
         android:label="Pick Language"
         tools:layout="@layout/fragment_pick_language" />
+    <fragment
+        android:id="@+id/webReaderFragment"
+        android:name="com.guillermonegrete.tts.webreader.WebReaderFragment"
+        android:label="Reader"
+        tools:layout="@layout/fragment_web_reader" >
+        <argument
+            android:name="link"
+            app:argType="string" />
+    </fragment>
 </navigation>

@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Patterns
 import androidx.fragment.app.Fragment
 import androidx.appcompat.app.AppCompatActivity
 import tourguide.tourguide.TourGuide
@@ -23,6 +24,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
 import androidx.annotation.DrawableRes
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
 
@@ -85,6 +88,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? AppCompatActivity)?.supportActionBar?.show()
         _binding = FragmentMainTtsBinding.bind(view)
 
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
@@ -105,6 +109,10 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 if (hasFocus) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             }
 
+            ttsEditText.doAfterTextChanged {
+                webReaderBtn.isVisible = Patterns.WEB_URL.matcher(it.toString()).matches()
+            }
+
             startBubbleBtn.setOnClickListener { presenter.onStartOverlayMode() }
 
             clipboardBtn.setOnClickListener { presenter.onStartClipboardMode() }
@@ -119,6 +127,12 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 val selectedLang = pickLanguage.text.toString()
                 val lang = if(selectedLang == autoText) null else selectedLang
                 presenter.onClickReproduce(text, lang)
+            }
+
+            webReaderBtn.setOnClickListener {
+                val url = ttsEditText.text.toString()
+                val action = TextToSpeechFragmentDirections.toWebReaderFragmentAction(url)
+                findNavController().navigate(action)
             }
         }
 
@@ -238,14 +252,10 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     }
 
     private fun hideKeyboard() {
-        val context = activity
-        if (context != null) {
-            val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            val focusedView = context.currentFocus
-            if (focusedView != null) {
-                inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
-            }
-        }
+        val context = activity ?: return
+        val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val focusedView = context.currentFocus ?: return
+        inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
     }
 
     private fun playTutorial(){
