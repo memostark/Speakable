@@ -9,6 +9,7 @@
         android:id="@+id/body_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
         android:layout_margin="@dimen/text_margin"
         tools:text="@string/large_text"/>
 </androidx.core.widget.NestedScrollView>
