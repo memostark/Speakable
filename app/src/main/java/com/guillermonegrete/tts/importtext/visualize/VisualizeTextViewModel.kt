@@ -30,8 +30,6 @@ class VisualizeTextViewModel @ViewModelInject constructor(
     private var firstLoad = true
     private var leftSwipe = false
 
-    private var cleared = false
-
     private var text = ""
     var currentPage = -1
     var currentChapter = -1
@@ -291,18 +289,11 @@ class VisualizeTextViewModel @ViewModelInject constructor(
         _pages.value = Event(mutablePages)
     }
 
-    override fun onCleared() {
-        if(!cleared) onFinish()
-        super.onCleared()
-    }
-
     /**
-     * Sometimes is necessary to wrap up before onCleared is called (e.g. when changing theme)
-     * This function can be called before activity/fragment is destroyed.
+     * Persists the book data when the user stops interacting with the app (should be called when onPaused())
      */
-    fun onFinish(date: Calendar = Calendar.getInstance(), folderPath: String = uuid) {
+    fun saveBookData(date: Calendar = Calendar.getInstance(), folderPath: String = uuid) {
         saveBookFileData(date, folderPath)
-        cleared = true
     }
 
     private fun saveBookFileData(date: Calendar, path: String){
