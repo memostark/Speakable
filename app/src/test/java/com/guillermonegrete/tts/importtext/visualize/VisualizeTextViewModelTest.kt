@@ -282,7 +282,7 @@ class VisualizeTextViewModelTest {
 
         val lastReadDate = Calendar.getInstance()
         val uuid = "random"
-        viewModel.onFinish(lastReadDate, uuid)
+        viewModel.saveBookData(lastReadDate, uuid)
 
         val sumPreviousChars = sumCharacters(3, initialPage)
 
@@ -325,7 +325,7 @@ class VisualizeTextViewModelTest {
 
         val lastReadDate = Calendar.getInstance()
         val uuid = "random"
-        viewModel.onFinish(lastReadDate, uuid)
+        viewModel.saveBookData(lastReadDate, uuid)
 
         mainCoroutineRule.resumeDispatcher()
 
@@ -350,7 +350,7 @@ class VisualizeTextViewModelTest {
         // Swipe to right
         viewModel.swipeChapterRight()
         val lastReadDate = Calendar.getInstance()
-        viewModel.onFinish(lastReadDate)
+        viewModel.saveBookData(lastReadDate)
 
         val sumPreviousChars = sumCharacters(3, 0)
 
@@ -385,7 +385,7 @@ class VisualizeTextViewModelTest {
 
         val lastReadDate = Calendar.getInstance()
         val uuid = "random"
-        viewModel.onFinish(lastReadDate, uuid)
+        viewModel.saveBookData(lastReadDate, uuid)
 
         val expectedFile = BookFile(
             book.uri,
@@ -412,7 +412,7 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         val lastReadDate = Calendar.getInstance()
-        viewModel.onFinish(lastReadDate)
+        viewModel.saveBookData(lastReadDate)
 
         assertEquals(1, fileRepository.filesServiceData.values.size)
     }

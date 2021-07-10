@@ -120,6 +120,11 @@ class VisualizeTextActivity: AppCompatActivity() {
         setUpSeekBar()
     }
 
+    override fun onPause() {
+        super.onPause()
+        viewModel.saveBookData()
+    }
+
     /**
      * Handle scaling in text view with selectable text and clickable spans. Intercept touch event if is scaling.
      *
@@ -342,7 +347,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setBackgroundColor(theme: BrightnessTheme){
         if(theme != brightnessTheme) {
             saveBrightnessPreference(theme.value)
-            viewModel.onFinish()
             finish()
             startActivity(intent)
         }
