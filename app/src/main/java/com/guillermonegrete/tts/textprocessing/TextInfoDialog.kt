@@ -99,7 +99,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         keepImmersiveMode()
         setBrightnessTheme()
 
@@ -127,6 +127,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         setPlayButton(layout, text)
 
+        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+
         return layout
     }
 
@@ -135,8 +137,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         setSpinner()
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setSwipeListener(view)
 
         val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
         if(extraWord != null){
@@ -149,11 +152,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                 presenter.startWithService(inputText, languageFrom, languageToISO)
             }
         }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        setSwipeListener(view)
     }
 
     override fun onStop() {
@@ -492,7 +490,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             val wlp = it.attributes
             wlp.flags =
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-            it.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             it.attributes = wlp
         }
     }
@@ -508,7 +505,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
             wlp.y = 50 * resources.displayMetrics.density.toInt() // dp to px
             wlp.gravity = Gravity.BOTTOM
-            it.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             it.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             it.attributes = wlp
         }
