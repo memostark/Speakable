@@ -22,6 +22,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.*
 import javax.inject.Inject
 
 @RunWith(AndroidJUnit4::class)
@@ -63,7 +64,7 @@ class MainActivityTest {
 
     @Test
     fun changeLanguageFrom(){
-        tts.languages = arrayListOf("JA")
+        tts.languages = arrayListOf(Locale.JAPANESE)
         val activityScenario = ActivityScenario.launch(MainActivity::class.java)
 
         onView(withId(R.id.pick_language)).check(matches(withText("AUTO DETECT")))
@@ -74,7 +75,7 @@ class MainActivityTest {
                 RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(1, click())
             )
 
-        onView(withId(R.id.pick_language)).check(matches(withText("JA")))
+        onView(withId(R.id.pick_language)).check(matches(withText(Locale.JAPANESE.language)))
 
         activityScenario.close()
     }
