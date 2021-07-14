@@ -27,11 +27,14 @@ class PickLanguageFragment : Fragment(R.layout.fragment_pick_language) {
             with(view) {
                 val auto = context.getString(R.string.auto_detect)
                 val values = mutableListOf(auto)
-                values.addAll(tts.getAvailableLanguages())
+                val locales = tts.getAvailableLanguages()
+                values.addAll(locales.map { it.displayLanguage })
+                val isoCodes = mutableListOf(auto)
+                isoCodes.addAll(locales.map { it.language })
 
                 layoutManager =  LinearLayoutManager(context)
                 adapter = LanguageAdapter(values) {
-                    setFragmentResult("requestKey", bundleOf("lang" to values[it]))
+                    setFragmentResult("requestKey", bundleOf("lang" to isoCodes[it]))
                     findNavController().navigateUp()
                 }
             }

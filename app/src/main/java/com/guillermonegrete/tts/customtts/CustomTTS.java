@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -194,19 +195,24 @@ public class CustomTTS implements TextToSpeech.OnInitListener, TTS{
     }
 
     @NonNull
-    public List<String> getAvailableLanguages(){
+    @Override
+    public List<Locale> getAvailableLanguages(){
         Locale[] locales = Locale.getAvailableLocales();
-        Set<String> localeList = new HashSet<>();
+        Set<String> localeSet = new HashSet<>();
+        List<Locale> localeList = new ArrayList<>();
 
         for (Locale locale : locales) {
             int res = localTTS.isLanguageAvailable(locale);
             if (res == TextToSpeech.LANG_COUNTRY_AVAILABLE) {
-                System.out.println(locale);
-                localeList.add(locale.getLanguage());
+                String lang = locale.getLanguage();
+                if(!localeSet.contains(lang)){
+                    localeSet.add(lang);
+                    localeList.add(locale);
+                }
             }
         }
 
-        return new ArrayList<>(localeList);
+        return localeList;
     }
 
     public void finishTTS(){
