@@ -7,6 +7,7 @@ import android.text.Html
 import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
@@ -30,26 +31,32 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         (activity as? AppCompatActivity)?.supportActionBar?.hide()
         _binding = FragmentWebReaderBinding.bind(view)
 
-        viewModel.page.observe(viewLifecycleOwner, {
-            binding.bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT)
-            } else {
-                Html.fromHtml(it)
-            }
+        with(binding){
+            loadingIcon.isVisible = true
 
-            binding.bodyText.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    val offset = binding.bodyText.getOffsetForPosition(event.x, event.y)
-                    clickedWord = findWordForRightHanded(binding.bodyText.text.toString(), offset)
+            viewModel.page.observe(viewLifecycleOwner, {
+                bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT)
+                } else {
+                    Html.fromHtml(it)
                 }
-                return@setOnTouchListener false
-            }
 
-            binding.bodyText.setOnClickListener {
-                clickedWord?.let { word -> showTextDialog(word) }
-                clickedWord = null
-            }
-        })
+                bodyText.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        val offset = bodyText.getOffsetForPosition(event.x, event.y)
+                        clickedWord = findWordForRightHanded(bodyText.text.toString(), offset)
+                    }
+                    return@setOnTouchListener false
+                }
+
+                bodyText.setOnClickListener {
+                    clickedWord?.let { word -> showTextDialog(word) }
+                    clickedWord = null
+                }
+
+                loadingIcon.isVisible = false
+            })
+        }
 
         viewModel.loadDoc(args.link)
     }
