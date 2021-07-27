@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.text.Html
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +27,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     val args: WebReaderFragmentArgs by navArgs()
 
     private var clickedWord: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -64,6 +71,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        menu.clear()
     }
 
     private fun showTextDialog(text: CharSequence){
