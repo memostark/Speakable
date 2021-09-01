@@ -15,6 +15,7 @@
         android:layout_weight="0.5"
         android:textIsSelectable="true"
         app:autoSizeTextType="uniform">
+<!--        app:autoSizeMaxTextSize="@dimen/text_size_large"-->
         <requestFocus />
     </TextView>
     <View

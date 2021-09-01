@@ -126,7 +126,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     /**
-     * Handle scaling in text view with selectable text and clickable spans. Intercept touch event if is scaling.
+     * Handle scaling in text view with selectable text and clickable spans. Intercept touch event if it's scaling.
      *
      * Inspired by: https://stackoverflow.com/a/5369880/10244759
      */
@@ -161,7 +161,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
         }
 
-        // When scaling don't handle other events, this avoids unexpected click and changes of page
+        // When scaling don't handle other events, this avoids unexpected clicks and changes of page
         return if(scaleInProgress) true else super.dispatchTouchEvent(ev)
     }
 
@@ -496,6 +496,19 @@ class VisualizeTextActivity: AppCompatActivity() {
             viewPager.isUserInputEnabled = true
             textCardView.scaleX = 1f
             textCardView.scaleY = 1f
+
+            detector ?: return
+            val factor = detector.scaleFactor
+
+            // Check if it should toggle off full screen mode
+            if(viewModel.fullScreen && factor < 1.0f){
+                val lastWidth = screenWidth * factor
+                val middleWidth = cardWidth + (screenWidth - cardWidth) / 2f
+                if(lastWidth < middleWidth){
+                    toggleImmersiveMode()
+                    initialWidth = cardWidth
+                }
+            }
         }
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
@@ -518,12 +531,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                     toggleImmersiveMode()
                     pinchDetected = true
                     initialWidth = screenWidth
-                    return true
-                }
-                if(detector.scaleFactor < PINCH_LOWER_LIMIT && fullScreen){
-                    toggleImmersiveMode()
-                    pinchDetected = true
-                    initialWidth = cardWidth
                     return true
                 }
             }
@@ -623,6 +630,5 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val FILE_ID = "fileId"
 
         const val PINCH_UPPER_LIMIT = 1.15f
-        const val PINCH_LOWER_LIMIT = 0.8f
     }
 }
