@@ -6,7 +6,6 @@ import android.text.method.LinkMovementMethod
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.utils.dpToPixel
@@ -20,8 +19,6 @@ class VisualizerAdapter(
     private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val isExpanded
-        get() = viewModel.fullScreen
     val hasBottomSheet
         get() = viewModel.hasBottomSheet
 
@@ -39,7 +36,7 @@ class VisualizerAdapter(
         val layout = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
         return when(viewType){
             R.layout.visualizer_split_page_item -> SplitPageViewHolder(layout)
-            else -> if(measuringPage) ViewHolder(layout) else PageViewHolder(isExpanded, layout)
+            else -> if(measuringPage) ViewHolder(layout) else PageViewHolder(layout)
         }
     }
 
@@ -70,7 +67,7 @@ class VisualizerAdapter(
     }
 
     open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
-        protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
+        private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         private val actionModeCallback = PageActionModeCallback(pageTextView, showTextDialog)
 
@@ -118,12 +115,7 @@ class VisualizerAdapter(
 
     }
 
-    inner class PageViewHolder(isExpanded: Boolean, view: View): ViewHolder(view){
-
-        init {
-            val autoSizeType = if(isExpanded) TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM else TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE
-            TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, autoSizeType)
-        }
+    inner class PageViewHolder(view: View): ViewHolder(view){
 
         fun bind(text: CharSequence){
             setPageText(text)

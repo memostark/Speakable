@@ -477,12 +477,14 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
 
-        private var initialWidth = 0
+        // Ratio between the width of the card and the screen
+        private var ratio = 1f
+        private var scale = 1f
 
         init {
             textCardView.doOnPreDraw {
                 cardWidth = textCardView.width
-                initialWidth = cardWidth
+                ratio = screenWidth.toFloat() / cardWidth.toFloat()
             }
         }
 
@@ -494,8 +496,6 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         override fun onScaleEnd(detector: ScaleGestureDetector?) {
             viewPager.isUserInputEnabled = true
-            textCardView.scaleX = 1f
-            textCardView.scaleY = 1f
 
             detector ?: return
             val factor = detector.scaleFactor
@@ -506,9 +506,12 @@ class VisualizeTextActivity: AppCompatActivity() {
                 val middleWidth = cardWidth + (screenWidth - cardWidth) / 2f
                 if(lastWidth < middleWidth){
                     toggleImmersiveMode()
-                    initialWidth = cardWidth
+                    scale = 1f
                 }
             }
+
+            textCardView.scaleX = scale
+            textCardView.scaleY = scale
         }
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
@@ -517,11 +520,12 @@ class VisualizeTextActivity: AppCompatActivity() {
             if(!pinchDetected){
 
                 val factor = detector.scaleFactor
-                val newWidth = initialWidth * factor
+                val newScale = scale * factor
 
-                if (newWidth >= cardWidth) {
-                    textCardView.scaleX = factor
-                    textCardView.scaleY = factor
+                // Avoid making the card smaller
+                if (newScale >= 1f) {
+                    textCardView.scaleX = newScale
+                    textCardView.scaleY = newScale
                     textCardView.invalidate()
                 }
 
@@ -530,7 +534,9 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
-                    initialWidth = screenWidth
+                    scale = ratio
+                    textCardView.scaleX = ratio
+                    textCardView.scaleY = ratio
                     return true
                 }
             }
@@ -546,15 +552,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         if(viewModel.fullScreen){
             hideSystemUi()
-
-            expandedConstraintSet.applyTo(rootConstraintLayout)
-
         }else{
             window.decorView.systemUiVisibility = 0
             actionBar?.show()
-
-            contractedConstraintSet.applyTo(rootConstraintLayout)
-
         }
 
         viewPager.post { setBottomSheetPeekHeight() }
