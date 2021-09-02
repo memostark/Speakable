@@ -12,8 +12,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.edit
 import androidx.core.view.*
 import androidx.viewpager2.widget.ViewPager2
@@ -33,7 +31,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private val viewModel: VisualizeTextViewModel by viewModels()
 
     private lateinit var viewPager: ViewPager2
-    private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var pagesSeekBar: SeekBar
     private lateinit var currentPageLabel: TextView
@@ -49,9 +46,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private var pageItemView: View? = null
 
     private lateinit var pagesAdapter: VisualizerAdapter
-
-    private val expandedConstraintSet = ConstraintSet()
-    private val contractedConstraintSet = ConstraintSet()
 
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
@@ -75,11 +69,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         bottomText = findViewById(R.id.page_bottom_text_view)
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
         translationProgress = findViewById(R.id.page_translation_progress)
-
-        rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
-
-        contractedConstraintSet.clone(rootConstraintLayout)
-        expandedConstraintSet.clone(this, R.layout.activity_visualize_text_expanded)
 
         currentPageLabel = findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
@@ -224,7 +213,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             pages.observe(this@VisualizeTextActivity, EventObserver {
                 updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
-                updateScreenMode()
             })
 
             book.observe(this@VisualizeTextActivity, {
@@ -244,7 +232,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                     View.VISIBLE
                 }
                 showTOCBtn.visibility = tocVisibility
-                contractedConstraintSet.setVisibility(R.id.show_toc_btn, tocVisibility)
             })
 
             translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
@@ -295,15 +282,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Subtract 1 because seek bar is zero based numbering
         pagesSeekBar.max = pages.size - 1
         pagesSeekBar.progress = position
-    }
-
-    private fun updateScreenMode() {
-        if(viewModel.fullScreen) {
-            hideSystemUi()
-            expandedConstraintSet.applyTo(rootConstraintLayout)
-
-            viewPager.post { setBottomSheetPeekHeight() }
-        }
     }
 
     private fun showSettingsPopUp(view: View) {

@@ -55,6 +55,10 @@ class VisualizeTextViewModel @ViewModelInject constructor(
 
     private var currentPages = listOf<CharSequence>()
     private val _pages = MutableLiveData<Event<List<CharSequence>>>()
+    /**
+     * Called every time pages have been processed, called when visualizer starts and
+     * when switching between chapters.
+     */
     val pages: LiveData<Event<List<CharSequence>>>
         get() = _pages
 
