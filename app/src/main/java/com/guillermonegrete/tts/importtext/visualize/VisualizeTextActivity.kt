@@ -54,6 +54,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private lateinit var scaleDetector: ScaleGestureDetector
 
+    private var cardWidth = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
@@ -63,6 +65,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         pagesSeekBar = findViewById(R.id.pages_seekBar)
 
         textCardView = findViewById(R.id.text_reader_card_view)
+        setUpCardViewDimensions()
 
         // Bottom sheet
         bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
@@ -107,6 +110,23 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         setUIChangesListener()
         setUpSeekBar()
+    }
+
+    /**
+     *  Changes the dimensions of the card to have the same aspect ratio as the screen.
+     */
+    private fun setUpCardViewDimensions() {
+        val metrics = resources.displayMetrics
+        val ratio = metrics.heightPixels.toFloat() / metrics.widthPixels.toFloat()
+
+        val cardParams = textCardView.layoutParams
+
+        textCardView.post {
+            cardWidth = (textCardView.height / ratio).toInt()
+            cardParams.width = cardWidth
+            cardParams.height = textCardView.height
+            textCardView.layoutParams = cardParams
+        }
     }
 
     override fun onPause() {
@@ -451,20 +471,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
 
         private var pinchDetected = false
-        private var cardWidth = 0
 
         private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
 
-        // Ratio between the width of the card and the screen
-        private var ratio = 1f
+        private val ratio
+            get() = screenWidth.toFloat() / cardWidth
         private var scale = 1f
-
-        init {
-            textCardView.doOnPreDraw {
-                cardWidth = textCardView.width
-                ratio = screenWidth.toFloat() / cardWidth.toFloat()
-            }
-        }
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
             viewPager.isUserInputEnabled = false
