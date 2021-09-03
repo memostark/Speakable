@@ -14,7 +14,9 @@
         android:layout_marginStart="40dp"
         android:layout_weight="0.5"
         android:textIsSelectable="true"
-        app:autoSizeTextType="uniform">
+        app:autoSizeTextType="uniform"
+        app:autoSizeMaxTextSize="@dimen/text_size_large">
+<!--    Set large size as max, we only want the text to shrink -->
         <requestFocus />
     </TextView>
     <View

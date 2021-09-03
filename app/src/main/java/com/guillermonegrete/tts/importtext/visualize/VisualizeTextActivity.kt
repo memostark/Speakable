@@ -12,8 +12,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.edit
 import androidx.core.view.*
 import androidx.viewpager2.widget.ViewPager2
@@ -33,7 +31,6 @@ class VisualizeTextActivity: AppCompatActivity() {
     private val viewModel: VisualizeTextViewModel by viewModels()
 
     private lateinit var viewPager: ViewPager2
-    private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var pagesSeekBar: SeekBar
     private lateinit var currentPageLabel: TextView
@@ -50,15 +47,21 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private lateinit var pagesAdapter: VisualizerAdapter
 
-    private val expandedConstraintSet = ConstraintSet()
-    private val contractedConstraintSet = ConstraintSet()
-
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
 
     private var splitterCreated = true
 
     private lateinit var scaleDetector: ScaleGestureDetector
+
+    private var cardWidth = 0
+    private var statusBarHeight = 0
+
+    /**
+     * The ratio between the size of the screen and card view, ratio = cardWith / screenWidth
+     * Used to get the desired dimensions of the card.
+     */
+    private val ratio = 0.8f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,17 +72,13 @@ class VisualizeTextActivity: AppCompatActivity() {
         pagesSeekBar = findViewById(R.id.pages_seekBar)
 
         textCardView = findViewById(R.id.text_reader_card_view)
+        setUpCardViewDimensions()
 
         // Bottom sheet
         bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
         bottomText = findViewById(R.id.page_bottom_text_view)
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
         translationProgress = findViewById(R.id.page_translation_progress)
-
-        rootConstraintLayout = findViewById(R.id.visualizer_root_layout)
-
-        contractedConstraintSet.clone(rootConstraintLayout)
-        expandedConstraintSet.clone(this, R.layout.activity_visualize_text_expanded)
 
         currentPageLabel = findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
@@ -120,13 +119,34 @@ class VisualizeTextActivity: AppCompatActivity() {
         setUpSeekBar()
     }
 
+    /**
+     *  Changes the dimensions of the card to have the same aspect ratio as the screen
+     *  and smaller size given by the defined ratio.
+     */
+    private fun setUpCardViewDimensions() {
+
+        val cardParams = textCardView.layoutParams
+        val metrics = resources.displayMetrics
+
+        cardWidth = (metrics.widthPixels * ratio).toInt()
+        cardParams.width = cardWidth
+        cardParams.height = (metrics.heightPixels * ratio).toInt()
+        textCardView.layoutParams = cardParams
+
+        // In case a status bar exists, offset the card view in order to keep it centered with the screen
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
+
+        textCardView.translationY = - statusBarHeight / 2f
+    }
+
     override fun onPause() {
         super.onPause()
         viewModel.saveBookData()
     }
 
     /**
-     * Handle scaling in text view with selectable text and clickable spans. Intercept touch event if is scaling.
+     * Handle scaling in text view with selectable text and clickable spans. Intercept touch event if it's scaling.
      *
      * Inspired by: https://stackoverflow.com/a/5369880/10244759
      */
@@ -161,7 +181,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
         }
 
-        // When scaling don't handle other events, this avoids unexpected click and changes of page
+        // When scaling don't handle other events, this avoids unexpected clicks and changes of page
         return if(scaleInProgress) true else super.dispatchTouchEvent(ev)
     }
 
@@ -224,7 +244,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             pages.observe(this@VisualizeTextActivity, EventObserver {
                 updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
-                updateScreenMode()
             })
 
             book.observe(this@VisualizeTextActivity, {
@@ -244,7 +263,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                     View.VISIBLE
                 }
                 showTOCBtn.visibility = tocVisibility
-                contractedConstraintSet.setVisibility(R.id.show_toc_btn, tocVisibility)
             })
 
             translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
@@ -295,15 +313,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Subtract 1 because seek bar is zero based numbering
         pagesSeekBar.max = pages.size - 1
         pagesSeekBar.progress = position
-    }
-
-    private fun updateScreenMode() {
-        if(viewModel.fullScreen) {
-            hideSystemUi()
-            expandedConstraintSet.applyTo(rootConstraintLayout)
-
-            viewPager.post { setBottomSheetPeekHeight() }
-        }
     }
 
     private fun showSettingsPopUp(view: View) {
@@ -473,18 +482,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
 
         private var pinchDetected = false
-        private var cardWidth = 0
 
         private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
 
-        private var initialWidth = 0
-
-        init {
-            textCardView.doOnPreDraw {
-                cardWidth = textCardView.width
-                initialWidth = cardWidth
-            }
-        }
+        private val invRatio
+            get() = 1f / ratio
+        private var scale = 1f
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
             viewPager.isUserInputEnabled = false
@@ -494,8 +497,23 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         override fun onScaleEnd(detector: ScaleGestureDetector?) {
             viewPager.isUserInputEnabled = true
-            textCardView.scaleX = 1f
-            textCardView.scaleY = 1f
+
+            detector ?: return
+            val factor = detector.scaleFactor
+
+            // Check if it should toggle off full screen mode
+            if(viewModel.fullScreen && factor < 1.0f){
+                val lastWidth = screenWidth * factor
+                val middleWidth = cardWidth + (screenWidth - cardWidth) / 2f
+                if(lastWidth < middleWidth){
+                    toggleImmersiveMode()
+                    scale = 1f
+                    textCardView.translationY = - statusBarHeight.toFloat() / 2f
+                }
+            }
+
+            textCardView.scaleX = scale
+            textCardView.scaleY = scale
         }
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
@@ -504,11 +522,12 @@ class VisualizeTextActivity: AppCompatActivity() {
             if(!pinchDetected){
 
                 val factor = detector.scaleFactor
-                val newWidth = initialWidth * factor
+                val newScale = scale * factor
 
-                if (newWidth >= cardWidth) {
-                    textCardView.scaleX = factor
-                    textCardView.scaleY = factor
+                // Avoid making the card smaller
+                if (newScale >= 1f) {
+                    textCardView.scaleX = newScale
+                    textCardView.scaleY = newScale
                     textCardView.invalidate()
                 }
 
@@ -517,13 +536,11 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
-                    initialWidth = screenWidth
-                    return true
-                }
-                if(detector.scaleFactor < PINCH_LOWER_LIMIT && fullScreen){
-                    toggleImmersiveMode()
-                    pinchDetected = true
-                    initialWidth = cardWidth
+                    scale = invRatio
+                    textCardView.scaleX = invRatio
+                    textCardView.scaleY = invRatio
+                    // Remove the offset for the full screen, only necessary when the status bar is visible
+                    textCardView.translationY = 0f
                     return true
                 }
             }
@@ -539,15 +556,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         if(viewModel.fullScreen){
             hideSystemUi()
-
-            expandedConstraintSet.applyTo(rootConstraintLayout)
-
         }else{
             window.decorView.systemUiVisibility = 0
             actionBar?.show()
-
-            contractedConstraintSet.applyTo(rootConstraintLayout)
-
         }
 
         viewPager.post { setBottomSheetPeekHeight() }
@@ -623,6 +634,5 @@ class VisualizeTextActivity: AppCompatActivity() {
         const val FILE_ID = "fileId"
 
         const val PINCH_UPPER_LIMIT = 1.15f
-        const val PINCH_LOWER_LIMIT = 0.8f
     }
 }
