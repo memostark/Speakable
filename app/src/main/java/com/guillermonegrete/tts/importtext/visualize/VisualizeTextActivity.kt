@@ -55,6 +55,13 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var scaleDetector: ScaleGestureDetector
 
     private var cardWidth = 0
+    private var statusBarHeight = 0
+
+    /**
+     * The ratio between the size of the screen and card view, ratio = cardWith / screenWidth
+     * Used to get the desired dimensions of the card.
+     */
+    private val ratio = 0.8f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,20 +120,24 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     /**
-     *  Changes the dimensions of the card to have the same aspect ratio as the screen.
+     *  Changes the dimensions of the card to have the same aspect ratio as the screen
+     *  and smaller size given by the defined ratio.
      */
     private fun setUpCardViewDimensions() {
-        val metrics = resources.displayMetrics
-        val ratio = metrics.heightPixels.toFloat() / metrics.widthPixels.toFloat()
 
         val cardParams = textCardView.layoutParams
+        val metrics = resources.displayMetrics
 
-        textCardView.post {
-            cardWidth = (textCardView.height / ratio).toInt()
-            cardParams.width = cardWidth
-            cardParams.height = textCardView.height
-            textCardView.layoutParams = cardParams
-        }
+        cardWidth = (metrics.widthPixels * ratio).toInt()
+        cardParams.width = cardWidth
+        cardParams.height = (metrics.heightPixels * ratio).toInt()
+        textCardView.layoutParams = cardParams
+
+        // In case a status bar exists, offset the card view in order to keep it centered with the screen
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
+
+        textCardView.translationY = - statusBarHeight / 2f
     }
 
     override fun onPause() {
@@ -474,8 +485,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
 
-        private val ratio
-            get() = screenWidth.toFloat() / cardWidth
+        private val invRatio
+            get() = 1f / ratio
         private var scale = 1f
 
         override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
@@ -497,6 +508,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(lastWidth < middleWidth){
                     toggleImmersiveMode()
                     scale = 1f
+                    textCardView.translationY = - statusBarHeight.toFloat() / 2f
                 }
             }
 
@@ -524,9 +536,11 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
-                    scale = ratio
-                    textCardView.scaleX = ratio
-                    textCardView.scaleY = ratio
+                    scale = invRatio
+                    textCardView.scaleX = invRatio
+                    textCardView.scaleY = invRatio
+                    // Remove the offset for the full screen, only necessary when the status bar is visible
+                    textCardView.translationY = 0f
                     return true
                 }
             }

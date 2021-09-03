@@ -17,19 +17,18 @@
         tools:text="Chapter: 1 of 5" />
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/text_reader_card_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:id="@+id/text_reader_card_view"
-        app:layout_constraintBottom_toTopOf="@+id/reader_current_page"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:elevation="4dp"
+        app:cardBackgroundColor="?attr/cardBackground"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/reader_current_chapter"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="?attr/cardBackground"
-        android:elevation="4dp">
+        app:layout_constraintTop_toTopOf="parent">
+
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -43,9 +42,9 @@
                 android:id="@+id/visualizer_bottom_sheet"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-                app:behavior_peekHeight="60dp"
                 android:visibility="gone"
+                app:behavior_peekHeight="60dp"
+                app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
                 tools:visibility="visible">
 
                 <View
@@ -83,22 +82,22 @@
                     app:iconTint="?iconTintColor"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@id/peek_view"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Button.Circle"/>
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Button.Circle" />
 
                 <TextView
                     android:id="@+id/page_bottom_text_view"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
+                    android:background="?cardBackground"
                     android:paddingStart="40dp"
                     android:paddingEnd="40dp"
                     android:paddingBottom="8dp"
                     android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                    android:background="?cardBackground"
+                    app:autoSizeMaxTextSize="30sp"
+                    app:autoSizeTextType="uniform"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/page_translate_btn"
-                    app:autoSizeTextType="uniform"
-                    app:autoSizeMaxTextSize="30sp"
-                    tools:text="Real content to display"/>
+                    tools:text="Real content to display" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/guideline_mid_height"
@@ -112,12 +111,12 @@
                     style="@android:style/Widget.Material.ProgressBar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:visibility="invisible"
                     app:layout_constraintBottom_toBottomOf="@+id/page_bottom_text_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/peek_view"
-                    android:visibility="invisible"
-                    tools:visibility="visible"/>
+                    tools:visibility="visible" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
     </androidx.cardview.widget.CardView>
