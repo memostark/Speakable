@@ -51,7 +51,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 bodyText.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = bodyText.getOffsetForPosition(event.x, event.y)
-                        clickedWord = findWordForRightHanded(bodyText.text.toString(), offset)
+                        val possibleWord = findWordForRightHanded(bodyText.text.toString(), offset)
+                        clickedWord = if(possibleWord.isBlank()) null else possibleWord
                     }
                     return@setOnTouchListener false
                 }
@@ -102,27 +103,20 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         var startIndex = newOffset
         var endIndex = newOffset
         try {
-            while (str[startIndex] != ' ' && str[startIndex] != '\n') {
+            while (Character.isLetterOrDigit(str[startIndex])) {
                 startIndex--
             }
         } catch (e: StringIndexOutOfBoundsException) {
             startIndex = 0
         }
         try {
-            while (str[endIndex] != ' ' && str[endIndex] != '\n') {
+            while (Character.isLetterOrDigit(str[endIndex])) {
                 endIndex++
             }
         } catch (e: StringIndexOutOfBoundsException) {
             endIndex = str.length
         }
 
-        // without this code, you will get 'here!' instead of 'here'
-        // if you use only english, just check whether this is alphabet,
-        // but 'I' use korean, so i use below algorithm to get clean word.
-        val last = str[endIndex - 1]
-        if (last == ',' || last == '.' || last == '!' || last == '?' || last == ':' || last == ';') {
-            endIndex--
-        }
         return str.substring(startIndex, endIndex)
     }
 }
