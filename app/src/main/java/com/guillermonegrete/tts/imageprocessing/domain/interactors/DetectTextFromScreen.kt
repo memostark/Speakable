@@ -3,14 +3,14 @@ package com.guillermonegrete.tts.imageprocessing.domain.interactors
 import android.graphics.Bitmap
 import android.graphics.Rect
 import com.guillermonegrete.tts.AbstractInteractor
-import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.imageprocessing.ImageProcessingSource
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor
+import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 
 class DetectTextFromScreen @Inject constructor (
-    executor: Executor,
+    executor: ExecutorService,
     mainThread: MainThread,
     private val imageProcessor: ImageProcessingSource
 ): AbstractInteractor(executor, mainThread) {

@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * This abstract class implements some common methods for all interactors. Cancelling an interactor, check if its running
@@ -13,17 +12,11 @@ import java.util.concurrent.Executors;
  */
 public abstract class AbstractInteractor implements Interactor {
 
-    protected Executor mThreadExecutor;
     protected ExecutorService executorService;
     protected MainThread mMainThread;
 
     protected volatile boolean mIsCanceled;
     protected volatile boolean mIsRunning;
-
-    public AbstractInteractor(Executor executor, MainThread mainThread){
-        mThreadExecutor = executor;
-        mMainThread = mainThread;
-    }
 
     public AbstractInteractor(ExecutorService executor, MainThread mainThread){
         executorService = executor;
@@ -59,10 +52,6 @@ public abstract class AbstractInteractor implements Interactor {
         mIsRunning = true;
 
         // start running this interactor in a background thread
-        if(mThreadExecutor != null) mThreadExecutor.execute(this); else {
-            if (executorService == null) executorService = Executors.newFixedThreadPool(4);
-            executorService.execute(this::run);
-        }
-
+        if(!executorService.isShutdown()) executorService.execute(this::run);
     }
 }

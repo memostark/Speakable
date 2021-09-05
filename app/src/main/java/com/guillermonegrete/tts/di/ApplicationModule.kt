@@ -6,9 +6,7 @@ import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import android.util.Xml
 import androidx.room.Room
-import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
-import com.guillermonegrete.tts.ThreadExecutor
 import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.customtts.TTS
 import com.guillermonegrete.tts.data.preferences.DefaultSettingsRepository
@@ -149,9 +147,6 @@ object ApplicationModule {
 @InstallIn(ApplicationComponent::class)
 @Module
 abstract class ApplicationModuleBinds {
-
-    @Binds
-    abstract fun bindExecutor(executor: ThreadExecutor): Executor
 
     @Binds
     abstract fun bindThread(executor: MainThreadImpl): MainThread
