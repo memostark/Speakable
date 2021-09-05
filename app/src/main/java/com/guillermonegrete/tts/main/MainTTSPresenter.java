@@ -4,10 +4,11 @@ package com.guillermonegrete.tts.main;
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
+
+import java.util.concurrent.ExecutorService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -24,7 +25,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
     private String text;
 
     @Inject
-    MainTTSPresenter(Executor executor, MainThread mainThread, WordRepositorySource wordRepository, CustomTTS tts) {
+    MainTTSPresenter(ExecutorService executor, MainThread mainThread, WordRepositorySource wordRepository, CustomTTS tts) {
         super(executor, mainThread);
         this.tts = tts;
         this.wordRepository = wordRepository;
@@ -88,7 +89,7 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
             System.out.println("On engine ready");
 
             System.out.println("Running tts interactor");
-            PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, tts, ttsListener, text);
+            PlayTTS interactor = new PlayTTS(executorService, mMainThread, tts, ttsListener, text);
             interactor.execute();
         }
 

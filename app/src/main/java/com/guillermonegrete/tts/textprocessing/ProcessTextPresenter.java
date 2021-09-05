@@ -233,7 +233,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         }else if(isAvailable){
             isLoading = true;
             mView.showLoadingTTS();
-            PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, ttsListener, text);
+            PlayTTS interactor = new PlayTTS(executorService, mMainThread, customTTS, ttsListener, text);
             interactor.execute();
         }
     }

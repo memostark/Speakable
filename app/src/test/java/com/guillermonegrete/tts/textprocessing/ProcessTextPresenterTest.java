@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.textprocessing;
 import android.content.SharedPreferences;
 
 import com.guillermonegrete.tts.customtts.CustomTTS;
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TestThreadExecutor;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
@@ -30,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
@@ -62,12 +62,12 @@ public class ProcessTextPresenterTest {
 
     private ProcessTextPresenter presenter;
 
-    private List<WikiItem> defaultDictionaryItems = Arrays.asList(
+    private final List<WikiItem> defaultDictionaryItems = Arrays.asList(
             new WiktionaryItem("First", "First header"),
             new WiktionaryItem("Second", "Second header")
     );
 
-    private List<ExternalLink> defaultLinksItems = Collections.singletonList(
+    private final List<ExternalLink> defaultLinksItems = Collections.singletonList(
             new ExternalLink("Dummy Site", "dummy-link", "en")
     );
 
@@ -82,7 +82,7 @@ public class ProcessTextPresenterTest {
 
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
-        Executor executor = new TestThreadExecutor();
+        ExecutorService executor = new TestThreadExecutor();
         ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, sharedPreferences, customTTS, getTranslationInteractor);
         presenter.setView(view);
         return presenter;
