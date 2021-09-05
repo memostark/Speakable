@@ -1,13 +1,13 @@
 package com.guillermonegrete.tts.textprocessing.domain.interactors
 
 import com.guillermonegrete.tts.AbstractInteractor
-import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.db.ExternalLink
+import java.util.concurrent.ExecutorService
 
 class GetExternalLink(
-    executor: Executor,
+    executor: ExecutorService,
     mainThread: MainThread,
     private val callback: GetExternalLinksInteractor.Callback,
     private val dataSource: ExternalLinksDataSource,

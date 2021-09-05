@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
@@ -19,7 +18,6 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInteractor;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
-import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.db.Words;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
@@ -29,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
@@ -52,7 +51,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Inject
     ProcessTextPresenter(
-            Executor executor,
+            ExecutorService executor,
             MainThread mainThread,
             WordRepositorySource repository,
             DictionaryRepository dictRepository,
@@ -110,7 +109,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         EspressoIdlingResource.INSTANCE.increment();
 
-        GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
+        GetLayout interactor = new GetLayout(executorService, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
                 foundWord = word;
@@ -167,7 +166,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         checkTTSInitialization();
 
-        GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
+        GetDictionaryEntry interactor = new GetDictionaryEntry(executorService, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
 
             @Override
             public void onEntryNotAvailable() {
@@ -194,7 +193,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     private void getExternalLinks(String language) {
         GetExternalLink link_interactor = new GetExternalLink(
-                mExecutor,
+                executorService,
                 mMainThread,
                 links -> {
                     mView.setExternalDictionary(links);
@@ -220,7 +219,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onClickDeleteWord(String word) {
-        DeleteWord interactor = new DeleteWord(mExecutor, mMainThread, mRepository, word);
+        DeleteWord interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
         interactor.execute();
         mView.showWordDeleted();
     }
@@ -262,7 +261,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         }, languageFrom, languageTo);
 
         GetExternalLink linkInteractor = new GetExternalLink(
-                mExecutor,
+                executorService,
                 mMainThread,
                 links -> mView.updateExternalLinks(links),
                 linksRepository,
@@ -320,6 +319,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void destroy() {
         onViewInactive();
         customTTS.removeListener(ttsListener);
+        System.out.println("Shutting down service");
+        executorService.shutdown();
+        executorService.shutdownNow();
     }
 
     private void onViewInactive(){
