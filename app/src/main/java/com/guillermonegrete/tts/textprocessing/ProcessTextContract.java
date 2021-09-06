@@ -11,15 +11,12 @@ import java.util.List;
 public interface ProcessTextContract {
 
     interface View extends BaseView<Presenter>{
-        void setWiktionaryLayout(Words word, List<WikiItem> items);
 
         void setSavedWordLayout(Words word);
 
         void setDictWithSaveWordLayout(Words word, List<WikiItem> items);
 
         void setTranslationLayout(Words word);
-
-        void setSentenceLayout(Words word);
 
         void setExternalDictionary(List<ExternalLink> links);
 

@@ -58,7 +58,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             wordRepository.getLanguageAndTranslation(mText, languageFrom, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
                 @Override
                 public void onTranslationAndLanguage(Words word) {
-                    mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION);
+                    mMainThread.post(() -> mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION));
                 }
 
                 @Override

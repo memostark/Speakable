@@ -3,6 +3,9 @@ package com.guillermonegrete.tts.textprocessing;
 
 import android.content.SharedPreferences;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
@@ -16,6 +19,7 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryE
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInteractor;
+import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.db.Words;
@@ -48,6 +52,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean hasTranslation;
 
     private boolean viewIsActive = false;
+
+    private final MutableLiveData<GetLayoutResult> layoutResult = new MutableLiveData<>();
 
     @Inject
     ProcessTextPresenter(
@@ -118,17 +124,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 switch (layoutType){
                     case WORD_TRANSLATION:
                         getExternalLinks(word.lang);
-                        mView.setTranslationLayout(word);
                         break;
                     case SAVED_WORD:
                         insideLocalDatabase = true;
                         getExternalLinks(word.lang);
-                        mView.setSavedWordLayout(word);
-                        break;
-                    case SENTENCE_TRANSLATION:
-                        mView.setSentenceLayout(word);
                         break;
                 }
+
+                layoutResult.setValue(new GetLayoutResult.WordSuccess(layoutType, word));
 
                 EspressoIdlingResource.INSTANCE.decrement();
             }
@@ -138,7 +141,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 foundWord = word;
                 checkTTSInitialization();
                 getExternalLinks(word.lang);
-                mView.setWiktionaryLayout(word, items);
+                layoutResult.setValue(new GetLayoutResult.DictionarySuccess(word, items));
 
                 EspressoIdlingResource.INSTANCE.decrement();
             }
@@ -146,7 +149,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onTranslationError(String message) {
                 hasTranslation = false;
-                mView.showTranslationError(message);
+                layoutResult.setValue(new GetLayoutResult.Error(new Exception(message)));
 
                 EspressoIdlingResource.INSTANCE.decrement();
             }
@@ -396,4 +399,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             });
         }
     };
+
+    public LiveData<GetLayoutResult> getLayoutResult() {
+        return layoutResult;
+    }
 }

@@ -7,6 +7,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -27,6 +28,7 @@ import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
+import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
@@ -141,6 +143,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         super.onViewCreated(view, savedInstanceState)
         setSwipeListener(view)
 
+        (presenter as ProcessTextPresenter).layoutResult.observe(viewLifecycleOwner){
+            onLayoutResult(it)
+        }
+
         val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
         if(extraWord != null){
             presenter.start(extraWord)
@@ -216,7 +222,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         bindingWord.saveIcon.setOnClickListener { presenter.onClickBookmark() }
     }
 
-    override fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
+    fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
         val isLargeWindow = preferences.getBoolean(SettingsFragment.PREF_WINDOW_SIZE, ButtonsPreference.DEFAULT_VALUE)
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
         setWordLayout(word)
@@ -263,7 +269,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         createSmallViewPager()
     }
 
-    override fun setSentenceLayout(word: Words) {
+    private fun setSentenceLayout(word: Words) {
         bindingSentence.textTranslation.text = word.definition
         textFromLanguage.text = word.lang
     }
@@ -288,6 +294,21 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         }
 
         this.pagerAdapter = pagerAdapter
+    }
+
+    private fun onLayoutResult(result: GetLayoutResult) {
+        when(result){
+            is GetLayoutResult.WordSuccess -> {
+                when(result.type){
+                    ProcessTextLayoutType.WORD_TRANSLATION -> setTranslationLayout(result.word)
+                    ProcessTextLayoutType.SAVED_WORD -> setSavedWordLayout(result.word)
+                    ProcessTextLayoutType.SENTENCE_TRANSLATION -> setSentenceLayout(result.word)
+                    else -> Log.e("TextInfoDialog", "Unknown layout type: ${result.type}")
+                }
+            }
+            is GetLayoutResult.DictionarySuccess -> setWiktionaryLayout(result.word, result.items)
+            is GetLayoutResult.Error -> showTranslationError(result.exception.message ?: result.exception.toString())
+        }
     }
 
     override fun setTranslationErrorMessage() {
