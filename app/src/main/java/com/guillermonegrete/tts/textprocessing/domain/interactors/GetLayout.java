@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.textprocessing.domain.interactors;
 
 import com.guillermonegrete.tts.AbstractInteractor;
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.textprocessing.ProcessTextLayoutType;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
@@ -11,6 +10,7 @@ import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 
 public class GetLayout extends AbstractInteractor implements GetLayoutInteractor {
@@ -30,7 +30,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private List<WikiItem> items;
 
 
-    public GetLayout(Executor threadExecutor, MainThread mainThread,
+    public GetLayout(ExecutorService threadExecutor, MainThread mainThread,
                      Callback callback, WordRepositorySource repository,
                      DictionaryRepository dictRepository, String text,
                      String languageFrom,
@@ -58,7 +58,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             wordRepository.getLanguageAndTranslation(mText, languageFrom, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
                 @Override
                 public void onTranslationAndLanguage(Words word) {
-                    mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION);
+                    mMainThread.post(() -> mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION));
                 }
 
                 @Override

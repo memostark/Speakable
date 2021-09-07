@@ -1,14 +1,14 @@
 package com.guillermonegrete.tts.textprocessing.domain.interactors
 
 import com.guillermonegrete.tts.AbstractInteractor
-import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.data.source.DictionaryDataSource
 import com.guillermonegrete.tts.data.source.DictionaryRepository
+import java.util.concurrent.ExecutorService
 
 class GetDictionaryEntry(
-        executor: Executor,
+        executor: ExecutorService,
         mainThread: MainThread,
         private val dictionaryRepository: DictionaryRepository,
         private val text: String,
@@ -31,5 +31,4 @@ class GetDictionaryEntry(
 
         })
     }
-
 }

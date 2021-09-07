@@ -1,14 +1,36 @@
 package com.guillermonegrete.tts;
 
-public class TestThreadExecutor implements Executor {
+import java.util.List;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class TestThreadExecutor extends AbstractExecutorService {
+
     @Override
-    public void execute(final AbstractInteractor interactor) {
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                interactor.run();
-            }
-        };
-        runnable.run();
+    public void shutdown() {}
+
+    @Override
+    public List<Runnable> shutdownNow() {
+        return null;
+    }
+
+    @Override
+    public boolean isShutdown() {
+        return false;
+    }
+
+    @Override
+    public boolean isTerminated() {
+        return false;
+    }
+
+    @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return false;
+    }
+
+    @Override
+    public void execute(Runnable command) {
+        command.run();
     }
 }

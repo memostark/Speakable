@@ -5,12 +5,14 @@ import com.guillermonegrete.tts.textprocessing.ProcessTextPresenter
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.components.FragmentComponent
+import dagger.hilt.android.scopes.FragmentScoped
 
-@InstallIn(SingletonComponent::class)
+@InstallIn(FragmentComponent::class)
 @Module
-abstract class ProcessTextModule {
+abstract class ProcessTextModuleBinds {
 
+    @FragmentScoped
     @Binds
     abstract fun bindPresenter(presenter: ProcessTextPresenter): ProcessTextContract.Presenter
 }

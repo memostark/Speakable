@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.textprocessing.domain.interactors;
 
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
@@ -11,9 +10,11 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.concurrent.ExecutorService;
+
 public class GetLayoutTest {
     private MainThread mainThread;
-    @Mock private Executor executor;
+    @Mock private ExecutorService executor;
     @Mock private GetLayout.Callback callback;
     @Mock private WordRepository repository;
     @Mock private DictionaryRepository dictionaryRepository;

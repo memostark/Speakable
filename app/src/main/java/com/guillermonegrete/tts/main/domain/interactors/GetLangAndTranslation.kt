@@ -1,15 +1,15 @@
 package com.guillermonegrete.tts.main.domain.interactors
 
 import com.guillermonegrete.tts.AbstractInteractor
-import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.db.Words
+import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 
 class GetLangAndTranslation @Inject constructor(
-    executor: Executor,
+    executor: ExecutorService,
     mainThread: MainThread,
     private val wordRepository: WordRepositorySource
 ) : AbstractInteractor(executor, mainThread){

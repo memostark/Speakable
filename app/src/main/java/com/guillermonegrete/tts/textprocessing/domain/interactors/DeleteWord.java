@@ -1,16 +1,17 @@
 package com.guillermonegrete.tts.textprocessing.domain.interactors;
 
 import com.guillermonegrete.tts.AbstractInteractor;
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 
+import java.util.concurrent.ExecutorService;
+
 public class DeleteWord extends AbstractInteractor implements DeleteWordInteractor {
 
-    private String word;
-    private WordRepositorySource repository;
+    private final String word;
+    private final WordRepositorySource repository;
 
-    public DeleteWord(Executor executor, MainThread mainThread, WordRepositorySource repository, String word) {
+    public DeleteWord(ExecutorService executor, MainThread mainThread, WordRepositorySource repository, String word) {
         super(executor, mainThread);
         this.repository = repository;
         this.word = word;

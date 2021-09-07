@@ -6,9 +6,7 @@ import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import android.util.Xml
 import androidx.room.Room
-import com.guillermonegrete.tts.Executor
 import com.guillermonegrete.tts.MainThread
-import com.guillermonegrete.tts.ThreadExecutor
 import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.customtts.TTS
 import com.guillermonegrete.tts.data.preferences.DefaultSettingsRepository
@@ -41,6 +39,8 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
 import org.xmlpull.v1.XmlPullParser
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 @InstallIn(SingletonComponent::class)
 @Module
@@ -139,14 +139,14 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideXmlParser(): XmlPullParser = Xml.newPullParser()
+
+    @Provides
+    fun bindExecutorService(): ExecutorService = Executors.newFixedThreadPool(4)
 }
 
 @InstallIn(ApplicationComponent::class)
 @Module
 abstract class ApplicationModuleBinds {
-
-    @Binds
-    abstract fun bindExecutor(executor: ThreadExecutor): Executor
 
     @Binds
     abstract fun bindThread(executor: MainThreadImpl): MainThread

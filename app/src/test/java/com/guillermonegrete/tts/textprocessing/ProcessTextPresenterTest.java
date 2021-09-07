@@ -2,13 +2,16 @@ package com.guillermonegrete.tts.textprocessing;
 
 import android.content.SharedPreferences;
 
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
+
+import com.guillermonegrete.tts.LiveDataTestUtilKt;
 import com.guillermonegrete.tts.customtts.CustomTTS;
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TestThreadExecutor;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
@@ -20,6 +23,7 @@ import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.threading.TestMainThread;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -30,12 +34,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 public class ProcessTextPresenterTest {
+
+    @Rule
+    public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
     @Mock private ProcessTextContract.View view;
     @Mock private WordRepository wordRepository;
@@ -62,12 +72,12 @@ public class ProcessTextPresenterTest {
 
     private ProcessTextPresenter presenter;
 
-    private List<WikiItem> defaultDictionaryItems = Arrays.asList(
+    private final List<WikiItem> defaultDictionaryItems = Arrays.asList(
             new WiktionaryItem("First", "First header"),
             new WiktionaryItem("Second", "Second header")
     );
 
-    private List<ExternalLink> defaultLinksItems = Collections.singletonList(
+    private final List<ExternalLink> defaultLinksItems = Collections.singletonList(
             new ExternalLink("Dummy Site", "dummy-link", "en")
     );
 
@@ -82,7 +92,7 @@ public class ProcessTextPresenterTest {
 
     private ProcessTextPresenter givenPresenter(){
         MainThread mainThread = new TestMainThread();
-        Executor executor = new TestThreadExecutor();
+        ExecutorService executor = new TestThreadExecutor();
         ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, sharedPreferences, customTTS, getTranslationInteractor);
         presenter.setView(view);
         return presenter;
@@ -99,7 +109,8 @@ public class ProcessTextPresenterTest {
         Words return_word = new Words(test_text,"ES", "Test");
         getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
 
-        verify(view).setSavedWordLayout(return_word);
+        GetLayoutResult expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.SAVED_WORD, return_word);
+        assertEquals(LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()), expected);
     }
 
     @Test
@@ -111,7 +122,8 @@ public class ProcessTextPresenterTest {
         Words return_word = new Words(test_text,"ES", "Sentence test");
         getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(return_word);
 
-        verify(view).setSentenceLayout(return_word);
+        GetLayoutResult expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.SENTENCE_TRANSLATION, return_word);
+        assertEquals(LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()), expected);
     }
 
     @Test
@@ -128,7 +140,8 @@ public class ProcessTextPresenterTest {
         verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
         getDefinitionCallbacCaptor.getValue().onDataNotAvailable();
 
-        verify(view).setTranslationLayout(return_word);
+        GetLayoutResult expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.WORD_TRANSLATION, return_word);
+        assertEquals(LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()), expected);
 
     }
 
@@ -147,10 +160,8 @@ public class ProcessTextPresenterTest {
         verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
         getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(wiktionaryLanguages);
 
-
-        verify(view, never()).setTranslationLayout(return_word);
-//        verify(view).setWiktionaryLayout(wiktionaryLanguages);
-
+        GetLayoutResult expected = new GetLayoutResult.DictionarySuccess(return_word, new ArrayList<>());
+        assertEquals(expected, LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()));
     }
 
     @Test
@@ -226,11 +237,16 @@ public class ProcessTextPresenterTest {
         verify(dictionaryRepository).getDefinition(eq(inputText), getDefinitionCallbacCaptor.capture());
         getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(defaultDictionaryItems);
 
+        // Two values are set, first the dictionary result and then the error when translating
+        // Because LiveData is a data holder, not a stream, only the last value is available
+        GetLayoutResult result = LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult());
+        assertTrue(result instanceof GetLayoutResult.Error);
+        assertEquals("Error", ((GetLayoutResult.Error) result).getException().getMessage());
+
         // Return external links
         verify(linksRepository).getLanguageLinks(eq("un"), getLinksCaptor.capture());
         getLinksCaptor.getValue().onLinksRetrieved(defaultLinksItems);
 
-        verify(view).setWiktionaryLayout(emptyWord, defaultDictionaryItems);
         verify(view).setTranslationErrorMessage();
     }
 

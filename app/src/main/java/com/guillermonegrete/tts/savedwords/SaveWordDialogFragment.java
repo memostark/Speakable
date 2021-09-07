@@ -15,10 +15,11 @@ import android.widget.Toast;
 
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.ThreadExecutor;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 import com.guillermonegrete.tts.threading.MainThreadImpl;
+
+import java.util.concurrent.ExecutorService;
 
 import javax.inject.Inject;
 
@@ -28,7 +29,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class SaveWordDialogFragment extends DialogFragment {
     // TODO create view model for this, remove these dependencies
     @Inject WordsDAO wordsDAO;
-    @Inject ThreadExecutor executor;
+    @Inject ExecutorService executor;
     @Inject MainThreadImpl mainThread;
     private Context context;
 
@@ -131,21 +132,23 @@ public class SaveWordDialogFragment extends DialogFragment {
     }
 
     private void update(Words word){
-        executor.execute(new AbstractInteractor(executor, mainThread) {
+        AbstractInteractor interactor = new AbstractInteractor(executor, mainThread) {
             @Override
             public void run() {
                 wordsDAO.update(word);
             }
-        });
+        };
+        interactor.execute();
     }
 
     private void insert(Words word){
-        executor.execute(new AbstractInteractor(executor, mainThread) {
+        AbstractInteractor interactor = new AbstractInteractor(executor, mainThread) {
             @Override
             public void run() {
                 wordsDAO.insert(word);
             }
-        });
+        };
+        interactor.execute();
     }
 
     public interface Callback{

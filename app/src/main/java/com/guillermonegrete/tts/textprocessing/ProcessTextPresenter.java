@@ -3,10 +3,12 @@ package com.guillermonegrete.tts.textprocessing;
 
 import android.content.SharedPreferences;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
-import com.guillermonegrete.tts.Executor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
@@ -17,9 +19,9 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryE
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInteractor;
+import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
-import com.guillermonegrete.tts.data.source.WordRepository;
 import com.guillermonegrete.tts.db.Words;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
@@ -29,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
@@ -50,9 +53,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     private boolean viewIsActive = false;
 
+    private final MutableLiveData<GetLayoutResult> layoutResult = new MutableLiveData<>();
+
     @Inject
     ProcessTextPresenter(
-            Executor executor,
+            ExecutorService executor,
             MainThread mainThread,
             WordRepositorySource repository,
             DictionaryRepository dictRepository,
@@ -110,7 +115,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         EspressoIdlingResource.INSTANCE.increment();
 
-        GetLayout interactor = new GetLayout(mExecutor, mMainThread, new GetLayoutInteractor.Callback() {
+        GetLayout interactor = new GetLayout(executorService, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
                 foundWord = word;
@@ -119,17 +124,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 switch (layoutType){
                     case WORD_TRANSLATION:
                         getExternalLinks(word.lang);
-                        mView.setTranslationLayout(word);
                         break;
                     case SAVED_WORD:
                         insideLocalDatabase = true;
                         getExternalLinks(word.lang);
-                        mView.setSavedWordLayout(word);
-                        break;
-                    case SENTENCE_TRANSLATION:
-                        mView.setSentenceLayout(word);
                         break;
                 }
+
+                layoutResult.setValue(new GetLayoutResult.WordSuccess(layoutType, word));
 
                 EspressoIdlingResource.INSTANCE.decrement();
             }
@@ -139,7 +141,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 foundWord = word;
                 checkTTSInitialization();
                 getExternalLinks(word.lang);
-                mView.setWiktionaryLayout(word, items);
+                layoutResult.setValue(new GetLayoutResult.DictionarySuccess(word, items));
 
                 EspressoIdlingResource.INSTANCE.decrement();
             }
@@ -147,7 +149,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onTranslationError(String message) {
                 hasTranslation = false;
-                mView.showTranslationError(message);
+                layoutResult.setValue(new GetLayoutResult.Error(new Exception(message)));
 
                 EspressoIdlingResource.INSTANCE.decrement();
             }
@@ -167,7 +169,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         checkTTSInitialization();
 
-        GetDictionaryEntry interactor = new GetDictionaryEntry(mExecutor, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
+        GetDictionaryEntry interactor = new GetDictionaryEntry(executorService, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
 
             @Override
             public void onEntryNotAvailable() {
@@ -194,7 +196,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     private void getExternalLinks(String language) {
         GetExternalLink link_interactor = new GetExternalLink(
-                mExecutor,
+                executorService,
                 mMainThread,
                 links -> {
                     mView.setExternalDictionary(links);
@@ -220,7 +222,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onClickDeleteWord(String word) {
-        DeleteWord interactor = new DeleteWord(mExecutor, mMainThread, mRepository, word);
+        DeleteWord interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
         interactor.execute();
         mView.showWordDeleted();
     }
@@ -234,7 +236,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         }else if(isAvailable){
             isLoading = true;
             mView.showLoadingTTS();
-            PlayTTS interactor = new PlayTTS(mExecutor, mMainThread, customTTS, ttsListener, text);
+            PlayTTS interactor = new PlayTTS(executorService, mMainThread, customTTS, ttsListener, text);
             interactor.execute();
         }
     }
@@ -262,7 +264,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         }, languageFrom, languageTo);
 
         GetExternalLink linkInteractor = new GetExternalLink(
-                mExecutor,
+                executorService,
                 mMainThread,
                 links -> mView.updateExternalLinks(links),
                 linksRepository,
@@ -320,6 +322,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void destroy() {
         onViewInactive();
         customTTS.removeListener(ttsListener);
+        System.out.println("Shutting down service");
+        executorService.shutdown();
+        executorService.shutdownNow();
     }
 
     private void onViewInactive(){
@@ -394,4 +399,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             });
         }
     };
+
+    public LiveData<GetLayoutResult> getLayoutResult() {
+        return layoutResult;
+    }
 }

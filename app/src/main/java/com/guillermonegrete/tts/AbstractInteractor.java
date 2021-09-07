@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts;
 
+import java.util.concurrent.ExecutorService;
+
 /**
  * This abstract class implements some common methods for all interactors. Cancelling an interactor, check if its running
  * and finishing an interactor has mostly the same code throughout so that is why this class was created. Field methods
@@ -10,14 +12,14 @@ package com.guillermonegrete.tts;
  */
 public abstract class AbstractInteractor implements Interactor {
 
-    protected Executor mThreadExecutor;
+    protected ExecutorService executorService;
     protected MainThread mMainThread;
 
     protected volatile boolean mIsCanceled;
     protected volatile boolean mIsRunning;
 
-    public AbstractInteractor(Executor executor, MainThread mainThread){
-        mThreadExecutor = executor;
+    public AbstractInteractor(ExecutorService executor, MainThread mainThread){
+        executorService = executor;
         mMainThread = mainThread;
     }
 
@@ -50,7 +52,6 @@ public abstract class AbstractInteractor implements Interactor {
         mIsRunning = true;
 
         // start running this interactor in a background thread
-        mThreadExecutor.execute(this);
-
+        if(!executorService.isShutdown()) executorService.execute(this::run);
     }
 }
