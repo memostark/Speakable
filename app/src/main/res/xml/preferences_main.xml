@@ -13,25 +13,7 @@
         />
 
     <PreferenceCategory
-        android:title="Text recognizer">
-        <ListPreference
-            android:title="Select recognizer service"
-            android:summary="%s"
-            android:key="textRecognizerPref"
-            android:entries="@array/textRecognizerArray"
-            android:entryValues="@array/textRecognizerValues"
-            android:defaultValue="0"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory
         android:title="Translation">
-        <ListPreference
-            android:title="Select translation service"
-            android:summary="%s"
-            android:key="translator_pref_key"
-            android:entries="@array/translatorArray"
-            android:entryValues="@array/translatorValues"
-            android:defaultValue="10"/>
 
         <ListPreference
             android:title="Default from language"
@@ -57,7 +39,7 @@
         android:key="window_size"
         android:title="Pop up window size"
         android:summary="Small or large"
-        android:defaultValue="light" />
+        android:defaultValue="true" />
 
     <PreferenceCategory
         android:key="theme_category"
