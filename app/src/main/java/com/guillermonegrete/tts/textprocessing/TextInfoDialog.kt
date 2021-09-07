@@ -262,7 +262,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         Toast.makeText(context, "No translation found: $error", Toast.LENGTH_SHORT).show()
     }
 
-    override fun setTranslationLayout(word: Words) {
+    private fun setTranslationLayout(word: Words) {
         setBottomDialog()
         mFoundWords = word
         setWordLayout(word)

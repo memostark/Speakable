@@ -16,8 +16,6 @@ public interface ProcessTextContract {
 
         void setDictWithSaveWordLayout(Words word, List<WikiItem> items);
 
-        void setTranslationLayout(Words word);
-
         void setExternalDictionary(List<ExternalLink> links);
 
         void setTranslationErrorMessage();

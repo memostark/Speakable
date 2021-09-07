@@ -160,11 +160,8 @@ public class ProcessTextPresenterTest {
         verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
         getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(wiktionaryLanguages);
 
-
-        verify(view, never()).setTranslationLayout(return_word);
-//        verify(view).setWiktionaryLayout(wiktionaryLanguages);
-        // TODO Not testing what it should test
-
+        GetLayoutResult expected = new GetLayoutResult.DictionarySuccess(return_word, new ArrayList<>());
+        assertEquals(expected, LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()));
     }
 
     @Test
