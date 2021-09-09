@@ -32,7 +32,6 @@ class ParagraphAdapter(val items: List<String>): RecyclerView.Adapter<ParagraphA
                     val previousExpandedPos = expandedItemPos
                     val isExpanded = adapterPosition == expandedItemPos
                     expandedItemPos = if(isExpanded) -1 else adapterPosition
-                    toggleParagraph.setIconResource(if(isExpanded) R.drawable.ic_baseline_arrow_drop_down_24 else R.drawable.ic_baseline_arrow_right_24)
                     notifyItemChanged(previousExpandedPos)
                     notifyItemChanged(adapterPosition)
                 }
@@ -49,6 +48,7 @@ class ParagraphAdapter(val items: List<String>): RecyclerView.Adapter<ParagraphA
             val isExpanded = adapterPosition == expandedItemPos
             binding.translate.isInvisible = !isExpanded
             binding.translatedParagraph.isVisible = isExpanded
+            binding.toggleParagraph.setIconResource(if(isExpanded) R.drawable.ic_baseline_arrow_drop_down_24 else R.drawable.ic_baseline_arrow_right_24)
         }
 
     }

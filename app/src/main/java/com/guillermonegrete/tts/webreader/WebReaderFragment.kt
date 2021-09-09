@@ -16,6 +16,8 @@ import androidx.navigation.fragment.navArgs
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
+import java.text.BreakIterator
+import java.util.*
 
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
@@ -44,14 +46,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             loadingIcon.isVisible = true
 
             viewModel.page.observe(viewLifecycleOwner, {
-                println("Filtered html:\n $it")
                 bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT)
                 } else {
                     Html.fromHtml(it)
                 }
-
-                println("Parsed html:\n${bodyText.text}")
 
                 bodyText.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
@@ -87,13 +86,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             } else {
                 bodyText.isVisible = false
                 paragraphsList.isVisible = true
-                if(adapter == null) adapter = ParagraphAdapter(
-                    listOf(
-                        "First paragraph\nsecond sentence.",
-                        "Second paragraph\nsecond sentence\nthird sentence.",
-                        "Third paragraph\nsecond sentence."
-                    )
-                )
+                if(adapter == null) {
+                    val paragraphs = bodyText.text.toString().split("\n")
+                    adapter = ParagraphAdapter(paragraphs)
+                }
                 paragraphsList.adapter = adapter
             }
         }
