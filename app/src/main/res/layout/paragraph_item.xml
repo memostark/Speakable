@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+
+    <TextView
+        android:id="@+id/paragraph"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/toggle_paragraph"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/toggle_paragraph"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:contentDescription="@string/expand"
+        app:icon="@drawable/ic_baseline_arrow_right_24"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:iconTint="@color/DarkGray"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/paragraph" />
+
+    <TextView
+        android:id="@+id/translated_paragraph"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/paragraph_not_translated"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/toggle_paragraph"
+        app:layout_constraintTop_toBottomOf="@+id/toggle_paragraph"
+        tools:text="Maecenas bibendum nibh elit, nec elementum augue scelerisque nec. Integer ut commodo urna, vel congue purus. Ut tincidunt augue vel semper volutpat. Nulla facilisi. Ut pretium lobortis velit nec lobortis. Aenean in pellentesque dolor, eget pellentesque justo. Donec vehicula nec nibh vitae viverra. Aenean et lorem ac est posuere porta sed et est. Integer ullamcorper elit neque, vitae cursus augue cursus a. Phasellus fermentum nisi sit amet tortor maximus, non facilisis enim laoreet. Nullam interdum, eros at dignissim dictum, tellus tellus rutrum dui, vitae porta urna mi sit amet sapien. Ut aliquet mollis tortor, ut consequat quam ornare sed. "
+        tools:visibility="visible" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/translate"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:visibility="invisible"
+        app:icon="@drawable/ic_translate_black_24dp"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:iconTint="@color/DarkGray"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/paragraph"
+        tools:visibility="visible" />
+</androidx.constraintlayout.widget.ConstraintLayout>

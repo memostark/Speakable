@@ -28,6 +28,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var clickedWord: String? = null
 
+    private var adapter: ParagraphAdapter? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -42,11 +44,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             loadingIcon.isVisible = true
 
             viewModel.page.observe(viewLifecycleOwner, {
+                println("Filtered html:\n $it")
                 bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT)
                 } else {
                     Html.fromHtml(it)
                 }
+
+                println("Parsed html:\n${bodyText.text}")
 
                 bodyText.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
@@ -63,10 +68,35 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
 
                 loadingIcon.isVisible = false
+
+                listToggle.isVisible = true
+                listToggle.setOnClickListener {
+                    onListToggleClick()
+                }
             })
         }
 
         viewModel.loadDoc(args.link)
+    }
+
+    private fun onListToggleClick() {
+        with(binding){
+            if (paragraphsList.isVisible){
+                paragraphsList.isVisible = false
+                bodyText.isVisible = true
+            } else {
+                bodyText.isVisible = false
+                paragraphsList.isVisible = true
+                if(adapter == null) adapter = ParagraphAdapter(
+                    listOf(
+                        "First paragraph\nsecond sentence.",
+                        "Second paragraph\nsecond sentence\nthird sentence.",
+                        "Third paragraph\nsecond sentence."
+                    )
+                )
+                paragraphsList.adapter = adapter
+            }
+        }
     }
 
     override fun onDestroyView() {
