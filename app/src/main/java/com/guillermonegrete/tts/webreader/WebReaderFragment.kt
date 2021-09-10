@@ -13,12 +13,14 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
+import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
-import java.text.BreakIterator
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 
+@AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private val viewModel: WebReaderViewModel by viewModels()
@@ -73,6 +75,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     onListToggleClick()
                 }
             })
+
+            viewModel.paragraphIndex.observe(viewLifecycleOwner, EventObserver {
+                adapter?.notifyItemChanged(it)
+            })
         }
 
         viewModel.loadDoc(args.link)
@@ -87,8 +93,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 bodyText.isVisible = false
                 paragraphsList.isVisible = true
                 if(adapter == null) {
-                    val paragraphs = bodyText.text.toString().split("\n")
-                    adapter = ParagraphAdapter(paragraphs)
+                    val paragraphs = viewModel.createParagraphs(bodyText.text.toString())
+                    adapter = ParagraphAdapter(paragraphs, viewModel)
                 }
                 paragraphsList.adapter = adapter
             }
