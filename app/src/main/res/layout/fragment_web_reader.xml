@@ -39,9 +39,10 @@
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
         android:contentDescription="@string/toggle"
+        android:backgroundTint="?colorPrimary"
         android:visibility="invisible"
         app:srcCompat="@drawable/ic_list_grey_24dp"
         tools:visibility="visible" />

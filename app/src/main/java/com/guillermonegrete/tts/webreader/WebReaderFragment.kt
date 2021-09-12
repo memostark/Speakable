@@ -91,7 +91,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun onListToggleClick() {
         with(binding){
-            if (paragraphsList.isVisible){
+            val listVisible = paragraphsList.isVisible
+            if (listVisible){
                 paragraphsList.isVisible = false
                 bodyText.isVisible = true
             } else {
@@ -103,6 +104,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
                 paragraphsList.adapter = adapter
             }
+
+            listToggle.setImageResource(if(listVisible) R.drawable.ic_list_grey_24dp else R.drawable.ic_baseline_arrow_left_24)
         }
     }
 
