@@ -6,54 +6,10 @@ import androidx.lifecycle.MutableLiveData
 import com.google.gson.*
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
-import okhttp3.ResponseBody
 import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
-/*  Expected JSON response scheme:
-    [
-       [
-          [
-             "my friend",
-             "amigo mio",
-             null,
-             null,
-             1
-          ]
-       ],
-       null,
-       "es",
-       null,
-       null,
-       null,
-       1,
-       null,
-       [
-          [
-             "es"
-          ],
-          null,
-          [
-             1
-          ],
-          [
-             "es"
-          ]
-       ]
-    ]
-
-    With auto detect:
-    [[["disappointment of that poor","decepción de ese pobre",null,null,3]],null,"es",null,null,null,0.97732538,null,[["es"],null,[0.97732538],["es"]]]
-
-    With language selected:
-    [[["disappointment of that poor","decepción de ese pobre",null,null,3]],null,"es"]
-
-    // Latest response as of 04/Dec/2019
-    [[["tiny","winzige",null,null,0]],null,"de",null,null,null,null,[]]
-
-    Because response JSON cannot be converted to POJO we have to parse it manually.
-*/
 @Singleton
 class GooglePublicSource: WordDataSource {
 
@@ -93,22 +49,17 @@ class GooglePublicSource: WordDataSource {
 
             val rawLanguageFrom = if(languageFrom == "he") "iw" else languageFrom
 
-            googlePublicAPI.getWord(wordText, rawLanguageFrom, languageTo).enqueue(object : Callback<ResponseBody>{
-                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+            googlePublicAPI.getWord(wordText, rawLanguageFrom, languageTo).enqueue(object : Callback<GoogleTranslateResponse>{
+                override fun onFailure(call: Call<GoogleTranslateResponse>, t: Throwable) {
                     callback?.onDataNotAvailable()
                 }
 
-                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                override fun onResponse(call: Call<GoogleTranslateResponse>, response: Response<GoogleTranslateResponse>) {
 
                     val body = response.body()
                     if(response.isSuccessful && body != null){
-                        try {
-                            val parsedWord = processText(body.string(), wordText)
-                            callback?.onWordLoaded(parsedWord)
-                        }catch (e: Exception){
-                            callback?.onDataNotAvailable()
-                        }
-
+                        val parsedWord = processText(body, wordText)
+                        callback?.onWordLoaded(parsedWord)
                     }else{
                         callback?.onDataNotAvailable()
                     }
@@ -130,26 +81,12 @@ class GooglePublicSource: WordDataSource {
 
         if(!response.isSuccessful || responseBody == null) throw HttpException(response)
 
-        return processText(responseBody.string(), wordText)
+        return processText(responseBody, wordText)
     }
 
     @VisibleForTesting
-    fun processText(bodyText: String, wordText: String): Words{
-        val jsonArray  = gson.fromJson(bodyText, JsonArray::class.java)
-
-        // We extract all the posible translations from the first element
-        // E.g. [["tiny","winzige",null,null,0], ["little","winzige",null,null,0]]
-        val jsonSentences = jsonArray[0].asJsonArray
-        val sentences = arrayListOf<String>()
-        for(i in 0 until  jsonSentences.size()){
-            sentences.add(jsonSentences[i].asJsonArray[0].asString)
-        }
-
-        val rawLanguage = jsonArray[2].asString
-        val detectedLanguage = if(rawLanguage == "iw") "he" else rawLanguage
-
-        val translation = sentences.joinToString(separator = "")
-        return Words(wordText, detectedLanguage, translation)
+    fun processText(response: GoogleTranslateResponse, wordText: String): Words{
+        return Words(wordText, response.src, response.sentences.joinToString(""){ it.trans })
     }
 
     companion object {
