@@ -49,6 +49,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
+            android:paddingBottom="16dp"
             android:text="@string/paragraph_not_translated"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
             app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
@@ -69,6 +70,16 @@
             app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
             app:layout_constraintTop_toBottomOf="@+id/paragraph"
             tools:visibility="visible" />
+
+        <ProgressBar
+            android:id="@+id/loadingParagraph"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintBottom_toBottomOf="@+id/toggle_paragraph"
+            app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
+            app:layout_constraintTop_toTopOf="@+id/toggle_paragraph" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.cardview.widget.CardView>

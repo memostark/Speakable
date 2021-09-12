@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.webreader
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
@@ -14,6 +15,8 @@ class ParagraphAdapter(
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var expandedItemPos = -1
+
+    var isLoading = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -31,6 +34,10 @@ class ParagraphAdapter(
     override fun getItemCount() = items.size
 
     override fun getItemViewType(position: Int) = if(expandedItemPos == position) R.layout.paragraph_expanded_item else R.layout.paragraph_item
+
+    fun updateExpanded(){
+        notifyItemChanged(expandedItemPos)
+    }
 
     inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
 
@@ -76,6 +83,8 @@ class ParagraphAdapter(
 
         fun bind(item: Words){
             binding.paragraph.text = item.word
+            binding.loadingParagraph.isVisible = isLoading
+            binding.translate.isVisible = !isLoading
             binding.translatedParagraph.text = if(item.definition.isNotBlank()) item.definition else noTranslationText
         }
 

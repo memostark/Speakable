@@ -13,8 +13,8 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
-import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import dagger.hilt.android.AndroidEntryPoint
@@ -76,8 +76,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
             })
 
-            viewModel.paragraphIndex.observe(viewLifecycleOwner, EventObserver {
-                adapter?.notifyItemChanged(it)
+            viewModel.translatedParagraph.observe(viewLifecycleOwner, { result ->
+                val adapter = adapter ?: return@observe
+                adapter.isLoading = when(result){
+                    LoadResult.Loading -> true
+                    is LoadResult.Success, is LoadResult.Error -> false
+                }
+                adapter.updateExpanded()
             })
         }
 

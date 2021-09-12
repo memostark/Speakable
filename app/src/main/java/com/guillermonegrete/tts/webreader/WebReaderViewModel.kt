@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.guillermonegrete.tts.Event
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.data.Result
@@ -21,8 +21,8 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
     private var cachedParagraphs: List<Words>? = null
     val paragraphs = cachedParagraphs
 
-    private val _paragraphIndex = MutableLiveData<Event<Int>>()
-    val paragraphIndex: LiveData<Event<Int>> = _paragraphIndex
+    private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
+    val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
 
     fun loadDoc(url: String){
         viewModelScope.launch {
@@ -49,13 +49,19 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
 
         if(paragraph.definition.isNotBlank()) return
 
+        _translatedParagraph.value = LoadResult.Loading
+
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 getTranslationInteractor(paragraph.word)
             }
-            if(result is Result.Success) {
-                paragraph.definition = result.data.definition
-                _paragraphIndex.value = Event(pos)
+
+            when(result){
+                is Result.Success -> {
+                    paragraph.definition = result.data.definition
+                    _translatedParagraph.value = LoadResult.Success(pos)
+                }
+                is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
             }
         }
     }
