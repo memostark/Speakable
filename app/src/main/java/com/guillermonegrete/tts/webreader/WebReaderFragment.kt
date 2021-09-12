@@ -14,9 +14,13 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
+import dagger.hilt.android.AndroidEntryPoint
+import java.util.*
 
+@AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private val viewModel: WebReaderViewModel by viewModels()
@@ -27,6 +31,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     val args: WebReaderFragmentArgs by navArgs()
 
     private var clickedWord: String? = null
+
+    private var adapter: ParagraphAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,10 +69,44 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
 
                 loadingIcon.isVisible = false
+
+                listToggle.isVisible = true
+                listToggle.setOnClickListener {
+                    onListToggleClick()
+                }
+            })
+
+            viewModel.translatedParagraph.observe(viewLifecycleOwner, { result ->
+                val adapter = adapter ?: return@observe
+                adapter.isLoading = when(result){
+                    LoadResult.Loading -> true
+                    is LoadResult.Success, is LoadResult.Error -> false
+                }
+                adapter.updateExpanded()
             })
         }
 
         viewModel.loadDoc(args.link)
+    }
+
+    private fun onListToggleClick() {
+        with(binding){
+            val listVisible = paragraphsList.isVisible
+            if (listVisible){
+                paragraphsList.isVisible = false
+                bodyText.isVisible = true
+            } else {
+                bodyText.isVisible = false
+                paragraphsList.isVisible = true
+                if(adapter == null) {
+                    val paragraphs = viewModel.createParagraphs(bodyText.text.toString())
+                    adapter = ParagraphAdapter(paragraphs, viewModel)
+                }
+                paragraphsList.adapter = adapter
+            }
+
+            listToggle.setImageResource(if(listVisible) R.drawable.ic_list_grey_24dp else R.drawable.ic_baseline_arrow_left_24)
+        }
     }
 
     override fun onDestroyView() {

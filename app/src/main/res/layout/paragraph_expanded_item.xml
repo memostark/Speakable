@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/paragraph"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:paddingBottom="16dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="?colorPrimary"
+            app:layout_constraintBottom_toTopOf="@+id/translate" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/toggle_paragraph"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:contentDescription="@string/expand"
+            app:icon="@drawable/ic_baseline_arrow_drop_down_24"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="?colorOnSurface"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/paragraph" />
+
+
+        <TextView
+            android:id="@+id/translated_paragraph"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:paddingBottom="16dp"
+            android:text="@string/paragraph_not_translated"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/toggle_paragraph"
+            tools:text="Maecenas bibendum nibh elit, nec elementum augue scelerisque nec. Integer ut commodo urna, vel congue purus. Ut tincidunt augue vel semper volutpat. Nulla facilisi. Ut pretium lobortis velit nec lobortis. Aenean in pellentesque dolor, eget pellentesque justo. Donec vehicula nec nibh vitae viverra. Aenean et lorem ac est posuere porta sed et est. Integer ullamcorper elit neque, vitae cursus augue cursus a. Phasellus fermentum nisi sit amet tortor maximus, non facilisis enim laoreet. Nullam interdum, eros at dignissim dictum, tellus tellus rutrum dui, vitae porta urna mi sit amet sapien. Ut aliquet mollis tortor, ut consequat quam ornare sed. " />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/translate"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="16dp"
+            app:icon="@drawable/ic_translate_black_24dp"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="?colorOnSurface"
+            app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
+            app:layout_constraintTop_toBottomOf="@+id/paragraph"
+            tools:visibility="visible" />
+
+        <ProgressBar
+            android:id="@+id/loadingParagraph"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintBottom_toBottomOf="@+id/toggle_paragraph"
+            app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
+            app:layout_constraintTop_toTopOf="@+id/toggle_paragraph" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

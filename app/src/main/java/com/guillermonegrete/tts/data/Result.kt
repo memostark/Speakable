@@ -10,3 +10,13 @@ sealed class Result<out T> {
     // data class Error(val exception: Exception): Result<Nothing>()
     data class Error<out T>(val exception: Exception): Result<T>()
 }
+
+/**
+ * Same as [Result] but with an additional loading state.
+ */
+sealed class LoadResult<out T>{
+
+    data class Success<out T>(val data: T): LoadResult<T>()
+    data class Error<out T>(val exception: Exception): LoadResult<T>()
+    object Loading : LoadResult<Nothing>()
+}

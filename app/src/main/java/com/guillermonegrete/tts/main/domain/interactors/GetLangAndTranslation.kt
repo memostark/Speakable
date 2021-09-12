@@ -23,6 +23,7 @@ class GetLangAndTranslation @Inject constructor(
      * This function is deprecated, avoid usage for new features.
      * Only use when Kotlin Coroutines or RxJava are not options.
      */
+    @Deprecated("Avoid usage for new features. Only use when Kotlin Coroutines or RxJava are not options.")
     @JvmOverloads
     operator fun invoke(
         text: String,

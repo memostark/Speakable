@@ -81,6 +81,7 @@ class VisualizerAdapter(
         // Based on: https://stackoverflow.com/questions/8612652/select-a-word-on-a-tap-in-textview-edittext
         private fun setSpannables(view: TextView){
             val spans = view.text as SpannableString
+//            BreakIterator.
             val iterator = BreakIterator.getWordInstance(Locale.US)
             iterator.setText(spans.toString())
             var start = iterator.first()
