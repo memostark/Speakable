@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.main.domain.interactors
 import com.guillermonegrete.tts.AbstractInteractor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.data.Result
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.db.Words
 import java.util.concurrent.ExecutorService
@@ -42,8 +43,8 @@ class GetLangAndTranslation @Inject constructor(
         text: String,
         languageFrom: String = "auto",
         languageTo: String = "en"
-    ): Result<Words>{
-        return wordRepository.getLanguageAndTranslation(text, languageFrom, languageTo)
+    ): Result<Translation>{
+        return wordRepository.getTranslation(text, languageFrom, languageTo)
     }
 
     override fun run() {

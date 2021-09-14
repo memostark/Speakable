@@ -159,6 +159,9 @@ abstract class ApplicationModuleBinds {
 
     @Binds
     abstract fun bindEpubFileManager(manager: DefaultEpubFileManager): EpubFileManager
+
+    @Binds
+    abstract fun bindTranslatorSource(manager: GooglePublicSource): TranslationSource
 }
 
 /**

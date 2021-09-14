@@ -58,7 +58,7 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
 
             when(result){
                 is Result.Success -> {
-                    paragraph.definition = result.data.definition
+                    paragraph.definition = result.data.sentences.joinToString("") { it.trans }
                     _translatedParagraph.value = LoadResult.Success(pos)
                 }
                 is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)

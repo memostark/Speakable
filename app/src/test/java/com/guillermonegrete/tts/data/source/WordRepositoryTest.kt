@@ -2,8 +2,9 @@ package com.guillermonegrete.tts.data.source
 
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.Result
+import com.guillermonegrete.tts.data.Segment
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.source.remote.FakeWordDataSource
-import com.guillermonegrete.tts.db.Words
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -21,24 +22,28 @@ class WordRepositoryTest {
     private lateinit var fakeRemoteSource: FakeWordDataSource
     private lateinit var fakeLocalSource: FakeWordDataSource
 
+    private lateinit var fakeTranslator: FakeTranslatorSource
+
     @Before
     fun setUp(){
 
         fakeRemoteSource = FakeWordDataSource()
         fakeLocalSource = FakeWordDataSource()
 
-        repository = WordRepository(fakeRemoteSource, fakeLocalSource)
+        fakeTranslator = FakeTranslatorSource()
+
+        repository = WordRepository(fakeRemoteSource, fakeLocalSource, fakeTranslator)
     }
 
     @Test
     fun `Get translation from remote source`(){
-        val remoteWord = Words("Hola", "en", "remote")
-        fakeRemoteSource.addTranslation(remoteWord)
+        val translation = Translation(listOf(Segment("remote", "Hola")), "en")
+        fakeTranslator.addTranslation(translation)
 
-        val result = repository.getLanguageAndTranslation("Hola", "auto", "en")
+        val result = repository.getTranslation("Hola", "auto", "en")
 
         assertTrue(result is Result.Success)
         val word = (result as Result.Success).data
-        assertEquals(remoteWord, word)
+        assertEquals(translation, word)
     }
 }

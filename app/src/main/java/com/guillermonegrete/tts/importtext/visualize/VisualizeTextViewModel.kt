@@ -249,7 +249,7 @@ class VisualizeTextViewModel @ViewModelInject constructor(
 
             when(result){
                 is Result.Success -> {
-                    _translatedPages[index] = result.data.definition // In this case is a translation
+                    _translatedPages[index] = result.data.sentences.joinToString("") {it.trans} // In this case is a translation
                     _translatedPageIndex.value = Event(index)
                 }
                 is Result.Error -> {

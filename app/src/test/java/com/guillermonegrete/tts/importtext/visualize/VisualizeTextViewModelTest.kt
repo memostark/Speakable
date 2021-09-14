@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.importtext.visualize
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
+import com.guillermonegrete.tts.data.Segment
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
@@ -150,7 +152,8 @@ class VisualizeTextViewModelTest {
 
         val pageIndex = 2
         val expectedTranslation = "Page to translate"
-        wordRepository.addTranslation(Words(pages[pageIndex], "ES", expectedTranslation))
+        val trans = Translation(listOf(Segment(expectedTranslation, pages[pageIndex])), "ES")
+        wordRepository.addTranslation(trans)
 
         // Request translation
         viewModel.translatePage(pageIndex)
@@ -427,7 +430,8 @@ class VisualizeTextViewModelTest {
 
         val pageIndex = 2
         val expectedTranslation = "Page to translate"
-        wordRepository.addTranslation(Words(pages[pageIndex], "ES", expectedTranslation))
+        val trans = Translation(listOf(Segment(expectedTranslation, pages[pageIndex])), "ES")
+        wordRepository.addTranslation(trans)
 
         // Request translation
         viewModel.translatePage(pageIndex)

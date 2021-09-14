@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.guillermonegrete.tts.data.Result
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.db.Words
 import java.lang.Exception
 import java.util.LinkedHashMap
@@ -16,7 +17,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
     var wordsServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
     var remoteWordServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
 
-    var translationsData: LinkedHashMap<String, Words> = LinkedHashMap()
+    var translationsWordData: LinkedHashMap<String, Words> = LinkedHashMap()
+    var translationsData: LinkedHashMap<String, Translation> = LinkedHashMap()
 
     var languagesData: MutableSet<String> = mutableSetOf()
 
@@ -65,16 +67,16 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         languageTo: String,
         callback: WordRepositorySource.GetTranslationCallback
     ) {
-        val translation = translationsData[text]
+        val translation = translationsWordData[text]
         if(translation != null) callback.onTranslationAndLanguage(translation)
         else callback.onDataNotAvailable()
     }
 
-    override fun getLanguageAndTranslation(
+    override fun getTranslation(
         text: String,
         languageFrom: String,
         languageTo: String
-    ): Result<Words> {
+    ): Result<Translation> {
         val word = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
         return Result.Success(word)
     }
@@ -113,7 +115,14 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
     @VisibleForTesting
     fun addTranslation(vararg words: Words) {
         for (word in words) {
-            translationsData[word.word] = word
+            translationsWordData[word.word] = word
+        }
+    }
+
+    @VisibleForTesting
+    fun addTranslation(vararg translations: Translation) {
+        for (translation in translations) {
+            translationsData[translation.sentences.first().orig] = translation
         }
     }
 }
