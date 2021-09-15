@@ -3,11 +3,13 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.method.LinkMovementMethod
+import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.utils.dpToPixel
 import java.text.BreakIterator
 import java.util.*
@@ -49,6 +51,9 @@ class VisualizerAdapter(
         }
     }
 
+    /**
+     * Used for updating [ViewHolder] while providing additional data with [payloads].
+     */
     override fun onBindViewHolder(
         holder: RecyclerView.ViewHolder,
         position: Int,
@@ -57,7 +62,14 @@ class VisualizerAdapter(
         if(payloads.isEmpty()){
             onBindViewHolder(holder, position)
         }else{
-            if(holder is SplitPageViewHolder) holder.updateLayoutParams(payloads.first() as Boolean)
+            if(holder is SplitPageViewHolder) {
+                val payload = payloads.first()
+                if(payload is Span) {
+                    holder.setHighlightedText(payload.start, payload.end)
+                } else {
+                    holder.updateLayoutParams(payloads.first() as Boolean)
+                }
+            }
         }
     }
 
@@ -67,7 +79,7 @@ class VisualizerAdapter(
     }
 
     open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
-        private val pageTextView: TextView = view.findViewById(R.id.page_text_view)
+        protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         private val actionModeCallback = PageActionModeCallback(pageTextView, showTextDialog)
 
@@ -139,6 +151,16 @@ class VisualizerAdapter(
 
         fun updateLayoutParams(splitPage: Boolean){
             bottomText.layoutParams = if(splitPage) halfShownParams else hiddenParams
+        }
+
+        fun setHighlightedText(start: Int, end: Int){
+            val text = SpannableString(pageTextView.text)
+
+            //Remove previous
+            text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+
+            text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
         }
 
     }
