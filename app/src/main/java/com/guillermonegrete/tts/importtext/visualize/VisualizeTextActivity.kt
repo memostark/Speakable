@@ -632,14 +632,24 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
         })
 
-        var index = -1
-        bottomText.setOnTouchListener { _, event ->
-            index = bottomText.getOffsetForPosition(event.x, event.y)
-            false
-        }
-        
-        bottomText.setOnClickListener {
-            viewModel.onTranslatedTextClick(viewPager.currentItem, index)
+        val metrics = resources.displayMetrics
+        val cardHalfHeight = (metrics.heightPixels * ratio / 2f).toInt()
+
+        // To detect the click, onTouchListener is used to get the touch coordinates and because onClickListener consumes the touch event
+        bottomText.setOnTouchListener { v, event ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            val duration = event.eventTime - event.downTime
+
+            if(event.action == MotionEvent.ACTION_UP && duration < 300){
+                val index = bottomText.getOffsetForPosition(event.x, event.y)
+                viewModel.onTranslatedTextClick(viewPager.currentItem, index)
+            }
+
+            // Need to dispatch the touch event to the ViewPager otherwise scrolling won't work on the bottom text
+            // The y position of the touch event is in terms of the bottom text origin, add offset to make it in term of the card view origin
+            val newEvent = MotionEvent.obtain(event.downTime, event.eventTime, event.action, event.x, event.y + cardHalfHeight, event.metaState)
+            viewPager.dispatchTouchEvent(newEvent)
+            true
         }
     }
 
