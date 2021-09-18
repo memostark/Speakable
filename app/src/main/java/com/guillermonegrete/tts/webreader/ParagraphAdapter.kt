@@ -1,7 +1,13 @@
 package com.guillermonegrete.tts.webreader
 
+import android.annotation.SuppressLint
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.BackgroundColorSpan
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
@@ -60,6 +66,7 @@ class ParagraphAdapter(
 
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     inner class ExpandedViewHolder(val binding: ParagraphExpandedItemBinding): RecyclerView.ViewHolder(binding.root){
 
         val noTranslationText: CharSequence = itemView.context.getText(R.string.paragraph_not_translated)
@@ -78,6 +85,22 @@ class ParagraphAdapter(
                 translate.setOnClickListener {
                     viewModel.translateParagraph(adapterPosition)
                 }
+
+                translatedParagraph.setOnTouchListener { _, event ->
+                    val duration = event.eventTime - event.downTime
+
+                    if(event.action == MotionEvent.ACTION_UP && duration < 300){
+                        val index = translatedParagraph.getOffsetForPosition(event.x, event.y)
+                        val spans = viewModel.findSelectedSentence(adapterPosition, index) ?: return@setOnTouchListener false
+
+                        println("Top, length: ${paragraph.text.length}, text: ${paragraph.text}")
+                        println("Bottom, length: ${translatedParagraph.text.length}, text: ${translatedParagraph.text}")
+
+                        paragraph.setHighlightedText(spans.topSpan.start, spans.topSpan.end)
+                        translatedParagraph.setHighlightedText(spans.bottomSpan.start, spans.bottomSpan.end)
+                    }
+                    true
+                }
             }
         }
 
@@ -86,6 +109,16 @@ class ParagraphAdapter(
             binding.loadingParagraph.isVisible = isLoading
             binding.translate.isVisible = !isLoading
             binding.translatedParagraph.text = if(item.definition.isNotBlank()) item.definition else noTranslationText
+        }
+
+        fun TextView.setHighlightedText(start: Int, end: Int){
+            val text = SpannableString(this.text)
+
+            //Remove previous
+            text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+
+            text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            this.setText(text, TextView.BufferType.SPANNABLE)
         }
 
     }

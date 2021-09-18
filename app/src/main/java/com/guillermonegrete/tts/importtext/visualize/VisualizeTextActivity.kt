@@ -636,8 +636,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         val cardHalfHeight = (metrics.heightPixels * ratio / 2f).toInt()
 
         // To detect the click, onTouchListener is used to get the touch coordinates and because onClickListener consumes the touch event
-        bottomText.setOnTouchListener { v, event ->
-            v.parent.requestDisallowInterceptTouchEvent(true)
+        bottomText.setOnTouchListener { _, event ->
             val duration = event.eventTime - event.downTime
 
             if(event.action == MotionEvent.ACTION_UP && duration < 300){

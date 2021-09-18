@@ -9,6 +9,9 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.data.Result
+import com.guillermonegrete.tts.data.Translation
+import com.guillermonegrete.tts.importtext.visualize.model.Span
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 
@@ -20,6 +23,10 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
 
     private var cachedParagraphs: List<Words>? = null
     val paragraphs = cachedParagraphs
+
+    private var _translatedParagraphs = mutableListOf<Translation?>()
+    val translatedParagraphs: List<Translation?>
+        get() = _translatedParagraphs
 
     private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
     val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
@@ -39,7 +46,10 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
 
     fun createParagraphs(text: String): List<Words> {
         val newParagraphs = cachedParagraphs ?: text.split("\n").map { Words(it, "", "") }
-        if(cachedParagraphs == null) cachedParagraphs = newParagraphs
+        if(cachedParagraphs == null) {
+            cachedParagraphs = newParagraphs
+            _translatedParagraphs = arrayOfNulls<Translation>(newParagraphs.size).toMutableList()
+        }
         return newParagraphs
     }
 
@@ -58,11 +68,34 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
 
             when(result){
                 is Result.Success -> {
-                    paragraph.definition = result.data.sentences.joinToString("") { it.trans }
+                    paragraph.definition = result.data.translatedText
+                    _translatedParagraphs[pos] = result.data
                     _translatedParagraph.value = LoadResult.Success(pos)
                 }
                 is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
             }
         }
+    }
+
+    fun findSelectedSentence(paragraphPos: Int, charIndex: Int): SplitPageSpan? {
+        val translation = translatedParagraphs[paragraphPos] ?: return null
+        // Highlighting only makes sense where there are at least 2 sentences
+        if(translation.sentences.size <= 1) return null
+
+        var start = 0
+        var originStart = 0
+
+        for(sentence in translation.sentences){
+            val end = start + sentence.trans.length
+            val originalEnd = originStart + sentence.orig.length
+            if(charIndex < end) {
+                // indicate UI to highlight this sentence
+                return SplitPageSpan(Span(originStart, originalEnd), Span(start, end))
+            }
+            start = end
+            originStart = originalEnd
+        }
+
+        return null
     }
 }
