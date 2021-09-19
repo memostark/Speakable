@@ -1,11 +1,14 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.text.Selection
 import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.widget.*
 import androidx.activity.viewModels
@@ -266,8 +269,8 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
-                val text = viewModel.translatedPages[it]
-                bottomText.text = text
+                val translation = viewModel.translatedPages[it]
+                bottomText.text = translation?.translatedText
                 pagesAdapter.notifyItemChanged(it)
             })
 
@@ -279,6 +282,19 @@ class VisualizeTextActivity: AppCompatActivity() {
             translationError.observe(this@VisualizeTextActivity, EventObserver {
                 Toast.makeText(this@VisualizeTextActivity, getString(R.string.error_translation), Toast.LENGTH_SHORT).show()
                 bottomText.text = getString(R.string.click_to_translate_msg)
+            })
+
+            spanSelection.observe(this@VisualizeTextActivity, EventObserver {
+                val text = SpannableString(bottomText.text)
+
+                //Remove previous
+                text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+
+                text.setSpan(BackgroundColorSpan(0x6633B5E5), it.bottomSpan.start, it.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                bottomText.setText(text, TextView.BufferType.SPANNABLE)
+
+                // Notify the adapter to set the highlight, send span payload
+                pagesAdapter.notifyItemChanged(viewPager.currentItem, it.topSpan)
             })
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
@@ -378,7 +394,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 pagesSeekBar.progress = position
 
                 if(pagesAdapter.hasBottomSheet)
-                    bottomText.text = viewModel.translatedPages[position] ?: getString(R.string.click_to_translate_msg)
+                    bottomText.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
 
             }
 
@@ -582,6 +598,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         actionBar?.hide()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setBottomSheetCallbacks(){
         val translateBtn: Button = findViewById(R.id.page_translate_btn)
         translateBtn.setOnClickListener {
@@ -614,6 +631,25 @@ class VisualizeTextActivity: AppCompatActivity() {
                 viewModel.isSheetExpanded = isSplit
             }
         })
+
+        val metrics = resources.displayMetrics
+        val cardHalfHeight = (metrics.heightPixels * ratio / 2f).toInt()
+
+        // To detect the click, onTouchListener is used to get the touch coordinates and because onClickListener consumes the touch event
+        bottomText.setOnTouchListener { _, event ->
+            val duration = event.eventTime - event.downTime
+
+            if(event.action == MotionEvent.ACTION_UP && duration < 300){
+                val index = bottomText.getOffsetForPosition(event.x, event.y)
+                viewModel.onTranslatedTextClick(viewPager.currentItem, index)
+            }
+
+            // Need to dispatch the touch event to the ViewPager otherwise scrolling won't work on the bottom text
+            // The y position of the touch event is in terms of the bottom text origin, add offset to make it in term of the card view origin
+            val newEvent = MotionEvent.obtain(event.downTime, event.eventTime, event.action, event.x, event.y + cardHalfHeight, event.metaState)
+            viewPager.dispatchTouchEvent(newEvent)
+            true
+        }
     }
 
     private fun setFullBottomSheet(full: Boolean){

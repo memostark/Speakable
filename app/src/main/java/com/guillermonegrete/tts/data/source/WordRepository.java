@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.guillermonegrete.tts.data.Result;
+import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.di.ApplicationModule;
@@ -22,17 +23,20 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 public class WordRepository implements WordRepositorySource {
 
     private final WordDataSource remoteTranslatorSource;
-
     private final WordDataSource mWordLocalDataSource;
+
+    private final TranslationSource translationSource;
 
     private final ConcurrentMap<String, Words> cachedWords;
 
 
     @Inject
     public WordRepository(@ApplicationModule.RemoteTranslationDataSource WordDataSource remoteTranslatorSource,
-                          @ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource){
+                          @ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource,
+                          @NonNull TranslationSource translationSource){
         this.remoteTranslatorSource = checkNotNull(remoteTranslatorSource);
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
+        this.translationSource = translationSource;
 
         cachedWords = new ConcurrentHashMap<>();
     }
@@ -98,9 +102,9 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public Result<Words> getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo) {
+    public Result<Translation> getTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo) {
         try{
-            Words wordTranslation = remoteTranslatorSource.getWordLanguageInfo(text, languageFrom, languageTo);
+            Translation wordTranslation = translationSource.getTranslation(text, languageFrom, languageTo);
             return new Result.Success<>(wordTranslation);
         }catch (Exception e){
             return new Result.Error<>(e);

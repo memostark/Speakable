@@ -7,11 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.Result
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.visualize.model.Span
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import kotlinx.coroutines.*
 import java.io.File
@@ -65,8 +68,8 @@ class VisualizeTextViewModel @ViewModelInject constructor(
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
 
-    private var _translatedPages = mutableListOf<CharSequence?>()
-    val translatedPages: List<CharSequence?>
+    private var _translatedPages = mutableListOf<Translation?>()
+    val translatedPages: List<Translation?>
         get() = _translatedPages
 
     private val _translatedPageIndex = MutableLiveData<Event<Int>>()
@@ -75,8 +78,11 @@ class VisualizeTextViewModel @ViewModelInject constructor(
     private val _translationLoading = MutableLiveData<Boolean>()
     val translationLoading: LiveData<Boolean> = _translationLoading
 
-    private val _translationError= MutableLiveData<Event<String>>()
+    private val _translationError = MutableLiveData<Event<String>>()
     val translationError: LiveData<Event<String>> = _translationError
+
+    private val _spanSelection = MutableLiveData<Event<SplitPageSpan>>()
+    val spanSelection: LiveData<Event<SplitPageSpan>> = _spanSelection
 
     // Settings
     var hasBottomSheet = false
@@ -95,7 +101,7 @@ class VisualizeTextViewModel @ViewModelInject constructor(
             if(field != value) {
                 field = value
                 settings.setLanguageTo(value)
-                _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
+                _translatedPages = arrayOfNulls<Translation>(pagesSize).toMutableList()
             }
         }
 
@@ -249,7 +255,7 @@ class VisualizeTextViewModel @ViewModelInject constructor(
 
             when(result){
                 is Result.Success -> {
-                    _translatedPages[index] = result.data.definition // In this case is a translation
+                    _translatedPages[index] = result.data
                     _translatedPageIndex.value = Event(index)
                 }
                 is Result.Error -> {
@@ -288,7 +294,7 @@ class VisualizeTextViewModel @ViewModelInject constructor(
         pagesSize = mutablePages.size
 
         currentPages = mutablePages
-        _translatedPages = arrayOfNulls<CharSequence>(pagesSize).toMutableList()
+        _translatedPages = arrayOfNulls<Translation>(pagesSize).toMutableList()
 
         _pages.value = Event(mutablePages)
     }
@@ -352,6 +358,26 @@ class VisualizeTextViewModel @ViewModelInject constructor(
         percentage = 100 * sumPreviousChars / book.totalChars
 
         return percentage
+    }
+
+    fun onTranslatedTextClick(page: Int, charIndex: Int) {
+        val translation = translatedPages[page] ?: return
+
+        var start = 0
+        var originStart = 0
+
+        for(sentence in translation.sentences){
+            val end = start + sentence.trans.length
+            val originalEnd = originStart + sentence.orig.length
+            if(charIndex < end){
+                // indicate UI to highlight this sentence
+                 val splitSpan = SplitPageSpan(Span(originStart, originalEnd), Span(start, end))
+                _spanSelection.value = Event(splitSpan)
+                return
+            }
+            start = end
+            originStart = originalEnd
+        }
     }
 
 }
