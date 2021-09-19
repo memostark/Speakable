@@ -93,9 +93,6 @@ class ParagraphAdapter(
                         val index = translatedParagraph.getOffsetForPosition(event.x, event.y)
                         val spans = viewModel.findSelectedSentence(adapterPosition, index) ?: return@setOnTouchListener false
 
-                        println("Top, length: ${paragraph.text.length}, text: ${paragraph.text}")
-                        println("Bottom, length: ${translatedParagraph.text.length}, text: ${translatedParagraph.text}")
-
                         paragraph.setHighlightedText(spans.topSpan.start, spans.topSpan.end)
                         translatedParagraph.setHighlightedText(spans.bottomSpan.start, spans.bottomSpan.end)
                     }
