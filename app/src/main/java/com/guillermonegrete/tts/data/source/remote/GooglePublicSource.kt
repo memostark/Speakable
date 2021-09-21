@@ -9,22 +9,11 @@ import com.guillermonegrete.tts.data.source.TranslationSource
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
 import retrofit2.*
-import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class GooglePublicSource @Inject constructor(): WordDataSource, TranslationSource {
-
-    private var googlePublicAPI: GooglePublicAPI
-
-    init {
-        val retrofit = Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(MoshiConverterFactory.create())
-                .build()
-        googlePublicAPI = retrofit.create(GooglePublicAPI::class.java)
-    }
+class GooglePublicSource @Inject constructor(private val googlePublicAPI: GooglePublicAPI): WordDataSource, TranslationSource {
 
     /**
      *  These three functions should not be used for this implementation
