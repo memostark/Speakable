@@ -9,7 +9,6 @@ import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.BookFile
-import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.*
@@ -214,7 +213,7 @@ class VisualizeTextViewModelTest {
         splitPages(5)
         viewModel.swipeChapterLeft()
         val secondLoadPage = viewModel.getPage()
-        assertEquals(5 - 1, secondLoadPage)
+        assertEquals((5 - 1), secondLoadPage)
     }
 
     @Test
@@ -429,9 +428,9 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         val pageIndex = 2
-        val expectedTranslation = "Page to translate"
-        val trans = Translation(listOf(Segment(expectedTranslation, pages[pageIndex])), "ES")
-        wordRepository.addTranslation(trans)
+        val pageText = "Page to translate"
+        val expectedTranslation = Translation(listOf(Segment(pageText, pages[pageIndex])), "ES")
+        wordRepository.addTranslation(expectedTranslation)
 
         // Request translation
         viewModel.translatePage(pageIndex)
