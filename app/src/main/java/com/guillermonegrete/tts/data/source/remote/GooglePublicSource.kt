@@ -3,14 +3,13 @@ package com.guillermonegrete.tts.data.source.remote
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.gson.*
 import com.guillermonegrete.tts.data.Segment
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.source.TranslationSource
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
 import retrofit2.*
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,14 +17,11 @@ import javax.inject.Singleton
 class GooglePublicSource @Inject constructor(): WordDataSource, TranslationSource {
 
     private var googlePublicAPI: GooglePublicAPI
-    private val gson: Gson = GsonBuilder()
-            .setLenient()
-            .create()
 
     init {
         val retrofit = Retrofit.Builder()
                 .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addConverterFactory(MoshiConverterFactory.create())
                 .build()
         googlePublicAPI = retrofit.create(GooglePublicAPI::class.java)
     }
