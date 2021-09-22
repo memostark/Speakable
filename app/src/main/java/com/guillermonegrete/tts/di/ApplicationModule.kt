@@ -14,6 +14,7 @@ import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.*
 import com.guillermonegrete.tts.data.source.local.AssetsExternalLinksSource
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
+import com.guillermonegrete.tts.data.source.remote.GooglePublicAPI
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource
 import com.guillermonegrete.tts.db.FileDAO
@@ -39,6 +40,8 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
 import org.xmlpull.v1.XmlPullParser
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -112,8 +115,12 @@ object ApplicationModule {
 
     @RemoteTranslationDataSource
     @Provides
-    fun provideRemoteTranslationSource(type: TranslatorType, map: @JvmSuppressWildcards Map<TranslatorType, WordDataSource>): WordDataSource{
-        return map[type] ?: GooglePublicSource()
+    fun provideRemoteTranslationSource(
+        type: TranslatorType,
+        map: @JvmSuppressWildcards Map<TranslatorType, WordDataSource>,
+        defaultSource: GooglePublicSource
+    ): WordDataSource{
+        return map[type] ?: defaultSource
     }
 
     @Singleton
@@ -142,6 +149,17 @@ object ApplicationModule {
 
     @Provides
     fun bindExecutorService(): ExecutorService = Executors.newFixedThreadPool(4)
+
+    @Singleton
+    @Provides
+    fun provideGoogleRetrofit() = Retrofit.Builder()
+        .baseUrl(GooglePublicSource.BASE_URL)
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+
+    @Singleton
+    @Provides
+    fun provideGoogleApi(retrofit: Retrofit) = retrofit.create(GooglePublicAPI::class.java)
 }
 
 @InstallIn(ApplicationComponent::class)
@@ -189,7 +207,7 @@ class GoogleSourceModule{
     @Singleton
     @IntoMap
     @TranslatorEnumKey(TranslatorType.GOOGLE_PUBLIC)
-    fun provideGooglePublicSource(): WordDataSource = GooglePublicSource()
+    fun provideGooglePublicSource(api: GooglePublicAPI): WordDataSource = GooglePublicSource(api)
 }
 
 @InstallIn(ApplicationComponent::class)

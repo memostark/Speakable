@@ -93,6 +93,7 @@ dependencies {
     //  Mockito framework
     testImplementation 'org.mockito:mockito-core:2.25.1'
     testImplementation group: 'com.nhaarman', name: 'mockito-kotlin', version: '1.5.0'
+    testImplementation "io.mockk:mockk:1.12.0"
 
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
@@ -134,6 +135,7 @@ dependencies {
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
+    implementation 'com.squareup.retrofit2:converter-moshi:2.9.0'
 
     // Lifecycle-aware components
     def lifecycle_version = "2.2.0"
