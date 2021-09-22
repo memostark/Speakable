@@ -8,11 +8,13 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MotionEvent
 import android.view.View
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
@@ -83,6 +85,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is LoadResult.Success, is LoadResult.Error -> false
                 }
                 adapter.updateExpanded()
+            })
+
+            val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+
+            infoWebview.webViewClient = WebViewClient()
+
+            viewModel.clickedWord.observe(viewLifecycleOwner, {
+                infoWebview.loadUrl("https://en.m.wiktionary.org/wiki/$it")
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             })
         }
 

@@ -86,6 +86,23 @@ class ParagraphAdapter(
                     viewModel.translateParagraph(adapterPosition)
                 }
 
+                var clickedWord: String? = null
+
+                // Handles click
+                paragraph.setOnTouchListener { v, event ->
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        val offset = paragraph.getOffsetForPosition(event.x, event.y)
+                        val possibleWord = findWordForRightHanded(paragraph.text.toString(), offset)
+                        clickedWord = if(possibleWord.isBlank()) null else possibleWord
+                    }
+                    return@setOnTouchListener false
+                }
+
+                paragraph.setOnClickListener {
+                    clickedWord?.let { word -> viewModel.onWordClicked(word) }
+                    clickedWord = null
+                }
+
                 translatedParagraph.setOnTouchListener { _, event ->
                     val duration = event.eventTime - event.downTime
 
@@ -116,6 +133,37 @@ class ParagraphAdapter(
 
             text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             this.setText(text, TextView.BufferType.SPANNABLE)
+        }
+
+        private fun findWordForRightHanded(
+            str: String,
+            offset: Int
+        ): String { // when you touch ' ', this method returns left word.
+            var newOffset = offset
+            if (str.length == newOffset) {
+                newOffset-- // without this code, you will get exception when touching end of the text
+            }
+            if (str[newOffset] == ' ') {
+                newOffset--
+            }
+            var startIndex = newOffset
+            var endIndex = newOffset
+            try {
+                while (Character.isLetterOrDigit(str[startIndex])) {
+                    startIndex--
+                }
+            } catch (e: StringIndexOutOfBoundsException) {
+                startIndex = 0
+            }
+            try {
+                while (Character.isLetterOrDigit(str[endIndex])) {
+                    endIndex++
+                }
+            } catch (e: StringIndexOutOfBoundsException) {
+                endIndex = str.length
+            }
+
+            return str.substring(startIndex, endIndex)
         }
 
     }

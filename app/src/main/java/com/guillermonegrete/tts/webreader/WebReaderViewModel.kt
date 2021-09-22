@@ -31,6 +31,9 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
     private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
     val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
 
+    private val _clickedWord = MutableLiveData<String>()
+    val clickedWord: LiveData<String> = _clickedWord
+
     fun loadDoc(url: String){
         viewModelScope.launch {
             val page = getPage(url)
@@ -97,5 +100,9 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
         }
 
         return null
+    }
+
+    fun onWordClicked(word: String) {
+        _clickedWord.value = word
     }
 }
