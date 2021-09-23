@@ -18,6 +18,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
+import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
@@ -91,9 +92,22 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
             infoWebview.webViewClient = WebViewClient()
+            // This disables scrolling the bottom layout when scrolling the WebView
+            // This is done to allow the web view to scroll up
+            infoWebview.setOnTouchListener { view, _ ->
+                view.parent.requestDisallowInterceptTouchEvent(true)
+                false
+            }
+
+            // This allows to scroll both the WebView and the list, otherwise only the list scrolls
+            linksList.isNestedScrollingEnabled = false
 
             viewModel.clickedWord.observe(viewLifecycleOwner, {
-                infoWebview.loadUrl(it)
+                val link = it.links.firstOrNull()
+                if(link !=  null) infoWebview.loadUrl(link.link.replace("{q}", it.word))
+                linksList.adapter = ExternalLinksAdapter(it.word, it.links) { url ->
+                    infoWebview.loadUrl(url)
+                }
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             })
         }

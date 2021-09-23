@@ -13,6 +13,7 @@ import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
+import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 
@@ -35,8 +36,8 @@ class WebReaderViewModel @ViewModelInject constructor(
     private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
     val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
 
-    private val _clickedWord = MutableLiveData<String>()
-    val clickedWord: LiveData<String> = _clickedWord
+    private val _clickedWord = MutableLiveData<WordAndLinks>()
+    val clickedWord: LiveData<WordAndLinks> = _clickedWord
 
     fun loadDoc(url: String){
         viewModelScope.launch {
@@ -111,7 +112,7 @@ class WebReaderViewModel @ViewModelInject constructor(
 
         viewModelScope.launch {
             val links = withContext(Dispatchers.IO) { getExternalLinksInteractor(translation.src) }
-            _clickedWord.value = links.first().link.replace("{q}", word)
+            _clickedWord.value = WordAndLinks(word, links)
         }
     }
 }

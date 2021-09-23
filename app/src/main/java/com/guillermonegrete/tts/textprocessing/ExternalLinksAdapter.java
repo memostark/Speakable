@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.textprocessing;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,16 +15,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdapter.ViewHolder> {
 
-    private List<ExternalLink> links;
-    private String word;
+    private final List<ExternalLink> links;
+    private final String word;
 
 
-    private DefaultWebBrowser defaultWebBrowser;
+    private final Callback callback;
 
-    ExternalLinksAdapter(String word, List<ExternalLink> links, DefaultWebBrowser defaultWebBrowser){
+    public ExternalLinksAdapter(String word, List<ExternalLink> links, Callback callback){
         this.links = links;
         this.word = word;
-        this.defaultWebBrowser = defaultWebBrowser;
+        this.callback = callback;
     }
 
 
@@ -33,7 +32,7 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.external_link_item, parent, false);
-        return new ViewHolder(view, defaultWebBrowser);
+        return new ViewHolder(view, callback);
     }
 
     @Override
@@ -48,22 +47,20 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
         return links.size();
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder{
+    static class ViewHolder extends RecyclerView.ViewHolder{
 
         Button linkButton;
         String url;
 
-        ViewHolder(@NonNull final View itemView, final DefaultWebBrowser defaultWebBrowser) {
+        ViewHolder(@NonNull final View itemView, Callback callback) {
             super(itemView);
             url = "";
             linkButton = itemView.findViewById(R.id.external_link_btn);
-            linkButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Context context = itemView.getContext();
-                    context.startActivity(defaultWebBrowser.intentForUrl(context, url));
-                }
-            });
+            linkButton.setOnClickListener(v -> callback.onClick(url));
         }
+    }
+
+    public interface Callback{
+        void onClick(String url);
     }
 }
