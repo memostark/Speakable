@@ -5,8 +5,9 @@ import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.db.ExternalLink
 import java.util.concurrent.ExecutorService
+import javax.inject.Inject
 
-class GetExternalLink(
+class GetExternalLink @Inject constructor (
     executor: ExecutorService,
     mainThread: MainThread,
     private val dataSource: ExternalLinksDataSource
@@ -27,5 +28,9 @@ class GetExternalLink(
         this.language = language
         this.callback = callback
         if(!executorService.isShutdown) executorService.execute { run() }
+    }
+
+    operator fun invoke(language: String): List<ExternalLink> {
+        return dataSource.getLanguageLinks(language)
     }
 }

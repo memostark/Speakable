@@ -12,10 +12,14 @@ import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
+import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 
-class WebReaderViewModel @ViewModelInject constructor(private val getTranslationInteractor: GetLangAndTranslation): ViewModel() {
+class WebReaderViewModel @ViewModelInject constructor(
+    private val getTranslationInteractor: GetLangAndTranslation,
+    private val getExternalLinksInteractor: GetExternalLink
+): ViewModel() {
 
     private val _page = MutableLiveData<String>()
     val page: LiveData<String>
@@ -102,7 +106,12 @@ class WebReaderViewModel @ViewModelInject constructor(private val getTranslation
         return null
     }
 
-    fun onWordClicked(word: String) {
-        _clickedWord.value = word
+    fun onWordClicked(word: String, pos: Int) {
+        val translation = translatedParagraphs[pos] ?: return
+
+        viewModelScope.launch {
+            val links = withContext(Dispatchers.IO) { getExternalLinksInteractor(translation.src) }
+            _clickedWord.value = links.first().link.replace("{q}", word)
+        }
     }
 }

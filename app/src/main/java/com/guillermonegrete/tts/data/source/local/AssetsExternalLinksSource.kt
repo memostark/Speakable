@@ -27,6 +27,23 @@ class AssetsExternalLinksSource constructor(private val appContext: Application)
         }
     }
 
+    override fun getLanguageLinks(language: String): List<ExternalLink> {
+        val linkType = object : TypeToken<List<ExternalLink>>() {}.type
+        var jsonReader: JsonReader? = null
+
+        return try {
+            val inputStream = appContext.assets.open(EXTERNAL_LINKS_DATA_FILENAME)
+            jsonReader = JsonReader(inputStream.reader())
+            val linkList: List<ExternalLink> = Gson().fromJson(jsonReader, linkType)
+            linkList.filter { it.language == language }
+        } catch (ex: Exception){
+            println("Error loading asset $ex")
+            emptyList()
+        } finally {
+            jsonReader?.close()
+        }
+    }
+
     companion object{
         const val EXTERNAL_LINKS_DATA_FILENAME = "external_links.json"
     }

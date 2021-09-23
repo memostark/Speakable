@@ -93,7 +93,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             infoWebview.webViewClient = WebViewClient()
 
             viewModel.clickedWord.observe(viewLifecycleOwner, {
-                infoWebview.loadUrl("https://en.m.wiktionary.org/wiki/$it")
+                infoWebview.loadUrl(it)
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             })
         }

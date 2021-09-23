@@ -99,7 +99,7 @@ class ParagraphAdapter(
                 }
 
                 paragraph.setOnClickListener {
-                    clickedWord?.let { word -> viewModel.onWordClicked(word) }
+                    clickedWord?.let { word -> viewModel.onWordClicked(word, adapterPosition) }
                     clickedWord = null
                 }
 
