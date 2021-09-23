@@ -26,7 +26,7 @@
   },
   {
     "siteName": "Reverso Conjugator",
-    "link": "http://conjugator.reverso.net/conjugation-german-verb-{q}.html",
+    "link": "https://conjugator.reverso.net/conjugation-german-verb-{q}.html",
     "language": "de"
   },
   {
@@ -36,7 +36,7 @@
   },
   {
     "siteName": "Reverso Conjugator",
-    "link": "http://conjugator.reverso.net/conjugation-hebrew-verb-{q}.html",
+    "link": "https://conjugator.reverso.net/conjugation-hebrew-verb-{q}.html",
     "language": "he"
   },
   {
