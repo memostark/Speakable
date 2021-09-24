@@ -1,11 +1,11 @@
 package com.guillermonegrete.tts.textprocessing;
 
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.databinding.ExternalLinkItemBinding;
 import com.guillermonegrete.tts.db.ExternalLink;
 
 import java.util.List;
@@ -21,7 +21,9 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
 
     private final Callback callback;
 
-    public ExternalLinksAdapter(String word, List<ExternalLink> links, Callback callback){
+    private boolean isWrapped = false;
+
+    public ExternalLinksAdapter(@NonNull String word, @NonNull List<ExternalLink> links, @NonNull Callback callback){
         this.links = links;
         this.word = word;
         this.callback = callback;
@@ -31,8 +33,8 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.external_link_item, parent, false);
-        return new ViewHolder(view, callback);
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        return new ViewHolder(ExternalLinkItemBinding.inflate(inflater, parent, false), isWrapped, callback);
     }
 
     @Override
@@ -47,16 +49,28 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
         return links.size();
     }
 
+    /**
+     * Set if the width of thu button is wrapped instead of matching the parent.
+     */
+    public void setWrapped(boolean wrapped) {
+        isWrapped = wrapped;
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder{
 
         Button linkButton;
         String url;
 
-        ViewHolder(@NonNull final View itemView, Callback callback) {
-            super(itemView);
+        ViewHolder(ExternalLinkItemBinding binding,  boolean isWrapped, Callback callback) {
+            super(binding.getRoot());
             url = "";
             linkButton = itemView.findViewById(R.id.external_link_btn);
+            linkButton = binding.externalLinkBtn;
             linkButton.setOnClickListener(v -> callback.onClick(url));
+            if(isWrapped){
+                ViewGroup.LayoutParams params = linkButton.getLayoutParams();
+                params.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            }
         }
     }
 

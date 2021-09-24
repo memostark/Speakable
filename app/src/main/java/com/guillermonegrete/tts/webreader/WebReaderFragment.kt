@@ -105,9 +105,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             viewModel.clickedWord.observe(viewLifecycleOwner, {
                 val link = it.links.firstOrNull()
                 if(link !=  null) infoWebview.loadUrl(link.link.replace("{q}", it.word))
-                linksList.adapter = ExternalLinksAdapter(it.word, it.links) { url ->
+                val adapter = ExternalLinksAdapter(it.word, it.links) { url ->
                     infoWebview.loadUrl(url)
                 }
+                adapter.setWrapped(true)
+                linksList.adapter = adapter
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             })
         }
