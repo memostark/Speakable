@@ -88,30 +88,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.updateExpanded()
             })
 
-            val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-
-            infoWebview.webViewClient = WebViewClient()
-            // This disables scrolling the bottom layout when scrolling the WebView
-            // This is done to allow the web view to scroll up
-            infoWebview.setOnTouchListener { view, _ ->
-                view.parent.requestDisallowInterceptTouchEvent(true)
-                false
-            }
-
-            // This allows to scroll both the WebView and the list, otherwise only the list scrolls
-            linksList.isNestedScrollingEnabled = false
-
-            viewModel.clickedWord.observe(viewLifecycleOwner, {
-                val link = it.links.firstOrNull()
-                if(link !=  null) infoWebview.loadUrl(link.link.replace("{q}", it.word))
-                val adapter = ExternalLinksAdapter(it.word, it.links) { url ->
-                    infoWebview.loadUrl(url)
-                }
-                adapter.setWrapped(true)
-                linksList.adapter = adapter
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-            })
+            setBottomPanel()
         }
 
         viewModel.loadDoc(args.link)
@@ -155,6 +132,45 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             null,
         )
         dialog.show(childFragmentManager, "Text_info")
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setBottomPanel(){
+        with(binding) {
+            val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            bottomSheetBehavior.addBottomSheetCallback(object :
+                BottomSheetBehavior.BottomSheetCallback() {
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN) listToggle.show()
+                }
+
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+            })
+
+            infoWebview.webViewClient = WebViewClient()
+            // This disables scrolling the bottom layout when scrolling the WebView
+            // This is done to allow the web view to scroll up
+            infoWebview.setOnTouchListener { view, _ ->
+                view.parent.requestDisallowInterceptTouchEvent(true)
+                false
+            }
+
+            // This allows to scroll both the WebView and the list, otherwise only the list scrolls
+            linksList.isNestedScrollingEnabled = false
+
+            viewModel.clickedWord.observe(viewLifecycleOwner, {
+                val link = it.links.firstOrNull()
+                if (link != null) infoWebview.loadUrl(link.link.replace("{q}", it.word))
+                val adapter = ExternalLinksAdapter(it.word, it.links) { url ->
+                    infoWebview.loadUrl(url)
+                }
+                adapter.setWrapped(true)
+                linksList.adapter = adapter
+                listToggle.hide()
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            })
+        }
     }
 
     private fun findWordForRightHanded(
