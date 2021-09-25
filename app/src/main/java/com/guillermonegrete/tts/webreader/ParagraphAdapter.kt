@@ -89,7 +89,7 @@ class ParagraphAdapter(
                 var clickedWord: String? = null
 
                 // Handles click
-                paragraph.setOnTouchListener { v, event ->
+                paragraph.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = paragraph.getOffsetForPosition(event.x, event.y)
                         val possibleWord = findWordForRightHanded(paragraph.text.toString(), offset)
