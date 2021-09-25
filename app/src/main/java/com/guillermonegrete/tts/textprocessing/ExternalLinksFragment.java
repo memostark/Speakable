@@ -78,7 +78,8 @@ public class ExternalLinksFragment extends Fragment {
         // External links can be updated when fragment is not attached, in that case update args
         // Otherwise update adapter normally
         if(isAdded()){
-            ExternalLinksAdapter adapter = new ExternalLinksAdapter(wordExtra, links, defaultWebBrowser);
+            ExternalLinksAdapter adapter = new ExternalLinksAdapter(wordExtra, links,
+                    url -> startActivity(defaultWebBrowser.intentForUrl(requireContext(), url)));
             recyclerView.setAdapter(adapter);
         }else{
             Bundle args = getArguments();
@@ -91,6 +92,7 @@ public class ExternalLinksFragment extends Fragment {
     private DefaultWebBrowser getDefaultWebBrowser(){
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
         String preference = preferences.getString(DefaultWebBrowser.PREFERENCE_KEY, "");
+        if (preference == null) preference = "";
         return DefaultWebBrowser.Companion.get(preference);
     }
 

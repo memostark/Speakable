@@ -183,6 +183,7 @@
     </string>
     <string name="toggle">Toggle</string>
     <string name="expand">expand</string>
-    <string name="paragraph_not_translated">Paragraph not translated yet, click button to translate</string>
+    <string name="paragraph_not_translated">Paragraph not translated yet, click button to translate and enable bottom panel</string>
+    <string name="swipe_to_hide">Swipe to hide</string>
 
 </resources>

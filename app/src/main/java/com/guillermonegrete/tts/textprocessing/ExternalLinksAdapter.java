@@ -1,12 +1,11 @@
 package com.guillermonegrete.tts.textprocessing;
 
-import android.content.Context;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.databinding.ExternalLinkItemBinding;
 import com.guillermonegrete.tts.db.ExternalLink;
 
 import java.util.List;
@@ -16,24 +15,26 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdapter.ViewHolder> {
 
-    private List<ExternalLink> links;
-    private String word;
+    private final List<ExternalLink> links;
+    private final String word;
 
 
-    private DefaultWebBrowser defaultWebBrowser;
+    private final Callback callback;
 
-    ExternalLinksAdapter(String word, List<ExternalLink> links, DefaultWebBrowser defaultWebBrowser){
+    private boolean isWrapped = false;
+
+    public ExternalLinksAdapter(@NonNull String word, @NonNull List<ExternalLink> links, @NonNull Callback callback){
         this.links = links;
         this.word = word;
-        this.defaultWebBrowser = defaultWebBrowser;
+        this.callback = callback;
     }
 
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.external_link_item, parent, false);
-        return new ViewHolder(view, defaultWebBrowser);
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        return new ViewHolder(ExternalLinkItemBinding.inflate(inflater, parent, false), isWrapped, callback);
     }
 
     @Override
@@ -48,22 +49,32 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
         return links.size();
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder{
+    /**
+     * Set if the width of thu button is wrapped instead of matching the parent.
+     */
+    public void setWrapped(boolean wrapped) {
+        isWrapped = wrapped;
+    }
+
+    static class ViewHolder extends RecyclerView.ViewHolder{
 
         Button linkButton;
         String url;
 
-        ViewHolder(@NonNull final View itemView, final DefaultWebBrowser defaultWebBrowser) {
-            super(itemView);
+        ViewHolder(ExternalLinkItemBinding binding,  boolean isWrapped, Callback callback) {
+            super(binding.getRoot());
             url = "";
             linkButton = itemView.findViewById(R.id.external_link_btn);
-            linkButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Context context = itemView.getContext();
-                    context.startActivity(defaultWebBrowser.intentForUrl(context, url));
-                }
-            });
+            linkButton = binding.externalLinkBtn;
+            linkButton.setOnClickListener(v -> callback.onClick(url));
+            if(isWrapped){
+                ViewGroup.LayoutParams params = linkButton.getLayoutParams();
+                params.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            }
         }
+    }
+
+    public interface Callback{
+        void onClick(String url);
     }
 }

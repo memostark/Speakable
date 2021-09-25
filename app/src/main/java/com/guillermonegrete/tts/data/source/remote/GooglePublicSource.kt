@@ -78,7 +78,7 @@ class GooglePublicSource @Inject constructor(private val googlePublicAPI: Google
         languageFrom: String,
         languageTo: String
     ): Translation {
-      val rawLanguageFrom = if(languageFrom == "he") "iw" else languageFrom
+        val rawLanguageFrom = if(languageFrom == "he") "iw" else languageFrom
 
         val response = googlePublicAPI.getWord(text, rawLanguageFrom, languageTo).execute()
         val responseBody = response.body()
@@ -112,7 +112,9 @@ class GooglePublicSource @Inject constructor(private val googlePublicAPI: Google
 
         // The final line is unaffected by the api, so don't modify it.
         segments.add(Segment(sentences.last().trans, sentences.last().orig))
-        return Translation(segments, response.src)
+
+        val language = if(response.src == "iw") "he" else response.src
+        return Translation(segments, language)
     }
 
     companion object {

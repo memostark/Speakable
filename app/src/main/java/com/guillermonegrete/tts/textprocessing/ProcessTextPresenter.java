@@ -195,18 +195,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     private void getExternalLinks(String language) {
-        GetExternalLink link_interactor = new GetExternalLink(
-                executorService,
-                mMainThread,
-                links -> {
+        GetExternalLink link_interactor = new GetExternalLink(executorService, mMainThread, linksRepository);
+        link_interactor.invoke(language, links -> {
                     mView.setExternalDictionary(links);
                     if(!hasTranslation) mView.setTranslationErrorMessage();
-                },
-                linksRepository,
-                language
-        );
-
-        link_interactor.execute();
+        });
     }
 
     @Override
@@ -263,15 +256,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             }
         }, languageFrom, languageTo);
 
-        GetExternalLink linkInteractor = new GetExternalLink(
-                executorService,
-                mMainThread,
-                links -> mView.updateExternalLinks(links),
-                linksRepository,
-                languageFrom
-        );
+        GetExternalLink linkInteractor = new GetExternalLink(executorService, mMainThread, linksRepository);
 
-        linkInteractor.execute();
+        linkInteractor.invoke(languageFrom, links -> mView.updateExternalLinks(links));
     }
 
 

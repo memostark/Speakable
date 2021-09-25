@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/external_link_btn"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="@dimen/external_link_item_vpadding"
-    android:paddingBottom="@dimen/external_link_item_vpadding"
-    android:paddingStart="5dp"
-    android:paddingEnd="5dp">
-
-    <Button
-        android:id="@+id/external_link_btn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-</FrameLayout>
+    android:layout_marginStart="5dp"
+    android:layout_marginTop="@dimen/external_link_item_vpadding"
+    android:layout_marginEnd="5dp"
+    android:layout_marginBottom="@dimen/external_link_item_vpadding"
+    tools:text="External link" />
