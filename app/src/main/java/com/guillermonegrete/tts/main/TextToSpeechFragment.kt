@@ -81,6 +81,10 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 playTutorial()
                 true
             }
+            R.id.info_item -> {
+                findNavController().navigate(R.id.action_textToSpeechFragment_to_appInfoDest)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }

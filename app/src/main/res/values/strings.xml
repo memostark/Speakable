@@ -185,5 +185,7 @@
     <string name="expand">expand</string>
     <string name="paragraph_not_translated">Paragraph not translated yet, click button to translate and enable bottom panel</string>
     <string name="swipe_to_hide">Swipe to hide</string>
+    <string name="app_version">Version: %s</string>
+    <string name="about">About</string>
 
 </resources>
