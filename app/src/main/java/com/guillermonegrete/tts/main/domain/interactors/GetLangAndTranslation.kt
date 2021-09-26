@@ -36,7 +36,7 @@ class GetLangAndTranslation @Inject constructor(
         this.languageFrom = languageFrom
         this.languageTo = languageTo
         this.callback = callback
-        run()
+        execute()
     }
 
     operator fun invoke(
@@ -48,19 +48,13 @@ class GetLangAndTranslation @Inject constructor(
     }
 
     override fun run() {
-        wordRepository.getLanguageAndTranslation(
-            text,
-            languageFrom,
-            languageTo,
-            object : WordRepositorySource.GetTranslationCallback{
-                override fun onTranslationAndLanguage(word: Words?) {
-                    word?.let { callback?.onTranslationAndLanguage(it) }
-                }
-
-                override fun onDataNotAvailable() {callback?.onDataNotAvailable()}
-
+        val result = wordRepository.getTranslation(text, languageFrom, languageTo)
+        mMainThread.post {
+            when(result){
+                is Result.Success -> callback?.onTranslationAndLanguage(Words(text, result.data.src, result.data.translatedText))
+                is Result.Error -> callback?.onDataNotAvailable()
             }
-        )
+        }
     }
 
     interface Callback{

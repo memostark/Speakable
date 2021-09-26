@@ -22,7 +22,6 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 @Singleton
 public class WordRepository implements WordRepositorySource {
 
-    private final WordDataSource remoteTranslatorSource;
     private final WordDataSource mWordLocalDataSource;
 
     private final TranslationSource translationSource;
@@ -31,10 +30,8 @@ public class WordRepository implements WordRepositorySource {
 
 
     @Inject
-    public WordRepository(@ApplicationModule.RemoteTranslationDataSource WordDataSource remoteTranslatorSource,
-                          @ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource,
-                          @NonNull TranslationSource translationSource){
-        this.remoteTranslatorSource = checkNotNull(remoteTranslatorSource);
+    public WordRepository(@ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource,
+                          @ApplicationModule.RemoteTranslationSource @NonNull TranslationSource translationSource){
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
         this.translationSource = translationSource;
 
@@ -54,11 +51,6 @@ public class WordRepository implements WordRepositorySource {
     @Override
     public List<String> getLanguagesISO() {
         return mWordLocalDataSource.getLanguagesISO();
-    }
-
-    @Override
-    public void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback) {
-        getWordLanguageInfo(wordText, "auto", "en", callback);
     }
 
     @Override
@@ -86,19 +78,12 @@ public class WordRepository implements WordRepositorySource {
 
     @Override
     public void getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo, final @NonNull GetTranslationCallback callback) {
-        remoteTranslatorSource.getWordLanguageInfo(text, languageFrom , languageTo, new WordDataSource.GetWordCallback() {
-            @Override
-            public void onWordLoaded(Words word) {
-                callback.onTranslationAndLanguage(word);
-                cachedWords.put(text, word);
-            }
-
-            @Override
-            public void onDataNotAvailable() {
-                callback.onDataNotAvailable();
-            }
-        });
-
+        try{
+            Translation translation = translationSource.getTranslation(text, languageFrom, languageTo);
+            callback.onTranslationAndLanguage(new Words(text, translation.getSrc(), translation.getTranslatedText()));
+        }catch (Exception e){
+            callback.onDataNotAvailable();
+        }
     }
 
     @Override
@@ -141,7 +126,7 @@ public class WordRepository implements WordRepositorySource {
             return;
         }
 
-        remoteTranslatorSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback() {
+/*        remoteTranslatorSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback() {
 
             @Override
             public void onWordLoaded(Words word) {
@@ -153,6 +138,14 @@ public class WordRepository implements WordRepositorySource {
             public void onDataNotAvailable() {
                 callback.onDataNotAvailable(new Words(wordText, "un", "un"));
             }
-        });
+        });*/
+        try{
+            Translation translation = translationSource.getTranslation(wordText, languageFrom, languageTo);
+            Words word = new Words(wordText, translation.getSrc(), translation.getTranslatedText());
+            callback.onRemoteWordLoaded(word);
+            cachedWords.put(wordText, word);
+        }catch (Exception e){
+            callback.onDataNotAvailable(new Words(wordText, "un", "un"));
+        }
     }
 }
