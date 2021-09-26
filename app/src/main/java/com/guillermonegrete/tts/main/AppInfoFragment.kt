@@ -2,7 +2,10 @@ package com.guillermonegrete.tts.main
 
 import android.app.Dialog
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.BuildConfig
@@ -11,9 +14,10 @@ import com.guillermonegrete.tts.databinding.FragmentAppInfoBinding
 import java.util.*
 
 /**
- * A simple [Fragment] for showing information about the application
+ * A simple [DialogFragment] for showing information about the application.
+ * Extending the AppCompat version because it supports the applied styles.
  */
-class AppInfoFragment : DialogFragment(R.layout.fragment_app_info) {
+class AppInfoFragment : AppCompatDialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,9 +30,14 @@ class AppInfoFragment : DialogFragment(R.layout.fragment_app_info) {
         return dialog
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val binding = FragmentAppInfoBinding.bind(view)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        val binding = FragmentAppInfoBinding.inflate(inflater, container, false)
         binding.version.text = getVersion()
+        return binding.root
     }
 
     private fun getVersion(): String {
