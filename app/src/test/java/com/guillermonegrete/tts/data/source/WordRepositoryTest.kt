@@ -32,7 +32,7 @@ class WordRepositoryTest {
 
         fakeTranslator = FakeTranslatorSource()
 
-        repository = WordRepository(fakeRemoteSource, fakeLocalSource, fakeTranslator)
+        repository = WordRepository(fakeLocalSource, fakeTranslator)
     }
 
     @Test

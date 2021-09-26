@@ -22,7 +22,6 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 @Singleton
 public class WordRepository implements WordRepositorySource {
 
-    private final WordDataSource remoteTranslatorSource;
     private final WordDataSource mWordLocalDataSource;
 
     private final TranslationSource translationSource;
@@ -31,10 +30,8 @@ public class WordRepository implements WordRepositorySource {
 
 
     @Inject
-    public WordRepository(@ApplicationModule.RemoteTranslationDataSource WordDataSource remoteTranslatorSource,
-                          @ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource,
-                          @NonNull TranslationSource translationSource){
-        this.remoteTranslatorSource = checkNotNull(remoteTranslatorSource);
+    public WordRepository(@ApplicationModule.WordsLocalDataSource WordDataSource wordLocalDataSource,
+                          @ApplicationModule.RemoteTranslationSource @NonNull TranslationSource translationSource){
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
         this.translationSource = translationSource;
 

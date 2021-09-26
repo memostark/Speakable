@@ -55,7 +55,7 @@ object ApplicationModule {
 
     @Qualifier
     @Retention(AnnotationRetention.RUNTIME)
-    annotation class RemoteTranslationDataSource
+    annotation class RemoteTranslationSource
 
     @Qualifier
     @Retention(AnnotationRetention.RUNTIME)
@@ -113,13 +113,13 @@ object ApplicationModule {
     @Provides
     fun provideFileDAO(database: FilesDatabase): FileDAO = database.fileDao()
 
-    @RemoteTranslationDataSource
+    @RemoteTranslationSource
     @Provides
     fun provideRemoteTranslationSource(
         type: TranslatorType,
-        map: @JvmSuppressWildcards Map<TranslatorType, WordDataSource>,
+        map: @JvmSuppressWildcards Map<TranslatorType, TranslationSource>,
         defaultSource: GooglePublicSource
-    ): WordDataSource{
+    ): TranslationSource{
         return map[type] ?: defaultSource
     }
 
@@ -207,7 +207,7 @@ class GoogleSourceModule{
     @Singleton
     @IntoMap
     @TranslatorEnumKey(TranslatorType.GOOGLE_PUBLIC)
-    fun provideGooglePublicSource(api: GooglePublicAPI): WordDataSource = GooglePublicSource(api)
+    fun provideGooglePublicSource(api: GooglePublicAPI): TranslationSource = GooglePublicSource(api)
 }
 
 @InstallIn(ApplicationComponent::class)
