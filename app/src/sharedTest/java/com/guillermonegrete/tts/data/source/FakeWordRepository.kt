@@ -34,10 +34,6 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         return languagesData.toMutableList()
     }
 
-    override fun getWordLanguageInfo(wordText: String?, callback: WordRepositorySource.GetWordRepositoryCallback?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     override fun getWordLanguageInfo(
         wordText: String,
         languageFrom: String,

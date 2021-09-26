@@ -34,8 +34,6 @@ public interface WordRepositorySource {
 
     List<String> getLanguagesISO();
 
-    void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback);
-
     void getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo, @NonNull GetWordRepositoryCallback callback);
 
     void getLanguageAndTranslation(@NonNull String text, @NonNull GetTranslationCallback callback);

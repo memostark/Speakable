@@ -57,11 +57,6 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public void getWordLanguageInfo(String wordText, GetWordRepositoryCallback callback) {
-        getWordLanguageInfo(wordText, "auto", "en", callback);
-    }
-
-    @Override
     public void getWordLanguageInfo(final @NonNull String wordText, final @NonNull String languageFrom, final @NonNull String languageTo, final @NonNull GetWordRepositoryCallback callback) {
         mWordLocalDataSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback(){
 
@@ -86,19 +81,12 @@ public class WordRepository implements WordRepositorySource {
 
     @Override
     public void getLanguageAndTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo, final @NonNull GetTranslationCallback callback) {
-        remoteTranslatorSource.getWordLanguageInfo(text, languageFrom , languageTo, new WordDataSource.GetWordCallback() {
-            @Override
-            public void onWordLoaded(Words word) {
-                callback.onTranslationAndLanguage(word);
-                cachedWords.put(text, word);
-            }
-
-            @Override
-            public void onDataNotAvailable() {
-                callback.onDataNotAvailable();
-            }
-        });
-
+        try{
+            Translation translation = translationSource.getTranslation(text, languageFrom, languageTo);
+            callback.onTranslationAndLanguage(new Words(text, translation.getSrc(), translation.getTranslatedText()));
+        }catch (Exception e){
+            callback.onDataNotAvailable();
+        }
     }
 
     @Override
@@ -141,7 +129,7 @@ public class WordRepository implements WordRepositorySource {
             return;
         }
 
-        remoteTranslatorSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback() {
+/*        remoteTranslatorSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback() {
 
             @Override
             public void onWordLoaded(Words word) {
@@ -153,6 +141,14 @@ public class WordRepository implements WordRepositorySource {
             public void onDataNotAvailable() {
                 callback.onDataNotAvailable(new Words(wordText, "un", "un"));
             }
-        });
+        });*/
+        try{
+            Translation translation = translationSource.getTranslation(wordText, languageFrom, languageTo);
+            Words word = new Words(wordText, translation.getSrc(), translation.getTranslatedText());
+            callback.onRemoteWordLoaded(word);
+            cachedWords.put(wordText, word);
+        }catch (Exception e){
+            callback.onDataNotAvailable(new Words(wordText, "un", "un"));
+        }
     }
 }

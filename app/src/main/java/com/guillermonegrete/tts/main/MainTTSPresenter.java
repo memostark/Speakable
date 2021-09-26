@@ -45,17 +45,17 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
 
             // TODO this request should be done in a background thread
             if(lang == null) {
-                wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
+                executorService.submit(() -> wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
                     @Override
                     public void onTranslationAndLanguage(Words word) {
                         String language = word.lang;
                         tts.initializeTTS(language, ttsListener);
-                        view.showDetectedLanguage(language);
+                        mMainThread.post(() -> view.showDetectedLanguage(language));
                     }
 
                     @Override
                     public void onDataNotAvailable() {}
-                });
+                }));
             } else {
                 tts.initializeTTS(lang, ttsListener);
             }
