@@ -81,6 +81,8 @@ ext {
 
 kapt {
     generateStubs = true
+    // Required by hilt: https://dagger.dev/hilt/gradle-setup
+    correctErrorTypes = true
 }
 
 dependencies {
@@ -178,12 +180,9 @@ dependencies {
     kapt "com.google.dagger:dagger-compiler:$dagger_version"
 
     // Hilt
-    def hilt_version = "2.38"
+    def hilt_version = "2.38.1"
     implementation "com.google.dagger:hilt-android:$hilt_version"
     kapt "com.google.dagger:hilt-android-compiler:$hilt_version"
-    def hiltAndroidXVersion = '1.0.0-alpha02'
-    implementation "androidx.hilt:hilt-lifecycle-viewmodel:$hiltAndroidXVersion"
-    kapt "androidx.hilt:hilt-compiler:$hiltAndroidXVersion"
 
     // Hilt testing
     androidTestImplementation "com.google.dagger:hilt-android-testing:$hilt_version"

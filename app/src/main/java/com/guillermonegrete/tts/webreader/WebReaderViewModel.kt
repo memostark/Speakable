@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.webreader
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -14,10 +13,13 @@ import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
+import javax.inject.Inject
 
-class WebReaderViewModel @ViewModelInject constructor(
+@HiltViewModel
+class WebReaderViewModel @Inject constructor(
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink
 ): ViewModel() {

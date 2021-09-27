@@ -1,20 +1,22 @@
 package com.guillermonegrete.tts.importtext
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @FlowPreview
 @ExperimentalCoroutinesApi
-class ImportTextViewModel @ViewModelInject constructor(
+@HiltViewModel
+class ImportTextViewModel @Inject constructor(
     private val fileRepository: FileRepository,
     fileManager: EpubFileManager
 ): ViewModel() {

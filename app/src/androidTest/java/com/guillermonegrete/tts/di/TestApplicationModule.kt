@@ -6,7 +6,7 @@ import com.guillermonegrete.tts.data.source.*
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.components.SingletonComponent
 
 /**
  * WordRepositorySource binding to use in tests.
@@ -14,7 +14,7 @@ import dagger.hilt.android.components.ApplicationComponent
  * Hilt will inject a [FakeWordRepository] instead of a [WordRepository].
  */
 @Module
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 abstract class TestApplicationModuleBinds {
 
     @Binds
