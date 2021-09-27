@@ -114,4 +114,11 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
     </style>
+
+    <!--    Style used for a dialog fragment that has a title-->
+    <style name="DialogFragmentTitle" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">false</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
 </resources>

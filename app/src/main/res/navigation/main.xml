@@ -16,6 +16,9 @@
         <action
             android:id="@+id/to_webReaderFragment_action"
             app:destination="@id/webReaderFragment" />
+        <action
+            android:id="@+id/action_textToSpeechFragment_to_appInfoDest"
+            app:destination="@id/appInfoDest" />
     </fragment>
     <fragment
         android:id="@+id/settingsFragmentDest"
@@ -36,4 +39,9 @@
             android:name="link"
             app:argType="string" />
     </fragment>
+
+    <dialog android:id="@+id/appInfoDest"
+        android:name="com.guillermonegrete.tts.main.AppInfoFragment"
+        tools:layout="@layout/fragment_app_info"/>
+
 </navigation>
