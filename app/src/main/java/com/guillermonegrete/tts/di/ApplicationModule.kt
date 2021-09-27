@@ -34,7 +34,6 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 import dagger.Binds
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
@@ -162,7 +161,7 @@ object ApplicationModule {
     fun provideGoogleApi(retrofit: Retrofit) = retrofit.create(GooglePublicAPI::class.java)
 }
 
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 abstract class ApplicationModuleBinds {
 
@@ -185,7 +184,7 @@ abstract class ApplicationModuleBinds {
 /**
  * The binding for WordRepositorySource is on its own module so that we can replace it easily in tests.
  */
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 abstract class WordRepositorySourceModule {
     @Binds
@@ -200,7 +199,7 @@ abstract class WordRepositorySourceModule {
  * dagger can't determine how to create the instance if multiple methods return
  * the same type in the same module.
  */
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 class GoogleSourceModule{
     @Provides
@@ -210,7 +209,7 @@ class GoogleSourceModule{
     fun provideGooglePublicSource(api: GooglePublicAPI): TranslationSource = GooglePublicSource(api)
 }
 
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 class FirebaseLocalModule{
     @Provides

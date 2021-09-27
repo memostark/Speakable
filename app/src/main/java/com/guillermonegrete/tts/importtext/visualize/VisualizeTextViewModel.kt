@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.importtext.visualize
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -16,11 +15,14 @@ import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
+import javax.inject.Inject
 
-class VisualizeTextViewModel @ViewModelInject constructor(
+@HiltViewModel
+class VisualizeTextViewModel @Inject constructor(
     private val epubParser: EpubParser,
     private val settings: SettingsRepository,
     private val fileRepository: FileRepository,

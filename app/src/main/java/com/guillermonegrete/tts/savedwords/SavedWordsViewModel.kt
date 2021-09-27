@@ -1,17 +1,19 @@
 package com.guillermonegrete.tts.savedwords
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 
 import com.guillermonegrete.tts.db.Words
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import javax.inject.Inject
 
 /**
  * Production dispatcher is always Dispatchers.IO, we only inject the dispatcher when testing
  * The official docs recommend to inject Dispatchers.Unconfined when testing code using withContext()
  */
-class SavedWordsViewModel @ViewModelInject constructor(
+@HiltViewModel
+class SavedWordsViewModel @Inject constructor(
     private val wordRepository: WordRepositorySource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
