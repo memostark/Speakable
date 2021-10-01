@@ -181,16 +181,6 @@ abstract class ApplicationModuleBinds {
     abstract fun bindTranslatorSource(source: GooglePublicSource): TranslationSource
 }
 
-@InstallIn(SingletonComponent::class)
-@Module
-object SourcesModule{
-
-    @Singleton
-    @Provides
-    fun provideGoogleApi(retrofit: Retrofit): GooglePublicAPI = retrofit.create(GooglePublicAPI::class.java)
-
-}
-
 /**
  * The binding for WordRepositorySource is on its own module so that we can replace it easily in tests.
  */

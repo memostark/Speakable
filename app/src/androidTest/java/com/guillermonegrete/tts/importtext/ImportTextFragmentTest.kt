@@ -4,19 +4,24 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
+import android.view.View
 import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.UiController
+import androidx.test.espresso.ViewAction
+import androidx.test.espresso.action.ViewActions.*
+import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.google.android.material.tabs.TabLayout
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.source.DefaultFileRepository
 import com.guillermonegrete.tts.di.WordRepositorySourceModule
@@ -25,6 +30,8 @@ import com.guillermonegrete.tts.launchFragmentInHiltContainer
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
+import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.Matcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -83,5 +90,40 @@ class ImportTextFragmentTest{
         onView(withId(R.id.pick_epub_file_btn)).perform(click())
 
         intended(hasComponent(VisualizeTextActivity::class.java.name))
+    }
+
+    @Test
+    fun given_in_files_tab_when_add_text_then_navigate_to_visualizer(){
+
+        launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)
+
+        onView(withId(R.id.import_tab_layout)).perform(selectTabAtPosition(1))
+
+        // This can cause the tab to suddenly change, making the test fail
+        // A fix hasn't been found yet
+//        onView(withId(R.id.import_text_edit)).perform(typeText("New text to import"), closeSoftKeyboard())
+        Thread.sleep(500)
+        onView(withId(R.id.visualize_btn)).check(matches(isDisplayed())).perform(click())
+
+        intended(hasComponent(VisualizeTextActivity::class.java.name))
+    }
+
+    private fun selectTabAtPosition(position: Int): ViewAction {
+        return object : ViewAction {
+            override fun getConstraints(): Matcher<View> {
+                return allOf(isDisplayed(), isAssignableFrom(TabLayout::class.java))
+            }
+
+            override fun getDescription(): String {
+                return "selecting tab at index $position"
+            }
+
+            override fun perform(uiController: UiController, view: View) {
+                if (view is TabLayout) {
+                    val tab = view.getTabAt(position)
+                    tab?.select()
+                }
+            }
+        }
     }
 }
