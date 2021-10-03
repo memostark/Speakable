@@ -203,6 +203,7 @@ dependencies {
     def espressoVersion = "3.3.0"
     androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
     androidTestImplementation "androidx.test.espresso:espresso-contrib:$espressoVersion"
+    androidTestImplementation "com.android.support.test.espresso:espresso-intents:$espressoVersion"
     implementation "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
 
     // Need to use exclude due to a bug. More info here: https://github.com/android/android-test/issues/731#issuecomment-687201783

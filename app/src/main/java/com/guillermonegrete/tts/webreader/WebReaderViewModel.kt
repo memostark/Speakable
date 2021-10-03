@@ -12,6 +12,7 @@ import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
+import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
@@ -43,8 +44,10 @@ class WebReaderViewModel @Inject constructor(
 
     fun loadDoc(url: String){
         viewModelScope.launch {
-            val page = getPage(url)
-            _page.value = page
+            wrapEspressoIdlingResource {
+                val page = getPage(url)
+                _page.value = page
+            }
         }
     }
 

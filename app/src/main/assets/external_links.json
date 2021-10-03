@@ -53,5 +53,10 @@
     "siteName": "Cambridge Dictionary",
     "link": "https://dictionary.cambridge.org/dictionary/english/{q}",
     "language": "en"
+  },
+  {
+    "siteName": "RAE",
+    "link": "https://dle.rae.es/{q}",
+    "language": "es"
   }
 ]

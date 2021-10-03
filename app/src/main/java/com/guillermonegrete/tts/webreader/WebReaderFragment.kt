@@ -31,7 +31,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private  var _binding: FragmentWebReaderBinding? = null
     private val binding get() = _binding!!
 
-    val args: WebReaderFragmentArgs by navArgs()
+    private val args: WebReaderFragmentArgs by navArgs()
 
     private var clickedWord: String? = null
 
