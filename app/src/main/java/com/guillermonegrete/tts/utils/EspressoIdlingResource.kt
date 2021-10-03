@@ -11,10 +11,12 @@ object EspressoIdlingResource {
     @JvmField
     val countingIdlingResource = SimpleCountingIdlingResource(RESOURCE)
 
+    @JvmStatic
     fun increment() {
         countingIdlingResource.increment()
     }
 
+    @JvmStatic
     fun decrement() {
         if (!countingIdlingResource.isIdleNow) {
             countingIdlingResource.decrement()

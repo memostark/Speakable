@@ -673,7 +673,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         const val ACTION_KEY = "extra_key"
         const val THEME_KEY = "theme_key"
 
-        private const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
+        const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
 
         @JvmStatic

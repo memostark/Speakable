@@ -113,7 +113,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         hasTranslation = true;
         viewIsActive = true;
 
-        EspressoIdlingResource.INSTANCE.increment();
+        EspressoIdlingResource.increment();
 
         GetLayout interactor = new GetLayout(executorService, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
@@ -133,7 +133,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
                 layoutResult.setValue(new GetLayoutResult.WordSuccess(layoutType, word));
 
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             }
 
             @Override
@@ -143,7 +143,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 getExternalLinks(word.lang);
                 layoutResult.setValue(new GetLayoutResult.DictionarySuccess(word, items));
 
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             }
 
             @Override
@@ -151,7 +151,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 hasTranslation = false;
                 layoutResult.setValue(new GetLayoutResult.Error(new Exception(message)));
 
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             }
         }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
 
@@ -165,7 +165,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         hasTranslation = true;
         viewIsActive = true;
 
-        EspressoIdlingResource.INSTANCE.increment();
+        EspressoIdlingResource.increment();
 
         checkTTSInitialization();
 
@@ -177,7 +177,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 mView.setSavedWordLayout(word);
                 if(!isAvailable) mView.showLanguageNotAvailable();
 
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             }
 
             @Override
@@ -186,7 +186,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                 mView.setDictWithSaveWordLayout(word, items);
                 if(!isAvailable) mView.showLanguageNotAvailable();
 
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             }
 
 
@@ -241,18 +241,21 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
+        EspressoIdlingResource.increment();
         hasTranslation = true;
         getTranslationInteractor.invoke(foundWord.word, new GetLangAndTranslation.Callback() {
             @Override
             public void onTranslationAndLanguage(@NotNull Words word) {
                 customTTS.initializeTTS(word.lang, ttsListener);
                 mView.updateTranslation(word);
+                EspressoIdlingResource.decrement();
             }
 
             @Override
             public void onDataNotAvailable() {
                 hasTranslation = false;
                 mView.setTranslationErrorMessage();
+                EspressoIdlingResource.decrement();
             }
         }, languageFrom, languageTo);
 
@@ -326,7 +329,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private void checkTTSInitialization(){
         isAvailable = true;
         String lang = foundWord.lang;
-        EspressoIdlingResource.INSTANCE.increment();
+        EspressoIdlingResource.increment();
         customTTS.initializeTTS(lang, ttsListener);
     }
 
@@ -356,7 +359,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isAvailable = false;
             mMainThread.post(() -> {
                 mView.showLanguageNotAvailable();
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             });
         }
 
@@ -373,7 +376,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isPlaying = false;
             mMainThread.post(() -> {
                 mView.showPlayIcon();
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             });
         }
 
@@ -382,7 +385,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isPlaying = false;
             mMainThread.post(() -> {
                 mView.showErrorPlayingAudio();
-                EspressoIdlingResource.INSTANCE.decrement();
+                EspressoIdlingResource.decrement();
             });
         }
     };
