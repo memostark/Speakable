@@ -82,7 +82,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        inputText = arguments?.getString(TEXT_KEY)
+        inputText = arguments?.getString(TEXT_KEY)?.trim()
 
         languageToISO = getPreferenceISO()
         languageFrom = getLanguageFromPreference()
