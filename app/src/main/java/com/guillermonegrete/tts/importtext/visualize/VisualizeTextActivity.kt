@@ -9,6 +9,7 @@ import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
+import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.activity.viewModels
@@ -26,6 +27,7 @@ import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
+import java.lang.IllegalArgumentException
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -645,9 +647,15 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
 
             // Need to dispatch the touch event to the ViewPager otherwise scrolling won't work on the bottom text
-            // The y position of the touch event is in terms of the bottom text origin, add offset to make it in term of the card view origin
+            // The y position of the touch event is in terms of the bottom text origin, add offset to make it in terms of the card view origin
             val newEvent = MotionEvent.obtain(event.downTime, event.eventTime, event.action, event.x, event.y + cardHalfHeight, event.metaState)
-            viewPager.dispatchTouchEvent(newEvent)
+            try{
+                viewPager.dispatchTouchEvent(newEvent)
+            }catch (exception: IllegalArgumentException){
+                // Sometimes an exception will be thrown "pointerIndex out of range".
+                // Ignoring it seems to not affect the scaling gesture
+                Log.e(VisualizeTextActivity::class.simpleName, "Dispatching touch event to ViewPager error: ${exception.message}")
+            }
             true
         }
     }
