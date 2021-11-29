@@ -110,6 +110,14 @@ class VisualizeTextActivity: AppCompatActivity() {
             // A new page is shown when position is 0.0f,
             // so we request focus in order to highlight text correctly.
             if(position == 0.0f) setPageTextFocus()
+
+            // Remove highlights when page is mostly hidden.
+            if(position > 0.9f || position < -0.9f){
+                val topText: TextView = view.findViewById(R.id.page_text_view) ?: return@setPageTransformer
+                val text = SpannableString(topText.text)
+                val spans = text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+                if(spans.isNotEmpty()) topText.setText(text, TextView.BufferType.SPANNABLE)
+            }
         }
         viewPager.post{
             addPagerCallback()
