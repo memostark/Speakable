@@ -29,6 +29,7 @@ import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import java.lang.IllegalArgumentException
 import javax.inject.Inject
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class VisualizeTextActivity: AppCompatActivity() {
@@ -645,13 +646,25 @@ class VisualizeTextActivity: AppCompatActivity() {
         val metrics = resources.displayMetrics
         val cardHalfHeight = (metrics.heightPixels * ratio / 2f).toInt()
 
+        var startX = 0f
+        var startY = 0f
+        val radius = 40f
         // To detect the click, onTouchListener is used to get the touch coordinates and because onClickListener consumes the touch event
         bottomText.setOnTouchListener { _, event ->
             val duration = event.eventTime - event.downTime
 
-            if(event.action == MotionEvent.ACTION_UP && duration < 300){
-                val index = bottomText.getOffsetForPosition(event.x, event.y)
-                viewModel.onTranslatedTextClick(viewPager.currentItem, index)
+            when(event.action){
+                MotionEvent.ACTION_DOWN -> {
+                    startX = event.x
+                    startY = event.y
+                }
+                MotionEvent.ACTION_UP -> {
+                    if(duration < 300
+                        && abs(event.x - startX) < radius && abs(event.y - startY) < radius) {
+                        val index = bottomText.getOffsetForPosition(event.x, event.y)
+                        viewModel.onTranslatedTextClick(viewPager.currentItem, index)
+                    }
+                }
             }
 
             // Need to dispatch the touch event to the ViewPager otherwise scrolling won't work on the bottom text
