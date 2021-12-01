@@ -14,6 +14,8 @@
         android:layout_marginStart="40dp"
         android:layout_weight="0.5"
         android:textIsSelectable="true"
+        android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
+        android:textAppearance="?android:attr/textAppearanceLarge"
         app:autoSizeTextType="uniform"
         app:autoSizeMaxTextSize="@dimen/text_size_large">
 <!--    Set large size as max, we only want the text to shrink -->

@@ -28,10 +28,14 @@ class VisualizerAdapter(
         get() = viewModel.isSheetExpanded
 
     private var pageMarginsSize = 0
+    private var lineSpacingExtra = 0f
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
-        pageMarginsSize = recyclerView.context.dpToPixel(40)
+        with(recyclerView.context){
+            lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
+            pageMarginsSize = dpToPixel(40)
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -151,6 +155,7 @@ class VisualizerAdapter(
 
         fun updateLayoutParams(splitPage: Boolean){
             bottomText.layoutParams = if(splitPage) halfShownParams else hiddenParams
+            pageTextView.setLineSpacing(if(splitPage) 0f else lineSpacingExtra, 1f)
         }
 
         fun setHighlightedText(start: Int, end: Int){
