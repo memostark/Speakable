@@ -27,5 +27,9 @@ allprojects {
         mavenCentral()
         google()
         maven { url "https://maven.google.com" }
+        // For database debugger
+        maven { url "https://jitpack.io" }
+        // For tour guide
+        maven() { url "https://oss.sonatype.org/content/repositories/snapshots" }
     }
 }
