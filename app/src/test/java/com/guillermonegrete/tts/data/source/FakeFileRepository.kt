@@ -23,7 +23,7 @@ class FakeFileRepository: FileRepository {
     }
 
     override suspend fun getFile(uri: String): BookFile? {
-        return filesServiceData.filter { it.value.uri == uri }.values.first()
+        return filesServiceData.filter { it.value.uri == uri }.values.firstOrNull()
     }
 
     override suspend fun saveFile(file: BookFile) {

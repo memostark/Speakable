@@ -123,7 +123,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             if(insideDictionary){
                 mMainThread.post(() -> mCallback.onDictionaryLayoutDetermined(mWord, items));
             }else{
-                mCallback.onLayoutDetermined(mWord, ProcessTextLayoutType.WORD_TRANSLATION);
+                mMainThread.post(() -> mCallback.onLayoutDetermined(mWord, ProcessTextLayoutType.WORD_TRANSLATION));
             }
 
             if(mWord.lang.equals("un")){
