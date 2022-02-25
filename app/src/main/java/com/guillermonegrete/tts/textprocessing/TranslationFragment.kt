@@ -66,7 +66,7 @@ class TranslationFragment: Fragment() {
     private fun saveTextToClipboard(text: String){
         val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip: ClipData = ClipData.newPlainText("simple text", text)
-        clipboard.primaryClip = clip
+        clipboard.setPrimaryClip(clip)
     }
 
     fun updateTranslation(word: Words){

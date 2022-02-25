@@ -318,7 +318,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun initParse(){
         if(SHOW_EPUB == intent.action) {
-            val uri: Uri = intent.getParcelableExtra(EPUB_URI)
+            val uri: Uri = intent.getParcelableExtra(EPUB_URI) ?: return
             val rootStream = contentResolver.openInputStream(uri)
             viewModel.fileReader = DefaultZipFileReader(rootStream, this)
             viewModel.fileUri = uri.toString()
