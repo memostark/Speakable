@@ -23,6 +23,8 @@ import android.view.inputmethod.InputMethodManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -48,6 +50,9 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     private  var _binding: FragmentMainTtsBinding? = null
     private val binding get() = _binding!!
 
+    private lateinit var requestOverlayPermission: ActivityResultLauncher<Intent>
+    private lateinit var requestScreenCapture: ActivityResultLauncher<Intent>
+
     private val clipText: String
         get() {
             val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -63,6 +68,25 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+
+        requestOverlayPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            // If overlay drawing permission was granted ask for the screen capture one
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Settings.canDrawOverlays(context)) getScreenCaptureIntent()
+            }
+        }
+
+        requestScreenCapture = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data ?: return@registerForActivityResult
+            if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                val intent = Intent(activity, ScreenTextService::class.java)
+                intent.action = NORMAL_SERVICE
+                intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, result.resultCode)
+                intent.putExtras(data)
+                activity?.startService(intent)
+                activity?.finish()
+            }
+        }
     }
 
     override fun onResume() {
@@ -172,27 +196,6 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         presenter.destroy()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == AppCompatActivity.RESULT_OK && data != null) {
-            when(requestCode) {
-                REQUEST_CODE_SCREEN_CAPTURE -> {
-                    val intent = Intent(activity, ScreenTextService::class.java)
-                    intent.action = NORMAL_SERVICE
-                    intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode)
-                    intent.putExtras(data)
-                    activity?.startService(intent)
-                    activity?.finish()
-                }
-                REQUEST_CODE_DRAW_OVERLAY -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        if (Settings.canDrawOverlays(context)) getScreenCaptureIntent()
-                    }
-                }
-            }
-        }
-    }
-
     override fun setDictionaryWebPage(word: String) {
         binding.bottom.webviewWiktionary.loadUrl("https://en.m.wiktionary.org/wiki/$word")
     }
@@ -208,9 +211,11 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     }
 
     override fun startOverlayService() {
+        // For versions of android older than Android M (sdk 23), only it was necessary to request the screen capture permission
+        // For newer versions it's necessary to first ask for the permission to draw overlays, then ask for the screen capture one
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context?.packageName))
-            startActivityForResult(intent, REQUEST_CODE_DRAW_OVERLAY)
+            requestOverlayPermission.launch(intent)
         } else {
             getScreenCaptureIntent()
         }
@@ -219,7 +224,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     private fun getScreenCaptureIntent(){
         val manager = activity?.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val permissionIntent = manager.createScreenCaptureIntent()
-        startActivityForResult(permissionIntent, REQUEST_CODE_SCREEN_CAPTURE)
+        requestScreenCapture.launch(permissionIntent)
     }
 
     override fun showDetectedLanguage(language: String?) {
@@ -299,11 +304,5 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
             view.loadUrl(url)
             return true
         }
-    }
-
-    companion object {
-
-        const val REQUEST_CODE_SCREEN_CAPTURE = 100
-        const val REQUEST_CODE_DRAW_OVERLAY = 300
     }
 }

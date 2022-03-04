@@ -11,6 +11,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -47,6 +49,29 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
     private val viewModel: ImportTextViewModel by viewModels()
 
     private var fabOpen = false
+
+    private lateinit var pickFile: ActivityResultLauncher<Intent>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        pickFile = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data ?: return@registerForActivityResult
+
+            if(result.resultCode == Activity.RESULT_OK){
+                val uri = data.data ?: return@registerForActivityResult
+
+                // Necessary for persisting URIs
+                val takeFlags = data.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION
+                requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+
+                when(fileType){
+                    ImportedFileType.EPUB -> visualizeEpub(uri, -1)
+                    ImportedFileType.TXT -> readTextFile(uri)
+                }
+            }
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -156,30 +181,8 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             type = fileType.mimeType
         }
-        startActivityForResult(intent, REQUEST_PICK_FILE)
-    }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        data ?: return
-
-        if(resultCode == Activity.RESULT_OK){
-            when(requestCode){
-                REQUEST_PICK_FILE -> {
-                    val uri = data.data ?: return
-
-                    // Necessary for persisting URIs
-                    val takeFlags = data.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
-
-                    when(fileType){
-                        ImportedFileType.EPUB -> visualizeEpub(uri, -1)
-                        ImportedFileType.TXT -> readTextFile(uri)
-                    }
-                }
-            }
-        }
+        pickFile.launch(intent)
     }
 
     // TODO execute in background thread
@@ -301,7 +304,6 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
     }
 
     companion object{
-        private const val REQUEST_PICK_FILE = 112
         private const val READ_STORAGE_PERMISSION_REQUEST = 113
     }
 }
