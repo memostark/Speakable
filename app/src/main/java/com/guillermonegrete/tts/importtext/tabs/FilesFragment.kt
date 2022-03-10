@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,9 +62,13 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
             if(result.resultCode == Activity.RESULT_OK){
                 val uri = data.data ?: return@registerForActivityResult
 
-                // Necessary for persisting URIs
-                val takeFlags = data.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION
-                requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+                try {
+                    // When getting the uri of a file using "ACTION_OPEN_DOCUMENT" this makes it persistable
+                    val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+                } catch (e: SecurityException){
+                    Log.e(FilesFragment::class.simpleName, "Couldn't make the uri persistable")
+                }
 
                 when(fileType){
                     ImportedFileType.EPUB -> visualizeEpub(uri, -1)
