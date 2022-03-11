@@ -21,6 +21,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.source.DefaultFileRepository
+import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.di.WordRepositorySourceModule
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
@@ -28,6 +29,7 @@ import com.guillermonegrete.tts.utils.selectTabAtPosition
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -81,6 +83,12 @@ class ImportTextFragmentTest{
 
     @Test
     fun given_one_recent_file_when_clicked_then_navigate_to_visualizer(){
+
+        val tempFile = testFolder.newFile("copied_file.epub")
+
+        runBlocking {
+            repository.saveFile(BookFile(tempFile.toUri().toString(), "Test book", ImportedFileType.EPUB))
+        }
 
         launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)
 

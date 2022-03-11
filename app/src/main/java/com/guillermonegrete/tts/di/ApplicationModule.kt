@@ -104,12 +104,6 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase{
-        return FilesDatabase.getDatabase(context)
-    }
-
-    @Singleton
-    @Provides
     fun provideFileDAO(database: FilesDatabase): FileDAO = database.fileDao()
 
     @RemoteTranslationSource
@@ -159,6 +153,20 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideGoogleApi(retrofit: Retrofit) = retrofit.create(GooglePublicAPI::class.java)
+}
+
+/**
+ * Putting FileDatabase in its module so it can be replaced in tests.
+ */
+@InstallIn(SingletonComponent::class)
+@Module
+object FilesDatabaseModule {
+
+    @Singleton
+    @Provides
+    fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase{
+        return FilesDatabase.getDatabase(context)
+    }
 }
 
 @InstallIn(SingletonComponent::class)
