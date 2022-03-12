@@ -394,7 +394,8 @@ class VisualizeTextViewModelTest {
             book.title,
             book.fileType,
             folderPath = uuid,
-            id = book.id
+            id = book.id,
+            lastRead = lastReadDate,
         )
 
         val resultFile = fileRepository.filesServiceData.values.first()
