@@ -48,7 +48,13 @@ class VisualizeTextViewModelTest {
 
     @Mock private lateinit var pageSplitter: PageSplitter
 
-    private val bookFile = BookFile("empty_uri", "Title", ImportedFileType.EPUB, id = 1, folderPath = "random_path")
+    private val bookFile = BookFile(
+        "empty_uri",
+        "Title",
+        ImportedFileType.EPUB,
+        folderPath = "random_path",
+        id = 1
+    )
 
     @Before
     fun setUp(){
@@ -295,8 +301,8 @@ class VisualizeTextViewModelTest {
             folderPath = uuid,
             page = initialPage,
             chapter = 3,
-            lastRead = lastReadDate,
-            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars
+            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars,
+            lastRead = lastReadDate
         )
         val resultFile = fileRepository.filesServiceData.values.first()
         assertEquals(1, fileRepository.filesServiceData.values.size)
@@ -361,10 +367,10 @@ class VisualizeTextViewModelTest {
             bookFile.title,
             bookFile.fileType,
             folderPath = bookFile.folderPath,
-            id = bookFile.id,
             chapter = initialChapter + 1,
+            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars,
             lastRead = lastReadDate,
-            percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars
+            id = bookFile.id
         )
         val resultFile = fileRepository.filesServiceData.values.first()
         assertEquals(1, fileRepository.filesServiceData.values.size)
@@ -375,7 +381,7 @@ class VisualizeTextViewModelTest {
     @Test
     fun `Creates new folder path for book file if empty`(){
         // TODO this test and "Updates book files" test are very similar, try to refactor
-        val book = BookFile("default_uri", "Title", ImportedFileType.EPUB, id = 1, folderPath = "")
+        val book = BookFile("default_uri", "Title", ImportedFileType.EPUB, folderPath = "", id = 1)
 
         fileRepository.addTasks(book)
         viewModel.fileUri = bookFile.uri
@@ -394,8 +400,8 @@ class VisualizeTextViewModelTest {
             book.title,
             book.fileType,
             folderPath = uuid,
-            id = book.id,
             lastRead = lastReadDate,
+            id = book.id,
         )
 
         val resultFile = fileRepository.filesServiceData.values.first()

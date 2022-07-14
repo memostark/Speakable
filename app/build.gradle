@@ -130,7 +130,7 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
-    androidTestImplementation "androidx.room:room-testing:2.2.5"
+    androidTestImplementation "androidx.room:room-testing:$room_version"
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
