@@ -87,7 +87,11 @@ class ImportTextFragmentTest{
         val tempFile = testFolder.newFile("copied_file.epub")
 
         runBlocking {
-            repository.saveFile(BookFile(tempFile.toUri().toString(), "Test book", ImportedFileType.EPUB))
+            repository.saveFile(BookFile(
+                tempFile.toUri().toString(),
+                "Test book",
+                ImportedFileType.EPUB
+            ))
         }
 
         launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)

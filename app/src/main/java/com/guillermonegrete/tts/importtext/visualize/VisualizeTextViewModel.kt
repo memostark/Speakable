@@ -180,7 +180,8 @@ class VisualizeTextViewModel @Inject constructor(
     fun getPage(): Int{
         currentPage = if(firstLoad) {
             firstLoad = false
-            val initialPage = if(currentPage == -1) databaseBookFile?.page ?: 0 else currentPage
+            val lastChar = databaseBookFile?.lastChar ?: 0
+            val initialPage = if(currentPage == -1) getPageIndex(lastChar) else currentPage
             if (initialPage >= pagesSize) pagesSize - 1 else initialPage
         } else if(leftSwipe) pagesSize - 1 else 0
 
@@ -322,8 +323,9 @@ class VisualizeTextViewModel @Inject constructor(
         runBlocking{
             val progress = calculateProgress()
 
+            val charPos = getCharPos()
             databaseBookFile?.apply {
-                page = currentPage
+                lastChar = charPos
                 chapter = currentChapter
                 lastRead = date
                 percentageDone = progress
@@ -336,7 +338,7 @@ class VisualizeTextViewModel @Inject constructor(
                 title,
                 fileType,
                 folderPath = path,
-                page = currentPage,
+                lastChar = charPos,
                 chapter = currentChapter,
                 percentageDone =  calculateProgress(),
                 lastRead =  date
@@ -365,6 +367,35 @@ class VisualizeTextViewModel @Inject constructor(
         percentage = 100 * sumPreviousChars / book.totalChars
 
         return percentage
+    }
+
+    /**
+     * Gets the page that contains [charPos]
+     * For example, the third page ranges from 20 to 35, a char with position 23 would be inside that page.
+     *
+     * @return The page number that contains the character. Returns zero if none contains it.
+     */
+    private fun getPageIndex(charPos: Int): Int{
+        var acc = 0
+
+        currentPages.forEachIndexed { index, page ->
+            acc += page.length
+            if(charPos < acc) return index
+        }
+
+        return 0
+    }
+
+    /**
+     * Returns the character position of the first element of the current page.
+     * For example, the third page ranges from 20 to 35, it returns 20.
+     */
+    private fun getCharPos(): Int {
+        var sum = 0
+        for (i in 0 until currentPage){
+            sum += currentPages[i].length
+        }
+        return sum
     }
 
     fun onTranslatedTextClick(page: Int, charIndex: Int) {

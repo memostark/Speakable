@@ -21,7 +21,13 @@ data class BookFile(
      *  TODO page is not a good indicator of the current position because page size varies, replace with last character.
      *  This is problematic specially when rotating screen because the number of pages changes.
      */
+    @Deprecated("Use the last character field instead")
     var page: Int = 0,
+    /**
+     * The position of the character that the user
+     */
+    @ColumnInfo(name = "last_character")
+    var lastChar: Int = 0,
     var chapter: Int = 0,
     var percentageDone: Int = 0,
     var lastRead: Calendar = Calendar.getInstance(),
