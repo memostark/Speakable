@@ -380,7 +380,7 @@ class VisualizeTextViewModel @Inject constructor(
 
         currentPages.forEachIndexed { index, page ->
             acc += page.length
-            if(charPos <= acc) return index
+            if(charPos < acc) return index
         }
 
         return 0

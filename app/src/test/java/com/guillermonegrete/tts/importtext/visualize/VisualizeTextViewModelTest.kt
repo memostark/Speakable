@@ -181,7 +181,8 @@ class VisualizeTextViewModelTest {
     fun epub_first_load_set_predefined_page(){
         // Set up
         val initialPage = 4
-        bookFile.page = initialPage
+        val initialChar = 41
+        bookFile.lastChar = initialChar
         fileRepository.addTasks(bookFile)
 
         splitPages(8)
@@ -202,8 +203,9 @@ class VisualizeTextViewModelTest {
     fun when_changed_to_previous_chapter_set_last_page(){
         // Set up
         val initialPage = 2
+        val initialChar = 20
         val initialChapter = 1
-        bookFile.page = initialPage
+        bookFile.lastChar = initialChar
         bookFile.chapter = initialChapter
         fileRepository.addTasks(bookFile)
 
@@ -225,8 +227,8 @@ class VisualizeTextViewModelTest {
     @Test
     fun when_changed_to_next_chapter_set_first_page(){
         // Set up
-        val initialPage = 2
-        bookFile.page = initialPage
+        val initialChar = 20
+        bookFile.lastChar = initialChar
         fileRepository.addTasks(bookFile)
 
         splitPages(3)
@@ -235,6 +237,7 @@ class VisualizeTextViewModelTest {
 
         // Returns initial page in first load
         val page = viewModel.getPage()
+        val initialPage = 2
         assertEquals(initialPage, page)
 
         // Second load
@@ -299,7 +302,7 @@ class VisualizeTextViewModelTest {
             DEFAULT_BOOK.metadata.title,
             ImportedFileType.EPUB,
             folderPath = uuid,
-            page = initialPage,
+            lastChar = 50,
             chapter = 3,
             percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars,
             lastRead = lastReadDate
@@ -400,6 +403,7 @@ class VisualizeTextViewModelTest {
             book.title,
             book.fileType,
             folderPath = uuid,
+            percentageDone = 2, // it considers the first page as completed 10/500 = 2%
             lastRead = lastReadDate,
             id = book.id,
         )
@@ -472,7 +476,7 @@ class VisualizeTextViewModelTest {
     }
 
     private fun splitPages(pagesSize: Int){
-        val pages = Array(pagesSize) {"n"}.toList()
+        val pages = Array(pagesSize) { "n".repeat(10) }.toList()
         `when`(pageSplitter.getPages()).thenReturn(pages)
     }
 
@@ -489,7 +493,7 @@ class VisualizeTextViewModelTest {
 
         // Sum of previous pages
         for(i in 0..pageIndex){
-            sumPreviousChars += 1 // Every page only has one character
+            sumPreviousChars += 10 // Every page only has one character
         }
 
         println("Sum previous pages $sumPreviousChars")
@@ -503,7 +507,7 @@ class VisualizeTextViewModelTest {
         private val DEFAULT_BOOK = Book(
             EPUBMetadata("Test title", "", "", "coverId"),
             DEFAULT_CHAPTER,
-            Array(5){SpineItem("$it", "ch${it + 1}.html", it + 100)}.toList(),
+            Array(5){SpineItem("$it", "ch${it + 1}.html", 100)}.toList(),
             mapOf("0" to "ch1.html", "1" to "ch2.html", "2" to "ch3.html", "3" to "ch4.html", "4" to "ch5.html", "coverId" to "cover-jpg"),
             TableOfContents(listOf())
         )
