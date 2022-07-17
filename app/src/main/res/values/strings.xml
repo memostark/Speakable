@@ -187,5 +187,6 @@
     <string name="swipe_to_hide">Swipe to hide</string>
     <string name="app_version">Version: %s</string>
     <string name="about">About</string>
+    <string name="import_tab_layout">Import tab layout</string>
 
 </resources>

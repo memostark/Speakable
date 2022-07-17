@@ -8,7 +8,8 @@
         android:id="@+id/import_tab_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"/>
+        android:contentDescription="@string/import_tab_layout"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/import_text_pager"
