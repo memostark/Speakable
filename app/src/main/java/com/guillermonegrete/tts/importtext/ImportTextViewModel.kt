@@ -45,7 +45,7 @@ class ImportTextViewModel @Inject constructor(
     val filesPath = fileManager.filesDir
 
     init {
-        _forceUpdate.offer(true)
+        _forceUpdate.trySend(true)
     }
 
     fun openVisualizer(book: BookFile){

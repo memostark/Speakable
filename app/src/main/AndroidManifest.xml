@@ -17,7 +17,8 @@
         <activity
             android:name="com.guillermonegrete.tts.main.MainActivity"
             android:label="@string/app_name"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustPan"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -31,7 +32,8 @@
             android:label="@string/process_text_action_name"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
-            android:theme="@style/ProcessTextStyle">
+            android:theme="@style/ProcessTextStyle"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />
                 <category android:name="android.intent.category.DEFAULT" />
