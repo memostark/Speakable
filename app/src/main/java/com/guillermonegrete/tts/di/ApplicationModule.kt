@@ -17,10 +17,7 @@ import com.guillermonegrete.tts.data.source.local.WordLocalDataSource
 import com.guillermonegrete.tts.data.source.remote.GooglePublicAPI
 import com.guillermonegrete.tts.data.source.remote.GooglePublicSource
 import com.guillermonegrete.tts.data.source.remote.WiktionarySource
-import com.guillermonegrete.tts.db.FileDAO
-import com.guillermonegrete.tts.db.FilesDatabase
-import com.guillermonegrete.tts.db.WordsDAO
-import com.guillermonegrete.tts.db.WordsDatabase
+import com.guillermonegrete.tts.db.*
 import com.guillermonegrete.tts.imageprocessing.*
 import com.guillermonegrete.tts.importtext.visualize.io.DefaultEpubFileManager
 import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
@@ -105,6 +102,10 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideFileDAO(database: FilesDatabase): FileDAO = database.fileDao()
+
+    @Singleton
+    @Provides
+    fun provideWebLinkDAO(database: FilesDatabase): WebLinkDAO = database.linkDao()
 
     @RemoteTranslationSource
     @Provides
