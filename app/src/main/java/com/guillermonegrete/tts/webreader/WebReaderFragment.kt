@@ -21,7 +21,6 @@ import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.*
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -50,7 +49,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding){
             loadingIcon.isVisible = true
 
-            viewModel.page.observe(viewLifecycleOwner, {
+            viewModel.page.observe(viewLifecycleOwner) {
                 bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT)
                 } else {
@@ -61,7 +60,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = bodyText.getOffsetForPosition(event.x, event.y)
                         val possibleWord = findWordForRightHanded(bodyText.text.toString(), offset)
-                        clickedWord = if(possibleWord.isBlank()) null else possibleWord
+                        clickedWord = possibleWord.ifBlank { null }
                     }
                     return@setOnTouchListener false
                 }
@@ -77,16 +76,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 listToggle.setOnClickListener {
                     onListToggleClick()
                 }
-            })
+            }
 
-            viewModel.translatedParagraph.observe(viewLifecycleOwner, { result ->
+            viewModel.translatedParagraph.observe(viewLifecycleOwner) { result ->
                 val adapter = adapter ?: return@observe
-                adapter.isLoading = when(result){
+                adapter.isLoading = when (result) {
                     LoadResult.Loading -> true
                     is LoadResult.Success, is LoadResult.Error -> false
                 }
                 adapter.updateExpanded()
-            })
+            }
 
             setBottomPanel()
         }
@@ -159,7 +158,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             // This allows to scroll both the WebView and the list, otherwise only the list scrolls
             linksList.isNestedScrollingEnabled = false
 
-            viewModel.clickedWord.observe(viewLifecycleOwner, {
+            viewModel.clickedWord.observe(viewLifecycleOwner) {
                 val link = it.links.firstOrNull()
                 if (link != null) infoWebview.loadUrl(link.link.replace("{q}", it.word))
                 val adapter = ExternalLinksAdapter(it.word, it.links) { url ->
@@ -169,7 +168,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 linksList.adapter = adapter
                 listToggle.hide()
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-            })
+            }
         }
     }
 

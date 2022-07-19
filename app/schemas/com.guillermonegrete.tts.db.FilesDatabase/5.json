@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "f0d79273162b1cefc3986c688d7fa6f7",
+    "identityHash": "ecd7dfc2a6201e48fb54524b30b53197",
     "entities": [
       {
         "tableName": "book_files",
@@ -119,14 +119,24 @@
           ],
           "autoGenerate": true
         },
-        "indices": [],
+        "indices": [
+          {
+            "name": "index_web_link_url",
+            "unique": true,
+            "columnNames": [
+              "url"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_web_link_url` ON `${TABLE_NAME}` (`url`)"
+          }
+        ],
         "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f0d79273162b1cefc3986c688d7fa6f7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ecd7dfc2a6201e48fb54524b30b53197')"
     ]
   }
 }
