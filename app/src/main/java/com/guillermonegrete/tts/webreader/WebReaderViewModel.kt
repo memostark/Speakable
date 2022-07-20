@@ -19,6 +19,7 @@ import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,12 +45,14 @@ class WebReaderViewModel @Inject constructor(
     private val _clickedWord = MutableLiveData<WordAndLinks>()
     val clickedWord: LiveData<WordAndLinks> = _clickedWord
 
+    private var webLink: WebLink? = null
+
     fun loadDoc(url: String){
         viewModelScope.launch {
             wrapEspressoIdlingResource {
                 val page = getPage(url)
                 _page.value = page
-                saveWebLink(url)
+                webLink = webLinkDAO.getLink(url) ?: WebLink(url)
             }
         }
     }
@@ -60,9 +63,14 @@ class WebReaderViewModel @Inject constructor(
         doc.body().html()
     }
 
-    private suspend fun saveWebLink(url: String) {
-        withContext(Dispatchers.IO){
-            webLinkDAO.upsert(WebLink(url))
+    fun saveWebLink(){
+        viewModelScope.launch {
+            withContext(Dispatchers.IO){
+                webLink?.let {
+                    it.lastRead = Calendar.getInstance()
+                    webLinkDAO.upsert(it)
+                }
+            }
         }
     }
 

@@ -12,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DividerItemDecoration
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.DialogOpenLinkBinding
@@ -52,6 +53,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
             }
         }
 
+        binding.list.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
         binding.addBtn.setOnClickListener { showAddNewDialog() }
 
         viewModel.getRecentLinks()

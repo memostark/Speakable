@@ -41,6 +41,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         setHasOptionsMenu(true)
     }
 
+    override fun onPause() {
+        super.onPause()
+        viewModel.saveWebLink()
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (activity as? AppCompatActivity)?.supportActionBar?.hide()

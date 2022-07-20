@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.tabs
 
+import android.text.format.DateUtils
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -8,6 +9,7 @@ import androidx.navigation.findNavController
 import com.guillermonegrete.tts.databinding.FragmentWebLinksBinding
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
+import java.util.*
 
 /**
  * [RecyclerView.Adapter] that can display a [WebLink].
@@ -29,7 +31,7 @@ class WebLinkAdapter(
 
     override fun getItemCount(): Int = values.size
 
-    class ViewHolder(binding: FragmentWebLinksBinding) :
+    class ViewHolder(private val binding: FragmentWebLinksBinding) :
         RecyclerView.ViewHolder(binding.root) {
         private val contentView: TextView = binding.content
 
@@ -39,6 +41,9 @@ class WebLinkAdapter(
                 val action = ImportTextFragmentDirections.toWebReaderFragment(link.url)
                 itemView.findNavController().navigate(action)
             }
+
+            val formattedDate = DateUtils.getRelativeTimeSpanString(link.lastRead.timeInMillis, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS)
+            binding.lastOpened.text = formattedDate
         }
 
         override fun toString(): String {
