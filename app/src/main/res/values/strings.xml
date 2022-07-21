@@ -187,5 +187,6 @@
     <string name="enter_url">Enter url</string>
     <string name="open_link">Open link</string>
     <string name="add_new">add new</string>
+    <string name="delete_item">Delete item?</string>
 
 </resources>

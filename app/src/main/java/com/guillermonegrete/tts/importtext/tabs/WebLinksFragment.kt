@@ -46,7 +46,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                 viewModel.uiState.collect { uiState ->
                     when (uiState) {
                         is LoadResult.Error -> Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
-                        is LoadResult.Success -> binding.list.adapter = WebLinkAdapter(uiState.data)
+                        is LoadResult.Success -> binding.list.adapter = WebLinkAdapter(uiState.data) { viewModel.delete(it) }
                         LoadResult.Loading -> println("Loading links...")
                     }
                 }

@@ -7,10 +7,13 @@ import kotlinx.coroutines.flow.Flow
 interface WebLinkDAO {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(file: WebLink): Long
+    fun insert(link: WebLink): Long
 
     @Update
-    fun update(file: WebLink)
+    fun update(link: WebLink)
+
+    @Delete
+    suspend fun delete(link: WebLink)
 
     @Query("SELECT * FROM web_link ORDER BY lastRead DESC")
     fun getRecentLinks(): Flow<List<WebLink>>

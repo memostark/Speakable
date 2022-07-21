@@ -31,11 +31,9 @@ class WebLinksViewModel @Inject constructor(private val webLinkDAO: WebLinkDAO):
 
     }
 
-    fun addNew(link: WebLink){
+    fun delete(link: WebLink){
         viewModelScope.launch {
-            withContext(Dispatchers.IO){
-                webLinkDAO.upsert(link)
-            }
+            webLinkDAO.delete(link)
         }
     }
 }
