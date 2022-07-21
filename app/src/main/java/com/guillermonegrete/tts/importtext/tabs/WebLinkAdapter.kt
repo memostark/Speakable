@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.navigation.findNavController
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FragmentWebLinksBinding
 import com.guillermonegrete.tts.db.WebLink
@@ -17,9 +19,8 @@ import java.util.*
  * [RecyclerView.Adapter] that can display a [WebLink].
  */
 class WebLinkAdapter(
-    private val values: List<WebLink>,
     private val onDeleteCallback: (WebLink) -> Unit
-) : RecyclerView.Adapter<WebLinkAdapter.ViewHolder>() {
+) : ListAdapter<WebLink, WebLinkAdapter.ViewHolder>(WebLinkDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
 
@@ -29,10 +30,8 @@ class WebLinkAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(values[position])
+        holder.bind(getItem(position))
     }
-
-    override fun getItemCount(): Int = values.size
 
     inner class ViewHolder(private val binding: FragmentWebLinksBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -62,4 +61,10 @@ class WebLinkAdapter(
         }
     }
 
+    class WebLinkDiffCallback: DiffUtil.ItemCallback<WebLink>(){
+
+        override fun areItemsTheSame(oldItem: WebLink, newItem: WebLink) = oldItem.id == newItem.id
+
+        override fun areContentsTheSame(oldItem: WebLink, newItem: WebLink) = oldItem == newItem
+    }
 }
