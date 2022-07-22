@@ -6,20 +6,37 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.preferences.DefaultSettingsRepository
 import com.guillermonegrete.tts.databinding.FragmentImportTextBinding
 import com.guillermonegrete.tts.importtext.tabs.EnterTextFragment
 import com.guillermonegrete.tts.importtext.tabs.FilesFragment
 import com.guillermonegrete.tts.importtext.tabs.WebLinksFragment
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
+
+    private  var _binding: FragmentImportTextBinding? = null
+    private val binding get() = _binding!!
+
+    @Inject lateinit var settings: DefaultSettingsRepository
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         (activity as? AppCompatActivity)?.supportActionBar?.show()
-        val binding = FragmentImportTextBinding.bind(view)
+        _binding = FragmentImportTextBinding.bind(view)
+
+        lifecycleScope.launch {
+            settings.getImportTabPosition().collect {
+                binding.importTextPager.setCurrentItem(it, false)
+            }
+        }
 
         val pager = binding.importTextPager
         pager.adapter = ImportAdapter(childFragmentManager, viewLifecycleOwner.lifecycle)
@@ -32,6 +49,18 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
                 else -> ""
             }
         }.attach()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        lifecycleScope.launch {
+            settings.setImportTabPosition(binding.importTextPager.currentItem)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     class ImportAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle): FragmentStateAdapter(fragmentManager, lifecycle){
