@@ -9,6 +9,8 @@ import android.view.MenuInflater
 import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebViewClient
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -92,6 +94,27 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.updateExpanded()
             }
 
+            viewModel.webLink.observe(viewLifecycleOwner) {
+                val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
+                val langAdapter = ArrayAdapter.createFromResource(
+                    requireContext(),
+                    R.array.googleTranslateLangsWithAutoArray,
+                    android.R.layout.simple_spinner_dropdown_item
+                )
+                setLanguage.adapter = langAdapter
+                val index = langShortNames.indexOf(it.language)
+                setLanguage.prompt = getString(R.string.web_reader_lang_spinner_prompt)
+                setLanguage.setSelection(index, false)
+                setLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        val langShort = if (position == 0) null else langShortNames[position]
+                        viewModel.setLanguage(langShort)
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+            }
+
             setBottomPanel()
         }
 
@@ -146,7 +169,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             bottomSheetBehavior.addBottomSheetCallback(object :
                 BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_HIDDEN) listToggle.show()
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -171,7 +194,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
                 adapter.setWrapped(true)
                 linksList.adapter = adapter
-                listToggle.hide()
+                menuBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }

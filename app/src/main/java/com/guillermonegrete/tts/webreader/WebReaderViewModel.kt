@@ -45,14 +45,19 @@ class WebReaderViewModel @Inject constructor(
     private val _clickedWord = MutableLiveData<WordAndLinks>()
     val clickedWord: LiveData<WordAndLinks> = _clickedWord
 
-    private var webLink: WebLink? = null
+    private var cacheWebLink: WebLink? = null
+
+    private val _weblink = MutableLiveData<WebLink>()
+    val webLink: LiveData<WebLink>
+        get() = _weblink
 
     fun loadDoc(url: String){
         viewModelScope.launch {
             wrapEspressoIdlingResource {
                 val page = getPage(url)
                 _page.value = page
-                webLink = webLinkDAO.getLink(url) ?: WebLink(url)
+                cacheWebLink = webLinkDAO.getLink(url) ?: WebLink(url)
+                _weblink.value = cacheWebLink
             }
         }
     }
@@ -66,7 +71,7 @@ class WebReaderViewModel @Inject constructor(
     fun saveWebLink(){
         viewModelScope.launch {
             withContext(Dispatchers.IO){
-                webLink?.let {
+                cacheWebLink?.let {
                     it.lastRead = Calendar.getInstance()
                     webLinkDAO.upsert(it)
                 }
@@ -136,5 +141,9 @@ class WebReaderViewModel @Inject constructor(
             val links = withContext(Dispatchers.IO) { getExternalLinksInteractor(translation.src) }
             _clickedWord.value = WordAndLinks(word, links)
         }
+    }
+
+    fun setLanguage(langShort: String?) {
+        cacheWebLink?.language = langShort
     }
 }

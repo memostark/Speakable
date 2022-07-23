@@ -189,4 +189,7 @@
     <string name="add_new">add new</string>
     <string name="delete_item">Delete item?</string>
 
+    <!-- Web reader-->
+    <string name="web_reader_lang_spinner_prompt">Select webpage language</string>
+
 </resources>
