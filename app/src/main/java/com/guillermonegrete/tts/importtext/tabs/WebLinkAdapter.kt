@@ -54,6 +54,7 @@ class WebLinkAdapter(
 
             val formattedDate = DateUtils.getRelativeTimeSpanString(link.lastRead.timeInMillis, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS)
             binding.lastOpened.text = formattedDate
+            binding.lang.text = link.language
         }
 
         override fun toString(): String {
