@@ -92,19 +92,22 @@ class WebReaderViewModel @Inject constructor(
         val paragraphs = cachedParagraphs ?: return
         val paragraph = paragraphs[pos]
 
-        if(paragraph.definition.isNotBlank()) return
+        val language = cacheWebLink?.language
+        if(paragraph.definition.isNotBlank() && paragraph.lang == language) return
 
         _translatedParagraph.value = LoadResult.Loading
 
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
-                getTranslationInteractor(paragraph.word)
+                getTranslationInteractor(paragraph.word, languageFrom = language ?: "auto")
             }
 
             when(result){
                 is Result.Success -> {
-                    paragraph.definition = result.data.translatedText
-                    _translatedParagraphs[pos] = result.data
+                    val translation = result.data
+                    paragraph.definition = translation.translatedText
+                    paragraph.lang = translation.src
+                    _translatedParagraphs[pos] = translation
                     _translatedParagraph.value = LoadResult.Success(pos)
                 }
                 is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)

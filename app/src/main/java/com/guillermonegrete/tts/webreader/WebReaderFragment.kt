@@ -35,6 +35,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val args: WebReaderFragmentArgs by navArgs()
 
     private var clickedWord: String? = null
+    private var languageFrom: String? = null
 
     private var adapter: ParagraphAdapter? = null
 
@@ -95,6 +96,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             viewModel.webLink.observe(viewLifecycleOwner) {
+                languageFrom = it.language
                 val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
                 val langAdapter = ArrayAdapter.createFromResource(
                     requireContext(),
@@ -108,6 +110,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 setLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                         val langShort = if (position == 0) null else langShortNames[position]
+                        languageFrom = langShort
                         viewModel.setLanguage(langShort)
                     }
 
@@ -157,6 +160,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             text.toString(),
             TextInfoDialog.NO_SERVICE,
             null,
+            languageFrom = languageFrom
         )
         dialog.show(childFragmentManager, "Text_info")
     }
