@@ -7,10 +7,11 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.data.preferences.DefaultSettingsRepository
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.databinding.FragmentImportTextBinding
 import com.guillermonegrete.tts.importtext.tabs.EnterTextFragment
 import com.guillermonegrete.tts.importtext.tabs.FilesFragment
@@ -25,7 +26,7 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
     private  var _binding: FragmentImportTextBinding? = null
     private val binding get() = _binding!!
 
-    @Inject lateinit var settings: DefaultSettingsRepository
+    @Inject lateinit var settings: SettingsRepository
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -33,8 +34,10 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
         _binding = FragmentImportTextBinding.bind(view)
 
         lifecycleScope.launch {
-            settings.getImportTabPosition().collect {
-                binding.importTextPager.setCurrentItem(it, false)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                settings.getImportTabPosition().collect {
+                    binding.importTextPager.setCurrentItem(it, false)
+                }
             }
         }
 
