@@ -13,12 +13,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
 class DefaultSettingsRepository @Inject constructor(
     private val preferences: SharedPreferences,
     @ApplicationContext private val context: Context
 ): SettingsRepository {
-
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 
     override fun setLanguageTo(language: String) {

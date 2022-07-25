@@ -40,13 +40,13 @@
                 tools:text="Selected text" />
             <Spinner
                 android:id="@+id/spinner_language_from"
+                style="@android:style/Widget.Material.Spinner"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center"
                 android:background="@android:color/transparent"
                 android:spinnerMode="dialog"
-                style="@android:style/Widget.Material.Spinner"
-                tools:listitem="@layout/spinner_layout_end"
-                android:layout_gravity="center"/>
+                tools:listitem="@layout/spinner_layout_end" />
             <TextView
                 android:id="@+id/text_language_code"
                 android:layout_width="wrap_content"
@@ -54,6 +54,7 @@
                 android:layout_marginEnd="4dp"
                 android:gravity="center"
                 android:visibility="gone"
+                tools:visibility="visible"
                 tools:text="ES" />
             <ImageButton
                 android:id="@+id/save_icon"
