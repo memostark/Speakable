@@ -96,15 +96,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             viewModel.webLink.observe(viewLifecycleOwner) {
-                languageFrom = it.language
                 val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
+                languageFrom = it.language ?: langShortNames.first() // First is always "auto"
                 val langAdapter = ArrayAdapter.createFromResource(
                     requireContext(),
                     R.array.googleTranslateLangsWithAutoArray,
                     android.R.layout.simple_spinner_dropdown_item
                 )
                 setLanguage.adapter = langAdapter
-                val index = langShortNames.indexOf(it.language)
+                val index = langShortNames.indexOf(languageFrom)
                 setLanguage.prompt = getString(R.string.web_reader_lang_spinner_prompt)
                 setLanguage.setSelection(index, false)
                 setLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
