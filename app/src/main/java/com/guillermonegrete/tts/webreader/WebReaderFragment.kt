@@ -9,6 +9,8 @@ import android.view.MenuInflater
 import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebViewClient
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -21,7 +23,6 @@ import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.*
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -34,12 +35,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val args: WebReaderFragmentArgs by navArgs()
 
     private var clickedWord: String? = null
+    private var languageFrom: String? = null
 
     private var adapter: ParagraphAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.saveWebLink()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -50,7 +57,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding){
             loadingIcon.isVisible = true
 
-            viewModel.page.observe(viewLifecycleOwner, {
+            viewModel.page.observe(viewLifecycleOwner) {
                 bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT)
                 } else {
@@ -61,7 +68,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = bodyText.getOffsetForPosition(event.x, event.y)
                         val possibleWord = findWordForRightHanded(bodyText.text.toString(), offset)
-                        clickedWord = if(possibleWord.isBlank()) null else possibleWord
+                        clickedWord = possibleWord.ifBlank { null }
                     }
                     return@setOnTouchListener false
                 }
@@ -77,16 +84,39 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 listToggle.setOnClickListener {
                     onListToggleClick()
                 }
-            })
+            }
 
-            viewModel.translatedParagraph.observe(viewLifecycleOwner, { result ->
+            viewModel.translatedParagraph.observe(viewLifecycleOwner) { result ->
                 val adapter = adapter ?: return@observe
-                adapter.isLoading = when(result){
+                adapter.isLoading = when (result) {
                     LoadResult.Loading -> true
                     is LoadResult.Success, is LoadResult.Error -> false
                 }
                 adapter.updateExpanded()
-            })
+            }
+
+            viewModel.webLink.observe(viewLifecycleOwner) {
+                val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
+                languageFrom = it.language ?: langShortNames.first() // First is always "auto"
+                val langAdapter = ArrayAdapter.createFromResource(
+                    requireContext(),
+                    R.array.googleTranslateLangsWithAutoArray,
+                    android.R.layout.simple_spinner_dropdown_item
+                )
+                setLanguage.adapter = langAdapter
+                val index = langShortNames.indexOf(languageFrom)
+                setLanguage.prompt = getString(R.string.web_reader_lang_spinner_prompt)
+                setLanguage.setSelection(index, false)
+                setLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        val langShort = if (position == 0) null else langShortNames[position]
+                        languageFrom = langShort
+                        viewModel.setLanguage(langShort)
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+            }
 
             setBottomPanel()
         }
@@ -130,6 +160,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             text.toString(),
             TextInfoDialog.NO_SERVICE,
             null,
+            languageFrom = languageFrom
         )
         dialog.show(childFragmentManager, "Text_info")
     }
@@ -142,7 +173,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             bottomSheetBehavior.addBottomSheetCallback(object :
                 BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_HIDDEN) listToggle.show()
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -159,7 +190,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             // This allows to scroll both the WebView and the list, otherwise only the list scrolls
             linksList.isNestedScrollingEnabled = false
 
-            viewModel.clickedWord.observe(viewLifecycleOwner, {
+            viewModel.clickedWord.observe(viewLifecycleOwner) {
                 val link = it.links.firstOrNull()
                 if (link != null) infoWebview.loadUrl(link.link.replace("{q}", it.word))
                 val adapter = ExternalLinksAdapter(it.word, it.links) { url ->
@@ -167,9 +198,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
                 adapter.setWrapped(true)
                 linksList.adapter = adapter
-                listToggle.hide()
+                menuBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-            })
+            }
         }
     }
 

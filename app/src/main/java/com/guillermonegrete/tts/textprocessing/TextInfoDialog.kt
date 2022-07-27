@@ -186,7 +186,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun getLanguageFromPreference(): String {
-        val preference = preferences.getString(SettingsFragment.PREF_LANGUAGE_FROM, "auto") ?: "auto"
+        // Give highest priority to the language set in the arguments, if null use the preference language
+        val setLang = arguments?.getString(LANG_FROM_KEY)
+        val preference = setLang ?: preferences.getString(SettingsFragment.PREF_LANGUAGE_FROM, "auto") ?: "auto"
         languageFromIndex = languagesISO.indexOf(preference)
         languageFromIndex++ // Increment because the list we searched is missing one element "auto"
         return preference
@@ -222,7 +224,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         bindingWord.saveIcon.setOnClickListener { presenter.onClickBookmark() }
     }
 
-    fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
+    private fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
         val isLargeWindow = preferences.getBoolean(SettingsFragment.PREF_WINDOW_SIZE, ButtonsPreference.DEFAULT_VALUE)
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
         setWordLayout(word)
@@ -672,6 +674,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         const val WORD_KEY = "word_key"
         const val ACTION_KEY = "extra_key"
         const val THEME_KEY = "theme_key"
+        const val LANG_FROM_KEY = "lang_from_key"
 
         const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
@@ -682,13 +685,15 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             text: String,
             action: String?,
             word: Words?,
-            theme: String = ""
+            theme: String = "",
+            languageFrom: String? = null,
         ) = TextInfoDialog().apply {
             arguments = Bundle().apply {
                 putString(TEXT_KEY, text)
                 putString(ACTION_KEY, action)
                 putParcelable(WORD_KEY, word)
                 putString(THEME_KEY, theme)
+                putString(LANG_FROM_KEY, languageFrom)
             }
         }
     }

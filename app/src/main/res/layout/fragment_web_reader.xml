@@ -13,9 +13,13 @@
         android:visibility="gone"
         android:layout_centerInParent="true"/>
 
-    <androidx.core.widget.NestedScrollView
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
             <TextView
                 android:id="@+id/body_text"
@@ -24,11 +28,7 @@
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:layout_margin="@dimen/text_margin"
                 tools:text="@string/large_text"/>
-    </androidx.core.widget.NestedScrollView>
-
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        </androidx.core.widget.NestedScrollView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/paragraphs_list"
@@ -71,19 +71,34 @@
 
         </LinearLayout>
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+        <FrameLayout
+            android:id="@+id/menu_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?colorPrimary"
+            app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"
+            android:layout_gravity="bottom">
+            <ImageButton
+                android:id="@+id/list_toggle"
+                app:srcCompat="@drawable/ic_list_grey_24dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:layout_gravity="center_vertical"
+                android:visibility="invisible"
+                android:layout_marginStart="8dp"
+                android:contentDescription="@string/toggle"
+                android:tint="@android:color/white"
+                tools:visibility="visible" />
+            <Spinner
+                android:id="@+id/set_language"
+                style="@android:style/Widget.Material.Spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:spinnerMode="dialog"
+                tools:listitem="@android:layout/simple_list_item_1" />
+        </FrameLayout>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/list_toggle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="@string/toggle"
-        android:backgroundTint="?colorPrimary"
-        android:visibility="invisible"
-        app:srcCompat="@drawable/ic_list_grey_24dp"
-        tools:visibility="visible" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </RelativeLayout>

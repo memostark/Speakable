@@ -69,7 +69,7 @@ class ParagraphAdapter(
     @SuppressLint("ClickableViewAccessibility")
     inner class ExpandedViewHolder(val binding: ParagraphExpandedItemBinding): RecyclerView.ViewHolder(binding.root){
 
-        val noTranslationText: CharSequence = itemView.context.getText(R.string.paragraph_not_translated)
+        private val noTranslationText: CharSequence = itemView.context.getText(R.string.paragraph_not_translated)
 
         init {
             with(binding){
@@ -93,7 +93,7 @@ class ParagraphAdapter(
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = paragraph.getOffsetForPosition(event.x, event.y)
                         val possibleWord = findWordForRightHanded(paragraph.text.toString(), offset)
-                        clickedWord = if(possibleWord.isBlank()) null else possibleWord
+                        clickedWord = possibleWord.ifBlank { null }
                     }
                     return@setOnTouchListener false
                 }
@@ -122,10 +122,10 @@ class ParagraphAdapter(
             binding.paragraph.text = item.word
             binding.loadingParagraph.isVisible = isLoading
             binding.translate.isVisible = !isLoading
-            binding.translatedParagraph.text = if(item.definition.isNotBlank()) item.definition else noTranslationText
+            binding.translatedParagraph.text = item.definition.ifBlank { noTranslationText }
         }
 
-        fun TextView.setHighlightedText(start: Int, end: Int){
+        private fun TextView.setHighlightedText(start: Int, end: Int){
             val text = SpannableString(this.text)
 
             //Remove previous
