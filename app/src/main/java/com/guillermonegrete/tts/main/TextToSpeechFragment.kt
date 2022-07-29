@@ -26,9 +26,12 @@ import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.setFragmentResultListener
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -43,7 +46,7 @@ import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContract.View {
+class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContract.View, MenuProvider {
 
     @Inject lateinit var presenter: MainTTSPresenter
 
@@ -67,7 +70,6 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
 
         requestOverlayPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             // If overlay drawing permission was granted ask for the screen capture one
@@ -94,12 +96,11 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         presenter.setView(this)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.menu_tts_fragment, menu)
-        super.onCreateOptionsMenu(menu, inflater)
+    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+        menuInflater.inflate(R.menu.menu_tts_fragment, menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    override fun onMenuItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.how_to_menu_item -> {
                 playTutorial()
@@ -109,7 +110,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 findNavController().navigate(R.id.action_textToSpeechFragment_to_appInfoDest)
                 true
             }
-            else -> super.onOptionsItemSelected(item)
+            else -> false
         }
     }
 
@@ -174,6 +175,13 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         setFragmentResultListener("requestKey") { _, bundle ->
             binding.main.pickLanguage.text = bundle.getString("lang")
         }
+
+        setupOptionsMenu()
+    }
+
+    private fun setupOptionsMenu() {
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onDestroyView() {
