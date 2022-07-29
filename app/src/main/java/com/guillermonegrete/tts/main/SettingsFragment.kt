@@ -2,7 +2,11 @@ package com.guillermonegrete.tts.main
 
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.Menu
+import android.view.View
+import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.ListPreference
 
 import com.guillermonegrete.tts.R
@@ -16,6 +20,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        (activity as? AppCompatActivity)?.supportActionBar?.apply {
+            setHomeButtonEnabled(true)
+            setDisplayHomeAsUpEnabled(true)
+        }
+        return super.onCreateView(inflater, container, savedInstanceState)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {

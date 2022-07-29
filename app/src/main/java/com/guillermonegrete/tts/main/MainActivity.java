@@ -1,48 +1,17 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
-//
-// Microsoft Cognitive Services (formerly Project Oxford): https://www.microsoft.com/cognitive-services
-//
-// Microsoft Cognitive Services (formerly Project Oxford) GitHub:
-// https://github.com/Microsoft/Cognitive-Speech-TTS
-//
-// Copyright (c) Microsoft Corporation
-// All rights reserved.
-//
-// MIT License:
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 package com.guillermonegrete.tts.main;
 
 import android.os.Bundle;
 
-import androidx.lifecycle.LiveData;
+import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
+import androidx.navigation.fragment.NavHostFragment;
+import androidx.navigation.ui.AppBarConfiguration;
+import androidx.navigation.ui.BottomNavigationViewKt;
 import androidx.navigation.ui.NavigationUI;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.utils.NavigationExtensionsKt;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -51,9 +20,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import java.util.Arrays;
-import java.util.List;
-
 import dagger.hilt.android.AndroidEntryPoint;
 
 
@@ -61,6 +27,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class MainActivity extends AppCompatActivity {
 
     NavController navController;
+    AppBarConfiguration appBarConfiguration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,30 +45,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNavController(){
+        NavHostFragment navHostFragment  = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_fragment_container);
+        if(navHostFragment == null) return;
+        navController = navHostFragment.getNavController();
         BottomNavigationView navView = findViewById(R.id.bottom_nav_view);
+        BottomNavigationViewKt.setupWithNavController(navView, navController);
 
-        List<Integer> navGraphIds = Arrays.asList(R.navigation.main, R.navigation.saved, R.navigation.importtext);
-        LiveData<NavController> controllerObservable = NavigationExtensionsKt.setupWithNavController(navView, navGraphIds, getSupportFragmentManager(), R.id.main_fragment_container, getIntent());
+        navController.addOnDestinationChangedListener((nController, destination, arguments) -> {
 
-        controllerObservable.observe(this, controller -> {
-            navController = controller;
-            NavigationUI.setupActionBarWithNavController(this, controller);
-
-            controller.addOnDestinationChangedListener((nController, destination, arguments) -> {
-
-                int destId = destination.getId();
-                if (destId == R.id.settingsFragmentDest
-                        || destId == R.id.webReaderFragment) {
-                    navView.setVisibility(View.GONE);
-                } else {
-                    navView.setVisibility(View.VISIBLE);
-                }
-            });
+            int destId = destination.getId();
+            if (destId == R.id.settingsFragmentDest
+                    || destId == R.id.webReaderFragment) {
+                navView.setVisibility(View.GONE);
+            } else {
+                navView.setVisibility(View.VISIBLE);
+            }
         });
+
+        appBarConfiguration = new AppBarConfiguration.Builder(R.id.main, R.id.saved, R.id.importtext).build();
+        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(@NonNull Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main_activity, menu);
         return true;
     }
@@ -118,6 +84,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onSupportNavigateUp() {
         // Necessary for making the back button in the action bar work
-        return navController.navigateUp();
+        return NavigationUI.navigateUp(navController, appBarConfiguration);
     }
 }
