@@ -2,11 +2,11 @@ package com.guillermonegrete.tts.main
 
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
+import androidx.lifecycle.Lifecycle
 import androidx.preference.ListPreference
 
 import com.guillermonegrete.tts.R
@@ -15,12 +15,7 @@ import androidx.preference.PreferenceFragmentCompat
 import com.guillermonegrete.tts.utils.applyTheme
 
 
-class SettingsFragment : PreferenceFragmentCompat() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
+class SettingsFragment : PreferenceFragmentCompat(), MenuProvider {
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -31,13 +26,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
             setHomeButtonEnabled(true)
             setDisplayHomeAsUpEnabled(true)
         }
+
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu) {
+    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menu.findItem(R.id.settings_menu_item).isVisible = false
-        super.onPrepareOptionsMenu(menu)
     }
+
+    override fun onMenuItemSelected(menuItem: MenuItem) = false
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences_main, rootKey)
