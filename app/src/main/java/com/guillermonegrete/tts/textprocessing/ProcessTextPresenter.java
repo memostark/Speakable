@@ -218,6 +218,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         DeleteWord interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
         interactor.execute();
         mView.showWordDeleted();
+        insideLocalDatabase = false;
     }
 
     @Override
