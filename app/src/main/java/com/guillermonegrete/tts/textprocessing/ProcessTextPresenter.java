@@ -97,7 +97,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void start(Words word) {
-        insideLocalDatabase = false;
+        insideLocalDatabase = true;
         getDictionaryEntry(word);
     }
 

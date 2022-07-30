@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.savedwords;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -8,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
@@ -124,9 +125,9 @@ public class SaveWordDialogFragment extends DialogFragment {
             insert(word_entry);
             Toast.makeText(getActivity(), "New word saved", Toast.LENGTH_SHORT).show();
 
-            Activity activity = getActivity();
-            if(activity instanceof Callback)
-                ((Callback)activity).onWordSaved(word_entry);
+            Fragment fragment = getParentFragment();
+            if(fragment instanceof Callback)
+                ((Callback) fragment).onWordSaved(word_entry);
         }
 
     }
