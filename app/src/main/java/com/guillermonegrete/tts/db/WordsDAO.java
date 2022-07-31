@@ -13,11 +13,11 @@ import java.util.List;
 @Dao
 public interface WordsDAO {
 
-    @Query("SELECT * FROM words where wid = :id LIMIT 1")
-    Words findWordById(int id);
-
     @Query("SELECT * FROM words where word = :word LIMIT 1")
     Words findWord(String word);
+
+    @Query("SELECT * FROM words WHERE wid = :id")
+    LiveData<Words> loadWordById(int id);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insert(Words word);
@@ -27,9 +27,6 @@ public interface WordsDAO {
 
     @Update(onConflict = OnConflictStrategy.IGNORE)
     void update(Words words);
-
-    @Query("DELETE FROM words where wid = :id")
-    void deleteWordById(int id);
 
     @Query("DELETE FROM words where word = :word")
     void deleteWord(String word);

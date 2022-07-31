@@ -4,25 +4,31 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.*
-import androidx.constraintlayout.widget.Group
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.distinctUntilChanged
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.databinding.FragmentProcessTranslationBinding
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
-class TranslationFragment: Fragment() {
+@AndroidEntryPoint
+class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
 
     private var word: Words? = null
     private var spinnerIndex: Int? = 0
     private var listener: Listener? = null
 
-    private lateinit var translationEditText: TextView
-    private lateinit var errorLayout: View
-    private lateinit var allGroup: Group
+    private var _binding: FragmentProcessTranslationBinding? = null
+    private val binding get() = _binding!!
+
+    @Inject lateinit var wordsDAO: WordsDAO
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,37 +36,51 @@ class TranslationFragment: Fragment() {
         spinnerIndex = arguments?.getInt(ARGUMENT_SPINNER_INDEX)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val root = inflater.inflate(R.layout.fragment_process_translation, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        _binding = FragmentProcessTranslationBinding.bind(view)
 
         word?.let {word ->
-            with(root){
-                findViewById<TextView>(R.id.saved_definition_text).text = word.definition
-                if(word.notes.isNullOrBlank()) {
-                    findViewById<Group>(R.id.notes_group).visibility = View.GONE
-                }else findViewById<TextView>(R.id.saved_notes_text).text = word.notes
+            setWord(word)
 
-                findViewById<ImageButton>(R.id.copy_definition_button).setOnClickListener {
-                    saveTextToClipboard(word.definition)
-                }
-
-                if(spinnerIndex != -1) {
-                    setSpinner(this)
-                    findViewById<Group>(R.id.definition_group).visibility = View.GONE
-                    findViewById<Group>(R.id.translation_group).visibility = View.VISIBLE
-                    translationEditText = findViewById(R.id.translation_text)
-                    translationEditText.text = word.definition
-                    findViewById<ImageButton>(R.id.copy_translation_button).setOnClickListener {
+            // If spinner index is set then it's a sentence layout
+            if(spinnerIndex != -1) {
+                with(binding) {
+                    setSpinner(root)
+                    definitionGroup.isVisible = false
+                    translationGroup.isVisible = true
+                    translationText.text = word.definition
+                    copyTranslationButton.setOnClickListener {
                         saveTextToClipboard(word.definition)
                     }
                 }
-
-                errorLayout = findViewById(R.id.error_layout)
-                allGroup = findViewById(R.id.all_group)
+            } else {
+                // Only query the database when it's a word layout
+                wordsDAO.loadWordById(word.id).distinctUntilChanged().observe(viewLifecycleOwner) {
+                    it ?: return@observe
+                    setWord(it)
+                }
             }
         }
+    }
 
-        return root
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    private fun setWord(word: Words){
+        with(binding){
+            savedDefinitionText.text = word.definition
+            val isEmpty = word.notes.isNullOrBlank()
+            notesGroup.isGone = isEmpty
+            if(!isEmpty) savedNotesText.text = word.notes
+
+            copyDefinitionButton.setOnClickListener {
+                saveTextToClipboard(word.definition)
+            }
+        }
     }
 
     private fun saveTextToClipboard(text: String){
@@ -71,7 +91,7 @@ class TranslationFragment: Fragment() {
 
     fun updateTranslation(word: Words){
         if(isAdded) {
-            translationEditText.text = word.definition
+            binding.translationText.text = word.definition
         }else{
             arguments?.putParcelable(ARGUMENT_WORD, word)
         }
@@ -79,8 +99,8 @@ class TranslationFragment: Fragment() {
 
     fun setErrorLayout(){
         if(view != null) {
-            errorLayout.visibility = View.VISIBLE
-            allGroup.visibility = View.GONE
+            binding.errorLayout.visibility = View.VISIBLE
+            binding.allGroup.visibility = View.GONE
         }
     }
 
@@ -123,14 +143,14 @@ class TranslationFragment: Fragment() {
 
     companion object {
 
-         private const val ARGUMENT_WORD = "word"
+        private const val ARGUMENT_WORD = "word"
         private const val ARGUMENT_SPINNER_INDEX = "spinnerIndex"
 
-         @JvmStatic fun newInstance(word: Words, spinnerIndex: Int) = TranslationFragment().apply {
+        @JvmStatic fun newInstance(word: Words, spinnerIndex: Int) = TranslationFragment().apply {
             arguments = Bundle().apply {
                 putParcelable(ARGUMENT_WORD, word)
                 putInt(ARGUMENT_SPINNER_INDEX, spinnerIndex)
             }
-         }
+        }
     }
 }
