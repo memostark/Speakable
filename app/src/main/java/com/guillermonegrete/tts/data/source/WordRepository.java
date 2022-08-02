@@ -49,6 +49,11 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
+    public LiveData<Words> getLocalWord(@NonNull String word, @NonNull String language) {
+        return mWordLocalDataSource.loadWord(word, language);
+    }
+
+    @Override
     public List<String> getLanguagesISO() {
         return mWordLocalDataSource.getLanguagesISO();
     }
@@ -126,19 +131,6 @@ public class WordRepository implements WordRepositorySource {
             return;
         }
 
-/*        remoteTranslatorSource.getWordLanguageInfo(wordText, languageFrom, languageTo, new WordDataSource.GetWordCallback() {
-
-            @Override
-            public void onWordLoaded(Words word) {
-                callback.onRemoteWordLoaded(word);
-                cachedWords.put(wordText, word);
-            }
-
-            @Override
-            public void onDataNotAvailable() {
-                callback.onDataNotAvailable(new Words(wordText, "un", "un"));
-            }
-        });*/
         try{
             Translation translation = translationSource.getTranslation(wordText, languageFrom, languageTo);
             Words word = new Words(wordText, translation.getSrc(), translation.getTranslatedText());

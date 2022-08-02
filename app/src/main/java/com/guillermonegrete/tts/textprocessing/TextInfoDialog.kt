@@ -14,6 +14,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.distinctUntilChanged
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
@@ -48,6 +49,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private var inputText: String? = null
 
     private lateinit var mFoundWords: Words
+    private var dbWord: Words? = null
 
     @Inject
     internal lateinit var presenter: ProcessTextContract.Presenter
@@ -158,6 +160,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                 presenter.startWithService(inputText, languageFrom, languageToISO)
             }
         }
+
+        presenter.wordStream(inputText, languageFrom).distinctUntilChanged().observe(this) {
+            dbWord = it
+        }
     }
 
     override fun onStop() {
@@ -243,14 +249,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         setWordLayout(word)
         createSmallViewPager()
 
-        setSavedWordToolbar(word)
+        setSavedWordToolbar()
         languagePreferenceIndex = -1 // Indicates spinner not visible
 
     }
 
     override fun setDictWithSaveWordLayout(word: Words, items: List<WikiItem>) {
         setWiktionaryLayout(word, items)
-        setSavedWordToolbar(word)
+        setSavedWordToolbar()
         languagePreferenceIndex = -1 // Indicates spinner not visible
 
         // Hides language from spinner, because language is already predefined.
@@ -326,7 +332,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showSaveDialog(word: Words) {
-        val dialogFragment: DialogFragment = SaveWordDialogFragment.newInstance(word)
+        val dialogFragment: DialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
         dialogFragment.show(childFragmentManager, "New word process")
     }
 
@@ -533,13 +539,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         }
     }
 
-    private fun setSavedWordToolbar(word: Words) {
+    private fun setSavedWordToolbar() {
         bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
 
         with(bindingWord.editIcon) {
             visibility = View.VISIBLE
             setOnClickListener {
-                val dialogFragment = SaveWordDialogFragment.newInstance(word)
+                val dialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
                 dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
             }
         }
@@ -603,7 +609,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         val editIcon = bindingWord.editIcon
         editIcon.visibility = View.VISIBLE
         editIcon.setOnClickListener {
-            val dialogFragment = SaveWordDialogFragment.newInstance(word)
+            val dialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
             dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
         }
     }

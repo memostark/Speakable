@@ -16,6 +16,9 @@ public interface WordsDAO {
     @Query("SELECT * FROM words where word = :word LIMIT 1")
     Words findWord(String word);
 
+    @Query("SELECT * FROM words WHERE word = :word AND lang = :language")
+    LiveData<Words> loadWord(String word, String language);
+
     @Query("SELECT * FROM words WHERE wid = :id")
     LiveData<Words> loadWordById(int id);
 
