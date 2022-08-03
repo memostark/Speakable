@@ -11,26 +11,28 @@
         android:layout_height="wrap_content"
         android:hint="@string/word_edit_text"
         android:inputType="textCapSentences"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp"
+        android:importantForAutofill="no" />
 
-    <EditText
+    <AutoCompleteTextView
         android:id="@+id/new_word_language_edit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/language_edit_text"
-        android:inputType="textCapCharacters" />
+        android:hint="@string/language_edit_text" />
 
     <EditText
         android:id="@+id/new_translation_edit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/translation_edit_text"
-        android:inputType="textCapSentences" />
+        android:inputType="textCapSentences"
+        android:importantForAutofill="no" />
 
     <EditText
         android:id="@+id/new_notes_edit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/notes_edit_text"
-        android:inputType="text" />
+        android:inputType="text"
+        android:importantForAutofill="no" />
 </LinearLayout>

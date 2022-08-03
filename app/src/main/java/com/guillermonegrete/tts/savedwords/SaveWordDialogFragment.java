@@ -14,6 +14,8 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -21,6 +23,8 @@ import android.widget.Toast;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.databinding.NewWordDialogBinding;
 import com.guillermonegrete.tts.db.Words;
+
+import java.util.ArrayList;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -69,9 +73,12 @@ public class SaveWordDialogFragment extends DialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         binding = NewWordDialogBinding.inflate(requireActivity().getLayoutInflater());
         final EditText wordEditText = binding.newWordEdit;
-        final EditText languageEditText = binding.newWordLanguageEdit;
+        final AutoCompleteTextView languageEditText = binding.newWordLanguageEdit;
         final EditText translationEditText = binding.newTranslationEdit;
         final EditText notesEditText = binding.newNotesEdit;
+
+        setUpAutoCompleteView(languageEditText);
+
 
         if(wordItem != null) {
             wordEditText.setText(wordItem.word);
@@ -150,6 +157,31 @@ public class SaveWordDialogFragment extends DialogFragment {
         }else{
             saveWordViewModel.save(word_entry);
         }
+    }
+
+    private void setUpAutoCompleteView(AutoCompleteTextView languageEditText){
+
+        String[] langInitials = getResources().getStringArray(R.array.googleTranslateLanguagesValue);
+        String[] langFullNames = getResources().getStringArray(R.array.googleTranslateLanguagesArray);
+
+        ArrayList<String> langNameIso = new ArrayList<>();
+        for (int i = 0; i < langFullNames.length; i++) {
+            langNameIso.add(langFullNames[i] + " (" + langInitials[i] + ")"); // e.g. Spanish (es)
+        }
+
+        languageEditText.setOnFocusChangeListener((v, hasFocus) -> languageEditText.showDropDown());
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                langNameIso
+        );
+        languageEditText.setOnItemClickListener((parent, view, position, id) -> {
+            CharSequence item = adapter.getItem(position);
+            int i = langNameIso.indexOf(item);
+            languageEditText.setText(langInitials[i], false);
+            languageEditText.setSelection(languageEditText.getText().length());
+        });
+        languageEditText.setAdapter(adapter);
     }
 
     public interface Callback{
