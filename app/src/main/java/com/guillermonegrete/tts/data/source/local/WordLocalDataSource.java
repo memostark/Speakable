@@ -11,7 +11,7 @@ import java.util.List;
 
 public class WordLocalDataSource implements WordDataSource {
 
-    private WordsDAO mWordDAO;
+    private final WordsDAO mWordDAO;
 
     public WordLocalDataSource(WordsDAO wordsDAO){
         mWordDAO = wordsDAO;
@@ -40,6 +40,11 @@ public class WordLocalDataSource implements WordDataSource {
         }else {
             callback.onWordLoaded(retrieved_word);
         }
+    }
+
+    @Override
+    public LiveData<Words> loadWord(String word, String language) {
+        return mWordDAO.loadWord(word, language);
     }
 
     @Override

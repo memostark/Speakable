@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.textprocessing;
 
+import androidx.lifecycle.LiveData;
+
 import com.guillermonegrete.tts.BasePresenter;
 import com.guillermonegrete.tts.BaseView;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
@@ -56,6 +58,8 @@ public interface ProcessTextContract {
         void startWithService(String selectedText, String languageFrom, String languageTo);
 
         void getLayout(String text, String languageFrom, String languageTo);
+
+        LiveData<Words> wordStream(String text, String languageFrom);
 
         void getDictionaryEntry(Words word);
 

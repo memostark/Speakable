@@ -91,6 +91,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:src="@drawable/ic_volume_up_black_24dp"
+                    android:tint="@android:color/black"
                     android:contentDescription="@string/save_icon_description"
                     android:background="?android:selectableItemBackgroundBorderless"
                     android:visibility="invisible"/>

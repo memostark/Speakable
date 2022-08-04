@@ -28,5 +28,7 @@ public interface WordDataSource {
 
     void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordCallback callback);
 
+    LiveData<Words> loadWord(String word, String language);
+
     Words getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo);
 }

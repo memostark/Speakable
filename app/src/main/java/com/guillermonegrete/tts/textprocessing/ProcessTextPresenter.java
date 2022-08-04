@@ -97,7 +97,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void start(Words word) {
-        insideLocalDatabase = false;
+        insideLocalDatabase = true;
         getDictionaryEntry(word);
     }
 
@@ -160,6 +160,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
+    public LiveData<Words> wordStream(String text, String languageFrom) {
+        return mRepository.getLocalWord(text, languageFrom);
+    }
+
+    @Override
     public void getDictionaryEntry(final Words word) {
         foundWord = word;
         hasTranslation = true;
@@ -218,6 +223,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         DeleteWord interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
         interactor.execute();
         mView.showWordDeleted();
+        insideLocalDatabase = false;
     }
 
     @Override

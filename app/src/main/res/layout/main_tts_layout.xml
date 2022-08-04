@@ -99,6 +99,7 @@
             android:drawableTop="@drawable/ic_volume_up_black_24dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
             android:text="@string/reproduce_description"
+            app:drawableTint="?colorOnSurface"
             app:textAllCaps="false"/>
 
         <ProgressBar

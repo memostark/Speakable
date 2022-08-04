@@ -32,6 +32,8 @@ public interface WordRepositorySource {
 
     LiveData<List<Words>> getWordsStream();
 
+    LiveData<Words> getLocalWord(@NonNull String word, @NonNull String language);
+
     List<String> getLanguagesISO();
 
     void getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo, @NonNull GetWordRepositoryCallback callback);
