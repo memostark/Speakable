@@ -29,10 +29,12 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.databinding.FragmentSavedWordsBinding;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
+import com.guillermonegrete.tts.ui.DifferentValuesAdapter;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @AndroidEntryPoint
@@ -46,6 +48,10 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     private String language_filter;
 
     private List<Words> words = new ArrayList<>();
+    private List<CharSequence> languageIsos;
+    private List<String> languageFullName;
+
+    private List<String> allLangs;
 
     private static final String ALL_OPTION = "All";
 
@@ -57,6 +63,9 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         wordListAdapter = new SavedWordListAdapter(this);
+
+        languageIsos = Arrays.asList(getResources().getTextArray(R.array.googleTranslateLanguagesValue));
+        languageFullName = Arrays.asList(getResources().getStringArray(R.array.googleTranslateLanguagesArray));
     }
 
     @Override
@@ -86,9 +95,18 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         wordsViewModel = new ViewModelProvider(this).get(SavedWordsViewModel.class);
 
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
-            ArrayList<String> spinnerItems = new ArrayList<>(languages);
+
+            var spinnerItems = new ArrayList<String>();
+            for(String lang: languages){
+                int index = languageIsos.indexOf(lang);
+                var newLang = index != -1 ? String.format("%s (%s)", languageFullName.get(index), lang) : lang;
+                spinnerItems.add(newLang);
+            }
+
             spinnerItems.add(0, ALL_OPTION);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, spinnerItems);
+            allLangs.addAll(languages);
+            allLangs.add(0, ALL_OPTION);
+            var adapter = new DifferentValuesAdapter(requireContext(), android.R.layout.simple_spinner_item, allLangs, spinnerItems);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             Spinner spinnerLang = binding.selectLanguageSpinner;
@@ -183,7 +201,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long id) {
-        language_filter = (String) adapterView.getItemAtPosition(pos);
+        language_filter = allLangs.get(pos);
         filterWords();
     }
 
