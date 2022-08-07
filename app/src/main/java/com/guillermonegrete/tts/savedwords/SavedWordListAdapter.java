@@ -49,9 +49,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
     @Override
     public void onBindViewHolder(@NonNull WordsViewHolder holder, int position) {
-        if (wordsList == null) {
-            return;
-        }
+        if (wordsList == null) return;
 
         final Words word = wordsList.get(position);
         if (word != null) holder.setWord(word);
@@ -99,12 +97,13 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
     // TODO Implement View Binding
     class WordsViewHolder extends RecyclerView.ViewHolder{
-        private TextView wordText;
-        private TextView languageText;
-        private TextView translationText;
-        private TextView notesText;
-        private ConstraintLayout container;
+        private final TextView wordText;
+        private final TextView languageText;
+        private final TextView translationText;
+        private final TextView notesText;
+        private final ConstraintLayout container;
         private Words word;
+        private int color;
 
         WordsViewHolder(View itemView){
             super(itemView);
@@ -122,6 +121,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             });
 
             itemView.setOnClickListener(view -> selectItem(word));
+            color = itemView.getResources().getColor(R.color.list_bg_variant);
         }
 
         void update(){
@@ -129,7 +129,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
                 container.setBackgroundColor(Color.LTGRAY);
             } else {
                 int defaultBGColor = ColorUtilsKt.getThemeColor(itemView.getContext(), R.attr.colorSurface);
-                container.setBackgroundColor(defaultBGColor);
+                container.setBackgroundColor(getAdapterPosition() % 2 == 1 ? defaultBGColor : color);
             }
         }
 

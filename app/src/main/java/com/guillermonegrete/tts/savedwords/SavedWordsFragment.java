@@ -104,6 +104,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             }
 
             spinnerItems.add(0, ALL_OPTION);
+            allLangs = new ArrayList<>();
             allLangs.addAll(languages);
             allLangs.add(0, ALL_OPTION);
             var adapter = new DifferentValuesAdapter(requireContext(), android.R.layout.simple_spinner_item, allLangs, spinnerItems);
