@@ -2,6 +2,8 @@ package com.guillermonegrete.tts.savedwords;
 
 
 import androidx.annotation.NonNull;
+import androidx.core.view.MenuProvider;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -18,9 +20,12 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.ItemTouchHelper;
+
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -80,8 +85,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
         setUpItemTouchHelper(wordsList);
 
-        binding.newWordButton.setOnClickListener(v -> showSaveDialog());
         initData();
+        createMenu();
     }
 
     @Override
@@ -121,6 +126,24 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             filterWords();
 
         });
+    }
+
+    private void createMenu(){
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.menu_saved_words_frag, menu);
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                if(menuItem.getItemId() == R.id.add_word_menu_item){
+                    showSaveDialog();
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
     private void showSaveDialog() {

@@ -15,9 +15,12 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
@@ -28,6 +31,8 @@ import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.RecentFilesAdapter
 import com.guillermonegrete.tts.importtext.UriValidator
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
+import com.guillermonegrete.tts.utils.actionBarSize
+import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -50,6 +55,7 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
     private val viewModel: ImportTextViewModel by viewModels()
 
     private var fabOpen = false
+    private var fabBottomMargin = 0
 
     private lateinit var pickFile: ActivityResultLauncher<Intent>
 
@@ -76,6 +82,10 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
                 }
             }
         }
+
+        val cont = context ?: return
+        // So the fab is not overlapping with the action bar
+        fabBottomMargin = cont.actionBarSize + cont.dpToPixel(8)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -85,6 +95,7 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
         with(binding){
 
             pickFileFab.setOnClickListener { toggleButtons() }
+            (fabContainer.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = fabBottomMargin
 
             pickTxtFileBtn.apply {
                 setOnClickListener {
@@ -103,6 +114,14 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
             }
 
             recentFilesList.layoutManager = LinearLayoutManager(context)
+            recentFilesList.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (dy<0 && !fabContainer.isVisible)
+                        fabContainer.isInvisible = false
+                    else if(dy>0 && fabContainer.isVisible)
+                        fabContainer.isInvisible = true
+                }
+            })
         }
 
         setViewModel()
@@ -123,16 +142,16 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
                 visualizeEpub(Uri.parse(it.uri), it.id)
             })
 
-            dataLoading.observe(viewLifecycleOwner, {
-                binding.recentFilesProgressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
-            })
+            dataLoading.observe(viewLifecycleOwner) {
+                binding.recentFilesProgressBar.visibility = if (it) View.VISIBLE else View.INVISIBLE
+            }
 
             val adapter = RecentFilesAdapter(viewModel)
             binding.recentFilesList.adapter = adapter
 
-            files.observe(viewLifecycleOwner, {
+            files.observe(viewLifecycleOwner) {
                 adapter.submitList(it)
-            })
+            }
 
             openItemMenu.observe(viewLifecycleOwner, EventObserver{
                 RecentFileMenu.newInstance(it).show(childFragmentManager, "Item menu")

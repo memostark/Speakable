@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.util.Patterns
 import androidx.fragment.app.Fragment
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.isInvisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -13,11 +15,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.DialogOpenLinkBinding
 import com.guillermonegrete.tts.databinding.FragmentWebLinksListBinding
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
+import com.guillermonegrete.tts.utils.actionBarSize
+import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -31,6 +36,13 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
     private  var _binding: FragmentWebLinksListBinding? = null
     private val binding get() = _binding!!
+
+    private var fabBottomMargin = 0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        context?.apply { fabBottomMargin = actionBarSize + dpToPixel(8) }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -55,8 +67,20 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
             }
         }
 
-        binding.list.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
-        binding.addBtn.setOnClickListener { showAddNewDialog() }
+        with(binding){
+            list.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+            list.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (dy<0 && !addBtn.isShown)
+                        addBtn.isInvisible = false
+                    else if(dy>0 && addBtn.isShown)
+                        addBtn.isInvisible = true
+                }
+            })
+
+            addBtn.setOnClickListener { showAddNewDialog() }
+            (addBtn.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = fabBottomMargin
+        }
 
         viewModel.getRecentLinks()
     }
