@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.savedwords;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 
 import androidx.annotation.NonNull;
@@ -13,6 +14,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.TextView;
 
 import com.guillermonegrete.tts.R;
@@ -22,9 +25,10 @@ import com.guillermonegrete.tts.utils.ColorUtilsKt;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdapter.WordsViewHolder> {
+public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdapter.WordsViewHolder> implements Filterable {
 
     private List<Words> wordsList = new ArrayList<>();
+    private List<Words> filteredWords = new ArrayList<>();
 
     private boolean multiSelect = false;
     private final ArrayList<Words> selectedItems = new ArrayList<>();
@@ -37,6 +41,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
     void setWordsList(@NonNull List<Words> wordsList){
         this.wordsList = wordsList;
+        filteredWords = wordsList;
         notifyDataSetChanged();
     }
 
@@ -51,7 +56,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     public void onBindViewHolder(@NonNull WordsViewHolder holder, int position) {
         if (wordsList == null) return;
 
-        final Words word = wordsList.get(position);
+        final Words word = filteredWords.get(position);
         if (word != null) holder.setWord(word);
 
         holder.update();
@@ -60,7 +65,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
     @Override
     public int getItemCount() {
-        return wordsList.size();
+        return filteredWords.size();
     }
 
     // Taken from: https://blog.teamtreehouse.com/contextual-action-bars-removing-items-recyclerview
@@ -95,6 +100,41 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         }
     };
 
+    @Override
+    public Filter getFilter() {
+        return new Filter() {
+            @Override
+            protected FilterResults performFiltering(CharSequence constraint) {
+
+                List<Words> filteredResults;
+                if (constraint.length() == 0) {
+                    filteredResults = wordsList;
+                } else {
+                    List<Words> results = new ArrayList<>();
+                    for (Words item : wordsList) {
+                        if (item.word.toLowerCase().contains(constraint)) {
+                            results.add(item);
+                        }
+                    }
+                    filteredResults = results;
+                }
+
+                FilterResults results = new FilterResults();
+                results.values = filteredResults;
+
+                return results;
+            }
+
+            @SuppressLint("NotifyDataSetChanged")
+            @SuppressWarnings("unchecked")
+            @Override
+            protected void publishResults(CharSequence constraint, FilterResults results) {
+                filteredWords = (List<Words>) results.values;
+                notifyDataSetChanged();
+            }
+        };
+    }
+
     // TODO Implement View Binding
     class WordsViewHolder extends RecyclerView.ViewHolder{
         private final TextView wordText;
@@ -103,7 +143,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         private final TextView notesText;
         private final ConstraintLayout container;
         private Words word;
-        private int color;
+        private final int color;
 
         WordsViewHolder(View itemView){
             super(itemView);

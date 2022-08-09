@@ -2,9 +2,12 @@ package com.guillermonegrete.tts.savedwords;
 
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
+
+import android.app.SearchManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -86,7 +89,27 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         setUpItemTouchHelper(wordsList);
 
         initData();
+        setupSearch(binding.searchWords);
         createMenu();
+    }
+
+    private void setupSearch(SearchView searchWords) {
+        var searchManager = (SearchManager) requireContext().getSystemService(Context.SEARCH_SERVICE);
+        searchWords.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+        searchWords.setMaxWidth(Integer.MAX_VALUE);
+
+        searchWords.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                wordListAdapter.getFilter().filter(newText);
+                return true;
+            }
+        });
     }
 
     @Override
