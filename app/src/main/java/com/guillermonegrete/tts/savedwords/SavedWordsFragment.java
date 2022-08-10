@@ -54,6 +54,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     private FragmentSavedWordsBinding binding;
 
     private String language_filter;
+    private String textFilter = "";
 
     private List<Words> words = new ArrayList<>();
     private List<CharSequence> languageIsos;
@@ -106,7 +107,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                wordListAdapter.getFilter().filter(newText);
+                textFilter = newText;
+                filterWords();
                 return true;
             }
         });
@@ -273,6 +275,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
             wordListAdapter.setWordsList(filtered_word);
         }
+
+        wordListAdapter.getFilter().filter(textFilter);
     }
 
     @Override

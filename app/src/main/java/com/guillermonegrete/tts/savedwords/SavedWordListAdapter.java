@@ -27,7 +27,7 @@ import java.util.List;
 
 public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdapter.WordsViewHolder> implements Filterable {
 
-    private List<Words> wordsList = new ArrayList<>();
+    @NonNull private List<Words> wordsList = new ArrayList<>();
     private List<Words> filteredWords = new ArrayList<>();
 
     private boolean multiSelect = false;
@@ -42,7 +42,6 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     void setWordsList(@NonNull List<Words> wordsList){
         this.wordsList = wordsList;
         filteredWords = wordsList;
-        notifyDataSetChanged();
     }
 
     @NonNull
@@ -54,7 +53,6 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
     @Override
     public void onBindViewHolder(@NonNull WordsViewHolder holder, int position) {
-        if (wordsList == null) return;
 
         final Words word = filteredWords.get(position);
         if (word != null) holder.setWord(word);
