@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.savedwords;
 
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
 import androidx.lifecycle.Lifecycle;
@@ -292,5 +293,10 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
                 word
         );
         dialog.show(getChildFragmentManager(), "Text_info");
+    }
+
+    @Override
+    public void onLongClick() {
+        ((AppCompatActivity) requireActivity()).startSupportActionMode(wordListAdapter.actionModeCallback);
     }
 }

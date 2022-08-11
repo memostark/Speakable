@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.graphics.Color;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
@@ -67,7 +66,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     }
 
     // Taken from: https://blog.teamtreehouse.com/contextual-action-bars-removing-items-recyclerview
-    private final ActionMode.Callback actionModeCallback =  new ActionMode.Callback() {
+    public final ActionMode.Callback actionModeCallback =  new ActionMode.Callback() {
         @Override
         public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
             multiSelect = true;
@@ -153,7 +152,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             container = itemView.findViewById(R.id.saved_word_item_container);
 
             itemView.setOnLongClickListener(view -> {
-                ((AppCompatActivity) view.getContext()).startSupportActionMode(actionModeCallback);
+                listener.onLongClick();
                 selectItem(word);
                 return true;
             });
@@ -204,5 +203,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         void onDeleteWords(List<Words> words);
 
         void showTextInfoDialog(String text, Words word);
+
+        void onLongClick();
     }
 }
