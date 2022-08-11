@@ -13,4 +13,6 @@
     <color name="grey">#424242</color>
     <color name="DarkerGrey">#303030</color>
     <color name="DarkestGrey">#121212</color>
+
+    <color name="list_bg_variant">#F5F5F5</color>
 </resources>

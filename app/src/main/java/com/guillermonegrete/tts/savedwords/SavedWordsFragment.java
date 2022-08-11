@@ -2,7 +2,13 @@ package com.guillermonegrete.tts.savedwords;
 
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
+import androidx.core.view.MenuProvider;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
+
+import android.app.SearchManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -18,9 +24,12 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.ItemTouchHelper;
+
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,10 +38,12 @@ import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.databinding.FragmentSavedWordsBinding;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
+import com.guillermonegrete.tts.ui.DifferentValuesAdapter;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @AndroidEntryPoint
@@ -44,8 +55,13 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     private FragmentSavedWordsBinding binding;
 
     private String language_filter;
+    private String textFilter = "";
 
     private List<Words> words = new ArrayList<>();
+    private List<CharSequence> languageIsos;
+    private List<String> languageFullName;
+
+    private List<String> allLangs;
 
     private static final String ALL_OPTION = "All";
 
@@ -57,6 +73,9 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         wordListAdapter = new SavedWordListAdapter(this);
+
+        languageIsos = Arrays.asList(getResources().getTextArray(R.array.googleTranslateLanguagesValue));
+        languageFullName = Arrays.asList(getResources().getStringArray(R.array.googleTranslateLanguagesArray));
     }
 
     @Override
@@ -71,8 +90,29 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
         setUpItemTouchHelper(wordsList);
 
-        binding.newWordButton.setOnClickListener(v -> showSaveDialog());
         initData();
+        setupSearch(binding.searchWords);
+        createMenu();
+    }
+
+    private void setupSearch(SearchView searchWords) {
+        var searchManager = (SearchManager) requireContext().getSystemService(Context.SEARCH_SERVICE);
+        searchWords.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+        searchWords.setMaxWidth(Integer.MAX_VALUE);
+
+        searchWords.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                textFilter = newText;
+                filterWords();
+                return true;
+            }
+        });
     }
 
     @Override
@@ -86,9 +126,19 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         wordsViewModel = new ViewModelProvider(this).get(SavedWordsViewModel.class);
 
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
-            ArrayList<String> spinnerItems = new ArrayList<>(languages);
+
+            var spinnerItems = new ArrayList<String>();
+            for(String lang: languages){
+                int index = languageIsos.indexOf(lang);
+                var newLang = index != -1 ? String.format("%s (%s)", languageFullName.get(index), lang) : lang;
+                spinnerItems.add(newLang);
+            }
+
             spinnerItems.add(0, ALL_OPTION);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, spinnerItems);
+            allLangs = new ArrayList<>();
+            allLangs.addAll(languages);
+            allLangs.add(0, ALL_OPTION);
+            var adapter = new DifferentValuesAdapter(requireContext(), android.R.layout.simple_spinner_item, allLangs, spinnerItems);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             Spinner spinnerLang = binding.selectLanguageSpinner;
@@ -102,6 +152,24 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             filterWords();
 
         });
+    }
+
+    private void createMenu(){
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.menu_saved_words_frag, menu);
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                if(menuItem.getItemId() == R.id.add_word_menu_item){
+                    showSaveDialog();
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
     private void showSaveDialog() {
@@ -183,7 +251,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long id) {
-        language_filter = (String) adapterView.getItemAtPosition(pos);
+        language_filter = allLangs.get(pos);
         filterWords();
     }
 
@@ -208,6 +276,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
             wordListAdapter.setWordsList(filtered_word);
         }
+
+        wordListAdapter.getFilter().filter(textFilter);
     }
 
     @Override
@@ -223,5 +293,10 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
                 word
         );
         dialog.show(getChildFragmentManager(), "Text_info");
+    }
+
+    @Override
+    public void onLongClick() {
+        ((AppCompatActivity) requireActivity()).startSupportActionMode(wordListAdapter.actionModeCallback);
     }
 }

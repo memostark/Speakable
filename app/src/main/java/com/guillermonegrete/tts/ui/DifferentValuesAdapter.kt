@@ -21,6 +21,14 @@ class DifferentValuesAdapter(
     private val closedViewItems: Array<String>,
     listViewItems: Array<String>
 ): ArrayAdapter<String>(context, resource, listViewItems) {
+
+    constructor (
+        context: Context,
+        @LayoutRes resource: Int,
+        closedViewItems: List<String>,
+        listViewItems: List<String>
+    ) : this(context, resource, 0, closedViewItems.toTypedArray(), listViewItems.toTypedArray())
+
     private val inflater: LayoutInflater = LayoutInflater.from(context)
 
     /**

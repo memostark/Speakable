@@ -180,6 +180,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             })
 
             infoWebview.webViewClient = WebViewClient()
+            infoWebview.settings.javaScriptEnabled = true
             // This disables scrolling the bottom layout when scrolling the WebView
             // This is done to allow the web view to scroll up
             infoWebview.setOnTouchListener { view, _ ->
