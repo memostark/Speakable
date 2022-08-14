@@ -191,5 +191,6 @@
 
     <!-- Web reader-->
     <string name="web_reader_lang_spinner_prompt">Select webpage language</string>
+    <string name="dialog">Dialog</string>
 
 </resources>
