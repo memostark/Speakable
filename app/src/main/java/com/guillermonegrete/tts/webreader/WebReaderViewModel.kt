@@ -1,14 +1,12 @@
 package com.guillermonegrete.tts.webreader
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
+import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.importtext.visualize.model.Span
@@ -26,7 +24,8 @@ import javax.inject.Inject
 class WebReaderViewModel @Inject constructor(
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
-    private val webLinkDAO: WebLinkDAO
+    private val wordRepository: WordRepository,
+    private val webLinkDAO: WebLinkDAO,
 ): ViewModel() {
 
     private val _page = MutableLiveData<String>()
@@ -41,6 +40,9 @@ class WebReaderViewModel @Inject constructor(
 
     private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
     val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
+
+    private val _textInfo = MutableLiveData<LoadResult<Words>>()
+    val textInfo: LiveData<LoadResult<Words>> = _textInfo
 
     private val _clickedWord = MutableLiveData<WordAndLinks>()
     val clickedWord: LiveData<WordAndLinks> = _clickedWord
@@ -112,6 +114,37 @@ class WebReaderViewModel @Inject constructor(
                 }
                 is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
             }
+        }
+    }
+
+    fun translateText(text: String){
+        _textInfo.value = LoadResult.Loading
+
+        viewModelScope.launch {
+
+            wordRepository.getLocalWord(text, cacheWebLink?.language ?: "en")
+                .asFlow().collect {
+
+                    if(it == null) {
+                        getTranslation(text)
+                    }  else {
+                        _textInfo.value = LoadResult.Success(it)
+                    }
+                }
+        }
+    }
+
+    private suspend fun getTranslation(text: String) {
+        val result = withContext(Dispatchers.IO) {
+            getTranslationInteractor(text, languageFrom = cacheWebLink?.language ?: "auto")
+        }
+
+        when(result){
+            is Result.Success -> {
+                val translation = result.data
+                _textInfo.value = LoadResult.Success(Words(text, translation.src, translation.translatedText))
+            }
+            is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
         }
     }
 

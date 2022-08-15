@@ -11,7 +11,11 @@ import android.view.View
 import android.webkit.WebViewClient
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isGone
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -20,6 +24,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import dagger.hilt.android.AndroidEntryPoint
@@ -74,7 +79,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
 
                 bodyText.setOnClickListener {
-                    clickedWord?.let { word -> showTextDialog(word) }
+                    clickedWord?.let { word -> viewModel.translateText(word.trim()) }
                     clickedWord = null
                 }
 
@@ -119,6 +124,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             setBottomPanel()
+            setTranslateBottomPanel()
         }
 
         viewModel.loadDoc(args.link)
@@ -154,12 +160,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         menu.clear()
     }
 
-    private fun showTextDialog(text: CharSequence){
+    private fun showTextDialog(words: Words){
         // TODO try to add this as destination in jetpack navigation
         val dialog = TextInfoDialog.newInstance(
-            text.toString(),
+            words.word,
             TextInfoDialog.NO_SERVICE,
-            null,
+            words,
             languageFrom = languageFrom
         )
         dialog.show(childFragmentManager, "Text_info")
@@ -168,7 +174,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     @SuppressLint("ClickableViewAccessibility")
     private fun setBottomPanel(){
         with(binding) {
-            val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
+            val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             bottomSheetBehavior.addBottomSheetCallback(object :
                 BottomSheetBehavior.BottomSheetCallback() {
@@ -201,6 +207,57 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 linksList.adapter = adapter
                 menuBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
+    }
+
+    private fun setTranslateBottomPanel() {
+        with(binding) {
+            val bottomSheetBehavior = BottomSheetBehavior.from(translationBottomSheet)
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+
+            bottomSheetBehavior.addBottomSheetCallback(object :
+                BottomSheetBehavior.BottomSheetCallback() {
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
+                }
+
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+            })
+
+            viewModel.textInfo.observe(viewLifecycleOwner) { result ->
+                barLoading.isInvisible = when(result){
+                    is LoadResult.Success -> {
+                        val word = result.data
+                        translatedText.text = word.definition
+                        notesText.isGone = word.notes.isNullOrEmpty()
+                        notesText.text = word.notes
+                        moreInfoBtn.isVisible = true
+                        moreInfoBtn.setOnClickListener { showTextDialog(word) }
+
+                        menuBar.isVisible = false
+                        true
+                    }
+                    is LoadResult.Error -> {
+                        Toast.makeText(context, "Couldn't translate text", Toast.LENGTH_SHORT).show()
+                        true
+                    }
+                    LoadResult.Loading -> {
+                        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                        moreInfoBtn.isVisible = false
+                        false
+                    }
+                }
+            }
+
+            // If translate sheet is showing, hide it otherwise use normal back press
+            requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+                if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
+                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                else if(isEnabled){
+                    isEnabled = false
+                    requireActivity().onBackPressed()
+                }
             }
         }
     }
