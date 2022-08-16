@@ -41,8 +41,8 @@ class WebReaderViewModel @Inject constructor(
     private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
     val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
 
-    private val _textInfo = MutableLiveData<LoadResult<Words>>()
-    val textInfo: LiveData<LoadResult<Words>> = _textInfo
+    private val _textInfo = MutableLiveData<LoadResult<WordResult>>()
+    val textInfo: LiveData<LoadResult<WordResult>> = _textInfo
 
     private val _clickedWord = MutableLiveData<WordAndLinks>()
     val clickedWord: LiveData<WordAndLinks> = _clickedWord
@@ -128,7 +128,7 @@ class WebReaderViewModel @Inject constructor(
                     if(it == null) {
                         getTranslation(text)
                     }  else {
-                        _textInfo.value = LoadResult.Success(it)
+                        _textInfo.value = LoadResult.Success(WordResult(it, true))
                     }
                 }
         }
@@ -142,7 +142,8 @@ class WebReaderViewModel @Inject constructor(
         when(result){
             is Result.Success -> {
                 val translation = result.data
-                _textInfo.value = LoadResult.Success(Words(text, translation.src, translation.translatedText))
+                val word = Words(text, translation.src, translation.translatedText)
+                _textInfo.value = LoadResult.Success(WordResult(word, false))
             }
             is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
         }
@@ -182,4 +183,6 @@ class WebReaderViewModel @Inject constructor(
     fun setLanguage(langShort: String?) {
         cacheWebLink?.language = langShort
     }
+
+    data class WordResult(val word: Words, val isSaved: Boolean)
 }

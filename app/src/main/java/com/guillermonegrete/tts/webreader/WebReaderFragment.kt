@@ -160,13 +160,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         menu.clear()
     }
 
-    private fun showTextDialog(words: Words){
+    private fun showTextDialog(words: Words, isSaved: Boolean){
         // TODO try to add this as destination in jetpack navigation
         val dialog = TextInfoDialog.newInstance(
             words.word,
             TextInfoDialog.NO_SERVICE,
             words,
-            languageFrom = languageFrom
+            languageFrom = languageFrom,
+            wordIsSaved = isSaved
         )
         dialog.show(childFragmentManager, "Text_info")
     }
@@ -228,12 +229,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             viewModel.textInfo.observe(viewLifecycleOwner) { result ->
                 barLoading.isInvisible = when(result){
                     is LoadResult.Success -> {
-                        val word = result.data
+                        val word = result.data.word
                         translatedText.text = word.definition
                         notesText.isGone = word.notes.isNullOrEmpty()
                         notesText.text = word.notes
                         moreInfoBtn.isVisible = true
-                        moreInfoBtn.setOnClickListener { showTextDialog(word) }
+                        moreInfoBtn.setOnClickListener { showTextDialog(word, result.data.isSaved) }
 
                         menuBar.isVisible = false
                         true
