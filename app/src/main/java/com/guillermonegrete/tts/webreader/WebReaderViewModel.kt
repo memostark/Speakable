@@ -16,6 +16,7 @@ import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
 import org.jsoup.Jsoup
 import java.util.*
 import javax.inject.Inject
@@ -117,13 +118,16 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
+    var job: Job? = null
+
     fun translateText(text: String){
         _textInfo.value = LoadResult.Loading
 
-        viewModelScope.launch {
+        job?.cancel() // cancel the previous job otherwise you'll receive its updates
+        job = viewModelScope.launch {
 
             wordRepository.getLocalWord(text, cacheWebLink?.language ?: "en")
-                .asFlow().collect {
+                .asFlow().collectLatest {
 
                     if(it == null) {
                         getTranslation(text)
