@@ -2,21 +2,24 @@ package com.guillermonegrete.tts.webreader
 
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.data.LoadResult
-import com.guillermonegrete.tts.db.Words
-import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import java.util.*
 import javax.inject.Inject
@@ -68,6 +71,10 @@ class WebReaderViewModel @Inject constructor(
     private suspend fun getPage(url: String): String = withContext(Dispatchers.IO){
         val doc = Jsoup.connect(url).get()
         doc.body().select("menu, header, footer, logo, nav, search, link, button, btn, ad, script, style").remove()
+        // Removes empty tags (e.g. <div></div>) and keeps self closing tags e.g. <br/>
+        for (element in doc.select("*")) {
+            if (!element.hasText() && element.isBlock) element.remove()
+        }
         doc.body().html()
     }
 
