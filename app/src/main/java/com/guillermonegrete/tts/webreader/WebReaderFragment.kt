@@ -20,6 +20,8 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
@@ -197,6 +199,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             // This allows to scroll both the WebView and the list, otherwise only the list scrolls
             linksList.isNestedScrollingEnabled = false
+            val decor = DividerItemDecoration(context, (linksList.layoutManager as LinearLayoutManager).orientation)
+            linksList.addItemDecoration(decor)
 
             viewModel.clickedWord.observe(viewLifecycleOwner) {
                 val link = it.links.firstOrNull()
@@ -204,7 +208,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val adapter = ExternalLinksAdapter(it.word, it.links) { url ->
                     infoWebview.loadUrl(url)
                 }
-                adapter.setWrapped(true)
+                adapter.setFlatButton(true)
                 linksList.adapter = adapter
                 menuBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
