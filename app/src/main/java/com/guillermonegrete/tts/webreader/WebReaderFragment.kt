@@ -202,13 +202,23 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val decor = DividerItemDecoration(context, (linksList.layoutManager as LinearLayoutManager).orientation)
             linksList.addItemDecoration(decor)
 
+            var selectedPos = 0
             viewModel.clickedWord.observe(viewLifecycleOwner) {
-                val link = it.links.firstOrNull()
-                if (link != null) infoWebview.loadUrl(link.link.replace("{q}", it.word))
-                val adapter = ExternalLinksAdapter(it.word, it.links) { url ->
-                    infoWebview.loadUrl(url)
+                val links = it.links
+                links.forEach { link -> link.link = link.link.replace("{q}", it.word) }
+
+                // if out of index, default to the first item (zero index)
+                if(selectedPos >= links.size) selectedPos = 0
+
+                val link = links.getOrNull(selectedPos)
+                if (link != null) infoWebview.loadUrl(link.link)
+                val adapter = ExternalLinksAdapter(it.links) { index ->
+                    selectedPos = index
+                    infoWebview.loadUrl(links[index].link)
                 }
                 adapter.setFlatButton(true)
+                adapter.setSelectedPos(selectedPos)
+                linksList.scrollToPosition(selectedPos)
                 linksList.adapter = adapter
                 menuBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED

@@ -1,11 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Button xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/external_link_btn"
-    style="?attr/borderlessButtonStyle"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:insetTop="0dp"
-    android:insetBottom="0dp"
-    android:textAllCaps="false"
-    tools:text="External link" />
+    android:layout_height="wrap_content">
+
+    <Button
+        android:id="@+id/external_link_btn"
+        style="?attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:textAllCaps="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="External link" />
+
+    <TextView
+        android:id="@+id/bottom_border"
+        android:layout_width="0dp"
+        android:layout_height="4dp"
+        android:layout_below="@id/external_link_btn"
+        android:background="?colorPrimary"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/external_link_btn"
+        app:layout_constraintStart_toStartOf="@+id/external_link_btn"
+        tools:visibility="visible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

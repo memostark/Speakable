@@ -78,8 +78,12 @@ public class ExternalLinksFragment extends Fragment {
         // External links can be updated when fragment is not attached, in that case update args
         // Otherwise update adapter normally
         if(isAdded()){
-            ExternalLinksAdapter adapter = new ExternalLinksAdapter(wordExtra, links,
-                    url -> startActivity(defaultWebBrowser.intentForUrl(requireContext(), url)));
+            for(var link: links){
+                final String base_url = link.link;
+                link.link = base_url.replace("{q}", wordExtra);
+            }
+            ExternalLinksAdapter adapter = new ExternalLinksAdapter(links,
+                    index -> startActivity(defaultWebBrowser.intentForUrl(requireContext(), links.get(index).link)));
             recyclerView.setAdapter(adapter);
         }else{
             Bundle args = getArguments();

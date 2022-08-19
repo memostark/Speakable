@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.textprocessing;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
@@ -16,16 +17,14 @@ import androidx.recyclerview.widget.RecyclerView;
 public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdapter.ViewHolder> {
 
     private final List<ExternalLink> links;
-    private final String word;
-
 
     private final Callback callback;
 
     private boolean isFlat = false;
+    private int selectedPos = -1;
 
-    public ExternalLinksAdapter(@NonNull String word, @NonNull List<ExternalLink> links, @NonNull Callback callback){
+    public ExternalLinksAdapter(@NonNull List<ExternalLink> links, @NonNull Callback callback){
         this.links = links;
-        this.word = word;
         this.callback = callback;
     }
 
@@ -40,9 +39,7 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.linkButton.setText(links.get(position).siteName);
-        final String base_url = links.get(position).link;
-        holder.url = base_url.replace("{q}", word);
+        holder.bind(links.get(position));
     }
 
     @Override
@@ -57,27 +54,40 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
         this.isFlat = isFlat;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder{
+    public void setSelectedPos(int pos) {
+        this.selectedPos = pos;
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder{
 
         Button linkButton;
-        String url;
+        View selectionView;
 
         ViewHolder(ExternalLinkItemBinding binding, Callback callback) {
             super(binding.getRoot());
-            url = "";
             linkButton = binding.externalLinkBtn;
-            linkButton.setOnClickListener(v -> callback.onClick(url));
+            linkButton.setOnClickListener(v -> callback.onClick(getAdapterPosition()));
         }
 
         ViewHolder(ExternalLinkFlatItemBinding binding, Callback callback) {
             super(binding.getRoot());
-            url = "";
             linkButton = binding.externalLinkBtn;
-            linkButton.setOnClickListener(v -> callback.onClick(url));
+            linkButton.setOnClickListener(v -> {
+                callback.onClick(getAdapterPosition());
+                notifyItemChanged(selectedPos);
+                selectedPos = getAdapterPosition();
+                notifyItemChanged(selectedPos);
+            });
+            selectionView = binding.bottomBorder;
+        }
+
+        void bind(ExternalLink link){
+            linkButton.setText(link.siteName);
+            if(selectionView != null) selectionView.setVisibility(getAdapterPosition() == selectedPos ? View.VISIBLE: View.GONE);
         }
     }
 
     public interface Callback{
-        void onClick(String url);
+        void onClick(int position);
     }
 }
