@@ -125,7 +125,7 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    var job: Job? = null
+    private var job: Job? = null
 
     fun translateText(text: String){
         _textInfo.value = LoadResult.Loading
@@ -182,11 +182,18 @@ class WebReaderViewModel @Inject constructor(
         return null
     }
 
+    /**
+     * Called when a [word] in the original text is clicked. The [pos] being the index of the paragraph in the list.
+     *
+     * In this case, retrieves the external link for the language of the word and emits them.
+     */
     fun onWordClicked(word: String, pos: Int) {
-        val translation = translatedParagraphs[pos] ?: return
+
+        // first try to get the language from a translation, if not from the set language, else ignore.
+        val lang = translatedParagraphs[pos]?.src ?: cacheWebLink?.language ?: return
 
         viewModelScope.launch {
-            val links = withContext(Dispatchers.IO) { getExternalLinksInteractor(translation.src) }
+            val links = withContext(Dispatchers.IO) { getExternalLinksInteractor(lang) }
             _clickedWord.value = WordAndLinks(word, links)
         }
     }
