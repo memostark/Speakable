@@ -183,6 +183,9 @@
     <string name="import_tab_layout">Import tab layout</string>
     <string name="add">Add</string>
 
+    <!--Translation fragment-->
+    <string name="language_to">Language to</string>
+
     <!-- Web links-->
     <string name="enter_url">Enter url</string>
     <string name="open_link">Open link</string>
