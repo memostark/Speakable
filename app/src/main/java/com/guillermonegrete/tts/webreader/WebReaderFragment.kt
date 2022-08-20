@@ -1,24 +1,20 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Bundle
 import android.text.Html
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MotionEvent
-import android.view.View
+import android.view.*
 import android.webkit.WebViewClient
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isGone
-import androidx.core.view.isInvisible
-import androidx.core.view.isVisible
+import androidx.core.text.HtmlCompat
+import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -46,11 +42,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var adapter: ParagraphAdapter? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
     override fun onPause() {
         super.onPause()
         viewModel.saveWebLink()
@@ -58,6 +49,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (activity as? AppCompatActivity)?.supportActionBar?.hide()
+        setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
 
         with(binding){
@@ -124,11 +116,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     @SuppressLint("ClickableViewAccessibility")
     private fun setBodyText(binding: FragmentWebReaderBinding, text: String) {
         with(binding){
-            bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                Html.fromHtml(text, Html.FROM_HTML_MODE_COMPACT)
-            } else {
-                Html.fromHtml(text)
-            }
+            bodyText.text = HtmlCompat.fromHtml(text, Html.FROM_HTML_MODE_COMPACT)
 
             bodyText.setOnTouchListener { _, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
@@ -176,9 +164,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         super.onDestroyView()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        menu.clear()
+    private fun setupOptionsMenu() {
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(object: MenuProvider{
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menu.clear()
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem) = false
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     private fun showTextDialog(words: Words, isSaved: Boolean){
