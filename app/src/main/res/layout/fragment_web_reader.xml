@@ -181,4 +181,27 @@
         </com.google.android.material.card.MaterialCardView>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <ImageButton
+        android:id="@+id/retry_button"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_centerInParent="true"
+        android:contentDescription="@string/refresh"
+        android:background="?selectableItemBackgroundBorderless"
+        android:scaleType="fitCenter"
+        android:tint="?colorOnSurface"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_baseline_refresh_24"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/error_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/retry_button"
+        android:layout_centerHorizontal="true"
+        android:text="@string/loading_page_error_msg"
+        tools:visibility="visible"/>
+
 </RelativeLayout>

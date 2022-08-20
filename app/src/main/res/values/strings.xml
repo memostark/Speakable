@@ -195,5 +195,7 @@
     <!-- Web reader-->
     <string name="web_reader_lang_spinner_prompt">Select webpage language</string>
     <string name="dialog">Dialog</string>
+    <string name="refresh">Refresh</string>
+    <string name="loading_page_error_msg">Error loading page</string>
 
 </resources>

@@ -56,7 +56,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         viewModel.saveWebLink()
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (activity as? AppCompatActivity)?.supportActionBar?.hide()
         _binding = FragmentWebReaderBinding.bind(view)
@@ -65,32 +64,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             loadingIcon.isVisible = true
 
             viewModel.page.observe(viewLifecycleOwner) {
-                bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT)
-                } else {
-                    Html.fromHtml(it)
+                var isError = false
+                var isLoading = false
+                when(it){
+                    is LoadResult.Error -> isError = true
+                    LoadResult.Loading -> isLoading = true
+                    is LoadResult.Success -> setBodyText(binding, it.data)
                 }
 
-                bodyText.setOnTouchListener { _, event ->
-                    if (event.action == MotionEvent.ACTION_DOWN) {
-                        val offset = bodyText.getOffsetForPosition(event.x, event.y)
-                        val possibleWord = findWordForRightHanded(bodyText.text.toString(), offset)
-                        clickedWord = possibleWord.ifBlank { null }
-                    }
-                    return@setOnTouchListener false
-                }
+                retryButton.isVisible = isError
+                errorText.isVisible = isError
 
-                bodyText.setOnClickListener {
-                    clickedWord?.let { word -> viewModel.translateText(word.trim()) }
-                    clickedWord = null
-                }
-
-                loadingIcon.isVisible = false
-
-                listToggle.isVisible = true
-                listToggle.setOnClickListener {
-                    onListToggleClick()
-                }
+                loadingIcon.isVisible = isLoading
             }
 
             viewModel.translatedParagraph.observe(viewLifecycleOwner) { result ->
@@ -125,11 +110,45 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
             }
 
+            retryButton.setOnClickListener {
+                viewModel.loadDoc(args.link)
+            }
+
             setBottomPanel()
             setTranslateBottomPanel()
         }
 
         viewModel.loadDoc(args.link)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setBodyText(binding: FragmentWebReaderBinding, text: String) {
+        with(binding){
+            bodyText.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Html.fromHtml(text, Html.FROM_HTML_MODE_COMPACT)
+            } else {
+                Html.fromHtml(text)
+            }
+
+            bodyText.setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    val offset = bodyText.getOffsetForPosition(event.x, event.y)
+                    val possibleWord = findWordForRightHanded(bodyText.text.toString(), offset)
+                    clickedWord = possibleWord.ifBlank { null }
+                }
+                return@setOnTouchListener false
+            }
+
+            bodyText.setOnClickListener {
+                clickedWord?.let { word -> viewModel.translateText(word.trim()) }
+                clickedWord = null
+            }
+
+            listToggle.isVisible = true
+            listToggle.setOnClickListener {
+                onListToggleClick()
+            }
+        }
     }
 
     private fun onListToggleClick() {

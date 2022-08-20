@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
+import java.io.IOException
 import java.util.*
 import javax.inject.Inject
 
@@ -32,8 +33,8 @@ class WebReaderViewModel @Inject constructor(
     private val webLinkDAO: WebLinkDAO,
 ): ViewModel() {
 
-    private val _page = MutableLiveData<String>()
-    val page: LiveData<String>
+    private val _page = MutableLiveData<LoadResult<String>>()
+    val page: LiveData<LoadResult<String>>
         get() = _page
 
     private var cachedParagraphs: List<Words>? = null
@@ -58,10 +59,16 @@ class WebReaderViewModel @Inject constructor(
         get() = _weblink
 
     fun loadDoc(url: String){
+        _page.value = LoadResult.Loading
+
         viewModelScope.launch {
             wrapEspressoIdlingResource {
-                val page = getPage(url)
-                _page.value = page
+                try {
+                    val page = getPage(url)
+                    _page.value = LoadResult.Success(page)
+                } catch (ex: IOException){
+                    _page.value = LoadResult.Error(ex)
+                }
                 cacheWebLink = webLinkDAO.getLink(url) ?: WebLink(url)
                 _weblink.value = cacheWebLink
             }
