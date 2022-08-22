@@ -98,7 +98,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void start(Words word) {
         insideLocalDatabase = true;
-        getDictionaryEntry(word);
+        getDictionaryEntry(word, true);
     }
 
     @Override
@@ -164,8 +164,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         return mRepository.getLocalWord(text, languageFrom);
     }
 
+    /**
+     * This method is used to get the dictionary data when the the translation of the word is already known.
+     * @param word Contains the information of the word (language, translation, etc)
+     * @param isSaved Whether the word passed is saved in the database
+     */
     @Override
-    public void getDictionaryEntry(final Words word) {
+    public void getDictionaryEntry(final Words word, boolean isSaved) {
+        insideLocalDatabase = isSaved;
         foundWord = word;
         hasTranslation = true;
         viewIsActive = true;
@@ -179,7 +185,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onEntryNotAvailable() {
                 getExternalLinks(word.lang);
-                mView.setSavedWordLayout(word);
+                var layoutType= isSaved ? ProcessTextLayoutType.SAVED_WORD: ProcessTextLayoutType.WORD_TRANSLATION;
+                layoutResult.setValue(new GetLayoutResult.WordSuccess(layoutType, word));
                 if(!isAvailable) mView.showLanguageNotAvailable();
 
                 EspressoIdlingResource.decrement();
@@ -188,7 +195,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             @Override
             public void onDictionaryLayoutDetermined(@NotNull List<WikiItem> items) {
                 getExternalLinks(word.lang);
-                mView.setDictWithSaveWordLayout(word, items);
+                layoutResult.setValue(new GetLayoutResult.DictionarySuccess(word, items));
                 if(!isAvailable) mView.showLanguageNotAvailable();
 
                 EspressoIdlingResource.decrement();

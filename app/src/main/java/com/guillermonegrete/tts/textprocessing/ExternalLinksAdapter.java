@@ -1,10 +1,11 @@
 package com.guillermonegrete.tts.textprocessing;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
-import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.databinding.ExternalLinkFlatItemBinding;
 import com.guillermonegrete.tts.databinding.ExternalLinkItemBinding;
 import com.guillermonegrete.tts.db.ExternalLink;
 
@@ -16,16 +17,14 @@ import androidx.recyclerview.widget.RecyclerView;
 public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdapter.ViewHolder> {
 
     private final List<ExternalLink> links;
-    private final String word;
-
 
     private final Callback callback;
 
-    private boolean isWrapped = false;
+    private boolean isFlat = false;
+    private int selectedPos = -1;
 
-    public ExternalLinksAdapter(@NonNull String word, @NonNull List<ExternalLink> links, @NonNull Callback callback){
+    public ExternalLinksAdapter(@NonNull List<ExternalLink> links, @NonNull Callback callback){
         this.links = links;
-        this.word = word;
         this.callback = callback;
     }
 
@@ -34,14 +33,13 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        return new ViewHolder(ExternalLinkItemBinding.inflate(inflater, parent, false), isWrapped, callback);
+        return isFlat ? new ViewHolder(ExternalLinkFlatItemBinding.inflate(inflater, parent, false), callback)
+                : new ViewHolder(ExternalLinkItemBinding.inflate(inflater, parent, false), callback) ;
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.linkButton.setText(links.get(position).siteName);
-        final String base_url = links.get(position).link;
-        holder.url = base_url.replace("{q}", word);
+        holder.bind(links.get(position));
     }
 
     @Override
@@ -50,31 +48,46 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     }
 
     /**
-     * Set if the width of thu button is wrapped instead of matching the parent.
+     * Set whether the button is using the flat layout.
      */
-    public void setWrapped(boolean wrapped) {
-        isWrapped = wrapped;
+    public void setFlatButton(boolean isFlat) {
+        this.isFlat = isFlat;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder{
+    public void setSelectedPos(int pos) {
+        this.selectedPos = pos;
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder{
 
         Button linkButton;
-        String url;
+        View selectionView;
 
-        ViewHolder(ExternalLinkItemBinding binding,  boolean isWrapped, Callback callback) {
+        ViewHolder(ExternalLinkItemBinding binding, Callback callback) {
             super(binding.getRoot());
-            url = "";
-            linkButton = itemView.findViewById(R.id.external_link_btn);
             linkButton = binding.externalLinkBtn;
-            linkButton.setOnClickListener(v -> callback.onClick(url));
-            if(isWrapped){
-                ViewGroup.LayoutParams params = linkButton.getLayoutParams();
-                params.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-            }
+            linkButton.setOnClickListener(v -> callback.onClick(getAdapterPosition()));
+        }
+
+        ViewHolder(ExternalLinkFlatItemBinding binding, Callback callback) {
+            super(binding.getRoot());
+            linkButton = binding.externalLinkBtn;
+            linkButton.setOnClickListener(v -> {
+                callback.onClick(getAdapterPosition());
+                notifyItemChanged(selectedPos);
+                selectedPos = getAdapterPosition();
+                notifyItemChanged(selectedPos);
+            });
+            selectionView = binding.bottomBorder;
+        }
+
+        void bind(ExternalLink link){
+            linkButton.setText(link.siteName);
+            if(selectionView != null) selectionView.setVisibility(getAdapterPosition() == selectedPos ? View.VISIBLE: View.GONE);
         }
     }
 
     public interface Callback{
-        void onClick(String url);
+        void onClick(int position);
     }
 }

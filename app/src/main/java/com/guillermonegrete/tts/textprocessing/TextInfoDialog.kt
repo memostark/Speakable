@@ -151,7 +151,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
         if(extraWord != null){
-            presenter.start(extraWord)
+            val isSaved = requireArguments().getBoolean(WORD_SAVED_KEY)
+            presenter.getDictionaryEntry(extraWord, isSaved)
         }else{
             val action = arguments?.getString(ACTION_KEY)
             if(NO_SERVICE == action){
@@ -314,7 +315,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                     else -> Log.e("TextInfoDialog", "Unknown layout type: ${result.type}")
                 }
             }
-            is GetLayoutResult.DictionarySuccess -> setWiktionaryLayout(result.word, result.items)
+            is GetLayoutResult.DictionarySuccess ->
+                if(requireArguments().getBoolean(WORD_SAVED_KEY)) setDictWithSaveWordLayout(result.word, result.items) else setWiktionaryLayout(result.word, result.items)
             is GetLayoutResult.Error -> showTranslationError(result.exception.message ?: result.exception.toString())
         }
     }
@@ -681,6 +683,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         const val ACTION_KEY = "extra_key"
         const val THEME_KEY = "theme_key"
         const val LANG_FROM_KEY = "lang_from_key"
+        const val WORD_SAVED_KEY = "word_saved_key"
 
         const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
@@ -693,6 +696,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             word: Words?,
             theme: String = "",
             languageFrom: String? = null,
+            wordIsSaved: Boolean = false,
         ) = TextInfoDialog().apply {
             arguments = Bundle().apply {
                 putString(TEXT_KEY, text)
@@ -700,7 +704,16 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                 putParcelable(WORD_KEY, word)
                 putString(THEME_KEY, theme)
                 putString(LANG_FROM_KEY, languageFrom)
+                putBoolean(WORD_SAVED_KEY, wordIsSaved)
             }
         }
+
+        @JvmStatic
+        fun newInstance(
+            text: String,
+            action: String?,
+            word: Words?,
+            isSaved: Boolean
+        ) = newInstance(text, action, word, wordIsSaved = isSaved)
     }
 }

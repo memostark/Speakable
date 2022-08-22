@@ -61,7 +61,7 @@ public interface ProcessTextContract {
 
         LiveData<Words> wordStream(String text, String languageFrom);
 
-        void getDictionaryEntry(Words word);
+        void getDictionaryEntry(Words word, boolean isSaved);
 
         void onClickBookmark();
 

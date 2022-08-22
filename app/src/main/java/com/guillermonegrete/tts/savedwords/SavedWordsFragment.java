@@ -290,7 +290,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         TextInfoDialog dialog = TextInfoDialog.newInstance(
                 text,
                 TextInfoDialog.NO_SERVICE,
-                word
+                word,
+                true
         );
         dialog.show(getChildFragmentManager(), "Text_info");
     }

@@ -183,6 +183,9 @@
     <string name="import_tab_layout">Import tab layout</string>
     <string name="add">Add</string>
 
+    <!--Translation fragment-->
+    <string name="language_to">Language to</string>
+
     <!-- Web links-->
     <string name="enter_url">Enter url</string>
     <string name="open_link">Open link</string>
@@ -191,5 +194,8 @@
 
     <!-- Web reader-->
     <string name="web_reader_lang_spinner_prompt">Select webpage language</string>
+    <string name="dialog">Dialog</string>
+    <string name="refresh">Refresh</string>
+    <string name="loading_page_error_msg">Error loading page</string>
 
 </resources>

@@ -12,6 +12,8 @@
         style="@style/Base.Widget.AppCompat.Spinner.Underlined"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:contentDescription="@string/language_to"
+        android:minHeight="32dp"
         android:spinnerMode="dialog"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -47,8 +49,10 @@
         android:clickable="true"
         android:contentDescription="@string/copy_translation_btn_description"
         android:focusable="true"
-        android:padding="8dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         android:src="@drawable/ic_content_copy_black_24dp"
+        android:tint="?colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@+id/translation_text"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintTop_toTopOf="@+id/translation_label" />
@@ -128,8 +132,10 @@
         android:clickable="true"
         android:contentDescription="@string/copy_definition_btn_description"
         android:focusable="true"
-        android:padding="8dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         android:src="@drawable/ic_content_copy_black_24dp"
+        android:tint="?colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@+id/saved_definition_text"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintTop_toTopOf="@+id/saved_definition_label" />
@@ -177,9 +183,9 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:contentDescription="@string/error"
+            android:layout_gravity="center"
             app:srcCompat="@drawable/ic_error_outline_black_24dp"
-            android:tint="?colorOnSurface"
-            android:layout_gravity="center"/>
+            app:tint="?colorOnSurface" />
 
         <TextView
             android:text="@string/error_translation"
