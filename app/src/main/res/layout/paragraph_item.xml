@@ -5,14 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-
     <TextView
         android:id="@+id/paragraph"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:paddingBottom="8dp"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
         app:layout_constraintStart_toStartOf="parent"
@@ -27,7 +24,7 @@
         android:background="?selectableItemBackgroundBorderless"
         android:tint="@color/DarkGray"
         app:srcCompat="@drawable/ic_baseline_arrow_left_24"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/paragraph"
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

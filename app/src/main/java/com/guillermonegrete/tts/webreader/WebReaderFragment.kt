@@ -74,7 +74,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val adapter = adapter ?: return@observe
                 adapter.isLoading = when (result) {
                     LoadResult.Loading -> true
-                    is LoadResult.Success, is LoadResult.Error -> false
+                    is LoadResult.Error -> false
+                    is LoadResult.Success -> {
+                        val translation = viewModel.translatedParagraphs[result.data]?.translatedText
+                        if(translation != null) adapter.updateTranslation(translation)
+                        false
+                    }
                 }
                 adapter.updateExpanded()
             }
@@ -134,12 +139,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             listToggle.isVisible = true
             listToggle.setOnClickListener {
-                onListToggleClick()
+                onListToggleClick(text)
             }
         }
     }
 
-    private fun onListToggleClick() {
+    private fun onListToggleClick(text: String) {
         with(binding){
             val listVisible = paragraphsList.isVisible
             if (listVisible){
@@ -149,8 +154,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 bodyText.isVisible = false
                 paragraphsList.isVisible = true
                 if(adapter == null) {
-                    val paragraphs = viewModel.createParagraphs(bodyText.text.toString())
-                    adapter = ParagraphAdapter(paragraphs, viewModel)
+                    val newParagraphs =  text.split("\n")
+                        .map { HtmlCompat.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).trim() }
+                        .filter { it.isNotEmpty() }
+                    viewModel.createParagraphs(newParagraphs)
+                    adapter = ParagraphAdapter(newParagraphs.map { ParagraphAdapter.ParagraphItem(it) }, viewModel)
                 }
                 paragraphsList.adapter = adapter
             }

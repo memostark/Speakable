@@ -13,10 +13,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
-import com.guillermonegrete.tts.db.Words
 
 class ParagraphAdapter(
-    val items: List<Words>,
+    val items: List<ParagraphItem>,
     val viewModel: WebReaderViewModel
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -41,6 +40,10 @@ class ParagraphAdapter(
 
     override fun getItemViewType(position: Int) = if(expandedItemPos == position) R.layout.paragraph_expanded_item else R.layout.paragraph_item
 
+    fun updateTranslation(translation: String){
+        items[expandedItemPos].translation = translation
+    }
+
     fun updateExpanded(){
         notifyItemChanged(expandedItemPos)
     }
@@ -60,8 +63,8 @@ class ParagraphAdapter(
             }
         }
 
-        fun bind(item: Words){
-            binding.paragraph.text = item.word
+        fun bind(item: ParagraphItem){
+            binding.paragraph.text = item.original
         }
 
     }
@@ -118,11 +121,11 @@ class ParagraphAdapter(
             }
         }
 
-        fun bind(item: Words){
-            binding.paragraph.text = item.word
+        fun bind(item: ParagraphItem){
+            binding.paragraph.text = item.original
             binding.loadingParagraph.isVisible = isLoading
             binding.translate.isVisible = !isLoading
-            binding.translatedParagraph.text = item.definition.ifBlank { noTranslationText }
+            binding.translatedParagraph.text = item.translation.ifBlank { noTranslationText }
         }
 
         private fun TextView.setHighlightedText(start: Int, end: Int){
@@ -167,4 +170,6 @@ class ParagraphAdapter(
         }
 
     }
+
+    data class ParagraphItem(val original: CharSequence, var translation: String = "")
 }

@@ -40,7 +40,7 @@ class WebReaderViewModel @Inject constructor(
     private var cachedParagraphs: List<Words>? = null
 
     private var _translatedParagraphs = mutableListOf<Translation?>()
-    private val translatedParagraphs: List<Translation?>
+    val translatedParagraphs: List<Translation?>
         get() = _translatedParagraphs
 
     private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
@@ -96,8 +96,8 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun createParagraphs(text: String): List<Words> {
-        val newParagraphs = cachedParagraphs ?: text.split("\n").map { Words(it, "", "") }
+    fun createParagraphs(paragraphs: List<CharSequence>): List<Words> {
+        val newParagraphs = cachedParagraphs ?: paragraphs.map { Words(it.toString(), "", "") }
         if(cachedParagraphs == null) {
             cachedParagraphs = newParagraphs
             _translatedParagraphs = arrayOfNulls<Translation>(newParagraphs.size).toMutableList()
