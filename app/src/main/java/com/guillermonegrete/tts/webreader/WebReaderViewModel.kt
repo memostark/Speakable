@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
 import androidx.lifecycle.*
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
@@ -8,11 +9,11 @@ import com.guillermonegrete.tts.data.source.WordRepository
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.db.Words
-import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
+import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import java.io.IOException
+import java.text.BreakIterator
 import java.util.*
 import javax.inject.Inject
 
@@ -207,6 +209,27 @@ class WebReaderViewModel @Inject constructor(
 
     fun setLanguage(langShort: String?) {
         cacheWebLink?.language = langShort
+    }
+
+    fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
+        val iterator = BreakIterator.getSentenceInstance()
+        val splitParagraphs = arrayListOf<SplitParagraph>()
+
+        for (paragraph in paragraphs){
+            iterator.setText(paragraph.toString())
+            var start = iterator.first()
+            var end = iterator.next()
+            val indexes = arrayListOf<Span>()
+            val sentences = arrayListOf<String>()
+            while (end != BreakIterator.DONE) {
+                sentences.add(paragraph.substring(start, end))
+                indexes.add(Span(start, end))
+                start = end
+                end = iterator.next()
+            }
+            splitParagraphs.add(SplitParagraph(paragraph, indexes, sentences))
+        }
+        return splitParagraphs
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean)

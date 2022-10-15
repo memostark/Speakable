@@ -158,7 +158,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         .map { HtmlCompat.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).trim() }
                         .filter { it.isNotEmpty() }
                     viewModel.createParagraphs(newParagraphs)
-                    adapter = ParagraphAdapter(newParagraphs.map { ParagraphAdapter.ParagraphItem(it) }, viewModel)
+                    val splitParagraphs = viewModel.splitBySentence(newParagraphs)
+                    adapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel)
                 }
                 paragraphsList.adapter = adapter
             }

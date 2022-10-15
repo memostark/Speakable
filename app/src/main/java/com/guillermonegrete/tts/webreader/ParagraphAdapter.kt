@@ -8,9 +8,11 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
 
@@ -48,6 +50,7 @@ class ParagraphAdapter(
         notifyItemChanged(expandedItemPos)
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
 
         init {
@@ -60,7 +63,32 @@ class ParagraphAdapter(
                     notifyItemChanged(previousExpandedPos)
                     notifyItemChanged(adapterPosition)
                 }
+
+                var clickedSentence: String? = null
+
+                paragraph.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        val offset = paragraph.getOffsetForPosition(event.x, event.y)
+                        clickedSentence = findSentence(offset)
+                    }
+                    return@setOnTouchListener false
+                }
+
+                paragraph.setOnClickListener {
+                    clickedSentence?.let { sentence ->
+                        Toast.makeText(itemView.context, "Sentence clicked: $sentence", Toast.LENGTH_SHORT).show()
+                    }
+                    clickedSentence = null
+                }
             }
+        }
+
+        private fun findSentence(offset: Int): String? {
+            val item = items[adapterPosition]
+            item.indexes.forEachIndexed { index, span ->
+                if(offset in span.start..span.end) return item.sentences[index]
+            }
+            return null
         }
 
         fun bind(item: ParagraphItem){
@@ -171,5 +199,10 @@ class ParagraphAdapter(
 
     }
 
-    data class ParagraphItem(val original: CharSequence, var translation: String = "")
+    data class ParagraphItem(
+        val original: CharSequence,
+        val indexes: List<Span>,
+        val sentences: List<String>,
+        var translation: String = ""
+    )
 }

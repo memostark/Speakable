@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
@@ -12,7 +13,6 @@ import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
-import com.guillermonegrete.tts.importtext.visualize.model.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -215,7 +215,7 @@ class VisualizeTextViewModel @Inject constructor(
         databaseBookFile?.let {
 
             // Verify folderPath is not empty
-            val folderPath = if (it.folderPath.isBlank()) uuid else it.folderPath
+            val folderPath = it.folderPath.ifBlank { uuid }
 
             fileReader?.createFileFolder(folderPath)
 
