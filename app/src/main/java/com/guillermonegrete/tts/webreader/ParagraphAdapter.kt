@@ -4,17 +4,20 @@ import android.annotation.SuppressLint
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
+import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
+import com.guillermonegrete.tts.utils.findWordForRightHanded
 
 class ParagraphAdapter(
     val items: List<ParagraphItem>,
@@ -55,30 +58,9 @@ class ParagraphAdapter(
 
         init {
             with(binding){
-
-                toggleParagraph.setOnClickListener {
-                    val previousExpandedPos = expandedItemPos
-                    val isExpanded = adapterPosition == expandedItemPos
-                    expandedItemPos = if(isExpanded) -1 else adapterPosition
-                    notifyItemChanged(previousExpandedPos)
-                    notifyItemChanged(adapterPosition)
-                }
-
-                var clickedSentence: String? = null
-
+                val detector = GestureDetectorCompat(itemView.context, MyGestureListener())
                 paragraph.setOnTouchListener { _, event ->
-                    if (event.action == MotionEvent.ACTION_DOWN) {
-                        val offset = paragraph.getOffsetForPosition(event.x, event.y)
-                        clickedSentence = findSentence(offset)
-                    }
-                    return@setOnTouchListener false
-                }
-
-                paragraph.setOnClickListener {
-                    clickedSentence?.let { sentence ->
-                        Toast.makeText(itemView.context, "Sentence clicked: $sentence", Toast.LENGTH_SHORT).show()
-                    }
-                    clickedSentence = null
+                    detector.onTouchEvent(event)
                 }
             }
         }
@@ -95,6 +77,41 @@ class ParagraphAdapter(
             binding.paragraph.text = item.original
         }
 
+        private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
+
+            override fun onDown(e: MotionEvent?): Boolean {
+                return true
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
+                e ?: return false
+                val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+                val clickedWord = binding.paragraph.findWordForRightHanded(offset)
+
+                if(clickedWord.isNotBlank()) viewModel.translateText(clickedWord)
+                return super.onSingleTapConfirmed(e)
+            }
+
+            override fun onLongPress(e: MotionEvent?) {
+                e ?: return
+                val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+                Toast.makeText(itemView.context, "Long press: ${findSentence(offset)}", Toast.LENGTH_SHORT).show()
+                super.onLongPress(e)
+            }
+
+            override fun onDoubleTap(e: MotionEvent?): Boolean {
+                setExpanded()
+                return super.onDoubleTap(e)
+            }
+        }
+
+        fun setExpanded(){
+            val previousExpandedPos = expandedItemPos
+            val isExpanded = adapterPosition == expandedItemPos
+            expandedItemPos = if(isExpanded) -1 else adapterPosition
+            notifyItemChanged(previousExpandedPos)
+            notifyItemChanged(adapterPosition)
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")

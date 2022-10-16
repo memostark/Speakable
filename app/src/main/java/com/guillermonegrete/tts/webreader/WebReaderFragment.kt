@@ -37,7 +37,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private val args: WebReaderFragmentArgs by navArgs()
 
-    private var clickedWord: String? = null
     private var languageFrom: String? = null
 
     private var adapter: ParagraphAdapter? = null
@@ -61,7 +60,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 when(it){
                     is LoadResult.Error -> isError = true
                     LoadResult.Loading -> isLoading = true
-                    is LoadResult.Success -> setBodyText(binding, it.data)
+                    is LoadResult.Success -> setParagraphList(it.data)
                 }
 
                 retryButton.isVisible = isError
@@ -118,53 +117,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         viewModel.loadDoc(args.link)
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setBodyText(binding: FragmentWebReaderBinding, text: String) {
+    private fun setParagraphList(text: String) {
         with(binding){
-            bodyText.text = HtmlCompat.fromHtml(text, Html.FROM_HTML_MODE_COMPACT)
-
-            bodyText.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    val offset = bodyText.getOffsetForPosition(event.x, event.y)
-                    val possibleWord = findWordForRightHanded(bodyText.text.toString(), offset)
-                    clickedWord = possibleWord.ifBlank { null }
-                }
-                return@setOnTouchListener false
+            paragraphsList.isVisible = true
+            if(adapter == null) {
+                val newParagraphs =  text.split("\n")
+                    .map { HtmlCompat.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).trim() }
+                    .filter { it.isNotEmpty() }
+                viewModel.createParagraphs(newParagraphs)
+                val splitParagraphs = viewModel.splitBySentence(newParagraphs)
+                adapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel)
             }
-
-            bodyText.setOnClickListener {
-                clickedWord?.let { word -> viewModel.translateText(word.trim()) }
-                clickedWord = null
-            }
-
-            listToggle.isVisible = true
-            listToggle.setOnClickListener {
-                onListToggleClick(text)
-            }
-        }
-    }
-
-    private fun onListToggleClick(text: String) {
-        with(binding){
-            val listVisible = paragraphsList.isVisible
-            if (listVisible){
-                paragraphsList.isVisible = false
-                bodyText.isVisible = true
-            } else {
-                bodyText.isVisible = false
-                paragraphsList.isVisible = true
-                if(adapter == null) {
-                    val newParagraphs =  text.split("\n")
-                        .map { HtmlCompat.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).trim() }
-                        .filter { it.isNotEmpty() }
-                    viewModel.createParagraphs(newParagraphs)
-                    val splitParagraphs = viewModel.splitBySentence(newParagraphs)
-                    adapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel)
-                }
-                paragraphsList.adapter = adapter
-            }
-
-            listToggle.setImageResource(if(listVisible) R.drawable.ic_list_grey_24dp else R.drawable.ic_baseline_arrow_left_24)
+            paragraphsList.adapter = adapter
         }
     }
 
@@ -297,36 +261,5 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
             }
         }
-    }
-
-    private fun findWordForRightHanded(
-        str: String,
-        offset: Int
-    ): String { // when you touch ' ', this method returns left word.
-        var newOffset = offset
-        if (str.length == newOffset) {
-            newOffset-- // without this code, you will get exception when touching end of the text
-        }
-        if (str[newOffset] == ' ') {
-            newOffset--
-        }
-        var startIndex = newOffset
-        var endIndex = newOffset
-        try {
-            while (Character.isLetterOrDigit(str[startIndex])) {
-                startIndex--
-            }
-        } catch (e: StringIndexOutOfBoundsException) {
-            startIndex = 0
-        }
-        try {
-            while (Character.isLetterOrDigit(str[endIndex])) {
-                endIndex++
-            }
-        } catch (e: StringIndexOutOfBoundsException) {
-            endIndex = str.length
-        }
-
-        return str.substring(startIndex, endIndex)
     }
 }
