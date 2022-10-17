@@ -9,7 +9,6 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +26,8 @@ class ParagraphAdapter(
     private var expandedItemPos = -1
 
     var isLoading = false
+
+    val selectedSentence = SelectedSentence()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -53,6 +54,9 @@ class ParagraphAdapter(
         notifyItemChanged(expandedItemPos)
     }
 
+    var selectedSentenceText: String? = null
+        private set
+
     @SuppressLint("ClickableViewAccessibility")
     inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
 
@@ -65,16 +69,20 @@ class ParagraphAdapter(
             }
         }
 
-        private fun findSentence(offset: Int): String? {
+        private fun findSentence(offset: Int): Int {
             val item = items[adapterPosition]
             item.indexes.forEachIndexed { index, span ->
-                if(offset in span.start..span.end) return item.sentences[index]
+                if(offset in span.start..span.end) return index
             }
-            return null
+            return -1
         }
 
         fun bind(item: ParagraphItem){
             binding.paragraph.text = item.original
+            if(item.selectedIndex != -1){
+                val span = item.indexes[item.selectedIndex]
+                binding.paragraph.setHighlightedText(span.start, span.end)
+            }
         }
 
         private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
@@ -86,16 +94,32 @@ class ParagraphAdapter(
             override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
                 e ?: return false
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
-                val clickedWord = binding.paragraph.findWordForRightHanded(offset)
+                val clickedWord = binding.paragraph.findWordForRightHanded(offset).trim()
 
-                if(clickedWord.isNotBlank()) viewModel.translateText(clickedWord)
+                if(clickedWord.isNotEmpty()) viewModel.translateText(clickedWord)
                 return super.onSingleTapConfirmed(e)
             }
 
             override fun onLongPress(e: MotionEvent?) {
                 e ?: return
+
+                val previousIndex = selectedSentence.paragraphIndex
+                if(previousIndex > -1) {
+                    val previousItem = items[previousIndex]
+                    previousItem.selectedIndex = -1
+                    notifyItemChanged(previousIndex)
+                }
+
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
-                Toast.makeText(itemView.context, "Long press: ${findSentence(offset)}", Toast.LENGTH_SHORT).show()
+                val item = items[adapterPosition]
+                val index = findSentence(offset)
+                item.selectedIndex = index
+                selectedSentenceText = item.sentences[index]
+
+                notifyItemChanged(adapterPosition)
+
+                selectedSentence.paragraphIndex = adapterPosition
+                selectedSentence.sentenceIndex = index
                 super.onLongPress(e)
             }
 
@@ -173,16 +197,6 @@ class ParagraphAdapter(
             binding.translatedParagraph.text = item.translation.ifBlank { noTranslationText }
         }
 
-        private fun TextView.setHighlightedText(start: Int, end: Int){
-            val text = SpannableString(this.text)
-
-            //Remove previous
-            text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-
-            text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            this.setText(text, TextView.BufferType.SPANNABLE)
-        }
-
         private fun findWordForRightHanded(
             str: String,
             offset: Int
@@ -216,10 +230,23 @@ class ParagraphAdapter(
 
     }
 
+    private fun TextView.setHighlightedText(start: Int, end: Int){
+        val text = SpannableString(this.text)
+
+        //Remove previous
+        text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+
+        text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        this.setText(text, TextView.BufferType.SPANNABLE)
+    }
+
     data class ParagraphItem(
         val original: CharSequence,
         val indexes: List<Span>,
         val sentences: List<String>,
+        var selectedIndex: Int = -1,
         var translation: String = ""
     )
+
+    data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)
 }

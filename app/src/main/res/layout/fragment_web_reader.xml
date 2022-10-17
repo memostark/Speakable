@@ -68,6 +68,19 @@
             app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"
             android:layout_gravity="bottom">
 
+            <ImageButton
+                android:id="@+id/translate"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:contentDescription="@string/toggle"
+                android:tint="?colorOnPrimarySurface"
+                android:visibility="invisible"
+                app:srcCompat="@drawable/ic_translate_black_24dp"
+                tools:visibility="visible" />
+
             <Spinner
                 android:id="@+id/set_language"
                 style="@android:style/Widget.Material.Spinner"

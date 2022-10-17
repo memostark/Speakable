@@ -106,6 +106,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
             }
 
+            translate.setOnClickListener {
+                viewModel.translateSelected(adapter?.selectedSentenceText)
+            }
+
             retryButton.setOnClickListener {
                 viewModel.loadDoc(args.link)
             }
@@ -129,6 +133,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel)
             }
             paragraphsList.adapter = adapter
+
+            translate.isVisible = true
         }
     }
 
@@ -229,12 +235,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             viewModel.textInfo.observe(viewLifecycleOwner) { result ->
                 barLoading.isInvisible = when(result){
                     is LoadResult.Success -> {
-                        val word = result.data.word
+                        val wordResult = result.data
+                        val word = wordResult.word
                         translatedText.text = word.definition
                         notesText.isGone = word.notes.isNullOrEmpty()
                         notesText.text = word.notes
-                        moreInfoBtn.isVisible = true
-                        moreInfoBtn.setOnClickListener { showTextDialog(word, result.data.isSaved) }
+                        moreInfoBtn.isGone = wordResult.isSentence
+                        moreInfoBtn.setOnClickListener { showTextDialog(word, wordResult.isSaved) }
 
                         menuBar.isVisible = false
                         true
@@ -244,6 +251,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         true
                     }
                     LoadResult.Loading -> {
+                        translatedText.text = ""
+                        notesText.text = ""
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
                         false

@@ -146,7 +146,10 @@ class WebReaderViewModel @Inject constructor(
                 .asFlow().collectLatest {
 
                     if(it == null) {
-                        getTranslation(text)
+                        getTranslation(text) { translation ->
+                            val word = Words(text, translation.src, translation.translatedText)
+                            _textInfo.value = LoadResult.Success(WordResult(word, false))
+                        }
                     }  else {
                         _textInfo.value = LoadResult.Success(WordResult(it, true))
                     }
@@ -154,17 +157,13 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getTranslation(text: String) {
+    private suspend fun getTranslation(text: String, onResult: (Translation) -> Unit) {
         val result = withContext(Dispatchers.IO) {
             getTranslationInteractor(text, languageFrom = cacheWebLink?.language ?: "auto")
         }
 
         when(result){
-            is Result.Success -> {
-                val translation = result.data
-                val word = Words(text, translation.src, translation.translatedText)
-                _textInfo.value = LoadResult.Success(WordResult(word, false))
-            }
+            is Result.Success -> onResult(result.data)
             is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
         }
     }
@@ -232,5 +231,17 @@ class WebReaderViewModel @Inject constructor(
         return splitParagraphs
     }
 
-    data class WordResult(val word: Words, val isSaved: Boolean)
+    fun translateSelected(text: String?) {
+        if(text == null) return
+        _textInfo.value = LoadResult.Loading
+
+        viewModelScope.launch {
+            getTranslation(text) { translation ->
+                val word = Words(text, translation.src, translation.translatedText)
+                _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+            }
+        }
+    }
+
+    data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
 }
