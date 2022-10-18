@@ -20,7 +20,8 @@ import com.guillermonegrete.tts.utils.findWordForRightHanded
 
 class ParagraphAdapter(
     val items: List<ParagraphItem>,
-    val viewModel: WebReaderViewModel
+    val viewModel: WebReaderViewModel,
+    val onSentenceSelected: () -> Unit,
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var expandedItemPos = -1
@@ -28,6 +29,7 @@ class ParagraphAdapter(
     var isLoading = false
 
     val selectedSentence = SelectedSentence()
+    var selectedWordPos = -1
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -82,6 +84,9 @@ class ParagraphAdapter(
             if(item.selectedIndex != -1){
                 val span = item.indexes[item.selectedIndex]
                 binding.paragraph.setHighlightedText(span.start, span.end)
+            } else {
+                val span = item.selectedWord
+                if(span != null) binding.paragraph.setHighlightedText(span.start, span.end)
             }
         }
 
@@ -94,21 +99,39 @@ class ParagraphAdapter(
             override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
                 e ?: return false
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
-                val clickedWord = binding.paragraph.findWordForRightHanded(offset).trim()
+                val wordSpan = binding.paragraph.findWordForRightHanded(offset)
+                val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end).trim()
 
-                if(clickedWord.isNotEmpty()) viewModel.translateText(clickedWord)
+                // If a highlighted sentence was tapped just unselect it and don't select a word
+                val item = items[adapterPosition]
+                if(item.selectedIndex != -1) {
+                    val span = item.indexes[item.selectedIndex]
+                    if(offset in span.start..span.end) {
+                        unselectSentence()
+                        return super.onSingleTapConfirmed(e)
+                    }
+                }
+
+                if(clickedWord.isNotEmpty()) {
+                    viewModel.translateText(clickedWord)
+                    unselectSentence()
+                    selectedSentence.paragraphIndex = -1
+                    selectedSentence.sentenceIndex = -1
+
+                    unselectWord()
+
+                    // Select new word
+                    item.selectedWord = wordSpan
+                    selectedWordPos = adapterPosition
+                    notifyItemChanged(adapterPosition)
+                }
                 return super.onSingleTapConfirmed(e)
             }
 
             override fun onLongPress(e: MotionEvent?) {
                 e ?: return
 
-                val previousIndex = selectedSentence.paragraphIndex
-                if(previousIndex > -1) {
-                    val previousItem = items[previousIndex]
-                    previousItem.selectedIndex = -1
-                    notifyItemChanged(previousIndex)
-                }
+                unselectSentence()
 
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
                 val item = items[adapterPosition]
@@ -117,6 +140,8 @@ class ParagraphAdapter(
                 selectedSentenceText = item.sentences[index]
 
                 notifyItemChanged(adapterPosition)
+
+                onSentenceSelected()
 
                 selectedSentence.paragraphIndex = adapterPosition
                 selectedSentence.sentenceIndex = index
@@ -135,6 +160,24 @@ class ParagraphAdapter(
             expandedItemPos = if(isExpanded) -1 else adapterPosition
             notifyItemChanged(previousExpandedPos)
             notifyItemChanged(adapterPosition)
+        }
+
+        fun unselectSentence(){
+            val previousIndex = selectedSentence.paragraphIndex
+            if(previousIndex != -1) {
+                val previousItem = items[previousIndex]
+                previousItem.selectedIndex = -1
+                notifyItemChanged(previousIndex)
+            }
+        }
+    }
+
+    fun unselectWord() {
+        if(selectedWordPos != -1) {
+            val previousItem = items[selectedWordPos]
+            previousItem.selectedWord = null
+            notifyItemChanged(selectedWordPos)
+            selectedWordPos = -1
         }
     }
 
@@ -245,7 +288,8 @@ class ParagraphAdapter(
         val indexes: List<Span>,
         val sentences: List<String>,
         var selectedIndex: Int = -1,
-        var translation: String = ""
+        var selectedWord: Span? = null,
+        var translation: String = "",
     )
 
     data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)

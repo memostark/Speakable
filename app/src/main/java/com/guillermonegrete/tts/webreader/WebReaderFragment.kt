@@ -22,9 +22,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
-import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
-import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -132,7 +130,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     .filter { it.isNotEmpty() }
                 viewModel.createParagraphs(newParagraphs)
                 val splitParagraphs = viewModel.splitBySentence(newParagraphs)
-                adapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel)
+                adapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
+                    hideBottomSheets()
+                }
             }
             paragraphsList.adapter = adapter
 
@@ -154,18 +154,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             override fun onMenuItemSelected(menuItem: MenuItem) = false
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
-    }
-
-    private fun showTextDialog(words: Words, isSaved: Boolean){
-        // TODO try to add this as destination in jetpack navigation
-        val dialog = TextInfoDialog.newInstance(
-            words.word,
-            TextInfoDialog.NO_SERVICE,
-            words,
-            languageFrom = languageFrom,
-            wordIsSaved = isSaved
-        )
-        dialog.show(childFragmentManager, "Text_info")
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -227,10 +215,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val bottomSheetBehavior = BottomSheetBehavior.from(translationBottomSheet)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
-            bottomSheetBehavior.addBottomSheetCallback(object :
-                BottomSheetBehavior.BottomSheetCallback() {
+            bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN) {
+                        adapter?.unselectWord()
+                        menuBar.isVisible = true
+                    }
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -282,5 +272,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
             }
         }
+    }
+
+    private fun hideBottomSheets() {
+        val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
+        webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 }
