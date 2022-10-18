@@ -198,7 +198,7 @@ class WebReaderViewModel @Inject constructor(
     fun onWordClicked(word: String, pos: Int) {
 
         // first try to get the language from a translation, if not from the set language, else ignore.
-        val lang = translatedParagraphs[pos]?.src ?: cacheWebLink?.language ?: return
+        val lang = translatedParagraphs.getOrNull(pos)?.src ?: cacheWebLink?.language ?: return
 
         viewModelScope.launch {
             val links = withContext(Dispatchers.IO) { getExternalLinksInteractor(lang) }

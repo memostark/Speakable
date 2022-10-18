@@ -116,6 +116,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             setBottomPanel()
             setTranslateBottomPanel()
+
+            setBackButtonNav()
         }
 
         viewModel.loadDoc(args.link)
@@ -170,11 +172,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun setBottomPanel(){
         with(binding) {
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+            val translateSheetBehavior = BottomSheetBehavior.from(translationBottomSheet)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             bottomSheetBehavior.addBottomSheetCallback(object :
                 BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN
+                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -241,7 +245,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         notesText.isGone = word.notes.isNullOrEmpty()
                         notesText.text = word.notes
                         moreInfoBtn.isGone = wordResult.isSentence
-                        moreInfoBtn.setOnClickListener { showTextDialog(word, wordResult.isSaved) }
+                        moreInfoBtn.setOnClickListener {
+                            viewModel.onWordClicked(word.word, adapter?.selectedSentence?.paragraphIndex ?: -1)
+                        }
 
                         menuBar.isVisible = false
                         true
@@ -259,12 +265,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                 }
             }
+        }
+    }
 
-            // If translate sheet is showing, hide it otherwise use normal back press
-            requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-                if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
-                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                else if(isEnabled){
+    private fun setBackButtonNav() {
+        val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
+        // If translate sheet is showing, hide it otherwise use normal back press
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            when {
+                webSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED -> webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                isEnabled -> {
                     isEnabled = false
                     requireActivity().onBackPressed()
                 }
