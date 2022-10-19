@@ -130,13 +130,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     .filter { it.isNotEmpty() }
                 viewModel.createParagraphs(newParagraphs)
                 val splitParagraphs = viewModel.splitBySentence(newParagraphs)
-                adapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
+                val newAdapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
                     hideBottomSheets()
                 }
+                setSentenceNavigator(newAdapter)
+                adapter = newAdapter
             }
             paragraphsList.adapter = adapter
 
             translate.isVisible = true
+            previousSelection.isVisible = true
+            nextSelection.isVisible = true
         }
     }
 
@@ -254,6 +258,22 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         false
                     }
                 }
+            }
+        }
+    }
+
+    private fun setSentenceNavigator(newAdapter: ParagraphAdapter) {
+        with(binding){
+            previousSelection.setOnClickListener {
+                newAdapter.previousSentence()
+                val pos = newAdapter.selectedSentence.paragraphIndex
+                if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
+            }
+
+            nextSelection.setOnClickListener {
+                newAdapter.nextSentence()
+                val pos = newAdapter.selectedSentence.paragraphIndex
+                if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
             }
         }
     }

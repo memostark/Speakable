@@ -108,6 +108,8 @@ class ParagraphAdapter(
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
                         unselectSentence()
+                        selectedSentence.paragraphIndex = -1
+                        selectedSentence.sentenceIndex = -1
                         return super.onSingleTapConfirmed(e)
                     }
                 }
@@ -134,17 +136,10 @@ class ParagraphAdapter(
                 unselectSentence()
 
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
-                val item = items[adapterPosition]
                 val index = findSentence(offset)
-                item.selectedIndex = index
-                selectedSentenceText = item.sentences[index]
-
-                notifyItemChanged(adapterPosition)
-
+                selectSentence(adapterPosition, index)
                 onSentenceSelected()
 
-                selectedSentence.paragraphIndex = adapterPosition
-                selectedSentence.sentenceIndex = index
                 super.onLongPress(e)
             }
 
@@ -161,15 +156,26 @@ class ParagraphAdapter(
             notifyItemChanged(previousExpandedPos)
             notifyItemChanged(adapterPosition)
         }
+    }
 
-        fun unselectSentence(){
-            val previousIndex = selectedSentence.paragraphIndex
-            if(previousIndex != -1) {
-                val previousItem = items[previousIndex]
-                previousItem.selectedIndex = -1
-                notifyItemChanged(previousIndex)
-            }
+    fun unselectSentence(){
+        val previousIndex = selectedSentence.paragraphIndex
+        if(previousIndex != -1) {
+            val previousItem = items[previousIndex]
+            previousItem.selectedIndex = -1
+            notifyItemChanged(previousIndex)
         }
+    }
+
+    private fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
+        val item = items[paragraphIndex]
+        item.selectedIndex = sentenceIndex
+        selectedSentenceText = item.sentences[sentenceIndex]
+
+        notifyItemChanged(paragraphIndex)
+
+        selectedSentence.paragraphIndex = paragraphIndex
+        selectedSentence.sentenceIndex = sentenceIndex
     }
 
     fun unselectWord() {
@@ -179,6 +185,41 @@ class ParagraphAdapter(
             notifyItemChanged(selectedWordPos)
             selectedWordPos = -1
         }
+    }
+
+    fun nextSentence(){
+        changeSentence(selectedSentence.sentenceIndex + 1)
+    }
+
+    private fun changeSentence(index: Int){
+        var paragraphIndex = selectedSentence.paragraphIndex
+
+        if(paragraphIndex != -1){
+            val item = items[paragraphIndex]
+
+            val newIndex = when {
+                // Move to the next paragraph first sentence (hence the zero)
+                index >= item.sentences.size -> {
+                    paragraphIndex++
+                    0
+                }
+                // Move to the previous paragraph, last sentence (if paragraph exists)
+                index < 0 -> {
+                    paragraphIndex--
+                    if(paragraphIndex < 0) 0 else items[paragraphIndex].sentences.size - 1
+                }
+                else -> index
+            }
+
+            if(paragraphIndex in items.indices) {
+                unselectSentence()
+                selectSentence(paragraphIndex, newIndex)
+            }
+        }
+    }
+
+    fun previousSentence(){
+        changeSentence(selectedSentence.sentenceIndex - 1)
     }
 
     @SuppressLint("ClickableViewAccessibility")
