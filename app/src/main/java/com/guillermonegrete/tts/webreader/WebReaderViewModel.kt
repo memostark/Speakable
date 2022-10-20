@@ -39,7 +39,8 @@ class WebReaderViewModel @Inject constructor(
     val page: LiveData<LoadResult<String>>
         get() = _page
 
-    private var cachedParagraphs: List<Words>? = null
+    private var cachedParagraphs: List<CachedParagraph>? = null
+    private var cachedSplitParagraphs: List<SplitParagraph>? = null
 
     private var _translatedParagraphs = mutableListOf<Translation?>()
     val translatedParagraphs: List<Translation?>
@@ -98,34 +99,35 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun createParagraphs(paragraphs: List<CharSequence>): List<Words> {
-        val newParagraphs = cachedParagraphs ?: paragraphs.map { Words(it.toString(), "", "") }
-        if(cachedParagraphs == null) {
-            cachedParagraphs = newParagraphs
-            _translatedParagraphs = arrayOfNulls<Translation>(newParagraphs.size).toMutableList()
+    fun createParagraphs(paragraphs: List<CharSequence>): List<SplitParagraph> {
+        var splitParagraphs = cachedSplitParagraphs
+        if(splitParagraphs == null) {
+
+            splitParagraphs = splitBySentence(paragraphs)
+            _translatedParagraphs = arrayOfNulls<Translation>(splitParagraphs.size).toMutableList()
         }
-        return newParagraphs
+        return splitParagraphs
     }
 
     fun translateParagraph(pos: Int) {
         val paragraphs = cachedParagraphs ?: return
-        val paragraph = paragraphs[pos]
+        val paragraph = paragraphs[pos].translation
 
         val language = cacheWebLink?.language
-        if(paragraph.definition.isNotBlank() && paragraph.lang == language) return
+        if(paragraph.translation.isNotBlank() && paragraph.sourceLang == language) return
 
         _translatedParagraph.value = LoadResult.Loading
 
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
-                getTranslationInteractor(paragraph.word, languageFrom = language ?: "auto")
+                getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
             }
 
             when(result){
                 is Result.Success -> {
                     val translation = result.data
-                    paragraph.definition = translation.translatedText
-                    paragraph.lang = translation.src
+                    paragraph.translation = translation.translatedText
+                    paragraph.sourceLang = translation.src
                     _translatedParagraphs[pos] = translation
                     _translatedParagraph.value = LoadResult.Success(pos)
                 }
@@ -210,9 +212,11 @@ class WebReaderViewModel @Inject constructor(
         cacheWebLink?.language = langShort
     }
 
-    fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
+    private fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
         val iterator = BreakIterator.getSentenceInstance()
+
         val splitParagraphs = arrayListOf<SplitParagraph>()
+        val cachedParagraphs = arrayListOf<CachedParagraph>()
 
         for (paragraph in paragraphs){
             iterator.setText(paragraph.toString())
@@ -220,28 +224,48 @@ class WebReaderViewModel @Inject constructor(
             var end = iterator.next()
             val indexes = arrayListOf<Span>()
             val sentences = arrayListOf<String>()
+            val cachedSentences = arrayListOf<SimpleTranslation>()
             while (end != BreakIterator.DONE) {
-                sentences.add(paragraph.substring(start, end))
+                val sentence = paragraph.substring(start, end)
+                sentences.add(sentence)
+                cachedSentences.add(SimpleTranslation(sentence))
                 indexes.add(Span(start, end))
                 start = end
                 end = iterator.next()
             }
             splitParagraphs.add(SplitParagraph(paragraph, indexes, sentences))
+            cachedParagraphs.add(CachedParagraph(SimpleTranslation(paragraph.toString()), cachedSentences))
         }
+        this.cachedParagraphs = cachedParagraphs
         return splitParagraphs
     }
 
-    fun translateSelected(text: String?) {
-        if(text == null) return
+    fun translateSelected(paragraphIndex: Int, sentenceIndex: Int) {
+        val paragraphs = cachedParagraphs ?: return
+        val sentence = paragraphs[paragraphIndex].sentences[sentenceIndex]
+
+        val language = cacheWebLink?.language
+        if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
+            val word = Words(sentence.original, sentence.sourceLang, sentence.translation)
+            _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+            return
+        }
+
         _textInfo.value = LoadResult.Loading
 
         viewModelScope.launch {
-            getTranslation(text) { translation ->
-                val word = Words(text, translation.src, translation.translatedText)
+            getTranslation(sentence.original) { translation ->
+                sentence.translation = translation.translatedText
+                sentence.sourceLang = translation.src
+                val word = Words(sentence.original, translation.src, translation.translatedText)
                 _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
             }
         }
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
+
+    data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
+
+    data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
 }

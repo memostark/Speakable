@@ -105,7 +105,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             translate.setOnClickListener {
-                viewModel.translateSelected(adapter?.selectedSentenceText)
+                val selected = adapter?.selectedSentence ?: return@setOnClickListener
+                if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
+                    viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
             }
 
             retryButton.setOnClickListener {
@@ -128,8 +130,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val newParagraphs =  text.split("\n")
                     .map { HtmlCompat.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).trim() }
                     .filter { it.isNotEmpty() }
-                viewModel.createParagraphs(newParagraphs)
-                val splitParagraphs = viewModel.splitBySentence(newParagraphs)
+                val splitParagraphs = viewModel.createParagraphs(newParagraphs)
                 val newAdapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
                     hideBottomSheets()
                 }
@@ -243,6 +244,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.onWordClicked(word.word, adapter?.selectedSentence?.paragraphIndex ?: -1)
                         }
 
+                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         menuBar.isVisible = false
                         true
                     }
