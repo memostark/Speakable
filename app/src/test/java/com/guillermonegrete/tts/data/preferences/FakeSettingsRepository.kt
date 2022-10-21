@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.data.preferences
 
+import kotlinx.coroutines.flow.Flow
+
 class FakeSettingsRepository: SettingsRepository {
 
     override fun setLanguageTo(language: String) {
@@ -16,5 +18,13 @@ class FakeSettingsRepository: SettingsRepository {
 
     override fun getLanguageFrom(): String {
         return "auto"
+    }
+
+    override fun getImportTabPosition(): Flow<Int> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun setImportTabPosition(pos: Int) {
+        TODO("Not yet implemented")
     }
 }
