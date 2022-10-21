@@ -47,8 +47,6 @@ class WebReaderFragmentTest{
         val args = bundleOf("link" to "https://en.wikipedia.org/wiki/Wiktionary")
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
 
-        onView(withId(R.id.paragraphs_list)).check(matches(not(isDisplayed())))
-        onView(withId(R.id.list_toggle)).perform(click())
-        onView(withId(R.id.body_text)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
     }
 }

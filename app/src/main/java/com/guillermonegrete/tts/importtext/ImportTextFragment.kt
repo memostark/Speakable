@@ -46,9 +46,9 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
 
         TabLayoutMediator(binding.importTabLayout, pager) { tab, position ->
             tab.text = when (position) {
-                0 -> "Files"
-                1 -> "Links"
-                2 -> "Text"
+                FilesIndex -> "Files"
+                WebLinksIndex -> "Links"
+                EnterTextIndex -> "Text"
                 else -> ""
             }
         }.attach()
@@ -72,11 +72,18 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
 
         override fun createFragment(position: Int): Fragment {
             return when(position){
-                0 -> FilesFragment()
-                1 -> WebLinksFragment.newInstance()
-                2 -> EnterTextFragment()
+                FilesIndex -> FilesFragment()
+                WebLinksIndex -> WebLinksFragment.newInstance()
+                EnterTextIndex -> EnterTextFragment()
                 else -> throw IllegalStateException("Out of position: $position")
             }
         }
+    }
+
+    companion object{
+
+        const val FilesIndex = 0
+        const val WebLinksIndex = 1
+        const val EnterTextIndex = 2
     }
 }
