@@ -122,7 +122,7 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         spinner.apply {
             adapter = arrayAdapter
             spinnerIndex?.let { setSelection(it, false) }
-            onItemSelectedListener = SpinnerListener()
+            post { onItemSelectedListener = SpinnerListener() } // the post{} avoids the listener being called
         }
 
     }
