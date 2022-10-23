@@ -63,7 +63,6 @@ repositories {
     maven() {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
-    jcenter()
     maven { url 'https://jitpack.io' }
 }
 
@@ -187,6 +186,10 @@ dependencies {
 
     // Jsoup HTML parser
     implementation 'org.jsoup:jsoup:1.13.1'
+
+    // Okhttp
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+    androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.10.0"
 
     // Instrumental testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
