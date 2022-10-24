@@ -166,7 +166,7 @@ class WebReaderViewModel @Inject constructor(
 
         when(result){
             is Result.Success -> onResult(result.data)
-            is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
+            is Result.Error -> _textInfo.value = LoadResult.Error(result.exception)
         }
     }
 

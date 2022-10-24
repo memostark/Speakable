@@ -3,8 +3,8 @@ package com.guillermonegrete.tts.di
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
 import android.util.Xml
+import androidx.preference.PreferenceManager
 import androidx.room.Room
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.customtts.CustomTTS
@@ -146,14 +146,14 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideGoogleRetrofit() = Retrofit.Builder()
-        .baseUrl(GooglePublicSource.BASE_URL)
-        .addConverterFactory(MoshiConverterFactory.create())
+    fun provideRetrofit(baseUrl: String): Retrofit = Retrofit.Builder()
+        .baseUrl(baseUrl)
+        .addConverterFactory(MoshiConverterFactory.create().asLenient())
         .build()
 
     @Singleton
     @Provides
-    fun provideGoogleApi(retrofit: Retrofit) = retrofit.create(GooglePublicAPI::class.java)
+    fun provideGoogleApi(retrofit: Retrofit): GooglePublicAPI = retrofit.create(GooglePublicAPI::class.java)
 }
 
 /**
@@ -168,6 +168,14 @@ object FilesDatabaseModule {
     fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase{
         return FilesDatabase.getDatabase(context)
     }
+}
+
+@InstallIn(SingletonComponent::class)
+@Module
+object NetworkModule {
+
+    @Provides
+    fun provideGoogleBaseUrl() = GooglePublicSource.BASE_URL
 }
 
 @InstallIn(SingletonComponent::class)

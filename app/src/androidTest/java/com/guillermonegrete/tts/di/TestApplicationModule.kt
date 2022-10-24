@@ -44,3 +44,18 @@ object FileMemoryDatabaseModule {
         return Room.inMemoryDatabaseBuilder(context, FilesDatabase::class.java).build()
     }
 }
+
+/**
+ * Replaces all the network server with the url of the MockWebServer.
+ */
+@Module
+@TestInstallIn(
+    components = [SingletonComponent::class],
+    replaces = [NetworkModule::class]
+)
+object MockNetworkModule {
+
+    @Provides
+    fun provideTestBaseUrl() = "http://localhost:8081"
+
+}
