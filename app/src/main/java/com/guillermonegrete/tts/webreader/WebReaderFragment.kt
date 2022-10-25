@@ -245,7 +245,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         notesText.text = word.notes
                         moreInfoBtn.isGone = wordResult.isSentence
                         moreInfoBtn.setOnClickListener {
-                            viewModel.onWordClicked(word.word, adapter?.selectedSentence?.paragraphIndex ?: -1)
+                            viewModel.getLinksForWord(word.word, word.lang)
                         }
 
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED

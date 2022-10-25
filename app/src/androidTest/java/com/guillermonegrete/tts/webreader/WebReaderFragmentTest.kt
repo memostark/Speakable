@@ -87,13 +87,14 @@ class WebReaderFragmentTest{
                 RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, click())
             )
 
-        Thread.sleep(1000)
+        Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
         onView(withId(R.id.menu_bar)).check(matches(not(isDisplayed())))
 
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText("My")))
 
         onView(withId(R.id.more_info_btn)).perform(click())
+        onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
     }
 
     @Test
