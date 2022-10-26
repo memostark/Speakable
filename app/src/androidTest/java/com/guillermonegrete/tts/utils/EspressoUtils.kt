@@ -1,8 +1,13 @@
 package com.guillermonegrete.tts.utils
 
+import android.view.InputDevice
+import android.view.MotionEvent
 import android.view.View
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
+import androidx.test.espresso.action.GeneralClickAction
+import androidx.test.espresso.action.Press
+import androidx.test.espresso.action.Tap
 import androidx.test.espresso.matcher.ViewMatchers
 import com.google.android.material.tabs.TabLayout
 import org.hamcrest.CoreMatchers
@@ -28,4 +33,23 @@ fun selectTabAtPosition(position: Int): ViewAction {
             }
         }
     }
+}
+
+/**
+ * Performs a click in the given coordinates
+ */
+fun clickIn(x: Int, y: Int): ViewAction {
+    return GeneralClickAction(
+        Tap.SINGLE, { view ->
+            val screenPos = IntArray(2)
+            view?.getLocationOnScreen(screenPos)
+
+            val screenX = (screenPos[0] + x).toFloat()
+            val screenY = (screenPos[1] + y).toFloat()
+
+            floatArrayOf(screenX, screenY)
+        },
+        Press.FINGER,
+        InputDevice.SOURCE_MOUSE,
+        MotionEvent.BUTTON_PRIMARY)
 }

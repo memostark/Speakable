@@ -19,6 +19,7 @@ import com.guillermonegrete.tts.data.source.remote.Sentence
 import com.guillermonegrete.tts.di.TestApplicationModuleBinds
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
+import com.guillermonegrete.tts.utils.clickIn
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -72,7 +73,7 @@ class WebReaderFragmentTest{
     }
 
     @Test
-    fun given_default_layout_when_toggle_button_then_paragraph_layout(){
+    fun when_word_tapped_then_translation_shown(){
         val body = readPage()
         server.enqueue(MockResponse().setBody(body))
 
@@ -87,7 +88,9 @@ class WebReaderFragmentTest{
 
         onView(withId(R.id.paragraphs_list))
             .perform(
-                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, click())
+                // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
+                // Click on the (0, 0) position to ensure the first word is clicked
+                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, clickIn(0, 0))
             )
 
         Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
@@ -170,11 +173,11 @@ class WebReaderFragmentTest{
 
     companion object{
         const val FIRST_SENTENCE = "My First Heading\n"
-        const val FIRST_SENTENCE_TRANS = "Primer encabezado"
+        private const val FIRST_SENTENCE_TRANS = "Primer encabezado"
         const val SECOND_SENTENCE = "Body first paragraph"
-        const val SECOND_SENTENCE_TRANS = "Cuerpo del primer parrafo"
+        private const val SECOND_SENTENCE_TRANS = "Cuerpo del primer parrafo"
         const val THIRD_SENTENCE = "My second paragraph."
-        const val THIRD_SENTENCE_TRANS = "Mi segundo parrafo"
+        private const val THIRD_SENTENCE_TRANS = "Mi segundo parrafo"
 
         val sentencesTranslationResponses = listOf(
             GoogleTranslateResponse(listOf(Sentence(FIRST_SENTENCE_TRANS, FIRST_SENTENCE)), "en"),
