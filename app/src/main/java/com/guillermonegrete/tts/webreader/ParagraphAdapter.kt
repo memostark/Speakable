@@ -24,7 +24,8 @@ class ParagraphAdapter(
     val onSentenceSelected: () -> Unit,
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private var expandedItemPos = -1
+    var expandedItemPos = -1
+        private set
 
     var isLoading = false
 
@@ -55,9 +56,6 @@ class ParagraphAdapter(
     fun updateExpanded(){
         notifyItemChanged(expandedItemPos)
     }
-
-    var selectedSentenceText: String? = null
-        private set
 
     @SuppressLint("ClickableViewAccessibility")
     inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
@@ -108,8 +106,6 @@ class ParagraphAdapter(
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
                         unselectSentence()
-                        selectedSentence.paragraphIndex = -1
-                        selectedSentence.sentenceIndex = -1
                         return super.onSingleTapConfirmed(e)
                     }
                 }
@@ -117,9 +113,6 @@ class ParagraphAdapter(
                 if(clickedWord.isNotEmpty()) {
                     viewModel.translateText(clickedWord)
                     unselectSentence()
-                    selectedSentence.paragraphIndex = -1
-                    selectedSentence.sentenceIndex = -1
-
                     unselectWord()
 
                     // Select new word
@@ -134,6 +127,7 @@ class ParagraphAdapter(
                 e ?: return
 
                 unselectSentence()
+                removeExpanded()
 
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
                 val index = findSentence(offset)
@@ -145,6 +139,7 @@ class ParagraphAdapter(
 
             override fun onDoubleTap(e: MotionEvent?): Boolean {
                 setExpanded()
+                unselectSentence()
                 return super.onDoubleTap(e)
             }
         }
@@ -164,13 +159,14 @@ class ParagraphAdapter(
             val previousItem = items[previousIndex]
             previousItem.selectedIndex = -1
             notifyItemChanged(previousIndex)
+            selectedSentence.paragraphIndex = -1
+            selectedSentence.sentenceIndex = -1
         }
     }
 
     private fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
         val item = items[paragraphIndex]
         item.selectedIndex = sentenceIndex
-        selectedSentenceText = item.sentences[sentenceIndex]
 
         notifyItemChanged(paragraphIndex)
 
@@ -231,15 +227,7 @@ class ParagraphAdapter(
             with(binding){
 
                 toggleParagraph.setOnClickListener {
-                    val previousExpandedPos = expandedItemPos
-                    val isExpanded = adapterPosition == expandedItemPos
-                    expandedItemPos = if(isExpanded) -1 else adapterPosition
-                    notifyItemChanged(previousExpandedPos)
-                    notifyItemChanged(adapterPosition)
-                }
-
-                translate.setOnClickListener {
-                    viewModel.translateParagraph(adapterPosition)
+                    removeExpanded()
                 }
 
                 var clickedWord: String? = null
@@ -277,7 +265,6 @@ class ParagraphAdapter(
         fun bind(item: ParagraphItem){
             binding.paragraph.text = item.original
             binding.loadingParagraph.isVisible = isLoading
-            binding.translate.isVisible = !isLoading
             binding.translatedParagraph.text = item.translation.ifBlank { noTranslationText }
         }
 
@@ -312,6 +299,12 @@ class ParagraphAdapter(
             return str.substring(startIndex, endIndex)
         }
 
+    }
+
+    private fun removeExpanded(){
+        val previousExpandedPos = expandedItemPos
+        expandedItemPos = -1
+        notifyItemChanged(previousExpandedPos)
     }
 
     private fun TextView.setHighlightedText(start: Int, end: Int){

@@ -109,7 +109,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             translate.setOnClickListener {
-                val selected = adapter?.selectedSentence ?: return@setOnClickListener
+                val adapter = adapter ?: return@setOnClickListener
+                val expandedItemPos = adapter.expandedItemPos
+                if (expandedItemPos != -1) {
+                    viewModel.translateParagraph(expandedItemPos)
+                    return@setOnClickListener
+                }
+
+                val selected = adapter.selectedSentence
                 if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
                     viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
             }
