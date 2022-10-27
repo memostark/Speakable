@@ -5,8 +5,9 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.longClick
+import androidx.test.espresso.ViewAction
+import androidx.test.espresso.action.ViewActions.*
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers.*
@@ -86,12 +87,9 @@ class WebReaderFragmentTest{
         val jsonResponse = responseAdapter.toJson(response)
         server.enqueue(MockResponse().setBody(jsonResponse))
 
-        onView(withId(R.id.paragraphs_list))
-            .perform(
-                // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
-                // Click on the (0, 0) position to ensure the first word is clicked
-                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, clickIn(0, 0))
-            )
+        // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
+        // Click on the (0, 0) position to ensure the first word is clicked
+        clickParagraphList(0, clickIn(0, 0))
 
         Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
         onView(withId(R.id.menu_bar)).check(matches(not(isDisplayed())))
@@ -114,10 +112,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
         // Highlight first sentence
-        onView(withId(R.id.paragraphs_list))
-            .perform(
-                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, longClick())
-            )
+        clickParagraphList(0, longClick())
 
         server.dispatcher = sentenceDispatcher()
 
@@ -136,6 +131,33 @@ class WebReaderFragmentTest{
         onView(withId(R.id.previous_selection)).perform(click())
         val secondTranslation = sentencesTranslationResponses[1].sentences.first().trans
         translateSelectionAndReturn(secondTranslation)
+    }
+
+    @Test
+    fun when_sentence_double_tapped_then_show_expanded_item(){
+        val body = readPage()
+        server.enqueue(MockResponse().setBody(body))
+
+        val args = bundleOf("link" to server.url("/").toString())
+        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+
+        onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
+
+        // Double click and verify item expanded
+        clickParagraphList(0, doubleClick())
+
+        onView(withId(R.id.toggle_paragraph)).check(matches(isDisplayed()))
+
+        // Click translate and verify correct translation
+        server.enqueue(MockResponse().setBody(responseAdapter.toJson(paragraphTranslationResponse)))
+        onView(withId(R.id.translate)).perform(click())
+
+        onView(withId(R.id.translated_paragraph)).check(matches(isDisplayed()))
+        onView(withId(R.id.translated_paragraph)).check(matches(withText(FIRST_PARAGRAPH_TRANS)))
+
+        // Unselect paragraph and verify back to normal
+        onView(withId(R.id.toggle_paragraph)).perform(click())
+        onView(withId(R.id.toggle_paragraph)).check(doesNotExist())
     }
 
     private fun readPage() =
@@ -171,6 +193,13 @@ class WebReaderFragmentTest{
         }
     }
 
+    private fun clickParagraphList(position: Int, action: ViewAction){
+        onView(withId(R.id.paragraphs_list))
+            .perform(
+                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(position, action)
+            )
+    }
+
     companion object{
         const val FIRST_SENTENCE = "My First Heading\n"
         private const val FIRST_SENTENCE_TRANS = "Primer encabezado"
@@ -184,5 +213,9 @@ class WebReaderFragmentTest{
             GoogleTranslateResponse(listOf(Sentence(SECOND_SENTENCE_TRANS, SECOND_SENTENCE)), "en"),
             GoogleTranslateResponse(listOf(Sentence(THIRD_SENTENCE_TRANS, THIRD_SENTENCE)), "en"),
         )
+
+        private const val FIRST_PARAGRAPH = FIRST_SENTENCE + SECOND_SENTENCE
+        private const val FIRST_PARAGRAPH_TRANS = FIRST_SENTENCE_TRANS + SECOND_SENTENCE_TRANS
+        val paragraphTranslationResponse = GoogleTranslateResponse(listOf(Sentence(FIRST_PARAGRAPH_TRANS, FIRST_PARAGRAPH)), "es")
     }
 }
