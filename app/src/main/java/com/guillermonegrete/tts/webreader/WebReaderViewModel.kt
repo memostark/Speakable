@@ -5,7 +5,7 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
-import com.guillermonegrete.tts.data.source.WordRepository
+import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.db.Words
@@ -31,7 +31,7 @@ import javax.inject.Inject
 class WebReaderViewModel @Inject constructor(
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
-    private val wordRepository: WordRepository,
+    private val wordRepository: WordRepositorySource,
     private val webLinkDAO: WebLinkDAO,
 ): ViewModel() {
 
