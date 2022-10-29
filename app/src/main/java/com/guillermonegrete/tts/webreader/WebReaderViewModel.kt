@@ -16,11 +16,8 @@ import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import java.io.IOException
 import java.text.BreakIterator
@@ -33,6 +30,7 @@ class WebReaderViewModel @Inject constructor(
     private val getExternalLinksInteractor: GetExternalLink,
     private val wordRepository: WordRepositorySource,
     private val webLinkDAO: WebLinkDAO,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
     private val _page = MutableLiveData<LoadResult<String>>()
@@ -61,7 +59,12 @@ class WebReaderViewModel @Inject constructor(
     val webLink: LiveData<WebLink>
         get() = _weblink
 
-    fun loadDoc(url: String){
+    /**
+     * Loads the [url] as a string and loads (or creates if it doesn't exist) a database entry for the [url].
+     *
+     * The [link] representing the url, used usually for testing.
+     */
+    fun loadDoc(url: String, link: WebLink? = null){
         _page.value = LoadResult.Loading
 
         viewModelScope.launch {
@@ -72,13 +75,13 @@ class WebReaderViewModel @Inject constructor(
                 } catch (ex: IOException){
                     _page.value = LoadResult.Error(ex)
                 }
-                cacheWebLink = webLinkDAO.getLink(url) ?: WebLink(url)
+                cacheWebLink = webLinkDAO.getLink(url) ?: link ?: WebLink(url)
                 _weblink.value = cacheWebLink
             }
         }
     }
 
-    private suspend fun getPage(url: String): String = withContext(Dispatchers.IO){
+    private suspend fun getPage(url: String): String = withContext(ioDispatcher){
         val doc = Jsoup.connect(url).get()
         doc.body().select("menu, header, footer, logo, nav, search, link, button, btn, ad, script, style, img").remove()
         // Removes empty tags (e.g. <div></div>) and keeps self closing tags e.g. <br/>
@@ -90,7 +93,7 @@ class WebReaderViewModel @Inject constructor(
 
     fun saveWebLink(){
         viewModelScope.launch {
-            withContext(Dispatchers.IO){
+            withContext(ioDispatcher){
                 cacheWebLink?.let {
                     it.lastRead = Calendar.getInstance()
                     webLinkDAO.upsert(it)
@@ -119,7 +122,7 @@ class WebReaderViewModel @Inject constructor(
         _translatedParagraph.value = LoadResult.Loading
 
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) {
+            val result = withContext(ioDispatcher) {
                 getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
             }
 
@@ -160,7 +163,7 @@ class WebReaderViewModel @Inject constructor(
     }
 
     private suspend fun getTranslation(text: String, onResult: (Translation) -> Unit) {
-        val result = withContext(Dispatchers.IO) {
+        val result = withContext(ioDispatcher) {
             getTranslationInteractor(text, languageFrom = cacheWebLink?.language ?: "auto")
         }
 
@@ -207,7 +210,7 @@ class WebReaderViewModel @Inject constructor(
 
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
-            val links = withContext(Dispatchers.IO) { getExternalLinksInteractor(lang) }
+            val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
             _clickedWord.value = WordAndLinks(word, links)
         }
     }
