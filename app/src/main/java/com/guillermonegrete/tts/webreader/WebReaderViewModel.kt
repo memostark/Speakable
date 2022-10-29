@@ -82,13 +82,17 @@ class WebReaderViewModel @Inject constructor(
     }
 
     private suspend fun getPage(url: String): String = withContext(ioDispatcher){
-        val doc = Jsoup.connect(url).get()
-        doc.body().select("menu, header, footer, logo, nav, search, link, button, btn, ad, script, style, img").remove()
-        // Removes empty tags (e.g. <div></div>) and keeps self closing tags e.g. <br/>
-        for (element in doc.select("*")) {
-            if (!element.hasText() && element.isBlock) element.remove()
+        val result = runCatching {
+            val doc = Jsoup.connect(url).get()
+            doc.body().select("menu, header, footer, logo, nav, search, link, button, btn, ad, script, style, img").remove()
+            // Removes empty tags (e.g. <div></div>) and keeps self closing tags e.g. <br/>
+            for (element in doc.select("*")) {
+                if (!element.hasText() && element.isBlock) element.remove()
+            }
+            doc.body().html()
         }
-        doc.body().html()
+
+        return@withContext result.getOrThrow()
     }
 
     fun saveWebLink(){
