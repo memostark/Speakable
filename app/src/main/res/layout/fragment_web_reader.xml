@@ -17,31 +17,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.core.widget.NestedScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <TextView
-                android:id="@+id/body_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:layout_margin="@dimen/text_margin"
-                tools:text="@string/large_text"/>
-        </androidx.core.widget.NestedScrollView>
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/paragraphs_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+            android:paddingBottom="48dp"
+            android:clipToPadding="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/paragraph_item"/>
 
         <LinearLayout
             android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
             android:layout_height="350dp"
             android:orientation="vertical"
+            android:elevation="2dp"
             app:behavior_hideable="true"
             app:behavior_skipCollapsed="true"
             app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
@@ -73,28 +63,62 @@
 
         </LinearLayout>
 
-        <FrameLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/menu_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
             android:background="?colorPrimary"
-            app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"
-            android:layout_gravity="bottom">
+            app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior">
 
             <ImageButton
-                android:id="@+id/list_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:id="@+id/translate"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="8dp"
                 android:background="?android:selectableItemBackgroundBorderless"
                 android:contentDescription="@string/toggle"
-                android:minWidth="48dp"
-                android:minHeight="48dp"
                 android:tint="?colorOnPrimarySurface"
                 android:visibility="invisible"
-                app:srcCompat="@drawable/ic_list_grey_24dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_translate_black_24dp"
                 tools:visibility="visible" />
+
+            <ImageButton
+                android:id="@+id/previous_selection"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:contentDescription="@string/previous_selection"
+                android:tint="?colorOnPrimarySurface"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/translate"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_baseline_arrow_back_ios_new_24"
+                tools:visibility="visible" />
+
+            <ImageButton
+                android:id="@+id/next_selection"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp"
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:contentDescription="@string/next_selection"
+                android:tint="?colorOnPrimarySurface"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/previous_selection"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_baseline_arrow_forward_ios_24"
+                tools:visibility="visible" />
+
             <Spinner
                 android:id="@+id/set_language"
                 style="@android:style/Widget.Material.Spinner"
@@ -102,9 +126,12 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:spinnerMode="dialog"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
                 tools:listitem="@android:layout/simple_list_item_1" />
 
-        </FrameLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/translation_bottom_sheet"

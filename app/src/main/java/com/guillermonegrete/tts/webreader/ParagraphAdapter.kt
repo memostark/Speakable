@@ -4,25 +4,33 @@ import android.annotation.SuppressLint
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
+import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
-import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.utils.findWordForRightHanded
 
 class ParagraphAdapter(
-    val items: List<Words>,
-    val viewModel: WebReaderViewModel
+    val items: List<ParagraphItem>,
+    val viewModel: WebReaderViewModel,
+    val onSentenceSelected: () -> Unit,
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private var expandedItemPos = -1
+    var expandedItemPos = -1
+        private set
 
     var isLoading = false
+
+    val selectedSentence = SelectedSentence()
+    var selectedWordPos = -1
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -41,29 +49,173 @@ class ParagraphAdapter(
 
     override fun getItemViewType(position: Int) = if(expandedItemPos == position) R.layout.paragraph_expanded_item else R.layout.paragraph_item
 
+    fun updateTranslation(translation: String){
+        items[expandedItemPos].translation = translation
+    }
+
     fun updateExpanded(){
         notifyItemChanged(expandedItemPos)
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
 
         init {
             with(binding){
-
-                toggleParagraph.setOnClickListener {
-                    val previousExpandedPos = expandedItemPos
-                    val isExpanded = adapterPosition == expandedItemPos
-                    expandedItemPos = if(isExpanded) -1 else adapterPosition
-                    notifyItemChanged(previousExpandedPos)
-                    notifyItemChanged(adapterPosition)
+                val detector = GestureDetectorCompat(itemView.context, MyGestureListener())
+                paragraph.setOnTouchListener { _, event ->
+                    detector.onTouchEvent(event)
                 }
             }
         }
 
-        fun bind(item: Words){
-            binding.paragraph.text = item.word
+        private fun findSentence(offset: Int): Int {
+            val item = items[adapterPosition]
+            item.indexes.forEachIndexed { index, span ->
+                if(offset in span.start..span.end) return index
+            }
+            return -1
         }
 
+        fun bind(item: ParagraphItem){
+            binding.paragraph.text = item.original
+            if(item.selectedIndex != -1){
+                val span = item.indexes[item.selectedIndex]
+                binding.paragraph.setHighlightedText(span.start, span.end)
+            } else {
+                val span = item.selectedWord
+                if(span != null) binding.paragraph.setHighlightedText(span.start, span.end)
+            }
+        }
+
+        private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
+
+            override fun onDown(e: MotionEvent?): Boolean {
+                return true
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
+                e ?: return false
+                val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+                val wordSpan = binding.paragraph.findWordForRightHanded(offset)
+                val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end).trim()
+
+                // If a highlighted sentence was tapped just unselect it and don't select a word
+                val item = items[adapterPosition]
+                if(item.selectedIndex != -1) {
+                    val span = item.indexes[item.selectedIndex]
+                    if(offset in span.start..span.end) {
+                        unselectSentence()
+                        return super.onSingleTapConfirmed(e)
+                    }
+                }
+
+                if(clickedWord.isNotEmpty()) {
+                    viewModel.translateText(clickedWord)
+                    unselectSentence()
+                    unselectWord()
+
+                    // Select new word
+                    item.selectedWord = wordSpan
+                    selectedWordPos = adapterPosition
+                    notifyItemChanged(adapterPosition)
+                }
+                return super.onSingleTapConfirmed(e)
+            }
+
+            override fun onLongPress(e: MotionEvent?) {
+                e ?: return
+
+                unselectSentence()
+                removeExpanded()
+
+                val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+                val index = findSentence(offset)
+                selectSentence(adapterPosition, index)
+                onSentenceSelected()
+
+                super.onLongPress(e)
+            }
+
+            override fun onDoubleTap(e: MotionEvent?): Boolean {
+                setExpanded()
+                unselectSentence()
+                return super.onDoubleTap(e)
+            }
+        }
+
+        fun setExpanded(){
+            val previousExpandedPos = expandedItemPos
+            val isExpanded = adapterPosition == expandedItemPos
+            expandedItemPos = if(isExpanded) -1 else adapterPosition
+            notifyItemChanged(previousExpandedPos)
+            notifyItemChanged(adapterPosition)
+        }
+    }
+
+    fun unselectSentence(){
+        val previousIndex = selectedSentence.paragraphIndex
+        if(previousIndex != -1) {
+            val previousItem = items[previousIndex]
+            previousItem.selectedIndex = -1
+            notifyItemChanged(previousIndex)
+            selectedSentence.paragraphIndex = -1
+            selectedSentence.sentenceIndex = -1
+        }
+    }
+
+    private fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
+        val item = items[paragraphIndex]
+        item.selectedIndex = sentenceIndex
+
+        notifyItemChanged(paragraphIndex)
+
+        selectedSentence.paragraphIndex = paragraphIndex
+        selectedSentence.sentenceIndex = sentenceIndex
+    }
+
+    fun unselectWord() {
+        if(selectedWordPos != -1) {
+            val previousItem = items[selectedWordPos]
+            previousItem.selectedWord = null
+            notifyItemChanged(selectedWordPos)
+            selectedWordPos = -1
+        }
+    }
+
+    fun nextSentence(){
+        changeSentence(selectedSentence.sentenceIndex + 1)
+    }
+
+    private fun changeSentence(index: Int){
+        var paragraphIndex = selectedSentence.paragraphIndex
+
+        if(paragraphIndex != -1){
+            val item = items[paragraphIndex]
+
+            val newIndex = when {
+                // Move to the next paragraph first sentence (hence the zero)
+                index >= item.sentences.size -> {
+                    paragraphIndex++
+                    0
+                }
+                // Move to the previous paragraph, last sentence (if paragraph exists)
+                index < 0 -> {
+                    paragraphIndex--
+                    if(paragraphIndex < 0) 0 else items[paragraphIndex].sentences.size - 1
+                }
+                else -> index
+            }
+
+            if(paragraphIndex in items.indices) {
+                unselectSentence()
+                selectSentence(paragraphIndex, newIndex)
+            }
+        }
+    }
+
+    fun previousSentence(){
+        changeSentence(selectedSentence.sentenceIndex - 1)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -75,15 +227,7 @@ class ParagraphAdapter(
             with(binding){
 
                 toggleParagraph.setOnClickListener {
-                    val previousExpandedPos = expandedItemPos
-                    val isExpanded = adapterPosition == expandedItemPos
-                    expandedItemPos = if(isExpanded) -1 else adapterPosition
-                    notifyItemChanged(previousExpandedPos)
-                    notifyItemChanged(adapterPosition)
-                }
-
-                translate.setOnClickListener {
-                    viewModel.translateParagraph(adapterPosition)
+                    removeExpanded()
                 }
 
                 var clickedWord: String? = null
@@ -118,21 +262,10 @@ class ParagraphAdapter(
             }
         }
 
-        fun bind(item: Words){
-            binding.paragraph.text = item.word
+        fun bind(item: ParagraphItem){
+            binding.paragraph.text = item.original
             binding.loadingParagraph.isVisible = isLoading
-            binding.translate.isVisible = !isLoading
-            binding.translatedParagraph.text = item.definition.ifBlank { noTranslationText }
-        }
-
-        private fun TextView.setHighlightedText(start: Int, end: Int){
-            val text = SpannableString(this.text)
-
-            //Remove previous
-            text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-
-            text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            this.setText(text, TextView.BufferType.SPANNABLE)
+            binding.translatedParagraph.text = item.translation.ifBlank { noTranslationText }
         }
 
         private fun findWordForRightHanded(
@@ -167,4 +300,31 @@ class ParagraphAdapter(
         }
 
     }
+
+    private fun removeExpanded(){
+        val previousExpandedPos = expandedItemPos
+        expandedItemPos = -1
+        notifyItemChanged(previousExpandedPos)
+    }
+
+    private fun TextView.setHighlightedText(start: Int, end: Int){
+        val text = SpannableString(this.text)
+
+        //Remove previous
+        text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+
+        text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        this.setText(text, TextView.BufferType.SPANNABLE)
+    }
+
+    data class ParagraphItem(
+        val original: CharSequence,
+        val indexes: List<Span>,
+        val sentences: List<String>,
+        var selectedIndex: Int = -1,
+        var selectedWord: Span? = null,
+        var translation: String = "",
+    )
+
+    data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)
 }

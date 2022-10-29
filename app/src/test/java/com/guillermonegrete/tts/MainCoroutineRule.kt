@@ -19,9 +19,7 @@ package com.guillermonegrete.tts
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.*
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import kotlin.coroutines.ContinuationInterceptor
@@ -61,4 +59,19 @@ class MainCoroutineRule : TestWatcher(), TestCoroutineScope by TestCoroutineScop
         super.finished(description)
         Dispatchers.resetMain()
     }
+}
+
+@ExperimentalCoroutinesApi
+class MainDispatcherRule(val dispatcher: TestDispatcher = StandardTestDispatcher()): TestWatcher() {
+
+    override fun starting(description: Description?) {
+        super.starting(description)
+        Dispatchers.setMain(dispatcher)
+    }
+
+    override fun finished(description: Description?) {
+        super.finished(description)
+        Dispatchers.resetMain()
+    }
+
 }

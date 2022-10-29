@@ -1,4 +1,4 @@
-package com.guillermonegrete.tts.main;
+package com.guillermonegrete.tts.main
 
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario

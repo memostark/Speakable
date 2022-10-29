@@ -197,5 +197,7 @@
     <string name="dialog">Dialog</string>
     <string name="refresh">Refresh</string>
     <string name="loading_page_error_msg">Error loading page</string>
+    <string name="previous_selection">previous selection</string>
+    <string name="next_selection">next selection</string>
 
 </resources>

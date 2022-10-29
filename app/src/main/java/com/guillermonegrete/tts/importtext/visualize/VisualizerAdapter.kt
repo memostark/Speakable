@@ -9,7 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.importtext.visualize.model.Span
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.utils.dpToPixel
 import java.text.BreakIterator
 import java.util.*

@@ -48,6 +48,10 @@ class FakeWordDataSource: WordDataSource {
         return translationsData[wordText] ?: throw Exception("Not found")
     }
 
+    override fun loadWord(word: String?, language: String?): LiveData<Words> {
+        TODO("Not yet implemented")
+    }
+
     @VisibleForTesting
     fun addTranslation(vararg words: Words) {
         for (word in words) {

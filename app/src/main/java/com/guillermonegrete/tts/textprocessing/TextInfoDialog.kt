@@ -585,7 +585,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         spinner.adapter = adapter
 
         spinner.setSelection(languageFromIndex, false)
-        spinner.onItemSelectedListener = SpinnerListener()
+        spinner.post { spinner.onItemSelectedListener = SpinnerListener() }
     }
 
     private fun setSpinner() {
@@ -601,7 +601,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         spinner.adapter = adapter
 
         spinner.setSelection(languagePreferenceIndex, false)
-        spinner.onItemSelectedListener = SpinnerListener()
+        // the post{} avoids the listener being called when setting
+        spinner.post { spinner.onItemSelectedListener = SpinnerListener() }
     }
 
     override fun onWordSaved(word: Words) {

@@ -131,13 +131,14 @@ class TextInfoDialogTest {
     }
 
     @Test
-    fun extraWord_showDictWithWordLayout(){
+    fun given_saved_extra_word_then_dict_layout_with_edit_icon(){
 
         val inputWord = Words("prueba", "ES", "test")
 
         val bundle = Bundle().apply {
             putString(TextInfoDialog.TEXT_KEY, inputWord.word)
             putParcelable(TextInfoDialog.WORD_KEY, inputWord)
+            putBoolean(TextInfoDialog.WORD_SAVED_KEY, true)
             putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
         }
 

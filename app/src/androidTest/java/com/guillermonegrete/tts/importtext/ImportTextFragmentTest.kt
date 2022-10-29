@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext
 
+import android.Manifest
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
@@ -19,7 +20,9 @@ import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.DefaultFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.di.WordRepositorySourceModule
@@ -30,6 +33,7 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -48,8 +52,14 @@ class ImportTextFragmentTest{
     @get:Rule
     var hiltRule = HiltAndroidRule(this)
 
+    @get:Rule
+    val runtimePermissionRule: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+
     @Inject
     lateinit var repository: DefaultFileRepository
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
 
     @get:Rule
     var testFolder = TemporaryFolder()
@@ -83,6 +93,7 @@ class ImportTextFragmentTest{
 
     @Test
     fun given_one_recent_file_when_clicked_then_navigate_to_visualizer(){
+        runTest { settingsRepository.setImportTabPosition(ImportTextFragment.FilesIndex) }
 
         val tempFile = testFolder.newFile("copied_file.epub")
 
@@ -104,6 +115,7 @@ class ImportTextFragmentTest{
 
     @Test
     fun when_file_added_then_navigate_to_visualizer(){
+        runTest { settingsRepository.setImportTabPosition(ImportTextFragment.FilesIndex) }
 
         launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)
 
@@ -126,7 +138,7 @@ class ImportTextFragmentTest{
 
         launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)
 
-        onView(withId(R.id.import_tab_layout)).perform(selectTabAtPosition(1))
+        onView(withId(R.id.import_tab_layout)).perform(selectTabAtPosition(ImportTextFragment.EnterTextIndex))
 
         // This can cause the tab to suddenly change, making the test fail
         // A fix hasn't been found yet

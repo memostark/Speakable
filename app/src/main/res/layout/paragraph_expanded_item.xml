@@ -36,7 +36,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:contentDescription="@string/expand"
-            app:icon="@drawable/ic_baseline_arrow_drop_down_24"
+            app:icon="@drawable/ic_baseline_close_24"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
             app:iconTint="?colorOnSurface"
@@ -57,20 +57,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/paragraph"
             tools:text="Maecenas bibendum nibh elit, nec elementum augue scelerisque nec. Integer ut commodo urna, vel congue purus. Ut tincidunt augue vel semper volutpat. Nulla facilisi. Ut pretium lobortis velit nec lobortis. Aenean in pellentesque dolor, eget pellentesque justo. Donec vehicula nec nibh vitae viverra. Aenean et lorem ac est posuere porta sed et est. Integer ullamcorper elit neque, vitae cursus augue cursus a. Phasellus fermentum nisi sit amet tortor maximus, non facilisis enim laoreet. Nullam interdum, eros at dignissim dictum, tellus tellus rutrum dui, vitae porta urna mi sit amet sapien. Ut aliquet mollis tortor, ut consequat quam ornare sed. " />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/translate"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/translate_description"
-            app:icon="@drawable/ic_translate_black_24dp"
-            app:iconGravity="textStart"
-            app:iconPadding="0dp"
-            app:iconTint="?colorOnSurface"
-            app:layout_constraintBottom_toBottomOf="@id/toggle_paragraph"
-            app:layout_constraintEnd_toStartOf="@+id/toggle_paragraph"
-            app:layout_constraintTop_toTopOf="@+id/toggle_paragraph" />
 
         <ProgressBar
             android:id="@+id/loadingParagraph"

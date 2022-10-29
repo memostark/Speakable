@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.data.source
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.liveData
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.db.Words
@@ -28,6 +29,10 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
 
     override fun getWordsStream(): LiveData<MutableList<Words>> {
         return MutableLiveData(wordsServiceData.values.toMutableList())
+    }
+
+    override fun getLocalWord(word: String, language: String): LiveData<Words> {
+        return  liveData { wordsServiceData[word]?.let { emit(it) } }
     }
 
     override fun getLanguagesISO(): MutableList<String> {
@@ -73,8 +78,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         languageFrom: String,
         languageTo: String
     ): Result<Translation> {
-        val word = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
-        return Result.Success(word)
+        val translation = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
+        return Result.Success(translation)
     }
 
     override fun deleteWord(word: String?) {
