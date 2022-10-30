@@ -7,7 +7,6 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -34,6 +33,7 @@ import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.abs
@@ -312,7 +312,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                     ProcessTextLayoutType.WORD_TRANSLATION -> setTranslationLayout(result.word)
                     ProcessTextLayoutType.SAVED_WORD -> setSavedWordLayout(result.word)
                     ProcessTextLayoutType.SENTENCE_TRANSLATION -> setSentenceLayout(result.word)
-                    else -> Log.e("TextInfoDialog", "Unknown layout type: ${result.type}")
+                    else -> Timber.e( "Unknown layout type: ${result.type}")
                 }
             }
             is GetLayoutResult.DictionarySuccess ->

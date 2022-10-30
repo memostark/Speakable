@@ -9,7 +9,6 @@ import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
-import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.activity.viewModels
@@ -17,7 +16,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.edit
-import androidx.core.view.*
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
@@ -27,6 +25,7 @@ import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 import java.lang.IllegalArgumentException
 import javax.inject.Inject
 import kotlin.math.abs
@@ -251,18 +250,18 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun createViewModel() {
         viewModel.apply {
-            dataLoading.observe(this@VisualizeTextActivity, {
-                progressBar.visibility = if(it) View.VISIBLE else View.INVISIBLE
-            })
+            dataLoading.observe(this@VisualizeTextActivity) {
+                progressBar.visibility = if (it) View.VISIBLE else View.INVISIBLE
+            }
 
             pages.observe(this@VisualizeTextActivity, EventObserver {
                 updateCurrentChapterLabel()
                 setUpPagerAndIndexLabel(it)
             })
 
-            book.observe(this@VisualizeTextActivity, {
-                if(it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
-                else{
+            book.observe(this@VisualizeTextActivity) {
+                if (it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
+                else {
                     updateCurrentChapterLabel()
                     currentChapterLabel.visibility = View.VISIBLE
                 }
@@ -270,14 +269,14 @@ class VisualizeTextActivity: AppCompatActivity() {
                 val showTOCBtn: ImageButton = findViewById(R.id.show_toc_btn)
                 val navPoints = it.tableOfContents.navPoints
 
-                val tocVisibility = if(navPoints.isEmpty()) {
+                val tocVisibility = if (navPoints.isEmpty()) {
                     View.GONE
-                }else{
+                } else {
                     showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
                     View.VISIBLE
                 }
                 showTOCBtn.visibility = tocVisibility
-            })
+            }
 
             translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
                 val translation = viewModel.translatedPages[it]
@@ -285,10 +284,10 @@ class VisualizeTextActivity: AppCompatActivity() {
                 pagesAdapter.notifyItemChanged(it)
             })
 
-            translationLoading.observe(this@VisualizeTextActivity, {
-                translationProgress.visibility = if(it) View.VISIBLE else View.INVISIBLE
-                if(it) bottomText.text = ""
-            })
+            translationLoading.observe(this@VisualizeTextActivity) {
+                translationProgress.visibility = if (it) View.VISIBLE else View.INVISIBLE
+                if (it) bottomText.text = ""
+            }
 
             translationError.observe(this@VisualizeTextActivity, EventObserver {
                 Toast.makeText(this@VisualizeTextActivity, getString(R.string.error_translation), Toast.LENGTH_SHORT).show()
@@ -675,7 +674,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             }catch (exception: IllegalArgumentException){
                 // Sometimes an exception will be thrown "pointerIndex out of range".
                 // Ignoring it seems to not affect the scaling gesture
-                Log.e(VisualizeTextActivity::class.simpleName, "Dispatching touch event to ViewPager error: ${exception.message}")
+                Timber.e("Dispatching touch event to ViewPager error: ${exception.message}")
             }
             true
         }

@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.ui
 
 import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +9,7 @@ import android.widget.TextView
 import androidx.annotation.ArrayRes
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
+import timber.log.Timber
 
 /**
  * Custom adapter for android spinner widget that shows different string values for closed view and drop down list view.
@@ -55,10 +55,9 @@ class DifferentValuesAdapter(
                     )
                 }
             }
-        } catch (e:ClassCastException) {
-            Log.e("ArrayAdapter", "You must supply a resource ID for a TextView")
-            throw IllegalStateException(
-                "ArrayAdapter requires the resource ID to be a TextView", e)
+        } catch (e: ClassCastException) {
+            Timber.e( "You must supply a resource ID for a TextView")
+            throw IllegalStateException("ArrayAdapter requires the resource ID to be a TextView", e)
         }
 
         val item = closedViewItems[position]

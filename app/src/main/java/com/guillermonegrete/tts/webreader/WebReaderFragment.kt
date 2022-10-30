@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.webreader
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.Html
-import android.util.Log
 import android.view.*
 import android.webkit.WebViewClient
 import android.widget.AdapterView
@@ -25,6 +24,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -58,7 +58,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 var isLoading = false
                 when(it){
                     is LoadResult.Error -> {
-                        Log.e(TAG, "Error loading page", it.exception)
+                        Timber.e("Error loading page", it.exception)
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true
@@ -261,7 +261,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                     is LoadResult.Error -> {
                         Toast.makeText(context, "Couldn't translate text", Toast.LENGTH_SHORT).show()
-                        Log.e(TAG, "Error translating selected text", result.exception)
+                        Timber.e("Error translating selected text", result.exception)
                         true
                     }
                     LoadResult.Loading -> {
@@ -313,9 +313,5 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
         webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-    }
-
-    companion object{
-        val TAG = this::class.simpleName
     }
 }

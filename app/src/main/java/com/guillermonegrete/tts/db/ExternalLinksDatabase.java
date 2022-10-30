@@ -2,7 +2,6 @@ package com.guillermonegrete.tts.db;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.room.Database;
@@ -10,10 +9,12 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
+import timber.log.Timber;
+
 @Database(entities = {ExternalLink.class}, version = 1)
 public abstract class ExternalLinksDatabase extends RoomDatabase {
 
-    private static ExternalLinksDatabase INSTANCE;
+    private static volatile ExternalLinksDatabase INSTANCE;
     private static final String DB_NAME = "external_links.db";
 
     public static ExternalLinksDatabase getDatabase(final Context context){
@@ -27,7 +28,7 @@ public abstract class ExternalLinksDatabase extends RoomDatabase {
                                 @Override
                                 public void onCreate(@NonNull SupportSQLiteDatabase db) {
                                     super.onCreate(db);
-                                    Log.d("WordsDatabase", "populating with data...");
+                                    Timber.d("populating with data...");
                                     new ExternalLinksDatabase.PopulateDbAsync(INSTANCE).execute();
                                 }
                             })

@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,6 +35,7 @@ import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import timber.log.Timber
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
@@ -73,7 +73,7 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
                     val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
                 } catch (e: SecurityException){
-                    Log.e(FilesFragment::class.simpleName, "Couldn't make the uri persistable")
+                    Timber.e("Couldn't make the uri persistable")
                 }
 
                 when(fileType){
