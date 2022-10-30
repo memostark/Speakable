@@ -6,6 +6,7 @@ import com.guillermonegrete.tts.main.SettingsFragment
 import com.guillermonegrete.tts.utils.DEFAULT_MODE
 import com.guillermonegrete.tts.utils.applyTheme
 import dagger.hilt.android.HiltAndroidApp
+import timber.log.Timber
 
 @HiltAndroidApp
 class SpeakableApplication: Application() {
@@ -16,5 +17,7 @@ class SpeakableApplication: Application() {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         val themePref = sharedPreferences.getString(SettingsFragment.PREF_THEME, DEFAULT_MODE)
         themePref?.let { applyTheme(themePref) }
+
+        if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())
     }
 }
