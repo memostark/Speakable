@@ -82,7 +82,7 @@ class EpubParser constructor(
         path: String,
         zipFileReader: ZipFileReader
     ): String{
-        return withContext(Dispatchers.Default){
+        return withContext(defaultDispatcher){
             val fullPath = if(basePath.isEmpty()) path else "$basePath/$path"
             currentFolder = File(fullPath).parent
 

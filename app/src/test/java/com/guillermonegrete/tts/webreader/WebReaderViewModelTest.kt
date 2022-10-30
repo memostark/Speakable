@@ -17,6 +17,8 @@ import io.mockk.every
 import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.jsoup.Jsoup
 import org.junit.Assert.*
 import org.junit.Before
@@ -24,10 +26,9 @@ import org.junit.Rule
 import org.junit.Test
 import java.io.IOException
 
+@ExperimentalCoroutinesApi
 class WebReaderViewModelTest {
 
-    private val testDispatcher = TestCoroutineDispatcher()
-    @ExperimentalCoroutinesApi
     @get:Rule
     var mainCoroutineRule = MainCoroutineRule()
 
@@ -49,42 +50,49 @@ class WebReaderViewModelTest {
         val getExternalLink = GetExternalLink(TestThreadExecutor(), TestMainThread(), externalLinksSource)
 
         webLinkDAO = FakeWebLinkDAO()
-        viewModel = WebReaderViewModel(getTranslationInteractor, getExternalLink, wordRepository, webLinkDAO, testDispatcher)
+        viewModel = WebReaderViewModel(getTranslationInteractor, getExternalLink, wordRepository, webLinkDAO, mainCoroutineRule.dispatcher)
 
         mockkStatic(Jsoup::class)
     }
 
     @Test
-    fun `Given no saved url link, when load page, then load success and new link`() {
+    fun `Given no saved url link, when load page, then load success and new link`() = runTest {
         val url = "https://example.com"
         val link = WebLink(url)
         every { Jsoup.connect(url).get() } returns Jsoup.parse("<body>My document</body>")
+
         viewModel.loadDoc(url, link)
+        advanceUntilIdle()
 
         assertEquals(LoadResult.Success("My document"), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
 
     @Test
-    fun `Given saved url link, when load page, then load success and saved link`() {
+    fun `Given saved url link, when load page, then load success and saved link`() = runTest {
         val url = "https://example.com"
         val link = WebLink(url, "en", id=10)
         webLinkDAO.insert(link)
         every { Jsoup.connect(url).get() } returns Jsoup.parse("<body>My document</body>")
+
         viewModel.loadDoc(url)
+        advanceUntilIdle()
 
         assertEquals(LoadResult.Success("My document"), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
 
     @Test
-    fun `Given connection error, when load page, then load error`() {
+    fun `Given connection error, when load page, then load error`() = runTest {
         val url = "https://example.com"
         val error = IOException()
-
         every { Jsoup.connect(url).get() } throws error
-        viewModel.loadDoc(url)
 
-        assertEquals(LoadResult.Error<Nothing>(error), viewModel.page.getOrAwaitValue())
+        viewModel.loadDoc(url)
+        advanceUntilIdle()
+
+        val result = viewModel.page.getOrAwaitValue()
+        assertTrue(result is LoadResult.Error)
+        assertTrue((result as LoadResult.Error).exception is IOException)
     }
 }

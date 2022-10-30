@@ -4,11 +4,12 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.db.BookFile
-import com.guillermonegrete.tts.getUnitLiveDataValue
+import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.importtext.visualize.io.FakeEpubFileManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -24,7 +25,7 @@ class ImportTextViewModelTest {
 
     @ExperimentalCoroutinesApi
     @get:Rule
-    var mainCoroutineRule = MainCoroutineRule()
+    var mainCoroutineRule = MainCoroutineRule(UnconfinedTestDispatcher())
 
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
@@ -41,12 +42,11 @@ class ImportTextViewModelTest {
     }
 
     @Test
-    fun load_files() = runBlockingTest{
+    fun load_files() = runTest {
         // TODO find how to test the status of the loading icon as well
 
         val files = viewModel.files
 
-        assertEquals(2, getUnitLiveDataValue(files).size)
-
+        assertEquals(2, files.getOrAwaitValue().size)
     }
 }

@@ -9,6 +9,7 @@ import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.*
@@ -16,9 +17,8 @@ import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.pauseDispatcher
-import kotlinx.coroutines.test.resumeDispatcher
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -68,7 +68,7 @@ class VisualizeTextViewModelTest {
 
         val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
 
-        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, getTranslationInteractor)
+        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, getTranslationInteractor, mainCoroutineRule.dispatcher)
         viewModel.pageSplitter = pageSplitter
         viewModel.fileReader = fileReader
 
@@ -79,25 +79,21 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun parse_book_and_show_loading_icon(){
-        // Pause dispatcher so we can verify initial values
-        mainCoroutineRule.pauseDispatcher()
+    fun parse_book_and_show_loading_icon() = runTest {
 
         // Epub parsing
-        runBlockingTest {
-            `when`(epubParser.parseBook(fileReader)).thenReturn(DEFAULT_BOOK)
-            viewModel.parseEpub()
-        }
+        `when`(epubParser.parseBook(fileReader)).thenReturn(DEFAULT_BOOK)
+        viewModel.parseEpub()
 
         // Then progress indicator is shown
-        assertTrue(getUnitLiveDataValue(viewModel.dataLoading))
+        assertTrue(viewModel.dataLoading.getOrAwaitValue())
 
-        mainCoroutineRule.resumeDispatcher()
+        advanceUntilIdle()
 
         // Then progress indicator is hidden
-        Assert.assertFalse(getUnitLiveDataValue(viewModel.dataLoading))
+        Assert.assertFalse(viewModel.dataLoading.getOrAwaitValue())
 
-        val resultBook = getUnitLiveDataValue(viewModel.book)
+        val resultBook = viewModel.book.getOrAwaitValue()
         assertEquals(DEFAULT_BOOK, resultBook)
     }
 
@@ -105,7 +101,7 @@ class VisualizeTextViewModelTest {
     fun parse_epub_with_multiple_pages_chapter(){
         val pages = listOf("This shouldn't be here", "This should be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
-        runBlockingTest { `when`(epubParser.getChapterBodyTextFromPath("ch1.html", fileReader)).thenReturn(DEFAULT_CHAPTER)}
+        runBlocking { `when`(epubParser.getChapterBodyTextFromPath("ch1.html", fileReader)).thenReturn(DEFAULT_CHAPTER)}
 
         parse_book(DEFAULT_BOOK)
 
@@ -117,7 +113,7 @@ class VisualizeTextViewModelTest {
     fun parse_epub_with_one_page_chapter(){
         val pages = listOf("This shouldn't be here")
         `when`(pageSplitter.getPages()).thenReturn(pages)
-        runBlockingTest { `when`(epubParser.getChapterBodyTextFromPath("ch1.html", fileReader)).thenReturn(DEFAULT_CHAPTER)}
+        runTest { `when`(epubParser.getChapterBodyTextFromPath("ch1.html", fileReader)).thenReturn(DEFAULT_CHAPTER)}
         parse_book(DEFAULT_BOOK)
 
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
@@ -134,21 +130,23 @@ class VisualizeTextViewModelTest {
 
         viewModel.swipeChapterRight()
         assertEquals(1, viewModel.currentChapter)
-        runBlockingTest { verify(epubParser).getChapterBodyTextFromPath("ch2.html", fileReader) }
+        runTest { advanceUntilIdle(); verify(epubParser).getChapterBodyTextFromPath("ch2.html", fileReader) }
     }
 
     @Test
-    fun swipes_to_previous_chapter(){
+    fun swipes_to_previous_chapter() = runTest {
         parse_book(TWO_CHAPTER_BOOK)
 
         viewModel.swipeChapterRight()
         assertEquals(1, viewModel.currentChapter)
-        runBlockingTest { verify(epubParser).getChapterBodyTextFromPath("ch2.html", fileReader) }
+        advanceUntilIdle()
+        verify(epubParser).getChapterBodyTextFromPath("ch2.html", fileReader)
 
         viewModel.swipeChapterLeft()
         assertEquals(0, viewModel.currentChapter)
         // Called twice, when first load and after swiping
-        runBlockingTest { verify(epubParser, times(2)).getChapterBodyTextFromPath("ch1.html", fileReader) }
+        advanceUntilIdle()
+        verify(epubParser, times(2)).getChapterBodyTextFromPath("ch1.html", fileReader)
     }
 
     @Test
@@ -171,12 +169,13 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun jumps_to_existing_chapter(){
+    fun jumps_to_existing_chapter() = runTest {
         parse_book(THREE_CHAPTER_BOOK)
 
         viewModel.jumpToChapter("ch3.html")
         assertEquals(2, viewModel.currentChapter)
-        runBlockingTest { verify(epubParser).getChapterBodyTextFromPath("ch3.html", fileReader) }
+        advanceUntilIdle()
+        verify(epubParser).getChapterBodyTextFromPath("ch3.html", fileReader)
     }
 
     @Test
@@ -202,7 +201,7 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun when_changed_to_previous_chapter_set_last_page(){
+    fun when_changed_to_previous_chapter_set_last_page() = runTest {
         // Set up
         val initialPage = 2
         val initialChar = 20
@@ -222,6 +221,7 @@ class VisualizeTextViewModelTest {
         // Second load, changed to chapter 0
         splitPages(5)
         viewModel.swipeChapterLeft()
+        advanceUntilIdle()
         val secondLoadPage = viewModel.getPage()
         assertEquals((5 - 1), secondLoadPage)
     }
@@ -275,7 +275,7 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun `Saves current file when finishing`(){
+    fun `Saves current file when finishing`() = runTest {
         // Set up
         val uri = "empty_uri"
         parse_book(DEFAULT_BOOK)
@@ -289,6 +289,7 @@ class VisualizeTextViewModelTest {
         viewModel.swipeChapterRight()
         viewModel.swipeChapterRight()
         viewModel.swipeChapterRight()
+        advanceUntilIdle()
 
         val initialPage = 5
         viewModel.currentPage = initialPage
@@ -320,7 +321,7 @@ class VisualizeTextViewModelTest {
 
         // Stop the coroutine that is parsing the book
         // We do this in order to simulate closing the activity before the parsing finishes
-        mainCoroutineRule.pauseDispatcher()
+//        mainCoroutineRule.pauseDispatcher()
 
         // Book parsing
         `when`(epubParser.basePath).thenReturn("")
@@ -340,7 +341,7 @@ class VisualizeTextViewModelTest {
         val uuid = "random"
         viewModel.saveBookData(lastReadDate, uuid)
 
-        mainCoroutineRule.resumeDispatcher()
+//        mainCoroutineRule.resumeDispatcher()
 
         assertEquals(0, fileRepository.filesServiceData.values.size)
     }
@@ -433,7 +434,7 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun `Translates page first time`(){
+    fun `Translates page first time`() = runTest {
 
         // Setup
         val pages = listOf("", "", "Página para traducir", "", "")
@@ -447,28 +448,30 @@ class VisualizeTextViewModelTest {
 
         // Request translation
         viewModel.translatePage(pageIndex)
+        advanceUntilIdle()
 
-        val resultIndex = getUnitLiveDataValue(viewModel.translatedPageIndex).getContentIfNotHandled() ?: -1
+        val resultIndex = viewModel.translatedPageIndex.getOrAwaitValue().getContentIfNotHandled() ?: -1
         assertEquals(expectedTranslation, viewModel.translatedPages[resultIndex])
     }
 
     @Test
-    fun `Translating page error`(){
+    fun `Translating page error`() = runTest {
         //Set up
         val pages = listOf("", "", "Página para traducir", "", "")
         splitPages(pages)
         parse_book(DEFAULT_BOOK)
 
         viewModel.translatePage(2)
+        advanceUntilIdle()
 
-        val errorMsg = getUnitLiveDataValue(viewModel.translationError)
+        val errorMsg = viewModel.translationError.getOrAwaitValue()
         assertEquals("Translation not found", errorMsg.peekContent())
     }
 
     private fun parse_book(book: Book){
         `when`(epubParser.basePath).thenReturn("")
 
-        runBlocking {
+        runTest {
             `when`(epubParser.parseBook(fileReader)).thenReturn(book)
             viewModel.parseEpub()
         }
