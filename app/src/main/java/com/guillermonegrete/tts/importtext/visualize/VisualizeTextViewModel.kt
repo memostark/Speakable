@@ -17,6 +17,7 @@ import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import timber.log.Timber
 import java.io.File
 import java.util.*
 import javax.inject.Inject
@@ -26,7 +27,8 @@ class VisualizeTextViewModel @Inject constructor(
     private val epubParser: EpubParser,
     private val settings: SettingsRepository,
     private val fileRepository: FileRepository,
-    private val getTranslationInteractor: GetLangAndTranslation
+    private val getTranslationInteractor: GetLangAndTranslation,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
     var pageSplitter: PageSplitter? = null
@@ -118,6 +120,7 @@ class VisualizeTextViewModel @Inject constructor(
             try {
                 parsedBook = epubParser.parseBook(reader)
             } catch (e: Exception){
+                Timber.e("Error parsing book", e)
                 return@launch
             }
 
@@ -259,7 +262,7 @@ class VisualizeTextViewModel @Inject constructor(
         _translationLoading.value = true
 
         viewModelScope.launch{
-            val result = withContext(Dispatchers.IO) { getTranslationInteractor(text, languageFrom, languageTo) }
+            val result = withContext(ioDispatcher) { getTranslationInteractor(text, languageFrom, languageTo) }
 
             when(result){
                 is Result.Success -> {

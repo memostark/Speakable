@@ -141,14 +141,14 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     // Coroutines
-    def coroutines_version = "1.4.0"
+    def coroutines_version = "1.6.4"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
 
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1"
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.2.1"
-    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1"
-    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.2.1"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
 
     // Navigation component
     def nav_version = "2.5.0"
