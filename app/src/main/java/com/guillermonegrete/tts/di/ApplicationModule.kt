@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.util.Xml
 import androidx.preference.PreferenceManager
 import androidx.room.Room
+import com.guillermonegrete.tts.BuildConfig
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.customtts.TTS
@@ -35,6 +36,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import kotlinx.coroutines.Dispatchers
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import org.xmlpull.v1.XmlPullParser
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -144,10 +147,23 @@ object ApplicationModule {
     @Provides
     fun bindExecutorService(): ExecutorService = Executors.newFixedThreadPool(4)
 
+    @Provides
+    fun provideOkHttp(): OkHttpClient {
+        val clientBuilder = OkHttpClient.Builder()
+
+        if(BuildConfig.DEBUG) {
+            val interceptor = HttpLoggingInterceptor()
+            interceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+            clientBuilder.addInterceptor(interceptor)
+        }
+        return clientBuilder.build()
+    }
+
     @Singleton
     @Provides
-    fun provideRetrofit(baseUrl: String): Retrofit = Retrofit.Builder()
+    fun provideRetrofit(client: OkHttpClient, baseUrl: String): Retrofit = Retrofit.Builder()
         .baseUrl(baseUrl)
+        .client(client)
         .addConverterFactory(MoshiConverterFactory.create().asLenient())
         .build()
 
