@@ -4,10 +4,10 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.Words
-import com.guillermonegrete.tts.getUnitLiveDataValue
-import kotlinx.coroutines.Dispatchers
+import com.guillermonegrete.tts.getOrAwaitValue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -22,7 +22,7 @@ class SavedWordsViewModelTest {
 
     @ExperimentalCoroutinesApi
     @get:Rule
-    var mainCoroutineRule = MainCoroutineRule()
+    var mainCoroutineRule = MainCoroutineRule(UnconfinedTestDispatcher())
 
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
@@ -35,21 +35,18 @@ class SavedWordsViewModelTest {
         val word3 = Words("azul", "es", "blue").apply { id = 3 }
         wordRepository.addWords(word1, word2, word3)
 
-        viewModel = SavedWordsViewModel(wordRepository, Dispatchers.Unconfined)
+        viewModel = SavedWordsViewModel(wordRepository, UnconfinedTestDispatcher())
     }
 
     @Test
-    fun load_all_words_from_repository(){
-
-        val words = getUnitLiveDataValue(viewModel.wordsList)
+    fun load_all_words_from_repository() = runTest {
+        val words = viewModel.wordsList.getOrAwaitValue()
         assertEquals(3, words.size)
     }
 
     @Test
-    fun load_all_languages_from_repository(){
-        runBlockingTest {
-            val langs = getUnitLiveDataValue(viewModel.languagesList)
-            assertEquals(2, langs.size)
-        }
+    fun load_all_languages_from_repository() = runTest {
+        val langs = viewModel.languagesList.getOrAwaitValue()
+        assertEquals(2, langs.size)
     }
 }
