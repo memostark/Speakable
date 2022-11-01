@@ -262,21 +262,20 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     // TODO filter in worker thread
     private void filterWords(){
+        List<Words> newWords;
         if(language_filter == null || language_filter.equals(ALL_OPTION)) {
-            wordListAdapter.setWordsList(words);
-
-        }else {
-
-            List<Words> filtered_word = new ArrayList<>();
+            newWords = words;
+        } else {
+            List<Words> filteredWords = new ArrayList<>();
             for (Words word : words) {
                 if (language_filter.equals(word.lang.toLowerCase())) {
-                    filtered_word.add(word);
+                    filteredWords.add(word);
                 }
             }
-
-            wordListAdapter.setWordsList(filtered_word);
+            newWords = filteredWords;
         }
 
+        wordListAdapter.setWordsList(newWords);
         wordListAdapter.getFilter().filter(textFilter);
     }
 
@@ -299,5 +298,10 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     @Override
     public void onLongClick() {
         ((AppCompatActivity) requireActivity()).startSupportActionMode(wordListAdapter.actionModeCallback);
+    }
+
+    @Override
+    public void onFiltered(boolean isListEmpty) {
+        binding.noLinksMessage.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
     }
 }

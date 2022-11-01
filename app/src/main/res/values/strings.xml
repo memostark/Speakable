@@ -181,6 +181,9 @@
     <string name="import_tab_layout">Import tab layout</string>
     <string name="add">Add</string>
 
+    <!--Saved words fragment-->
+    <string name="no_words_saved">No words found</string>
+
     <!--Files fragment-->
     <string name="pick_txt_file">Pick TXT file</string>
     <string name="pick_epub_file">Pick EPUB file</string>
