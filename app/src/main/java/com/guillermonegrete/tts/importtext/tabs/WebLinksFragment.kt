@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -60,7 +61,10 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                 viewModel.uiState.collect { uiState ->
                     when (uiState) {
                         is LoadResult.Error -> Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
-                        is LoadResult.Success -> adapter.submitList(uiState.data)
+                        is LoadResult.Success -> {
+                            binding.noLinksMessage.isVisible = uiState.data.isEmpty()
+                            adapter.submitList(uiState.data)
+                        }
                         LoadResult.Loading -> println("Loading links...")
                     }
                 }

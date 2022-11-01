@@ -16,7 +16,7 @@ import javax.inject.Inject
 @FlowPreview
 @ExperimentalCoroutinesApi
 @HiltViewModel
-class ImportTextViewModel @Inject constructor(
+class FilesViewModel @Inject constructor(
     private val fileRepository: FileRepository,
     fileManager: EpubFileManager
 ): ViewModel() {

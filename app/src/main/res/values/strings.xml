@@ -68,8 +68,6 @@
     <string name="reader_current_chapter_label">Chapter: %1$d of %2$d</string>
     <string name="table_of_contents">Table of contents</string>
     <string name="brightness_settings">Brightness settings</string>
-    <string name="pick_txt_file">Pick TXT file</string>
-    <string name="pick_epub_file">PICK EPUB FILE</string>
     <string name="recent_files_label">Recently opened files</string>
     <string name="error_translation">Error when translating</string>
     <string name="error">Error</string>
@@ -183,6 +181,12 @@
     <string name="import_tab_layout">Import tab layout</string>
     <string name="add">Add</string>
 
+    <!--Files fragment-->
+    <string name="pick_txt_file">Pick TXT file</string>
+    <string name="pick_epub_file">Pick EPUB file</string>
+    <string name="pick_file">pick file</string>
+    <string name="no_recent_files">No recent files</string>
+
     <!--Translation fragment-->
     <string name="language_to">Language to</string>
 
@@ -191,6 +195,7 @@
     <string name="open_link">Open link</string>
     <string name="add_new">add new</string>
     <string name="delete_item">Delete item?</string>
+    <string name="no_links_saved">No links saved</string>
 
     <!-- Web reader-->
     <string name="web_reader_lang_spinner_prompt">Select webpage language</string>

@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class RecentFilesAdapter(
-    private val viewModel: ImportTextViewModel
+    private val viewModel: FilesViewModel
 ): ListAdapter<BookFile, RecentFilesAdapter.ViewHolder>(BookFileDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -29,7 +29,7 @@ class RecentFilesAdapter(
     }
 
     class ViewHolder(
-        private val viewModel: ImportTextViewModel,
+        private val viewModel: FilesViewModel,
         itemView: View
     ): RecyclerView.ViewHolder(itemView){
         private val binding = RecentFileItemBinding.bind(itemView)

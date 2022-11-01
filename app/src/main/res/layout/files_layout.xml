@@ -25,6 +25,16 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"/>
 
+        <TextView
+            android:id="@+id/no_files_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/no_recent_files"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
     </FrameLayout>
 
     <LinearLayout
@@ -46,7 +56,8 @@
             app:backgroundTint="@color/grey"
             app:tint="?colorOnSurface"
             app:fabSize="mini"
-            app:rippleColor="@color/white"/>
+            app:rippleColor="@color/white"
+            android:contentDescription="@string/pick_txt_file" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/pick_epub_file_btn"
@@ -59,7 +70,8 @@
             app:fabSize="mini"
             app:backgroundTint="@color/grey"
             app:tint="?colorOnSurface"
-            app:rippleColor="@color/white"/>
+            app:rippleColor="@color/white"
+            android:contentDescription="@string/pick_epub_file" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/pick_file_fab"
@@ -69,7 +81,8 @@
             android:layout_marginBottom="8dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            app:rippleColor="@color/white"/>
+            app:rippleColor="@color/white"
+            android:contentDescription="@string/pick_file" />
 
     </LinearLayout>
 
