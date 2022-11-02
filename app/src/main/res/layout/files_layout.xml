@@ -53,7 +53,7 @@
             android:visibility="gone"
             android:alpha="0.0"
             app:srcCompat="@drawable/ic_txt_file_icon"
-            app:backgroundTint="@color/grey"
+            app:backgroundTint="?colorBackgroundFloating"
             app:tint="?colorOnSurface"
             app:fabSize="mini"
             app:rippleColor="@color/white"
@@ -68,7 +68,7 @@
             android:alpha="0.0"
             app:srcCompat="@drawable/ic_epub_icon"
             app:fabSize="mini"
-            app:backgroundTint="@color/grey"
+            app:backgroundTint="?colorBackgroundFloating"
             app:tint="?colorOnSurface"
             app:rippleColor="@color/white"
             android:contentDescription="@string/pick_epub_file" />
