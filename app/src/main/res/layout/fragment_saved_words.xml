@@ -18,16 +18,6 @@
         app:layout_constraintStart_toStartOf="@+id/recyclerview_saved_words"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerview_saved_words"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/select_language_spinner"
-        tools:listitem="@layout/saved_word_item" />
-
     <androidx.appcompat.widget.SearchView
         android:id="@+id/search_words"
         android:layout_width="0dp"
@@ -36,5 +26,37 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/select_language_spinner"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/search_barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="select_language_spinner,search_words" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerview_saved_words"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/search_barrier"
+        tools:listitem="@layout/saved_word_item" />
+
+    <TextView
+        android:id="@+id/no_links_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_words_saved"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:visibility="gone"
+        android:layout_marginBottom="?actionBarSize"
+        android:elevation="3dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/search_barrier"
+        tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -127,6 +127,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
                 filteredWords = (List<Words>) results.values;
+                listener.onFiltered(filteredWords.isEmpty());
                 notifyDataSetChanged();
             }
         };
@@ -205,5 +206,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         void showTextInfoDialog(String text, Words word);
 
         void onLongClick();
+
+        void onFiltered(boolean isListEmpty);
     }
 }

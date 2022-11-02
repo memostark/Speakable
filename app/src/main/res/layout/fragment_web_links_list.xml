@@ -17,6 +17,20 @@
         tools:context=".importtext.tabs.WebLinksFragment"
         tools:listitem="@layout/fragment_web_links" />
 
+    <TextView
+        android:id="@+id/no_links_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_links_saved"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:visibility="gone"
+        android:layout_marginBottom="?actionBarSize"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/add_btn"
         android:layout_width="wrap_content"

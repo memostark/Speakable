@@ -17,9 +17,9 @@ import org.junit.Test
 
 @FlowPreview
 @ExperimentalCoroutinesApi
-class ImportTextViewModelTest {
+class FilesViewModelTest {
 
-    private lateinit var viewModel: ImportTextViewModel
+    private lateinit var viewModel: FilesViewModel
 
     private lateinit var fileRepository: FakeFileRepository
 
@@ -38,7 +38,7 @@ class ImportTextViewModelTest {
 
         fileRepository.addTasks(files1, files2)
 
-        viewModel = ImportTextViewModel(fileRepository, FakeEpubFileManager())
+        viewModel = FilesViewModel(fileRepository, FakeEpubFileManager())
     }
 
     @Test

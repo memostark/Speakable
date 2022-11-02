@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,7 +26,7 @@ import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FilesLayoutBinding
 import com.guillermonegrete.tts.databinding.RecentFilesMenuBinding
-import com.guillermonegrete.tts.importtext.ImportTextViewModel
+import com.guillermonegrete.tts.importtext.FilesViewModel
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.RecentFilesAdapter
 import com.guillermonegrete.tts.importtext.UriValidator
@@ -52,7 +53,7 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
     private var fileType = ImportedFileType.TXT
 
-    private val viewModel: ImportTextViewModel by viewModels()
+    private val viewModel: FilesViewModel by viewModels()
 
     private var fabOpen = false
     private var fabBottomMargin = 0
@@ -95,7 +96,9 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
         with(binding){
 
             pickFileFab.setOnClickListener { toggleButtons() }
-            (fabContainer.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = fabBottomMargin
+            fabContainer.setBottomMargin(fabBottomMargin)
+            // the view is centered but it's not taking into account the bottom nav bar, add the missing offset
+            noFilesMessage.setBottomMargin(noFilesMessage.marginBottom + requireContext().actionBarSize / 2)
 
             pickTxtFileBtn.apply {
                 setOnClickListener {
@@ -150,6 +153,7 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
             binding.recentFilesList.adapter = adapter
 
             files.observe(viewLifecycleOwner) {
+                binding.noFilesMessage.isVisible = it.isEmpty()
                 adapter.submitList(it)
             }
 
@@ -325,6 +329,10 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
             override fun onAnimationStart(animation: Animator?) {}
         }
+    }
+
+    private fun View.setBottomMargin(margin: Int) {
+        (layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = margin
     }
 
     companion object{
