@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.main;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.MenuProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -11,8 +12,10 @@ import androidx.navigation.ui.BottomNavigationViewKt;
 import androidx.navigation.ui.NavigationUI;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.behavior.HideBottomViewOnScrollBehavior;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.databinding.ActivityMainBinding;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -30,11 +33,13 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
 
     NavController navController;
     AppBarConfiguration appBarConfiguration;
+    private ActivityMainBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         PreferenceManager.setDefaultValues(this, R.xml.preferences_main, false);
         setActionBar();
 
@@ -49,10 +54,10 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
     }
 
     private void setupNavController(){
-        NavHostFragment navHostFragment  = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_fragment_container);
+        var navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_fragment_container);
         if(navHostFragment == null) return;
         navController = navHostFragment.getNavController();
-        BottomNavigationView navView = findViewById(R.id.bottom_nav_view);
+        var navView = binding.bottomNavView;
         BottomNavigationViewKt.setupWithNavController(navView, navController);
 
         navController.addOnDestinationChangedListener((nController, destination, arguments) -> {
@@ -88,5 +93,20 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
     public boolean onSupportNavigateUp() {
         // Necessary for making the back button in the action bar work
         return NavigationUI.navigateUp(navController, appBarConfiguration);
+    }
+
+    public void showBottomBar() {
+        var navView = binding.bottomNavView;
+        var layoutParams = navView.getLayoutParams();
+        if (layoutParams instanceof CoordinatorLayout.LayoutParams) {
+            var coordinatorLayoutBehavior =
+                    ((CoordinatorLayout.LayoutParams) layoutParams).getBehavior();
+            if (coordinatorLayoutBehavior instanceof HideBottomViewOnScrollBehavior) {
+                @SuppressWarnings("unchecked")
+                var behavior =
+                        (HideBottomViewOnScrollBehavior<BottomNavigationView>) coordinatorLayoutBehavior;
+                behavior.slideUp(navView);
+            }
+        }
     }
 }

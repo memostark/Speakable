@@ -37,6 +37,7 @@ import android.widget.Toast;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.databinding.FragmentSavedWordsBinding;
 import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.main.MainActivity;
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter;
 
@@ -303,5 +304,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     @Override
     public void onFiltered(boolean isListEmpty) {
         binding.noLinksMessage.setVisibility(isListEmpty ? View.VISIBLE : View.GONE);
+        if (isListEmpty && requireActivity() instanceof MainActivity)
+            ((MainActivity) requireActivity()).showBottomBar();
     }
 }
