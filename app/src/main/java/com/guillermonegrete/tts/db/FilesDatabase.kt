@@ -6,10 +6,11 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    version = 5,
+    version = 6,
     entities = [BookFile::class, WebLink::class],
     autoMigrations = [
-        AutoMigration (from = 4, to = 5)
+        AutoMigration (from = 4, to = 5),
+        AutoMigration (from = 5, to = 6),
     ]
 
 )

@@ -71,17 +71,17 @@ class WebReaderViewModel @Inject constructor(
             wrapEspressoIdlingResource {
                 try {
                     val page = getPage(url)
-                    _page.value = LoadResult.Success(page)
+                    _page.value = LoadResult.Success(page.content)
+                    cacheWebLink = webLinkDAO.getLink(url) ?: link ?: WebLink(url, page.title)
+                    _weblink.value = cacheWebLink
                 } catch (ex: IOException){
                     _page.value = LoadResult.Error(ex)
                 }
-                cacheWebLink = webLinkDAO.getLink(url) ?: link ?: WebLink(url)
-                _weblink.value = cacheWebLink
             }
         }
     }
 
-    private suspend fun getPage(url: String): String = withContext(ioDispatcher){
+    private suspend fun getPage(url: String): Page = withContext(ioDispatcher){
         val result = runCatching {
             val doc = Jsoup.connect(url).get()
             doc.body().select("menu, header, footer, logo, nav, search, link, button, btn, ad, script, style, img").remove()
@@ -89,7 +89,7 @@ class WebReaderViewModel @Inject constructor(
             for (element in doc.select("*")) {
                 if (!element.hasText() && element.isBlock) element.remove()
             }
-            doc.body().html()
+            Page(doc.title(), doc.body().html())
         }
 
         return@withContext result.getOrThrow()
@@ -279,4 +279,6 @@ class WebReaderViewModel @Inject constructor(
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
 
     data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
+
+    data class Page(val title: String, val content: String)
 }

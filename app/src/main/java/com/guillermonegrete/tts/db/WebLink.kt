@@ -11,6 +11,7 @@ import java.util.*
 )
 data class WebLink(
     val url: String,
+    val title: String? = null,
     var language: String? = null,
     var lastRead: Calendar = Calendar.getInstance(),
     @PrimaryKey(autoGenerate = true) val id: Int = 0
