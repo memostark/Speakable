@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.isVisible
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -38,6 +39,9 @@ class WebLinkAdapter(
         private val contentView: TextView = binding.content
 
         fun bind(link: WebLink){
+            binding.title.isVisible = link.title != null
+            binding.title.text = link.title
+
             contentView.text = link.url
             contentView.setOnClickListener {
                 val action = ImportTextFragmentDirections.toWebReaderFragment(link.url)
