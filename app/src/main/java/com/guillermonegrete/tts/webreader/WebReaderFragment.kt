@@ -227,9 +227,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setTranslateBottomPanel() {
         with(binding) {
             translatedText.movementMethod = ScrollingMovementMethod()
+            // This disables scrolling the bottom sheet when scrolling the translation text
+            // This is done to allow the TextView to scroll up
+            translatedText.setOnTouchListener { view, _ ->
+                view.parent.requestDisallowInterceptTouchEvent(true)
+                false
+            }
             val bottomSheetBehavior = BottomSheetBehavior.from(translationBottomSheet)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
