@@ -20,8 +20,11 @@ fun TextView.findWordForRightHanded(
     var startIndex = newOffset
     var endIndex = newOffset
     try {
-        while (Character.isLetterOrDigit(str[startIndex])) {
-            startIndex--
+        if(Character.isLetterOrDigit(str[startIndex])){
+            do {
+                startIndex--
+            } while (Character.isLetterOrDigit(str[startIndex]))
+            startIndex++
         }
     } catch (e: StringIndexOutOfBoundsException) {
         startIndex = 0
