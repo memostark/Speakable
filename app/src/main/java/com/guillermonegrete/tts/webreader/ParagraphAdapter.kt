@@ -98,7 +98,7 @@ class ParagraphAdapter(
                 e ?: return false
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
                 val wordSpan = binding.paragraph.findWordForRightHanded(offset)
-                val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end).trim()
+                val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
 
                 // If a highlighted sentence was tapped just unselect it and don't select a word
                 val item = items[adapterPosition]
