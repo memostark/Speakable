@@ -16,6 +16,8 @@ import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,6 +27,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @AndroidEntryPoint
@@ -154,6 +157,26 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             translate.isVisible = true
             previousSelection.isVisible = true
             nextSelection.isVisible = true
+            setAdapterListeners()
+        }
+    }
+
+    private fun setAdapterListeners() {
+        val paragraphAdapter = adapter ?: return
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                paragraphAdapter.sentenceClicked.collect {
+
+                    val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
+                    if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
+                        paragraphAdapter.unselectSentence()
+                    } else {
+                        val itemIndex = paragraphAdapter.selectedSentence.paragraphIndex
+                        paragraphAdapter.notifyItemChanged(itemIndex)
+                    }
+                }
+            }
         }
     }
 

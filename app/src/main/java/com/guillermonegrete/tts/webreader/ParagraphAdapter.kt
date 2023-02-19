@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
@@ -17,6 +18,9 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
 import com.guillermonegrete.tts.utils.findWordForRightHanded
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class ParagraphAdapter(
     val items: List<ParagraphItem>,
@@ -31,6 +35,13 @@ class ParagraphAdapter(
 
     val selectedSentence = SelectedSentence()
     var selectedWordPos = -1
+
+    private val _sentenceClicked = MutableSharedFlow<String>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        BufferOverflow.DROP_OLDEST
+    )
+    val sentenceClicked = _sentenceClicked.asSharedFlow()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -82,6 +93,8 @@ class ParagraphAdapter(
             if(item.selectedIndex != -1){
                 val span = item.indexes[item.selectedIndex]
                 binding.paragraph.setHighlightedText(span.start, span.end)
+                val wordSpan = item.selectedWord
+                if(wordSpan != null) binding.paragraph.addHighlightedText(wordSpan.start, wordSpan.end)
             } else {
                 val span = item.selectedWord
                 if(span != null) binding.paragraph.setHighlightedText(span.start, span.end)
@@ -105,7 +118,8 @@ class ParagraphAdapter(
                 if(item.selectedIndex != -1) {
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
-                        unselectSentence()
+                        item.selectedWord = wordSpan
+                        _sentenceClicked.tryEmit(clickedWord)
                         return super.onSingleTapConfirmed(e)
                     }
                 }
@@ -158,6 +172,7 @@ class ParagraphAdapter(
         if(previousIndex != -1) {
             val previousItem = items[previousIndex]
             previousItem.selectedIndex = -1
+            previousItem.selectedWord = null
             notifyItemChanged(previousIndex)
             selectedSentence.paragraphIndex = -1
             selectedSentence.sentenceIndex = -1
@@ -314,6 +329,14 @@ class ParagraphAdapter(
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
         text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        this.setText(text, TextView.BufferType.SPANNABLE)
+    }
+
+    private fun TextView.addHighlightedText(start: Int, end: Int){
+        val text = SpannableString(this.text)
+
+        val color = Color.argb(128, 255, 0, 0)
+        text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
 
