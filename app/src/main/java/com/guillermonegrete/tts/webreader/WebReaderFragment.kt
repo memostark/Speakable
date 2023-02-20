@@ -171,9 +171,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
                     if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
                         paragraphAdapter.unselectSentence()
+                        setWordSheetViews(false)
                     } else {
                         val itemIndex = paragraphAdapter.selectedSentence.paragraphIndex
                         paragraphAdapter.notifyItemChanged(itemIndex)
+                        setWordSheetViews(true)
                     }
                 }
             }
@@ -286,6 +288,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         moreInfoBtn.setOnClickListener {
                             viewModel.getLinksForWord(word.word, word.lang)
                         }
+                        // When showing the sheet, the word views are hidden by default
+                        setWordSheetViews(false)
 
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         menuBar.isVisible = false
@@ -345,5 +349,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
         webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+    }
+
+    private fun setWordSheetViews(isVisible: Boolean){
+        binding.topBorderWordView.isVisible = isVisible
+        binding.wordTranslation.isVisible = isVisible
+        binding.moreInfoWordBtn.isVisible = isVisible
     }
 }
