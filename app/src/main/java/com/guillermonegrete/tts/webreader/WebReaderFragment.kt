@@ -173,9 +173,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         paragraphAdapter.unselectSentence()
                         setWordSheetViews(false)
                     } else {
+                        viewModel.translateWordInSentence(it)
                         val itemIndex = paragraphAdapter.selectedSentence.paragraphIndex
                         paragraphAdapter.notifyItemChanged(itemIndex)
-                        setWordSheetViews(true)
                     }
                 }
             }
@@ -288,8 +288,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         moreInfoBtn.setOnClickListener {
                             viewModel.getLinksForWord(word.word, word.lang)
                         }
-                        // When showing the sheet, the word views are hidden by default
-                        setWordSheetViews(false)
 
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         menuBar.isVisible = false
@@ -305,6 +303,32 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         notesText.text = ""
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
+                        // When showing the sheet, the word views are hidden by default
+                        setWordSheetViews(false)
+                        false
+                    }
+                }
+            }
+
+            viewModel.wordInfo.observe(viewLifecycleOwner) { result ->
+                barLoading.isInvisible = when(result){
+                    is LoadResult.Success -> {
+                        val word = result.data.word
+                        wordTranslation.text = word.definition
+                        moreInfoWordBtn.setOnClickListener {
+                            viewModel.getLinksForWord(word.word, word.lang)
+                        }
+                        setWordSheetViews(true)
+                        true
+                    }
+                    is LoadResult.Error -> {
+                        Toast.makeText(context, "Couldn't translate word", Toast.LENGTH_SHORT).show()
+                        Timber.e("Error translating word in selected text", result.exception)
+                        true
+                    }
+                    LoadResult.Loading -> {
+                        wordTranslation.text = ""
+                        moreInfoWordBtn.isInvisible = true
                         false
                     }
                 }

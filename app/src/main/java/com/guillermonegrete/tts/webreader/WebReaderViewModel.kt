@@ -50,6 +50,9 @@ class WebReaderViewModel @Inject constructor(
     private val _textInfo = MutableLiveData<LoadResult<WordResult>>()
     val textInfo: LiveData<LoadResult<WordResult>> = _textInfo
 
+    private val _wordInfo = MutableLiveData<LoadResult<WordResult>>()
+    val wordInfo: LiveData<LoadResult<WordResult>> = _wordInfo
+
     private val _clickedWord = MutableLiveData<WordAndLinks>()
     val clickedWord: LiveData<WordAndLinks> = _clickedWord
 
@@ -146,7 +149,15 @@ class WebReaderViewModel @Inject constructor(
     private var job: Job? = null
 
     fun translateText(text: String){
-        _textInfo.value = LoadResult.Loading
+        translateText(text, _textInfo)
+    }
+
+    fun translateWordInSentence(text: String){
+        translateText(text, _wordInfo)
+    }
+
+    private fun translateText(text: String, observer: MutableLiveData<LoadResult<WordResult>>) {
+        observer.value = LoadResult.Loading
 
         job?.cancel() // cancel the previous job otherwise you'll receive its updates
         job = viewModelScope.launch {
@@ -157,10 +168,10 @@ class WebReaderViewModel @Inject constructor(
                     if(it == null) {
                         getTranslation(text) { translation ->
                             val word = Words(text, translation.src, translation.translatedText)
-                            _textInfo.value = LoadResult.Success(WordResult(word, false))
+                            observer.value = LoadResult.Success(WordResult(word, false))
                         }
                     }  else {
-                        _textInfo.value = LoadResult.Success(WordResult(it, true))
+                        observer.value = LoadResult.Success(WordResult(it, true))
                     }
                 }
         }
