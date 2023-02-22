@@ -168,7 +168,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 paragraphAdapter.sentenceClicked.collect {
 
-                    val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
+                    val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
                     if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
                         paragraphAdapter.unselectSentence()
                         setWordSheetViews(false)
@@ -202,7 +202,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun setBottomPanel(){
         with(binding) {
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-            val translateSheetBehavior = BottomSheetBehavior.from(translationBottomSheet)
+            val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             bottomSheetBehavior.addBottomSheetCallback(object :
                 BottomSheetBehavior.BottomSheetCallback() {
@@ -254,7 +254,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setTranslateBottomPanel() {
-        with(binding) {
+        with(binding.transSheet) {
             translatedText.movementMethod = ScrollingMovementMethod()
             // This disables scrolling the bottom sheet when scrolling the translation text
             // This is done to allow the TextView to scroll up
@@ -262,14 +262,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 view.parent.requestDisallowInterceptTouchEvent(true)
                 false
             }
-            val bottomSheetBehavior = BottomSheetBehavior.from(translationBottomSheet)
+            val bottomSheetBehavior = BottomSheetBehavior.from(root)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
             bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         adapter?.unselectWord()
-                        menuBar.isVisible = true
+                        binding.menuBar.isVisible = true
                     }
                 }
 
@@ -290,7 +290,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
 
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                        menuBar.isVisible = false
+                        binding.menuBar.isVisible = false
                         true
                     }
                     is LoadResult.Error -> {
@@ -354,7 +354,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun setBackButtonNav() {
         val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
         // If translate sheet is showing, hide it otherwise use normal back press
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             when {
@@ -370,14 +370,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun hideBottomSheets() {
         val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet)
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
         webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
     private fun setWordSheetViews(isVisible: Boolean){
-        binding.topBorderWordView.isVisible = isVisible
-        binding.wordTranslation.isVisible = isVisible
-        binding.moreInfoWordBtn.isVisible = isVisible
+        val sheet = binding.transSheet
+        sheet.topBorderWordView.isVisible = isVisible
+        sheet.wordTranslation.isVisible = isVisible
+        sheet.moreInfoWordBtn.isVisible = isVisible
     }
 }
