@@ -39,26 +39,28 @@ class WebLinkAdapter(
         private val contentView: TextView = binding.content
 
         fun bind(link: WebLink){
-            binding.title.isVisible = link.title != null
-            binding.title.text = link.title
+            with(binding){
+                title.isVisible = link.title != null
+                title.text = link.title
 
-            contentView.text = link.url
-            contentView.setOnClickListener {
-                val action = ImportTextFragmentDirections.toWebReaderFragment(link.url)
-                itemView.findNavController().navigate(action)
+                contentView.text = link.url
+                root.setOnClickListener {
+                    val action = ImportTextFragmentDirections.toWebReaderFragment(link.url)
+                    itemView.findNavController().navigate(action)
+                }
+
+                root.setOnLongClickListener {
+                    AlertDialog.Builder(itemView.context).setTitle(R.string.delete_item)
+                        .setPositiveButton(android.R.string.ok) { _, _ -> onDeleteCallback(link) }
+                        .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
+                        .show()
+                    true
+                }
+
+                val formattedDate = DateUtils.getRelativeTimeSpanString(link.lastRead.timeInMillis, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS)
+                lastOpened.text = formattedDate
+                lang.text = link.language
             }
-
-            contentView.setOnLongClickListener {
-                AlertDialog.Builder(itemView.context).setTitle(R.string.delete_item)
-                    .setPositiveButton(android.R.string.ok) { _, _ -> onDeleteCallback(link) }
-                    .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
-                    .show()
-                true
-            }
-
-            val formattedDate = DateUtils.getRelativeTimeSpanString(link.lastRead.timeInMillis, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS)
-            binding.lastOpened.text = formattedDate
-            binding.lang.text = link.language
         }
 
         override fun toString(): String {
