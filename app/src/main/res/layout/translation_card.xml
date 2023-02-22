@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/translation_bottom_sheet"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    app:strokeColor="?colorOnSurface"
+    app:strokeWidth="1dp"
+    app:behavior_hideable="true"
+    app:behavior_skipCollapsed="true"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?colorSurface"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="16dp">
+
+        <ImageButton
+            android:id="@+id/more_info_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="@string/dialog"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:src="@drawable/ic_outline_info_24"
+            android:tint="?colorOnSurface"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/translated_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:scrollbars="vertical"
+            android:maxLines="4"
+            app:layout_constraintBottom_toTopOf="@+id/notes_text"
+            app:layout_constraintEnd_toStartOf="@+id/more_info_btn"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintVertical_chainStyle="packed"
+            app:layout_constrainedHeight="true"
+            tools:text="A secondary color provides more ways to accent and distinguish your product. Having a secondary color is optional, and should be applied sparingly to accent select parts of your UI." />
+
+        <TextView
+            android:id="@+id/notes_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/word_translation"
+            app:layout_constraintEnd_toEndOf="@+id/translated_text"
+            app:layout_constraintStart_toStartOf="@+id/translated_text"
+            app:layout_constraintTop_toBottomOf="@+id/translated_text"
+            tools:text="Saved notes text"
+            tools:visibility="visible" />
+
+        <View
+            android:id="@+id/top_border_word_view"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?colorOnSurface"
+            android:layout_marginHorizontal="16dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/word_translation"
+            tools:visibility="visible"/>
+
+        <TextView
+            android:id="@+id/word_translation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:lines="1"
+            android:paddingVertical="8dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/translated_text"
+            app:layout_constraintStart_toStartOf="@+id/translated_text"
+            app:layout_constraintTop_toBottomOf="@id/notes_text"
+            tools:text="Word translation"
+            tools:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/more_info_word_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="@string/dialog"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:src="@drawable/ic_outline_info_24"
+            android:tint="?colorOnSurface"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/word_translation"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/top_border_word_view"
+            tools:visibility="visible" />
+
+        <ProgressBar
+            android:id="@+id/bar_loading"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
