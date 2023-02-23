@@ -513,11 +513,14 @@ public class ScreenTextService extends Service {
 
     private void createForeground(String action){
         Intent intentHide = new Intent(this, Receiver.class);
-        PendingIntent stopServiceIntent = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, PendingIntent.FLAG_CANCEL_CURRENT);
+        int stopFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        PendingIntent stopServiceIntent = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, stopFlags);
 
         Intent intent = new Intent(this, ScreenTextService.class);
         intent.setAction(action);
-        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
+        int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
+        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, flags);
 
         String CHANNEL_IMPORTANCE;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
