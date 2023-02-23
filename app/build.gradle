@@ -182,7 +182,7 @@ dependencies {
     lintChecks "com.google.dagger:dagger-lint-aar:$dagger_version"
 
     // LeakCanary
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.5'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 
     // Jsoup HTML parser
     implementation 'org.jsoup:jsoup:1.13.1'
