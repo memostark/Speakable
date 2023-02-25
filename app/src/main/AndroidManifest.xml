@@ -54,7 +54,8 @@
             android:theme="@style/Theme.Transparent"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"/>
-        <service android:name="com.guillermonegrete.tts.services.ScreenTextService"/>
+        <service android:name="com.guillermonegrete.tts.services.ScreenTextService"
+            android:foregroundServiceType="mediaProjection"/>
         <receiver android:name="com.guillermonegrete.tts.services.Receiver"
             android:enabled="true"
             android:process=":remote"/>

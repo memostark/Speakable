@@ -5,6 +5,7 @@ import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizerOptions
+import timber.log.Timber
 
 class FirebaseTextProcessor: ImageProcessingSource{
 
@@ -18,7 +19,8 @@ class FirebaseTextProcessor: ImageProcessingSource{
                     bitmapCopy.recycle()
                 }
                 .addOnFailureListener {
-                    callback.onFailure(it.toString())
+                    Timber.e(it, "Error detecting text")
+                    callback.onFailure(it)
                     bitmapCopy.recycle()
                 }
     }
@@ -30,7 +32,8 @@ class FirebaseTextProcessor: ImageProcessingSource{
                     callback.onTextDetected(text, it)
                 }
                 .addOnFailureListener {
-                    callback.onFailure(it.toString())
+                    Timber.e(it, "Error identifying language")
+                    callback.onFailure(it)
                 }
     }
 }

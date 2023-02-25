@@ -43,7 +43,10 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
+import com.google.android.material.snackbar.Snackbar;
+import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.data.LoadResult;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.imageprocessing.*;
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
@@ -123,7 +126,7 @@ public class ScreenTextService extends Service {
     private Observer<String> langDetectedObserver;
     private Observer<String> langToPreferenceObserver;
     private Observer<Boolean> detectTextErrorObserver;
-    private Observer<Words> textTranslatedObserver;
+    private Observer<LoadResult<Words>> textTranslatedObserver;
 
 
     @Nullable
@@ -325,8 +328,26 @@ public class ScreenTextService extends Service {
         };
         viewModel.getDetectTextError().observeForever(detectTextErrorObserver);
 
-        textTranslatedObserver = this::showPopUpTranslation;
+        textTranslatedObserver = result -> {
+            if(result instanceof LoadResult.Success){
+                var wordResult = (LoadResult.Success<Words>) result;
+                showPopUpTranslation(wordResult.getData());
+            } else if(result instanceof  LoadResult.Error) {
+                var errorResult = (LoadResult.Error<Words>) result;
+                handleTranslationError(errorResult.getException());
+            }
+        };
         viewModel.getTextTranslated().observeForever(textTranslatedObserver);
+    }
+
+    private void handleTranslationError(Exception error) {
+        String errorText;
+        if(error instanceof MlKitException) {
+            errorText = "Waiting for the text recognition module to be downloaded";
+        } else {
+            errorText = "Couldn't detect text from image";
+        }
+        Snackbar.make(icon_container, errorText, Snackbar.LENGTH_SHORT).show();
     }
 
     private void setTrashViewVerticalPosition(){
