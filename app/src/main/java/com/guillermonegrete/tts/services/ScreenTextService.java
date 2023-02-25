@@ -146,7 +146,7 @@ public class ScreenTextService extends Service {
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mMetrics = getResources().getDisplayMetrics();
-        mMediaProjectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        mMediaProjectionManager = (MediaProjectionManager) getApplication().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
         bubble = service_layout.findViewById(R.id.image_bubble);
