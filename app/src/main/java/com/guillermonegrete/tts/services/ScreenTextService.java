@@ -43,6 +43,7 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.LoadResult;
@@ -346,9 +347,7 @@ public class ScreenTextService extends Service {
         } else {
             errorText = "Couldn't detect text from image";
         }
-        var toast = Toast.makeText(this, errorText, Toast.LENGTH_SHORT);
-        positionToastVertical(toast, icon_container, 0);
-        toast.show();
+        Snackbar.make(icon_container, errorText, Snackbar.LENGTH_SHORT).show();
     }
 
     private void setTrashViewVerticalPosition(){
@@ -365,12 +364,6 @@ public class ScreenTextService extends Service {
                 }
             });
         }
-    }
-
-    public void positionToastVertical(Toast toast, View view, int offsetY) {
-        // compute toast offsets
-        int toastY = view.getTop() - view.getHeight() + offsetY;
-        toast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, toastY);
     }
 
     private boolean isSnipViewVisible(){
