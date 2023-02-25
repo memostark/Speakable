@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.customtts.CustomTTS
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen
@@ -41,8 +42,8 @@ class ScreenTextViewModel(
     private val _onError = MutableLiveData<String>()
     val onError: LiveData<String> = _onError
 
-    private val _textTranslated = MutableLiveData<Words>()
-    val textTranslated: LiveData<Words> = _textTranslated
+    private val _textTranslated = MutableLiveData<LoadResult<Words>>()
+    val textTranslated: LiveData<LoadResult<Words>> = _textTranslated
 
     private var isPlayingValue = false
     private var detectedText = ""
@@ -66,7 +67,7 @@ class ScreenTextViewModel(
                         tts.initializeTTS(language, ttsListener)
                     }
 
-                    override fun onError(message: String) {
+                    override fun onError(error: Exception) {
                         isPlayingValue = false
                         setStopState()
                         _detectTextError.value = true
@@ -85,10 +86,10 @@ class ScreenTextViewModel(
                     detectLanguageAndTranslate(text)
                 }
 
-                override fun onError(message: String) {
+                override fun onError(error: Exception) {
                     isPlayingValue = false
                     setStopState()
-                    _detectTextError.value = true
+                    _textTranslated.value = LoadResult.Error(error)
                 }
             }
         )
@@ -102,11 +103,11 @@ class ScreenTextViewModel(
             text,
             object: GetLangAndTranslation.Callback {
                 override fun onTranslationAndLanguage(word: Words) {
-                    _textTranslated.value = word
+                    _textTranslated.value = LoadResult.Success(word)
                 }
 
                 override fun onDataNotAvailable() {
-                    println("Error translating")
+                    _textTranslated.value = LoadResult.Error(RuntimeException())
                 }
             },
             "auto",

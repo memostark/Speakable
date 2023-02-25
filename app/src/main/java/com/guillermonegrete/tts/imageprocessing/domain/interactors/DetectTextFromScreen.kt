@@ -40,17 +40,17 @@ class DetectTextFromScreen @Inject constructor (
 
     private val imageProcessorCallback = object: ImageProcessingSource.Callback{
         override fun onTextDetected(text: String, language: String) {
-            mMainThread.post{callback?.onTextDetected(text, language)}
+            mMainThread.post{ callback?.onTextDetected(text, language) }
         }
 
-        override fun onFailure(message: String) {
-            mMainThread.post{callback?.onError(message)}
+        override fun onFailure(error: Exception) {
+            mMainThread.post{ callback?.onError(error) }
         }
     }
 
     interface Callback{
         fun onTextDetected(text: String, language: String)
 
-        fun onError(message: String)
+        fun onError(error: Exception)
     }
 }
