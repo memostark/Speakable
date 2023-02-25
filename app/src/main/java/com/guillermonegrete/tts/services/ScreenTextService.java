@@ -284,7 +284,7 @@ public class ScreenTextService extends Service {
                 )
         );
 
-        clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboard = (ClipboardManager) getApplication().getSystemService(Context.CLIPBOARD_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 //        setTextRecognizer();
         setClipboardCallback();
