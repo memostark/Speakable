@@ -109,11 +109,13 @@ public class ScreenTextService extends Service {
     @Inject GetLangAndTranslation getTranslationInteractor;
 
     /**
-     * Types of service
+     * This type of service display the floating icon button and listens for clipboard events.
      */
     public static final String NORMAL_SERVICE = "startService";
+    /**
+     * This type of service listens to clipboard events, no layout added.
+     */
     public static final String NO_FLOATING_ICON_SERVICE = "startNoFloatingIcon";
-    public static final String LONGPRESS_SERVICE = "showServiceLongPress";
 
     private Point screenSize;
 
@@ -497,7 +499,8 @@ public class ScreenTextService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent!=null) {
             String action = intent.getAction();
-            System.out.println("Service intent action " + action);
+            Intent notificationIntent = new Intent(this, ScreenTextService.class);
+            intent.setAction(action);
             if(NORMAL_SERVICE.equals(action) ) {
                 addViews();
                 if (!hasPermission) {
@@ -516,32 +519,29 @@ public class ScreenTextService extends Service {
                 );
 
                 setViewModel();
-            }else if(NO_FLOATING_ICON_SERVICE.equals(action)){
-                action=LONGPRESS_SERVICE;
-            }else if(LONGPRESS_SERVICE.equals(action)) {
+            } else if(NO_FLOATING_ICON_SERVICE.equals(action)) {
+                // For this case, when the notification is clicked it should show the bubble layout.
+                // Before that the screenshot permission is necessary and then it recreates the service as "NORMAL_SERVICE"
                 if(!hasPermission){
-                    final Intent intentGetPermission = new Intent(this, AcquireScreenshotPermission.class);
-                    intentGetPermission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intentGetPermission);
+                    notificationIntent = new Intent(this, AcquireScreenshotPermission.class);
+                    notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
             }
-            createForeground(action);
-        }else {
+            createForeground(notificationIntent);
+        } else {
             stopSelf();
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void createForeground(String action){
-        Intent intentHide = new Intent(this, Receiver.class);
+    private void createForeground(Intent intent) {
+        var intentHide = new Intent(this, Receiver.class);
         int stopFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
-        PendingIntent stopServiceIntent = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, stopFlags);
+        var stopServiceIntent = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, stopFlags);
 
-        Intent intent = new Intent(this, ScreenTextService.class);
-        intent.setAction(action);
         int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
-        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, flags);
+        var pendingIntent = PendingIntent.getActivity(this, 0, intent, flags);
 
         String CHANNEL_IMPORTANCE;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -550,14 +550,14 @@ public class ScreenTextService extends Service {
             CHANNEL_IMPORTANCE = "service_notification";
         }
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_IMPORTANCE)
+        var notification = new NotificationCompat.Builder(this, CHANNEL_IMPORTANCE)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Clipboard translation is activated")
                 .setContentText("Tap to start")
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText("Tap to start text recognition"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .addAction(R.drawable.ic_close, getString(R.string.close_notification),stopServiceIntent)
+                .addAction(R.drawable.ic_close, getString(R.string.close_notification), stopServiceIntent)
                 .setOngoing(true)
                 .setContentIntent(pendingIntent).build();
 
