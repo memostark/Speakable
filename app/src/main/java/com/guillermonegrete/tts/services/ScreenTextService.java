@@ -499,8 +499,11 @@ public class ScreenTextService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent!=null) {
             String action = intent.getAction();
-            Intent notificationIntent = new Intent(this, ScreenTextService.class);
-            intent.setAction(action);
+            int pendingFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
+            var notificationIntent = new Intent(this, ScreenTextService.class);
+            notificationIntent.setAction(action);
+            var pendingIntent = PendingIntent.getService(this, 0, notificationIntent, pendingFlags);
+
             if(NORMAL_SERVICE.equals(action) ) {
                 addViews();
                 if (!hasPermission) {
@@ -525,23 +528,21 @@ public class ScreenTextService extends Service {
                 if(!hasPermission){
                     notificationIntent = new Intent(this, AcquireScreenshotPermission.class);
                     notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, pendingFlags);
                 }
             }
-            createForeground(notificationIntent);
+            createForeground(pendingIntent);
         } else {
             stopSelf();
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void createForeground(Intent intent) {
+    private void createForeground(PendingIntent intent) {
         var intentHide = new Intent(this, Receiver.class);
         int stopFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
         var stopServiceIntent = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, stopFlags);
-
-        int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
-        var pendingIntent = PendingIntent.getActivity(this, 0, intent, flags);
 
         String CHANNEL_IMPORTANCE;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -559,7 +560,7 @@ public class ScreenTextService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .addAction(R.drawable.ic_close, getString(R.string.close_notification), stopServiceIntent)
                 .setOngoing(true)
-                .setContentIntent(pendingIntent).build();
+                .setContentIntent(intent).build();
 
         startForeground(1337, notification);
     }
