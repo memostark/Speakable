@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.TextRecognizerOptions
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import timber.log.Timber
 
 class FirebaseTextProcessor: ImageProcessingSource{
