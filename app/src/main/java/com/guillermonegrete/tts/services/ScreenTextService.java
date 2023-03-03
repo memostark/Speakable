@@ -26,7 +26,6 @@ import android.os.IBinder;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.Observer;
 
@@ -47,13 +46,13 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.LoadResult;
+import com.guillermonegrete.tts.databinding.ServiceProcesstextBinding;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.imageprocessing.*;
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customviews.BubbleView;
-import com.guillermonegrete.tts.customviews.SnippingView;
 import com.guillermonegrete.tts.customviews.TrashView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.main.SettingsFragment;
@@ -70,7 +69,7 @@ public class ScreenTextService extends Service {
 
     private WindowManager windowManager;
     private MediaProjectionManager mMediaProjectionManager;
-    private View service_layout;
+    private ServiceProcesstextBinding binding;
     private TrashView trash_layout;
     private GestureDetector gestureDetector;
     @Inject CustomTTS tts;
@@ -82,13 +81,6 @@ public class ScreenTextService extends Service {
     private static Intent permissionIntent = null;
 
     private static DisplayMetrics mMetrics;
-    private SnippingView snipView;
-    private BubbleView bubble;
-    private ImageButton playButton;
-    private ImageButton translateButton;
-    private ProgressBar playLoadingIcon;
-    private ConstraintLayout icon_container;
-    private FrameLayout play_icons_container;
     private WindowManager.LayoutParams windowParams;
     private WindowManager.LayoutParams mParamsTrash;
 
@@ -137,13 +129,10 @@ public class ScreenTextService extends Service {
         return null;
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate() {
         super.onCreate();
         setTheme(R.style.AppTheme);
-        service_layout = View.inflate(this, R.layout.service_processtext, null);
-        trash_layout = new TrashView(this);
         hasPermission = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -151,140 +140,12 @@ public class ScreenTextService extends Service {
         mMediaProjectionManager = (MediaProjectionManager) getApplication().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
-        bubble = service_layout.findViewById(R.id.image_bubble);
-        snipView = service_layout.findViewById(R.id.snip_view);
-        icon_container = service_layout.findViewById(R.id.icon_container);
-        play_icons_container = service_layout.findViewById(R.id.play_icons_container);
-
-        playButton = service_layout.findViewById(R.id.play_icon_button);
-        translateButton = service_layout.findViewById(R.id.translate_icon_button);
-        playLoadingIcon = service_layout.findViewById(R.id.play_loading_icon);
 
         screenSize = new Point();
         windowManager.getDefaultDisplay().getSize(screenSize);
 
         windowParams = new WindowManager.LayoutParams();
-        defaultSnippingView();
-
         mParamsTrash = new WindowManager.LayoutParams();
-        defaultTrashViewParams();
-
-        setTrashViewVerticalPosition();
-
-        bubble.setOnTouchListener(new View.OnTouchListener() {
-            private int initialX;
-            private int initialY;
-            private float initialTouchX;
-            private float initialTouchY;
-            int xByTouch;
-            int yByTouch;
-
-            //-------https://stackoverflow.com/questions/19538747/how-to-use-both-ontouch-and-onclick-for-an-imagebutton
-            @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                if (gestureDetector.onTouchEvent(event)) {
-
-                    trash_layout.dismiss();
-                    if(isSnipViewVisible()) setFloatingIconView();
-                    else showSnippingView();
-
-                    return true;
-                } else if (!isSnipViewVisible()) {
-                    // your code for move and drag
-                    final int state = bubble.getState();
-                    trash_layout.onTouchFloatingView(event, windowParams.x, windowParams.y);
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-                            bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
-                            bubble.mAnimationHandler.sendAnimationMessage(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
-                            initialX = windowParams.x;
-                            initialY = windowParams.y;
-                            initialTouchX = event.getRawX();
-                            initialTouchY = event.getRawY();
-                            //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
-                            return true;
-
-                        case MotionEvent.ACTION_UP:
-                            if (state == STATE_INTERSECTING) {
-                                bubble.setFinishing();
-                                trash_layout.setScaleTrashIcon(false);
-                                if (service_layout != null)
-                                    windowManager.removeView(service_layout);
-                                if(trash_layout!=null)
-                                    windowManager.removeView(trash_layout);
-                                windowParams.x = 0;
-                                windowParams.y = 100;
-                            }else animateToEdge();
-
-                            bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
-                            return true;
-
-                        case MotionEvent.ACTION_MOVE:
-                            xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
-                            yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
-//                            System.out.println("x0: " + initialX + " y0: " + initialY);
-//                            System.out.println("x: " + xByTouch + " y: " + yByTouch);
-
-                            final boolean isIntersecting = isIntersectingWithTrash();
-                            final boolean isIntersect = state == STATE_INTERSECTING;
-                            if (isIntersecting) {
-                                bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
-                                int containerWidth = icon_container.getWidth() / 2;
-                                int containerHeight = icon_container.getHeight() / 2;
-
-                                windowParams.x = (int) trash_layout.getTrashIconCenterX() - containerWidth;
-                                windowParams.y = (int) trash_layout.getTrashIconCenterY() - containerHeight;
-                            }else{
-                                windowParams.x = xByTouch;
-                                windowParams.y = yByTouch;
-                            }
-                            if(isIntersecting && !isIntersect){
-                                bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                                trash_layout.setScaleTrashIcon(true);
-                            }else if(!isIntersecting && isIntersect){
-                                bubble.mAnimationHandler.setState(STATE_NORMAL);
-                                trash_layout.setScaleTrashIcon(false);
-                            }
-                            /*Rect rect = new Rect();
-                            getBubbleWindowDrawingRect(rect);
-                            trash_layout.setRect(rect);
-                            trash_layout.invalidate();*/
-
-                            //Log.i(TAG,"X: "+windowParams.x+" Y: "+ windowParams.y);
-                            windowManager.updateViewLayout(service_layout, windowParams);
-                            return true;
-                    }
-                }
-                return true;
-            }
-
-            private boolean isIntersectingWithTrash() {
-
-                trash_layout.getWindowDrawingRect(mTrashViewRect);
-                getBubbleWindowDrawingRect(mFloatingViewRect);
-
-                return Rect.intersects(mTrashViewRect, mFloatingViewRect);
-            }
-
-            private void getBubbleWindowDrawingRect(Rect outRect) {
-                outRect.set(xByTouch, yByTouch, xByTouch + bubble.getWidth(), yByTouch + bubble.getHeight());
-
-            }
-        });
-
-        playButton.setOnClickListener(view ->
-                viewModel.onPlayClick(
-                        new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
-                        snipView.getSnipRectangle()
-                )
-        );
-
-        translateButton.setOnClickListener(v ->
-                viewModel.onTranslateClick(
-                        new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
-                        snipView.getSnipRectangle()
-                )
-        );
 
         clipboard = (ClipboardManager) getApplication().getSystemService(Context.CLIPBOARD_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -292,8 +153,24 @@ public class ScreenTextService extends Service {
         setClipboardCallback();
     }
 
+    private void destroyLayouts() {
+        if (binding != null)
+            windowManager.removeView(binding.getRoot());
+        if(trash_layout != null)
+            windowManager.removeView(trash_layout);
+        // release all the reference to views to avoid leaks
+        binding = null;
+        trash_layout = null;
+        viewModel.isPlaying().removeObserver(isPlayingObserver);
+        viewModel.getTtsLoading().removeObserver(loadingObserver);
+        isPlayingObserver = null;
+        loadingObserver = null;
+    }
+
     private void setViewModel() {
         // Because service has no lifecycle we have to observeForever, don't forget to unbind onDestroy.
+        var playButton = binding.playIconButton;
+        var playLoadingIcon = binding.playLoadingIcon;
         loadingObserver = isLoading -> {
             if(isLoading){
                 playLoadingIcon.setVisibility(View.VISIBLE);
@@ -349,7 +226,7 @@ public class ScreenTextService extends Service {
         } else {
             errorText = "Couldn't detect text from image";
         }
-        Snackbar.make(icon_container, errorText, Snackbar.LENGTH_SHORT).show();
+        Snackbar.make(binding.iconContainer, errorText, Snackbar.LENGTH_SHORT).show();
     }
 
     private void setTrashViewVerticalPosition(){
@@ -369,7 +246,7 @@ public class ScreenTextService extends Service {
     }
 
     private boolean isSnipViewVisible(){
-        return snipView.getVisibility() == View.VISIBLE;
+        return binding.snipView.getVisibility() == View.VISIBLE;
     }
 
     private final ClipboardManager.OnPrimaryClipChangedListener clipboardListener = new ClipboardManager.OnPrimaryClipChangedListener(){
@@ -435,9 +312,9 @@ public class ScreenTextService extends Service {
     }
 
     private void showSnippingView(){
-        FrameLayout.LayoutParams frameLayoutParams = (FrameLayout.LayoutParams) icon_container.getLayoutParams();
+        var frameLayoutParams = (FrameLayout.LayoutParams) binding.iconContainer.getLayoutParams();
         frameLayoutParams.setMargins(0,0,0,35);
-        snipView.setVisibility(View.VISIBLE);
+        binding.snipView.setVisibility(View.VISIBLE);
         showContainerActionButtons();
         setContainerBackground();
         windowParams.x=0;
@@ -447,40 +324,40 @@ public class ScreenTextService extends Service {
         windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_FULLSCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-        windowManager.updateViewLayout(service_layout, windowParams);
+        windowManager.updateViewLayout(binding.getRoot(), windowParams);
     }
 
     private void setFloatingIconView(){
-        snipView.setVisibility(View.GONE);
+        binding.snipView.setVisibility(View.GONE);
 
         hideContainerActionButtons();
         removeContainerBackground();
 
         defaultSnippingView();
-        windowManager.updateViewLayout(service_layout, windowParams);
-        icon_container.post(this::animateToEdge);
+        windowManager.updateViewLayout(binding.getRoot(), windowParams);
+        binding.iconContainer.post(this::animateToEdge);
     }
 
     private void setContainerBackground(){
-        icon_container.setBackgroundResource(R.drawable.slot_background);
+        binding.iconContainer.setBackgroundResource(R.drawable.slot_background);
     }
 
     private void removeContainerBackground(){
-        icon_container.setBackgroundResource(0);
+        binding.iconContainer.setBackgroundResource(0);
     }
 
     private void showContainerActionButtons(){
-        play_icons_container.setVisibility(View.VISIBLE);
-        translateButton.setVisibility(View.VISIBLE);
+        binding.playIconsContainer.setVisibility(View.VISIBLE);
+        binding.translateIconButton.setVisibility(View.VISIBLE);
     }
 
     private void hideContainerActionButtons() {
-        play_icons_container.setVisibility(View.GONE);
-        translateButton.setVisibility(View.GONE);
+        binding.playIconsContainer.setVisibility(View.GONE);
+        binding.translateIconButton.setVisibility(View.GONE);
     }
 
     private void showPopUpTranslation(Words word){
-        View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, (ViewGroup) service_layout, false);
+        View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, binding.getRoot(), false);
         TextView translationTextView = layout.findViewById(R.id.text_view_popup_translation);
         translationTextView.setText(word.definition);
         TextView languageFrom = layout.findViewById(R.id.language_from_text);
@@ -492,7 +369,7 @@ public class ScreenTextService extends Service {
         popupWindow.setFocusable(true);
         popupWindow.setElevation(24);
         popupWindow.setAnimationStyle(R.style.PopUpWindowAnimation);
-        popupWindow.showAtLocation(icon_container, Gravity.BOTTOM, 0, 24);
+        popupWindow.showAtLocation(binding.iconContainer, Gravity.BOTTOM, 0, 24);
     }
 
     @Override
@@ -576,19 +453,134 @@ public class ScreenTextService extends Service {
         return "my_service";
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void addViews(){
-        if(service_layout.getWindowToken() == null) {
-            windowManager.addView(service_layout, windowParams);
+        if(binding == null) {
+            binding = ServiceProcesstextBinding.inflate(LayoutInflater.from(this));
+            var bubble = binding.imageBubble;
+            var icon_container = binding.iconContainer;
+            defaultSnippingView();
+
+            trash_layout = new TrashView(this);
+            defaultTrashViewParams();
+            setTrashViewVerticalPosition();
+
+            bubble.setOnTouchListener(new View.OnTouchListener() {
+                private int initialX;
+                private int initialY;
+                private float initialTouchX;
+                private float initialTouchY;
+                int xByTouch;
+                int yByTouch;
+
+                //-------https://stackoverflow.com/questions/19538747/how-to-use-both-ontouch-and-onclick-for-an-imagebutton
+                @Override
+                public boolean onTouch(View view, MotionEvent event) {
+                    if (gestureDetector.onTouchEvent(event)) {
+
+                        trash_layout.dismiss();
+                        if(isSnipViewVisible()) setFloatingIconView();
+                        else showSnippingView();
+
+                        return true;
+                    } else if (!isSnipViewVisible()) {
+                        // your code for move and drag
+                        final int state = bubble.getState();
+                        trash_layout.onTouchFloatingView(event, windowParams.x, windowParams.y);
+                        switch (event.getAction()) {
+                            case MotionEvent.ACTION_DOWN:
+                                bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
+                                bubble.mAnimationHandler.sendAnimationMessage(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
+                                initialX = windowParams.x;
+                                initialY = windowParams.y;
+                                initialTouchX = event.getRawX();
+                                initialTouchY = event.getRawY();
+                                //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
+                                return true;
+
+                            case MotionEvent.ACTION_UP:
+                                if (state == STATE_INTERSECTING) {
+                                    bubble.setFinishing();
+                                    trash_layout.setScaleTrashIcon(false);
+                                    destroyLayouts();
+                                    windowParams.x = 0;
+                                    windowParams.y = 100;
+                                }else animateToEdge();
+
+                                bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
+                                return true;
+
+                            case MotionEvent.ACTION_MOVE:
+                                xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
+                                yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
+
+                                final boolean isIntersecting = isIntersectingWithTrash();
+                                final boolean isIntersect = state == STATE_INTERSECTING;
+                                if (isIntersecting) {
+                                    bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
+                                    int containerWidth = icon_container.getWidth() / 2;
+                                    int containerHeight = icon_container.getHeight() / 2;
+
+                                    windowParams.x = (int) trash_layout.getTrashIconCenterX() - containerWidth;
+                                    windowParams.y = (int) trash_layout.getTrashIconCenterY() - containerHeight;
+                                }else{
+                                    windowParams.x = xByTouch;
+                                    windowParams.y = yByTouch;
+                                }
+                                if(isIntersecting && !isIntersect){
+                                    bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                                    trash_layout.setScaleTrashIcon(true);
+                                }else if(!isIntersecting && isIntersect){
+                                    bubble.mAnimationHandler.setState(STATE_NORMAL);
+                                    trash_layout.setScaleTrashIcon(false);
+                                }
+                                windowManager.updateViewLayout(binding.getRoot(), windowParams);
+                                return true;
+                        }
+                    }
+                    return true;
+                }
+
+                private boolean isIntersectingWithTrash() {
+
+                    trash_layout.getWindowDrawingRect(mTrashViewRect);
+                    getBubbleWindowDrawingRect(mFloatingViewRect);
+
+                    return Rect.intersects(mTrashViewRect, mFloatingViewRect);
+                }
+
+                private void getBubbleWindowDrawingRect(Rect outRect) {
+                    outRect.set(xByTouch, yByTouch, xByTouch + bubble.getWidth(), yByTouch + bubble.getHeight());
+
+                }
+            });
+
+            var snipView = binding.snipView;
+            binding.playIconButton.setOnClickListener(view ->
+                    viewModel.onPlayClick(
+                            new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
+                            snipView.getSnipRectangle()
+                    )
+            );
+
+            binding.translateIconButton.setOnClickListener(v ->
+                    viewModel.onTranslateClick(
+                            new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
+                            snipView.getSnipRectangle()
+                    )
+            );
+
+            windowManager.addView(binding.getRoot(), windowParams);
             // Runs after the view has been drawn
-            icon_container.post(this::animateToEdge);
+            binding.iconContainer.post(this::animateToEdge);
+            windowManager.addView(trash_layout, mParamsTrash);
         }
-        if(trash_layout.getWindowToken() == null) windowManager.addView(trash_layout, mParamsTrash);
     }
 
     //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
     private void animateToEdge() {
         int currentX = windowParams.x;
-        int bubbleWidth =  icon_container.getMeasuredWidth();
+        int bubbleWidth =  binding.iconContainer.getMeasuredWidth();
         ValueAnimator ani;
         int toPosition;
         if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2 * bubbleWidth / 3;
@@ -600,7 +592,7 @@ public class ScreenTextService extends Service {
 
         ani.addUpdateListener(animation -> {
             windowParams.x = (Integer) animation.getAnimatedValue();
-            windowManager.updateViewLayout(service_layout, windowParams);
+            windowManager.updateViewLayout(binding.getRoot(), windowParams);
         });
         ani.setDuration(350L);
         ani.setInterpolator(new AccelerateDecelerateInterpolator());
@@ -611,7 +603,8 @@ public class ScreenTextService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (service_layout != null) {
+        if (binding != null) {
+            var service_layout = binding.getRoot();
             if(service_layout.getWindowToken() != null) windowManager.removeView(service_layout);
         }
         if (trash_layout != null) {
