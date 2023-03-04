@@ -58,6 +58,7 @@ class SnippingView : View {
     }
 
     private fun setBitmaps(context: Context) {
+        // Screen dimensions without the navigation bar because we don't draw over it
         wParent = context.resources.displayMetrics.widthPixels
         hParent = context.resources.displayMetrics.heightPixels
 

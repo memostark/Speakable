@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.imageprocessing.domain.interactors
 
-import android.graphics.Bitmap
 import android.graphics.Rect
 import com.guillermonegrete.tts.AbstractInteractor
 import com.guillermonegrete.tts.MainThread
@@ -12,7 +11,7 @@ import javax.inject.Inject
 class DetectTextFromScreen @Inject constructor (
     executor: ExecutorService,
     mainThread: MainThread,
-    private val imageProcessor: ImageProcessingSource
+    private val imageProcessor: ImageProcessingSource,
 ): AbstractInteractor(executor, mainThread) {
 
     private var screenCaptor: ScreenImageCaptor? = null

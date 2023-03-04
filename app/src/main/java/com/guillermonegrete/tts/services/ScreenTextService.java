@@ -142,7 +142,7 @@ public class ScreenTextService extends Service {
         gestureDetector = new GestureDetector(this, new SingleTapConfirm());
 
         screenSize = new Point();
-        windowManager.getDefaultDisplay().getSize(screenSize);
+        windowManager.getDefaultDisplay().getRealSize(screenSize);
 
         windowParams = new WindowManager.LayoutParams();
         mParamsTrash = new WindowManager.LayoutParams();
