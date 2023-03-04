@@ -8,7 +8,6 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Handler
-import android.os.Looper
 import android.util.DisplayMetrics
 
 /*
@@ -104,7 +103,7 @@ class ScreenImageCaptor(
             DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC
     }
 
-    interface Callback{
+    fun interface Callback{
         fun onImageCaptured(image: Bitmap)
     }
 }

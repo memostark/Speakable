@@ -31,11 +31,9 @@ class DetectTextFromScreen @Inject constructor (
     }
 
     override fun run() {
-        screenCaptor?.getImage(areaRect, object : ScreenImageCaptor.Callback{
-            override fun onImageCaptured(image: Bitmap) {
-                imageProcessor.detectText(image, imageProcessorCallback)
-            }
-        })
+        screenCaptor?.getImage(areaRect) { image ->
+            imageProcessor.detectText(image, imageProcessorCallback)
+        }
     }
 
     private val imageProcessorCallback = object: ImageProcessingSource.Callback{
