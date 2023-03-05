@@ -23,6 +23,7 @@ import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.text.method.ScrollingMovementMethod;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -46,6 +47,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.LoadResult;
+import com.guillermonegrete.tts.databinding.PopUpTranslationBinding;
 import com.guillermonegrete.tts.databinding.ServiceProcesstextBinding;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.imageprocessing.*;
@@ -357,15 +359,14 @@ public class ScreenTextService extends Service {
     }
 
     private void showPopUpTranslation(Words word){
-        View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, binding.getRoot(), false);
-        TextView translationTextView = layout.findViewById(R.id.text_view_popup_translation);
-        translationTextView.setText(word.definition);
-        TextView languageFrom = layout.findViewById(R.id.language_from_text);
-        languageFrom.setText(word.lang);
-        TextView languageTo = layout.findViewById(R.id.language_to_text);
-        languageTo.setText(languageToPreference);
-        PopupWindow popupWindow = new PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+        var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(this));
+        popupBinding.textViewPopupTranslation.setText(word.definition);
+        popupBinding.textViewPopupTranslation.setMovementMethod(new ScrollingMovementMethod());
+        popupBinding.languageFromText.setText(word.lang);
+        popupBinding.languageToText.setText(languageToPreference);
+
+        var popupWindow = new PopupWindow(popupBinding.getRoot(), ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popupWindow.setFocusable(true);
         popupWindow.setElevation(24);
         popupWindow.setAnimationStyle(R.style.PopUpWindowAnimation);
