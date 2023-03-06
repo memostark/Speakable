@@ -180,6 +180,7 @@
     <string name="about">About</string>
     <string name="import_tab_layout">Import tab layout</string>
     <string name="add">Add</string>
+    <string name="unknown_language">Unknown</string>
 
     <!--Saved words fragment-->
     <string name="no_words_saved">No words found</string>

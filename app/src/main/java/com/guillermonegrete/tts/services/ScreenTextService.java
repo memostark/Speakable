@@ -62,6 +62,9 @@ import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -120,9 +123,12 @@ public class ScreenTextService extends Service {
     private Observer<Boolean> isPlayingObserver;
     private Observer<String> hasErrorObserver;
     private Observer<String> langDetectedObserver;
-    private Observer<String> langToPreferenceObserver;
+    private Observer<Integer> langToPreferenceObserver;
     private Observer<Boolean> detectTextErrorObserver;
     private Observer<LoadResult<Words>> textTranslatedObserver;
+
+    private String[] languagesNames;
+    private List<String> languagesISO;
 
 
     @Nullable
@@ -135,6 +141,8 @@ public class ScreenTextService extends Service {
     public void onCreate() {
         super.onCreate();
         setTheme(R.style.AppTheme);
+        languagesNames = getResources().getStringArray(R.array.googleTranslateLanguagesArray);
+        languagesISO = Arrays.asList(getResources().getStringArray(R.array.googleTranslateLanguagesValue));
         hasPermission = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -201,7 +209,7 @@ public class ScreenTextService extends Service {
         langDetectedObserver = lang -> Toast.makeText(ScreenTextService.this, "Language detected: " + lang, Toast.LENGTH_SHORT).show();
         viewModel.getLangDetected().observeForever(langDetectedObserver);
 
-        langToPreferenceObserver = lang -> languageToPreference = lang;
+        langToPreferenceObserver = langIndex -> languageToPreference = languagesNames[langIndex];
         viewModel.getLangToPreference().observeForever(langToPreferenceObserver);
 
         detectTextErrorObserver = error -> {
@@ -362,7 +370,7 @@ public class ScreenTextService extends Service {
         var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(this));
         popupBinding.textViewPopupTranslation.setText(word.definition);
         popupBinding.textViewPopupTranslation.setMovementMethod(new ScrollingMovementMethod());
-        popupBinding.languageFromText.setText(word.lang);
+        popupBinding.languageFromText.setText(getLanguageName(word.lang));
         popupBinding.languageToText.setText(languageToPreference);
 
         var popupWindow = new PopupWindow(popupBinding.getRoot(), ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -371,6 +379,15 @@ public class ScreenTextService extends Service {
         popupWindow.setElevation(24);
         popupWindow.setAnimationStyle(R.style.PopUpWindowAnimation);
         popupWindow.showAtLocation(binding.iconContainer, Gravity.BOTTOM, 0, 24);
+    }
+
+    /**
+     * Return the language full name based on the ISO characters.
+     * @return Language full name if exists otherwise "unknown" resource
+     */
+    private String getLanguageName(String iso){
+        var index = languagesISO.indexOf(iso);
+        return index != -1 ? languagesNames[index] : getString(R.string.unknown_language);
     }
 
     @Override

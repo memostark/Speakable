@@ -27,8 +27,8 @@ class ScreenTextViewModel(
     private val _langDetected = MutableLiveData<String>()
     val langDetected: LiveData<String> = _langDetected
 
-    private val _langToPreference = MutableLiveData<String>()
-    val langToPreference: LiveData<String> = _langToPreference
+    private val _langToPreference = MutableLiveData<Int>()
+    val langToPreference: LiveData<Int> = _langToPreference
 
     private val _detectTextError = MutableLiveData<Boolean>()
     val detectTextError: LiveData<Boolean> = _detectTextError
@@ -96,8 +96,8 @@ class ScreenTextViewModel(
     }
 
     fun detectLanguageAndTranslate(text: String){
-        val languagePreference = getLanguageToPreference()
-        _langToPreference.value = languagePreference
+        val langPrefIndex = getLanguageToPreference()
+        _langToPreference.value = langPrefIndex
 
         getTranslationInteractor.invoke(
             text,
@@ -111,7 +111,7 @@ class ScreenTextViewModel(
                 }
             },
             "auto",
-            languagePreference
+            languagesISO[langPrefIndex]
         )
 
     }
@@ -133,14 +133,13 @@ class ScreenTextViewModel(
         _onError.value = msg
     }
 
-    private fun getLanguageToPreference(): String {
+    private fun getLanguageToPreference(): Int {
         val englishIndex = 15
         /**
          * Reference to a fragment is bad, either wrap around repo/data source
          * or move this code somewhere outside the view model.
          */
-        val languagePreferenceIndex: Int = sharedPreferences.getInt(SettingsFragment.PREF_LANGUAGE_TO, englishIndex)
-        return languagesISO[languagePreferenceIndex]
+        return sharedPreferences.getInt(SettingsFragment.PREF_LANGUAGE_TO, englishIndex)
     }
 
     val ttsListener =  object: CustomTTS.Listener{
