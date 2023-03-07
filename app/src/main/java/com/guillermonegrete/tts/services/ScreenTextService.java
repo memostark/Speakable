@@ -218,12 +218,18 @@ public class ScreenTextService extends Service {
         viewModel.getDetectTextError().observeForever(detectTextErrorObserver);
 
         textTranslatedObserver = result -> {
-            if(result instanceof LoadResult.Success){
+            binding.loadingTranslate.setVisibility(View.GONE);
+            binding.translateIconButton.setVisibility(View.VISIBLE);
+
+            if (result instanceof LoadResult.Success) {
                 var wordResult = (LoadResult.Success<Words>) result;
                 showPopUpTranslation(wordResult.getData());
-            } else if(result instanceof  LoadResult.Error) {
+            } else if (result instanceof LoadResult.Error) {
                 var errorResult = (LoadResult.Error<Words>) result;
                 handleTranslationError(errorResult.getException());
+            } else if (result instanceof LoadResult.Loading) {
+                binding.translateIconButton.setVisibility(View.INVISIBLE);
+                binding.loadingTranslate.setVisibility(View.VISIBLE);
             }
         };
         viewModel.getTextTranslated().observeForever(textTranslatedObserver);

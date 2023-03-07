@@ -54,8 +54,7 @@
                 android:layout_height="match_parent"
                 android:background="?android:selectableItemBackgroundBorderless"
                 android:contentDescription="@string/reproduce_description"
-                android:src="@drawable/ic_volume_up_black_24dp"
-                tools:visibility="gone"/>
+                android:src="@drawable/ic_volume_up_black_24dp"/>
             <ProgressBar
                 android:id="@+id/play_loading_icon"
                 android:padding="8dp"
@@ -84,6 +83,18 @@
             app:layout_constraintTop_toTopOf="@+id/play_icons_container"
             tools:visibility="visible" />
 
+        <ProgressBar
+            android:id="@+id/loading_translate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:visibility="gone"
+            style="@android:style/Widget.Holo.ProgressBar"
+            app:layout_constraintBottom_toBottomOf="@+id/translate_icon_button"
+            app:layout_constraintEnd_toEndOf="@id/translate_icon_button"
+            app:layout_constraintStart_toStartOf="@+id/translate_icon_button"
+            app:layout_constraintTop_toTopOf="@+id/translate_icon_button"
+            tools:visibility="visible"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -78,6 +78,7 @@ class ScreenTextViewModel(
     }
 
     fun onTranslateClick(imageCaptor: ScreenImageCaptor, rect: Rect){
+        _textTranslated.value = LoadResult.Loading
         detectTextInteractor(
             imageCaptor,
             rect,
