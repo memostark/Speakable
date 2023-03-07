@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.data.LoadResult
+import com.guillermonegrete.tts.data.PlayAudioState
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor
@@ -37,17 +38,8 @@ class ScreenTextViewModel @JvmOverloads constructor(
     private val _langToPreference = MutableLiveData<Int>()
     val langToPreference: LiveData<Int> = _langToPreference
 
-    private val _detectTextError = MutableLiveData<Boolean>()
-    val detectTextError: LiveData<Boolean> = _detectTextError
-
-    private val _ttsLoading = MutableLiveData<Boolean>()
-    val ttsLoading: LiveData<Boolean> = _ttsLoading
-
-    private val _isPlaying = MutableLiveData<Boolean>()
-    val isPlaying: LiveData<Boolean> = _isPlaying
-
-    private val _onError = MutableLiveData<String>()
-    val onError: LiveData<String> = _onError
+    private val _playingAudio = MutableLiveData<PlayAudioState>()
+    val playingAudio: LiveData<PlayAudioState> = _playingAudio
 
     private val _textTranslated = MutableLiveData<LoadResult<Translation>>()
     val textTranslated: LiveData<LoadResult<Translation>> = _textTranslated
@@ -57,11 +49,11 @@ class ScreenTextViewModel @JvmOverloads constructor(
 
 
     fun onPlayClick(imageCaptor: ScreenImageCaptor, rect: Rect){
-        if(isPlayingValue){
+        if (isPlayingValue) {
             tts.stop()
             isPlayingValue = false
             setStopState()
-        }else{
+        } else {
             setLoadingTts()
 
             detectTextInteractor(
@@ -76,8 +68,7 @@ class ScreenTextViewModel @JvmOverloads constructor(
 
                     override fun onError(error: Exception) {
                         isPlayingValue = false
-                        setStopState()
-                        _detectTextError.value = true
+                        _playingAudio.value = PlayAudioState.Error(error)
                     }
                 }
             )
@@ -95,8 +86,6 @@ class ScreenTextViewModel @JvmOverloads constructor(
                 }
 
                 override fun onError(error: Exception) {
-                    isPlayingValue = false
-                    setStopState()
                     _textTranslated.value = LoadResult.Error(error)
                 }
             }
@@ -120,20 +109,15 @@ class ScreenTextViewModel @JvmOverloads constructor(
     }
 
     private fun setStopState() {
-        _ttsLoading.value = false
+        _playingAudio.value = PlayAudioState.Stopped
     }
 
     private fun setLoadingTts() {
-        _ttsLoading.value = true
+        _playingAudio.value = PlayAudioState.Loading
     }
 
-    private fun setPlayingState() {
-        _isPlaying.value = true
-    }
-
-    private fun setErrorState(msg: String){
-        setStopState()
-        _onError.value = msg
+    private fun setErrorState(msg: String) {
+        _playingAudio.value = PlayAudioState.Error(RuntimeException(msg))
     }
 
     private fun getLanguageToPreference(): Int {
@@ -153,14 +137,13 @@ class ScreenTextViewModel @JvmOverloads constructor(
 
         override fun onLanguageUnavailable() {
             isPlayingValue = false
-            setStopState()
-            // set language unavailable state
+            setErrorState("TTS error: Language Unavailable")
         }
 
         override fun onSpeakStart() {
             mainThread.post {
                 isPlayingValue = true
-                setPlayingState()
+                _playingAudio.value = PlayAudioState.Playing
             }
         }
 
