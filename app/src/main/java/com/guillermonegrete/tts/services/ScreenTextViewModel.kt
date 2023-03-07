@@ -5,22 +5,29 @@ import android.graphics.Rect
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.customtts.CustomTTS
 import com.guillermonegrete.tts.data.LoadResult
-import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.data.Result
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.imageprocessing.ScreenImageCaptor
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen
 import com.guillermonegrete.tts.main.SettingsFragment
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class ScreenTextViewModel(
+class ScreenTextViewModel @JvmOverloads constructor(
     private val languagesISO: Array<String>,
     private val mainThread: MainThread,
     private val tts: CustomTTS,
     private val sharedPreferences: SharedPreferences,
     private val detectTextInteractor: DetectTextFromScreen,
-    private val getTranslationInteractor: GetLangAndTranslation
+    private val getTranslationInteractor: GetLangAndTranslation,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
 
@@ -42,8 +49,8 @@ class ScreenTextViewModel(
     private val _onError = MutableLiveData<String>()
     val onError: LiveData<String> = _onError
 
-    private val _textTranslated = MutableLiveData<LoadResult<Words>>()
-    val textTranslated: LiveData<LoadResult<Words>> = _textTranslated
+    private val _textTranslated = MutableLiveData<LoadResult<Translation>>()
+    val textTranslated: LiveData<LoadResult<Translation>> = _textTranslated
 
     private var isPlayingValue = false
     private var detectedText = ""
@@ -100,21 +107,16 @@ class ScreenTextViewModel(
         val langPrefIndex = getLanguageToPreference()
         _langToPreference.value = langPrefIndex
 
-        getTranslationInteractor.invoke(
-            text,
-            object: GetLangAndTranslation.Callback {
-                override fun onTranslationAndLanguage(word: Words) {
-                    _textTranslated.value = LoadResult.Success(word)
-                }
+        viewModelScope.launch {
+            val result = withContext(ioDispatcher) {
+                getTranslationInteractor(text, "auto", languagesISO[langPrefIndex])
+            }
 
-                override fun onDataNotAvailable() {
-                    _textTranslated.value = LoadResult.Error(RuntimeException())
-                }
-            },
-            "auto",
-            languagesISO[langPrefIndex]
-        )
-
+            when(result){
+                is Result.Success ->  _textTranslated.value = LoadResult.Success(result.data)
+                is Result.Error -> _textTranslated.value = LoadResult.Error(RuntimeException())
+            }
+        }
     }
 
     private fun setStopState() {

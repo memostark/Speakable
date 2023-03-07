@@ -47,9 +47,9 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.LoadResult;
+import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.databinding.PopUpTranslationBinding;
 import com.guillermonegrete.tts.databinding.ServiceProcesstextBinding;
-import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.imageprocessing.*;
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
@@ -125,7 +125,7 @@ public class ScreenTextService extends Service {
     private Observer<String> langDetectedObserver;
     private Observer<Integer> langToPreferenceObserver;
     private Observer<Boolean> detectTextErrorObserver;
-    private Observer<LoadResult<Words>> textTranslatedObserver;
+    private Observer<LoadResult<Translation>> textTranslatedObserver;
 
     private String[] languagesNames;
     private List<String> languagesISO;
@@ -222,10 +222,10 @@ public class ScreenTextService extends Service {
             binding.translateIconButton.setVisibility(View.VISIBLE);
 
             if (result instanceof LoadResult.Success) {
-                var wordResult = (LoadResult.Success<Words>) result;
+                var wordResult = (LoadResult.Success<Translation>) result;
                 showPopUpTranslation(wordResult.getData());
             } else if (result instanceof LoadResult.Error) {
-                var errorResult = (LoadResult.Error<Words>) result;
+                var errorResult = (LoadResult.Error<Translation>) result;
                 handleTranslationError(errorResult.getException());
             } else if (result instanceof LoadResult.Loading) {
                 binding.translateIconButton.setVisibility(View.INVISIBLE);
@@ -372,11 +372,11 @@ public class ScreenTextService extends Service {
         binding.translateIconButton.setVisibility(View.GONE);
     }
 
-    private void showPopUpTranslation(Words word){
+    private void showPopUpTranslation(Translation translation){
         var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(this));
-        popupBinding.textViewPopupTranslation.setText(word.definition);
+        popupBinding.textViewPopupTranslation.setText(translation.getTranslatedText());
         popupBinding.textViewPopupTranslation.setMovementMethod(new ScrollingMovementMethod());
-        popupBinding.languageFromText.setText(getLanguageName(word.lang));
+        popupBinding.languageFromText.setText(getLanguageName(translation.getSrc()));
         popupBinding.languageToText.setText(languageToPreference);
 
         var popupWindow = new PopupWindow(popupBinding.getRoot(), ViewGroup.LayoutParams.WRAP_CONTENT,
