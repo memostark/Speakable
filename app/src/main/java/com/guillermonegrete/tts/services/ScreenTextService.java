@@ -23,6 +23,7 @@ import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.text.method.ScrollingMovementMethod;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -46,8 +47,10 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.LoadResult;
+import com.guillermonegrete.tts.data.PlayAudioState;
+import com.guillermonegrete.tts.data.Translation;
+import com.guillermonegrete.tts.databinding.PopUpTranslationBinding;
 import com.guillermonegrete.tts.databinding.ServiceProcesstextBinding;
-import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.imageprocessing.*;
 import com.guillermonegrete.tts.imageprocessing.domain.interactors.DetectTextFromScreen;
 import com.guillermonegrete.tts.main.AcquireScreenshotPermission;
@@ -59,6 +62,9 @@ import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+
+import java.util.Arrays;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -114,13 +120,13 @@ public class ScreenTextService extends Service {
     private ScreenTextViewModel viewModel;
 
     // Observers
-    private Observer<Boolean> loadingObserver;
-    private Observer<Boolean> isPlayingObserver;
-    private Observer<String> hasErrorObserver;
     private Observer<String> langDetectedObserver;
-    private Observer<String> langToPreferenceObserver;
-    private Observer<Boolean> detectTextErrorObserver;
-    private Observer<LoadResult<Words>> textTranslatedObserver;
+    private Observer<Integer> langToPreferenceObserver;
+    private Observer<PlayAudioState> playAudioObserver;
+    private Observer<LoadResult<Translation>> textTranslatedObserver;
+
+    private String[] languagesNames;
+    private List<String> languagesISO;
 
 
     @Nullable
@@ -133,6 +139,8 @@ public class ScreenTextService extends Service {
     public void onCreate() {
         super.onCreate();
         setTheme(R.style.AppTheme);
+        languagesNames = getResources().getStringArray(R.array.googleTranslateLanguagesArray);
+        languagesISO = Arrays.asList(getResources().getStringArray(R.array.googleTranslateLanguagesValue));
         hasPermission = false;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -161,59 +169,60 @@ public class ScreenTextService extends Service {
         // release all the reference to views to avoid leaks
         binding = null;
         trash_layout = null;
-        viewModel.isPlaying().removeObserver(isPlayingObserver);
-        viewModel.getTtsLoading().removeObserver(loadingObserver);
-        isPlayingObserver = null;
-        loadingObserver = null;
+        viewModel.getPlayingAudio().removeObserver(playAudioObserver);
+        playAudioObserver = null;
     }
 
     private void setViewModel() {
         // Because service has no lifecycle we have to observeForever, don't forget to unbind onDestroy.
         var playButton = binding.playIconButton;
         var playLoadingIcon = binding.playLoadingIcon;
-        loadingObserver = isLoading -> {
-            if(isLoading){
-                playLoadingIcon.setVisibility(View.VISIBLE);
-                playButton.setVisibility(View.INVISIBLE);
-            }else{
-                playLoadingIcon.setVisibility(View.INVISIBLE);
-                playButton.setVisibility(View.VISIBLE);
-                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
-            }
 
-        };
-        viewModel.getTtsLoading().observeForever(loadingObserver);
-
-        isPlayingObserver = isPlaying-> {
-            if(isPlaying){
+        playAudioObserver = state -> {
+            if (state instanceof PlayAudioState.Playing) {
                 playLoadingIcon.setVisibility(View.INVISIBLE);
                 playButton.setImageResource(R.drawable.ic_stop_black_24dp);
                 playButton.setVisibility(View.VISIBLE);
+
+            } else if (state instanceof PlayAudioState.Stopped) {
+                playLoadingIcon.setVisibility(View.INVISIBLE);
+                playButton.setVisibility(View.VISIBLE);
+                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+                binding.languageText.setVisibility(View.INVISIBLE);
+
+            } else if (state instanceof PlayAudioState.Loading) {
+                playLoadingIcon.setVisibility(View.VISIBLE);
+                playButton.setVisibility(View.INVISIBLE);
+
+            } else if (state instanceof PlayAudioState.Error) {
+                var error = (PlayAudioState.Error) state;
+                Toast.makeText(this, error.getException().getMessage(), Toast.LENGTH_SHORT).show();
             }
         };
-        viewModel.isPlaying().observeForever(isPlayingObserver);
+        viewModel.getPlayingAudio().observeForever(playAudioObserver);
 
-        hasErrorObserver = msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-        viewModel.getOnError().observeForever(hasErrorObserver);
-
-        langDetectedObserver = lang -> Toast.makeText(ScreenTextService.this, "Language detected: " + lang, Toast.LENGTH_SHORT).show();
+        langDetectedObserver = lang -> {
+            binding.languageText.setText(getLanguageName(lang));
+            binding.languageText.setVisibility(View.VISIBLE);
+        };
         viewModel.getLangDetected().observeForever(langDetectedObserver);
 
-        langToPreferenceObserver = lang -> languageToPreference = lang;
+        langToPreferenceObserver = langIndex -> languageToPreference = languagesNames[langIndex];
         viewModel.getLangToPreference().observeForever(langToPreferenceObserver);
 
-        detectTextErrorObserver = error -> {
-            if(error) Toast.makeText(this, "Couldn't detect text from image", Toast.LENGTH_SHORT).show();
-        };
-        viewModel.getDetectTextError().observeForever(detectTextErrorObserver);
-
         textTranslatedObserver = result -> {
-            if(result instanceof LoadResult.Success){
-                var wordResult = (LoadResult.Success<Words>) result;
+            binding.loadingTranslate.setVisibility(View.GONE);
+            binding.translateIconButton.setVisibility(View.VISIBLE);
+
+            if (result instanceof LoadResult.Success) {
+                var wordResult = (LoadResult.Success<Translation>) result;
                 showPopUpTranslation(wordResult.getData());
-            } else if(result instanceof  LoadResult.Error) {
-                var errorResult = (LoadResult.Error<Words>) result;
+            } else if (result instanceof LoadResult.Error) {
+                var errorResult = (LoadResult.Error<Translation>) result;
                 handleTranslationError(errorResult.getException());
+            } else if (result instanceof LoadResult.Loading) {
+                binding.translateIconButton.setVisibility(View.INVISIBLE);
+                binding.loadingTranslate.setVisibility(View.VISIBLE);
             }
         };
         viewModel.getTextTranslated().observeForever(textTranslatedObserver);
@@ -356,20 +365,28 @@ public class ScreenTextService extends Service {
         binding.translateIconButton.setVisibility(View.GONE);
     }
 
-    private void showPopUpTranslation(Words word){
-        View layout = LayoutInflater.from(this).inflate(R.layout.pop_up_translation, binding.getRoot(), false);
-        TextView translationTextView = layout.findViewById(R.id.text_view_popup_translation);
-        translationTextView.setText(word.definition);
-        TextView languageFrom = layout.findViewById(R.id.language_from_text);
-        languageFrom.setText(word.lang);
-        TextView languageTo = layout.findViewById(R.id.language_to_text);
-        languageTo.setText(languageToPreference);
-        PopupWindow popupWindow = new PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+    private void showPopUpTranslation(Translation translation){
+        var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(this));
+        popupBinding.textViewPopupTranslation.setText(translation.getTranslatedText());
+        popupBinding.textViewPopupTranslation.setMovementMethod(new ScrollingMovementMethod());
+        popupBinding.languageFromText.setText(getLanguageName(translation.getSrc()));
+        popupBinding.languageToText.setText(languageToPreference);
+
+        var popupWindow = new PopupWindow(popupBinding.getRoot(), ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popupWindow.setFocusable(true);
         popupWindow.setElevation(24);
         popupWindow.setAnimationStyle(R.style.PopUpWindowAnimation);
         popupWindow.showAtLocation(binding.iconContainer, Gravity.BOTTOM, 0, 24);
+    }
+
+    /**
+     * Return the language full name based on the ISO characters.
+     * @return Language full name if exists otherwise "unknown" resource
+     */
+    private String getLanguageName(String iso){
+        var index = languagesISO.indexOf(iso);
+        return index != -1 ? languagesNames[index] : getString(R.string.unknown_language);
     }
 
     @Override
@@ -619,11 +636,8 @@ public class ScreenTextService extends Service {
     }
 
     private void unbindObservers() {
-        viewModel.isPlaying().removeObserver(isPlayingObserver);
-        viewModel.getTtsLoading().removeObserver(loadingObserver);
-        viewModel.getOnError().removeObserver(hasErrorObserver);
+        viewModel.getPlayingAudio().removeObserver(playAudioObserver);
         viewModel.getLangDetected().removeObserver(langDetectedObserver);
-        viewModel.getDetectTextError().removeObserver(detectTextErrorObserver);
         viewModel.getTextTranslated().removeObserver(textTranslatedObserver);
         viewModel.getLangToPreference().removeObserver(langToPreferenceObserver);
     }

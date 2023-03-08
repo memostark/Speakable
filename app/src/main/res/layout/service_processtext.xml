@@ -38,9 +38,9 @@
 
 
         <FrameLayout
+            android:id="@+id/play_icons_container"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:id="@+id/play_icons_container"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/image_bubble"
             app:layout_constraintDimensionRatio="1:1"
@@ -48,23 +48,24 @@
             app:layout_constraintStart_toEndOf="@+id/image_bubble"
             app:layout_constraintTop_toTopOf="@+id/image_bubble"
             tools:visibility="visible">
+
             <ImageButton
                 android:id="@+id/play_icon_button"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="?android:selectableItemBackgroundBorderless"
                 android:contentDescription="@string/reproduce_description"
-                android:src="@drawable/ic_volume_up_black_24dp"
-                tools:visibility="gone"/>
+                android:src="@drawable/ic_volume_up_black_24dp" />
+
             <ProgressBar
                 android:id="@+id/play_loading_icon"
-                android:padding="8dp"
-                android:layout_gravity="center"
+                style="@android:style/Widget.Holo.ProgressBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                style="@android:style/Widget.Holo.ProgressBar"
+                android:layout_gravity="center"
+                android:padding="8dp"
                 android:visibility="gone"
-                tools:visibility="visible"/>
+                tools:visibility="visible" />
         </FrameLayout>
 
         <ImageButton
@@ -76,14 +77,37 @@
             android:background="?android:selectableItemBackgroundBorderless"
             android:contentDescription="@string/translate_description"
             android:src="@drawable/ic_translate_black_24dp"
-            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/play_icons_container"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/play_icons_container"
             app:layout_constraintTop_toTopOf="@+id/play_icons_container"
+            tools:visibility="invisible" />
+
+        <ProgressBar
+            android:id="@+id/loading_translate"
+            style="@android:style/Widget.Holo.ProgressBar"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:padding="8dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/translate_icon_button"
+            app:layout_constraintEnd_toEndOf="@id/translate_icon_button"
+            app:layout_constraintStart_toStartOf="@+id/translate_icon_button"
+            app:layout_constraintTop_toTopOf="@+id/translate_icon_button"
             tools:visibility="visible" />
 
+        <TextView
+            android:id="@+id/language_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="English"
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

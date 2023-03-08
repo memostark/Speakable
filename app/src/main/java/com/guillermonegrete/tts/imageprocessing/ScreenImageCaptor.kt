@@ -8,6 +8,7 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Handler
+import android.os.Looper
 import android.util.DisplayMetrics
 
 /*
@@ -24,7 +25,7 @@ class ScreenImageCaptor(
 
     private val mediaProjection = manager.getMediaProjection(resultCode, intent)
     private val density = metrics.densityDpi
-    private var handler = Handler()
+    private var handler = Handler(Looper.getMainLooper())
 
     private val width = screenSize.x
     private val height = screenSize.y
