@@ -188,6 +188,7 @@ public class ScreenTextService extends Service {
                 playLoadingIcon.setVisibility(View.INVISIBLE);
                 playButton.setVisibility(View.VISIBLE);
                 playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+                binding.languageText.setVisibility(View.INVISIBLE);
 
             } else if (state instanceof PlayAudioState.Loading) {
                 playLoadingIcon.setVisibility(View.VISIBLE);
@@ -200,7 +201,10 @@ public class ScreenTextService extends Service {
         };
         viewModel.getPlayingAudio().observeForever(playAudioObserver);
 
-        langDetectedObserver = lang -> Toast.makeText(ScreenTextService.this, "Language detected: " + lang, Toast.LENGTH_SHORT).show();
+        langDetectedObserver = lang -> {
+            binding.languageText.setText(getLanguageName(lang));
+            binding.languageText.setVisibility(View.VISIBLE);
+        };
         viewModel.getLangDetected().observeForever(langDetectedObserver);
 
         langToPreferenceObserver = langIndex -> languageToPreference = languagesNames[langIndex];
