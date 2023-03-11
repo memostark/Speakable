@@ -103,12 +103,11 @@ class ParagraphAdapter(
 
         private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
 
-            override fun onDown(e: MotionEvent?): Boolean {
+            override fun onDown(e: MotionEvent): Boolean {
                 return true
             }
 
-            override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
-                e ?: return false
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
                 val wordSpan = binding.paragraph.findWordForRightHanded(offset)
                 val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
@@ -137,8 +136,7 @@ class ParagraphAdapter(
                 return super.onSingleTapConfirmed(e)
             }
 
-            override fun onLongPress(e: MotionEvent?) {
-                e ?: return
+            override fun onLongPress(e: MotionEvent) {
 
                 unselectSentence()
                 removeExpanded()
@@ -151,7 +149,7 @@ class ParagraphAdapter(
                 super.onLongPress(e)
             }
 
-            override fun onDoubleTap(e: MotionEvent?): Boolean {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
                 setExpanded()
                 unselectSentence()
                 return super.onDoubleTap(e)

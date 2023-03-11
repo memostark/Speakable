@@ -166,8 +166,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private var eventInProgress = false
     private var scaleInProgress = false
 
-    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        val actionId = ev?.actionMasked ?: -1
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
 
         if(eventInProgress){
             if(pageItemView?.isShown == true) scaleDetector.onTouchEvent(ev)
@@ -180,7 +179,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
         }
 
-        when(actionId){
+        when(ev.actionMasked){
             MotionEvent.ACTION_DOWN -> eventInProgress = true
             MotionEvent.ACTION_UP -> {
                 eventInProgress = false
@@ -515,16 +514,15 @@ class VisualizeTextActivity: AppCompatActivity() {
             get() = 1f / ratio
         private var scale = 1f
 
-        override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             viewPager.isUserInputEnabled = false
             pinchDetected = false
             return true
         }
 
-        override fun onScaleEnd(detector: ScaleGestureDetector?) {
+        override fun onScaleEnd(detector: ScaleGestureDetector) {
             viewPager.isUserInputEnabled = true
 
-            detector ?: return
             val factor = detector.scaleFactor
 
             // Check if it should toggle off full screen mode
@@ -542,8 +540,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             textCardView.scaleY = scale
         }
 
-        override fun onScale(detector: ScaleGestureDetector?): Boolean {
-            detector ?: return false
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
 
             if(!pinchDetected){
 

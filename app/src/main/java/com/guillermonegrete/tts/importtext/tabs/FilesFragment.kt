@@ -310,7 +310,7 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
                     .translationY(view.height.toFloat())
                     .alpha(0f)
                     .setListener(object : SimpleAnimatorListener(){
-                        override fun onAnimationEnd(animation: Animator?) {
+                        override fun onAnimationEnd(animation: Animator) {
                             view.visibility = View.GONE
                             super.onAnimationEnd(animation)
                         }
@@ -321,13 +321,13 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
         open class SimpleAnimatorListener: Animator.AnimatorListener{
 
-            override fun onAnimationRepeat(animation: Animator?) {}
+            override fun onAnimationRepeat(animation: Animator) {}
 
-            override fun onAnimationEnd(animation: Animator?) {}
+            override fun onAnimationEnd(animation: Animator) {}
 
-            override fun onAnimationCancel(animation: Animator?) {}
+            override fun onAnimationCancel(animation: Animator) {}
 
-            override fun onAnimationStart(animation: Animator?) {}
+            override fun onAnimationStart(animation: Animator) {}
         }
     }
 
