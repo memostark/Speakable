@@ -49,6 +49,7 @@ android {
     buildFeatures {
         viewBinding true
     }
+    namespace 'com.guillermonegrete.tts'
 
 }
 
@@ -151,7 +152,7 @@ dependencies {
     androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
 
     // Navigation component
-    def nav_version = "2.5.0"
+    def nav_version = "2.5.3"
     // Java language implementation
     implementation "androidx.navigation:navigation-fragment:$nav_version"
     implementation "androidx.navigation:navigation-ui:$nav_version"
