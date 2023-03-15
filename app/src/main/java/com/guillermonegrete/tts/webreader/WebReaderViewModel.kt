@@ -75,8 +75,9 @@ class WebReaderViewModel @Inject constructor(
                 try {
                     val page = getPage(url)
                     _page.value = LoadResult.Success(page.content)
-                    cacheWebLink = webLinkDAO.getLink(url) ?: link ?: WebLink(url, page.title)
-                    _weblink.value = cacheWebLink
+                    val webLink = webLinkDAO.getLink(url) ?: link ?: WebLink(url, page.title)
+                    cacheWebLink = webLink
+                    _weblink.value = webLink
                 } catch (ex: IOException){
                     _page.value = LoadResult.Error(ex)
                 }
