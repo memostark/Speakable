@@ -126,10 +126,24 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:spinnerMode="dialog"
-                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/more_options"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toEndOf="@+id/next_selection"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:listitem="@android:layout/simple_list_item_1" />
+
+            <ImageButton
+                android:id="@+id/more_options"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:contentDescription="@string/more_options"
+                android:src="@drawable/baseline_more_vert_24"
+                android:tint="?colorOnPrimarySurface"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
