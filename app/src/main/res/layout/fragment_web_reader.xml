@@ -63,7 +63,7 @@
 
         </LinearLayout>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <!--<androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/menu_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -145,7 +145,15 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>-->
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/compose_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?colorPrimary"
+            android:layout_gravity="bottom"
+            app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" />
 
         <include android:id="@+id/trans_sheet" layout="@layout/translation_card"/>
 
@@ -159,9 +167,9 @@
         android:contentDescription="@string/refresh"
         android:background="?selectableItemBackgroundBorderless"
         android:scaleType="fitCenter"
-        android:tint="?colorOnSurface"
         android:visibility="gone"
         app:srcCompat="@drawable/ic_baseline_refresh_24"
+        app:tint="?colorOnSurface"
         tools:visibility="visible" />
 
     <TextView

@@ -2,15 +2,15 @@ package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.text.Html
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.text.HtmlCompat
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
@@ -89,17 +89,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.updateExpanded()
             }
 
+            val spinnerItems = mutableStateOf(emptyList<String>())
+
             viewModel.webLink.observe(viewLifecycleOwner) {
                 val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
                 languageFrom = it.language ?: langShortNames.first() // First is always "auto"
-                val langAdapter = ArrayAdapter.createFromResource(
-                    requireContext(),
-                    R.array.googleTranslateLangsWithAutoArray,
-                    android.R.layout.simple_spinner_dropdown_item
-                )
-                setLanguage.adapter = langAdapter
-                val index = langShortNames.indexOf(languageFrom)
-                setLanguage.prompt = getString(R.string.web_reader_lang_spinner_prompt)
+                spinnerItems.value = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
+
+                /*val index = langShortNames.indexOf(languageFrom)
                 setLanguage.setSelection(index, false)
                 setLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -109,10 +106,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
 
                     override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }*/
+            }
+
+            composeBar.apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setContent {
+                    MaterialTheme {
+                        WebReaderBottomBar(spinnerItems)
+                    }
                 }
             }
 
-            translate.setOnClickListener {
+            /*translate.setOnClickListener {
                 val adapter = adapter ?: return@setOnClickListener
                 val expandedItemPos = adapter.expandedItemPos
                 if (expandedItemPos != -1) {
@@ -123,7 +129,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val selected = adapter.selectedSentence
                 if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
                     viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
-            }
+            }*/
 
             retryButton.setOnClickListener {
                 viewModel.loadDoc(args.link)
@@ -143,7 +149,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             paragraphsList.isVisible = true
             if(adapter == null) {
                 val newParagraphs =  text.split("\n")
-                    .map { HtmlCompat.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).trim() }
+                    .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
                     .filter { it.isNotEmpty() }
                 val splitParagraphs = viewModel.createParagraphs(newParagraphs)
                 val newAdapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
@@ -154,10 +160,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
             paragraphsList.adapter = adapter
 
-            translate.isVisible = true
+            /*translate.isVisible = true
             previousSelection.isVisible = true
             nextSelection.isVisible = true
-            setAdapterListeners()
+            setAdapterListeners()*/
         }
     }
 
@@ -207,8 +213,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             bottomSheetBehavior.addBottomSheetCallback(object :
                 BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_HIDDEN
-                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
+                    /*if (newState == BottomSheetBehavior.STATE_HIDDEN
+                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true*/
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -246,7 +252,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.setSelectedPos(selectedPos)
                 linksList.scrollToPosition(selectedPos)
                 linksList.adapter = adapter
-                menuBar.isVisible = false
+//                menuBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
@@ -269,7 +275,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         adapter?.unselectWord()
-                        binding.menuBar.isVisible = true
+//                        binding.menuBar.isVisible = true
                     }
                 }
 
@@ -290,7 +296,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
 
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                        binding.menuBar.isVisible = false
+//                        binding.menuBar.isVisible = false
                         true
                     }
                     is LoadResult.Error -> {
@@ -338,7 +344,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun setSentenceNavigator(newAdapter: ParagraphAdapter) {
         with(binding){
-            previousSelection.setOnClickListener {
+            /*previousSelection.setOnClickListener {
                 newAdapter.previousSentence()
                 val pos = newAdapter.selectedSentence.paragraphIndex
                 if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
@@ -348,7 +354,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 newAdapter.nextSentence()
                 val pos = newAdapter.selectedSentence.paragraphIndex
                 if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
-            }
+            }*/
         }
     }
 
