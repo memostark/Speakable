@@ -90,30 +90,25 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             val spinnerItems = mutableStateOf(emptyList<String>())
+            val selection = mutableStateOf(-1)
 
+            val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
             viewModel.webLink.observe(viewLifecycleOwner) {
-                val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
-                languageFrom = it.language ?: langShortNames.first() // First is always "auto"
                 spinnerItems.value = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
 
-                /*val index = langShortNames.indexOf(languageFrom)
-                setLanguage.setSelection(index, false)
-                setLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                        val langShort = if (position == 0) null else langShortNames[position]
-                        languageFrom = langShort
-                        viewModel.setLanguage(langShort)
-                    }
-
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
-                }*/
+                languageFrom = it.language ?: langShortNames.first() // First is always "auto"
+                selection.value = langShortNames.indexOf(languageFrom)
             }
 
             composeBar.apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     MaterialTheme {
-                        WebReaderBottomBar(spinnerItems)
+                        WebReaderBottomBar(spinnerItems, selection) { index, _ ->
+                            val langShort = if (index == 0) null else langShortNames[index]
+                            languageFrom = langShort
+                            viewModel.setLanguage(langShort)
+                        }
                     }
                 }
             }

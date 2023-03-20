@@ -14,7 +14,11 @@ import com.guillermonegrete.tts.R
 
 
 @Composable
-fun WebReaderBottomBar(languages: MutableState<List<String>>) {
+fun WebReaderBottomBar(
+    languages: MutableState<List<String>>,
+    langSelection: MutableState<Int> = mutableStateOf(-1),
+    onLangSelected: (Int, String) -> Unit = { _, _ -> },
+) {
 
     BottomAppBar {
         IconButton(onClick = { /*TODO*/ }) {
@@ -37,7 +41,7 @@ fun WebReaderBottomBar(languages: MutableState<List<String>>) {
         }
 
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Spinner(languages)
+            Spinner(languages, langSelection, onLangSelected)
         }
 
         IconButton(onClick = { /*TODO*/ }) {
@@ -47,14 +51,18 @@ fun WebReaderBottomBar(languages: MutableState<List<String>>) {
 }
 
 @Composable
-fun Spinner(items: MutableState<List<String>>) {
-    var selected by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
+fun Spinner(
+    items: MutableState<List<String>>,
+    preselected: MutableState<Int> = mutableStateOf(-1),
+    onItemSelected: (Int, String) -> Unit = { _, _ -> }
+) {
     val spinnerItems by items
+    var selected by preselected
+    var expanded by remember { mutableStateOf(false) }
 
     Box {
         Button(onClick = { expanded = !expanded }) {
-            Text(text = selected)
+            Text(text = spinnerItems.getOrNull(selected) ?: "")
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null
@@ -66,12 +74,13 @@ fun Spinner(items: MutableState<List<String>>) {
         ) {
             Text(stringResource(R.string.web_reader_lang_spinner_prompt))
 
-            spinnerItems.forEach { label ->
+            spinnerItems.forEachIndexed { index, item ->
                 DropdownMenuItem(onClick = {
                     expanded = false
-                    selected = label
+                    selected = index
+                    onItemSelected(index, item)
                 }) {
-                    Text(text = label)
+                    Text(text = item)
                 }
             }
         }
