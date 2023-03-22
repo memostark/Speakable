@@ -17,11 +17,12 @@ import com.guillermonegrete.tts.R
 fun WebReaderBottomBar(
     languages: MutableState<List<String>>,
     langSelection: MutableState<Int> = mutableStateOf(-1),
+    onTranslateClicked: () -> Unit = {},
     onLangSelected: (Int, String) -> Unit = { _, _ -> },
 ) {
 
     BottomAppBar {
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = { onTranslateClicked() }) {
             Icon(
                 painter = painterResource(R.drawable.ic_translate_black_24dp),
                 contentDescription = stringResource(R.string.translate_description)

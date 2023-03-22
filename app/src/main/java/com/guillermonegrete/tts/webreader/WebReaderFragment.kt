@@ -104,7 +104,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     MaterialTheme {
-                        WebReaderBottomBar(spinnerItems, selection) { index, _ ->
+                        WebReaderBottomBar(
+                            spinnerItems,
+                            selection,
+                            { onTranslateClicked() }
+                        ) { index, _ ->
                             val langShort = if (index == 0) null else langShortNames[index]
                             languageFrom = langShort
                             viewModel.setLanguage(langShort)
@@ -112,19 +116,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                 }
             }
-
-            /*translate.setOnClickListener {
-                val adapter = adapter ?: return@setOnClickListener
-                val expandedItemPos = adapter.expandedItemPos
-                if (expandedItemPos != -1) {
-                    viewModel.translateParagraph(expandedItemPos)
-                    return@setOnClickListener
-                }
-
-                val selected = adapter.selectedSentence
-                if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
-                    viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
-            }*/
 
             retryButton.setOnClickListener {
                 viewModel.loadDoc(args.link)
@@ -157,8 +148,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             /*translate.isVisible = true
             previousSelection.isVisible = true
-            nextSelection.isVisible = true
-            setAdapterListeners()*/
+            nextSelection.isVisible = true*/
+            setAdapterListeners()
         }
     }
 
@@ -208,8 +199,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             bottomSheetBehavior.addBottomSheetCallback(object :
                 BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    /*if (newState == BottomSheetBehavior.STATE_HIDDEN
-                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true*/
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN
+                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -247,7 +238,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.setSelectedPos(selectedPos)
                 linksList.scrollToPosition(selectedPos)
                 linksList.adapter = adapter
-//                menuBar.isVisible = false
+                composeBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
@@ -270,7 +261,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         adapter?.unselectWord()
-//                        binding.menuBar.isVisible = true
+                        binding.composeBar.isVisible = true
                     }
                 }
 
@@ -291,7 +282,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
 
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-//                        binding.menuBar.isVisible = false
+                        binding.composeBar.isVisible = false
                         true
                     }
                     is LoadResult.Error -> {
@@ -351,6 +342,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
             }*/
         }
+    }
+
+    private fun onTranslateClicked(){
+        val adapter = adapter ?: return
+        val expandedItemPos = adapter.expandedItemPos
+        if (expandedItemPos != -1) {
+            viewModel.translateParagraph(expandedItemPos)
+            return
+        }
+
+        val selected = adapter.selectedSentence
+        if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
+            viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
     }
 
     private fun setBackButtonNav() {
