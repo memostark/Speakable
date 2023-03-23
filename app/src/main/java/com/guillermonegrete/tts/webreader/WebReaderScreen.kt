@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -17,24 +18,39 @@ import com.guillermonegrete.tts.R
 fun WebReaderBottomBar(
     languages: MutableState<List<String>>,
     langSelection: MutableState<Int> = mutableStateOf(-1),
+    iconsEnabled: MutableState<Boolean> = mutableStateOf(true),
     onTranslateClicked: () -> Unit = {},
+    onArrowClicked: (isLeft: Boolean) -> Unit = {},
     onLangSelected: (Int, String) -> Unit = { _, _ -> },
 ) {
+    val iconsState by iconsEnabled
 
     BottomAppBar {
-        IconButton(onClick = { onTranslateClicked() }) {
+        IconButton(
+            onClick = { onTranslateClicked() },
+            enabled = iconsState,
+            modifier = Modifier.alpha(if (iconsState) 1f else 0f),
+        ) {
             Icon(
                 painter = painterResource(R.drawable.ic_translate_black_24dp),
                 contentDescription = stringResource(R.string.translate_description)
             )
         }
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(
+            onClick = { onArrowClicked(true) },
+            enabled = iconsState,
+            modifier = Modifier.alpha(if (iconsState) 1f else 0f),
+        ) {
             Icon(
                 painter = painterResource(R.drawable.ic_baseline_arrow_back_ios_new_24),
                 contentDescription = stringResource(R.string.previous_selection)
             )
         }
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(
+            onClick = { onArrowClicked(false) },
+            enabled = iconsState,
+            modifier = Modifier.alpha(if (iconsState) 1f else 0f),
+        ) {
             Icon(
                 painter = painterResource(R.drawable.ic_baseline_arrow_forward_ios_24),
                 contentDescription = stringResource(R.string.next_selection)

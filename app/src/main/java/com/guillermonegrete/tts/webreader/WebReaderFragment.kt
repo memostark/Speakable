@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.text.HtmlCompat
@@ -54,6 +55,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
 
+        val iconsVisible = mutableStateOf(false)
+
         with(binding){
             loadingIcon.isVisible = true
 
@@ -66,7 +69,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true
-                    is LoadResult.Success -> setParagraphList(it.data)
+                    is LoadResult.Success -> setParagraphList(it.data, iconsVisible)
                 }
 
                 retryButton.isVisible = isError
@@ -90,14 +93,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             val spinnerItems = mutableStateOf(emptyList<String>())
-            val selection = mutableStateOf(-1)
+            val langSelection = mutableStateOf(-1)
 
             val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
             viewModel.webLink.observe(viewLifecycleOwner) {
                 spinnerItems.value = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
 
                 languageFrom = it.language ?: langShortNames.first() // First is always "auto"
-                selection.value = langShortNames.indexOf(languageFrom)
+                langSelection.value = langShortNames.indexOf(languageFrom)
             }
 
             composeBar.apply {
@@ -106,8 +109,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     MaterialTheme {
                         WebReaderBottomBar(
                             spinnerItems,
-                            selection,
-                            { onTranslateClicked() }
+                            langSelection,
+                            iconsVisible,
+                            { onTranslateClicked() },
+                            { onArrowClicked(it) },
                         ) { index, _ ->
                             val langShort = if (index == 0) null else langShortNames[index]
                             languageFrom = langShort
@@ -130,7 +135,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         viewModel.loadDoc(args.link)
     }
 
-    private fun setParagraphList(text: String) {
+    private fun setParagraphList(text: String, iconsVisible: MutableState<Boolean>) {
         with(binding){
             paragraphsList.isVisible = true
             if(adapter == null) {
@@ -141,14 +146,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val newAdapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
                     hideBottomSheets()
                 }
-                setSentenceNavigator(newAdapter)
                 adapter = newAdapter
             }
             paragraphsList.adapter = adapter
 
-            /*translate.isVisible = true
-            previousSelection.isVisible = true
-            nextSelection.isVisible = true*/
+            iconsVisible.value = true
             setAdapterListeners()
         }
     }
@@ -328,20 +330,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun setSentenceNavigator(newAdapter: ParagraphAdapter) {
-        with(binding){
-            /*previousSelection.setOnClickListener {
-                newAdapter.previousSentence()
-                val pos = newAdapter.selectedSentence.paragraphIndex
-                if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
-            }
-
-            nextSelection.setOnClickListener {
-                newAdapter.nextSentence()
-                val pos = newAdapter.selectedSentence.paragraphIndex
-                if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
-            }*/
+    private fun onArrowClicked(isLeft: Boolean){
+        val paragraphAdapter = adapter ?: return
+        if (isLeft) {
+            paragraphAdapter.previousSentence()
+        } else {
+            paragraphAdapter.nextSentence()
         }
+        val pos = paragraphAdapter.selectedSentence.paragraphIndex
+        if(pos != -1) binding.paragraphsList.smoothScrollToPosition(pos)
+
     }
 
     private fun onTranslateClicked(){
