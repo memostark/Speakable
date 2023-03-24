@@ -8,7 +8,6 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -27,6 +26,7 @@ import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
+import com.guillermonegrete.tts.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -106,7 +106,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             composeBar.apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
-                    MaterialTheme {
+                    AppTheme {
                         WebReaderBottomBar(
                             spinnerItems,
                             langSelection,
