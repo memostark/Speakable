@@ -11,7 +11,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.ui.theme.AppTheme
 
 
 @Composable
@@ -61,8 +63,25 @@ fun WebReaderBottomBar(
             Spinner(languages, langSelection, onLangSelected)
         }
 
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = "Desc")
+        Box {
+            var menuExpanded by remember { mutableStateOf(false) }
+            IconButton(onClick = { menuExpanded = true }) {
+                Icon(Icons.Filled.MoreVert, contentDescription = "Desc")
+            }
+            val isSaved = false
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+
+                DropdownMenuItem(onClick = { /* Handle send feedback! */ }) {
+                    val icon = if(isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
+                    Icon(painter = painterResource(icon), contentDescription = "Desc")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val text = stringResource(id = if (isSaved) R.string.delete else R.string.save)
+                    Text(text)
+                }
+            }
         }
     }
 }
@@ -109,7 +128,7 @@ private val suggestions = mutableStateOf(listOf("Item1", "Item2", "Item3"))
 @Preview
 @Composable
 fun BarPreview() {
-    MaterialTheme {
+    AppTheme {
         WebReaderBottomBar(remember { suggestions })
     }
 }
@@ -117,7 +136,7 @@ fun BarPreview() {
 @Preview
 @Composable
 fun SpinnerPreview() {
-    MaterialTheme {
+    AppTheme {
         Spinner(remember { suggestions })
     }
 }
