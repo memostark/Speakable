@@ -208,5 +208,8 @@
     <string name="loading_page_error_msg">Error loading page</string>
     <string name="previous_selection">previous selection</string>
     <string name="next_selection">next selection</string>
+    <string name="saving_page_dialog">Saving page…</string>
+    <string name="delete_page_dialog_body">The page is going to be deleted from the local storage</string>
+    <string name="delete_page_dialog_title">Deleting page</string>
 
 </resources>

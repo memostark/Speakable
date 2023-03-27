@@ -2,14 +2,15 @@ package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.text.HtmlCompat
 import androidx.core.view.*
@@ -44,6 +45,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private var languageFrom: String? = null
 
     private var adapter: ParagraphAdapter? = null
+
+    private val loadingDialogVisible = mutableStateOf(false)
+    private val deleteDialogVisible = mutableStateOf(false)
+    private val isPageSaved = mutableStateOf(false)
 
     override fun onPause() {
         super.onPause()
@@ -111,13 +116,28 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             spinnerItems,
                             langSelection,
                             iconsVisible,
+                            isPageSaved,
                             { onTranslateClicked() },
                             { onArrowClicked(it) },
+                            { onBarMenuItemClicked(it) },
                         ) { index, _ ->
                             val langShort = if (index == 0) null else langShortNames[index]
                             languageFrom = langShort
                             viewModel.setLanguage(langShort)
                         }
+
+                        val loadingVisible by remember { loadingDialogVisible }
+                        LoadingDialog(loadingVisible)
+
+                        var deleteVisible by remember { deleteDialogVisible }
+                        DeletePageDialog(
+                            deleteVisible,
+                            onDismiss = { deleteVisible = false },
+                            okClicked = {
+                                deleteVisible = false
+                                isPageSaved.value = false
+                            }
+                        )
                     }
                 }
             }
@@ -133,6 +153,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
 
         viewModel.loadDoc(args.link)
+    }
+
+    private fun onBarMenuItemClicked(index: Int) {
+        if (isPageSaved.value) {
+            deleteDialogVisible.value = true
+        } else {
+            loadingDialogVisible.value = true
+            // simulate saving to disk latency
+            Handler(Looper.getMainLooper()).postDelayed({
+                loadingDialogVisible.value = false
+                isPageSaved.value = true
+            }, 2000)
+        }
     }
 
     private fun setParagraphList(text: String, iconsVisible: MutableState<Boolean>) {

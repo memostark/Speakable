@@ -12,6 +12,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ui.theme.AppTheme
 
@@ -21,8 +22,10 @@ fun WebReaderBottomBar(
     languages: MutableState<List<String>>,
     langSelection: MutableState<Int> = mutableStateOf(-1),
     iconsEnabled: MutableState<Boolean> = mutableStateOf(true),
+    isPageSaved: MutableState<Boolean> = mutableStateOf(false),
     onTranslateClicked: () -> Unit = {},
     onArrowClicked: (isLeft: Boolean) -> Unit = {},
+    onMenuItemClick: (index: Int) -> Unit = {},
     onLangSelected: (Int, String) -> Unit = { _, _ -> },
 ) {
     val iconsState by iconsEnabled
@@ -68,14 +71,19 @@ fun WebReaderBottomBar(
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(Icons.Filled.MoreVert, contentDescription = "Desc")
             }
-            val isSaved = false
+
             DropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false }
             ) {
 
-                DropdownMenuItem(onClick = { /* Handle send feedback! */ }) {
-                    val icon = if(isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
+                DropdownMenuItem(onClick = {
+                    onMenuItemClick(0)
+                    menuExpanded = false
+                }) {
+                    val isSaved by isPageSaved
+                    val icon =
+                        if (isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
                     Icon(painter = painterResource(icon), contentDescription = "Desc")
                     Spacer(modifier = Modifier.width(8.dp))
                     val text = stringResource(id = if (isSaved) R.string.delete else R.string.save)
@@ -123,6 +131,49 @@ fun Spinner(
     }
 }
 
+@Composable
+fun LoadingDialog(isVisible: Boolean) {
+    if (isVisible) {
+        Dialog(onDismissRequest = {}) {
+            Card {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+                    Text(
+                        stringResource(R.string.saving_page_dialog),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeletePageDialog(
+    isOpen: Boolean,
+    onDismiss: () -> Unit = {},
+    okClicked: () -> Unit = {},
+) {
+    if (isOpen) {
+        AlertDialog(
+            onDismissRequest =  { onDismiss() },
+            title = { Text(text = stringResource(R.string.delete_page_dialog_title)) },
+            text = { Text(stringResource(R.string.delete_page_dialog_body)) },
+            buttons = {
+                Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.End) {
+                    Button(onClick = { onDismiss() }) {
+                        Text(stringResource(id = R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { okClicked() }) {
+                        Text(stringResource(id = android.R.string.ok))
+                    }
+                }
+            }
+        )
+    }
+}
+
 private val suggestions = mutableStateOf(listOf("Item1", "Item2", "Item3"))
 
 @Preview
@@ -137,6 +188,25 @@ fun BarPreview() {
 @Composable
 fun SpinnerPreview() {
     AppTheme {
-        Spinner(remember { suggestions })
+        Column {
+            Spinner(remember { suggestions })
+            Spinner(remember { suggestions }, remember { mutableStateOf(0) })
+        }
+    }
+}
+
+@Preview
+@Composable
+fun LoadingDialogPreview() {
+    AppTheme {
+        LoadingDialog(true)
+    }
+}
+
+@Preview
+@Composable
+fun DeletePageDialogPreview() {
+    AppTheme {
+        DeletePageDialog(true)
     }
 }
