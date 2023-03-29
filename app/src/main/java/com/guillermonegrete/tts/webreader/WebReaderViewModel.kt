@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import org.jsoup.Jsoup
+import java.io.File
 import java.io.IOException
 import java.text.BreakIterator
 import java.util.*
@@ -284,6 +285,36 @@ class WebReaderViewModel @Inject constructor(
                 _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
             }
         }
+    }
+
+    fun saveWebLinkFolder(rootPath: String, uuid: UUID, content: String) {
+        val link = cacheWebLink ?: return
+        val folder = File(rootPath, uuid.toString())
+
+
+        val success = folder.mkdirs()
+        if (!success) return
+
+        val contentFile = File(folder, "content.xml")
+
+        contentFile.bufferedWriter().use { it.write(content) }
+
+        link.uuid = uuid
+    }
+
+    fun deleteLinkFolder(rootPath: String) {
+        val uuid = cacheWebLink?.uuid ?: return
+        val folder = File(rootPath, uuid.toString())
+
+        val files = folder.listFiles()
+        if (files != null) {
+            for (child: File in files) {
+                child.delete()
+            }
+        }
+
+        folder.delete()
+        cacheWebLink?.uuid = null
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)

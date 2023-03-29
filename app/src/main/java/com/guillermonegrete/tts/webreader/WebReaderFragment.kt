@@ -2,8 +2,6 @@ package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
@@ -31,6 +29,7 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.*
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -49,6 +48,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val loadingDialogVisible = mutableStateOf(false)
     private val deleteDialogVisible = mutableStateOf(false)
     private val isPageSaved = mutableStateOf(false)
+
+    private var pageText = ""
 
     override fun onPause() {
         super.onPause()
@@ -106,6 +107,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 languageFrom = it.language ?: langShortNames.first() // First is always "auto"
                 langSelection.value = langShortNames.indexOf(languageFrom)
+                isPageSaved.value = it.uuid != null
             }
 
             composeBar.apply {
@@ -136,6 +138,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             okClicked = {
                                 deleteVisible = false
                                 isPageSaved.value = false
+                                val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
+                                viewModel.deleteLinkFolder(externalDir)
                             }
                         )
                     }
@@ -160,15 +164,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             deleteDialogVisible.value = true
         } else {
             loadingDialogVisible.value = true
-            // simulate saving to disk latency
-            Handler(Looper.getMainLooper()).postDelayed({
-                loadingDialogVisible.value = false
-                isPageSaved.value = true
-            }, 2000)
+            val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
+            viewModel.saveWebLinkFolder(externalDir, UUID.randomUUID(), pageText)
+
+            isPageSaved.value = true
+            loadingDialogVisible.value = false
         }
     }
 
     private fun setParagraphList(text: String, iconsVisible: MutableState<Boolean>) {
+        pageText = text
+
         with(binding){
             paragraphsList.isVisible = true
             if(adapter == null) {
