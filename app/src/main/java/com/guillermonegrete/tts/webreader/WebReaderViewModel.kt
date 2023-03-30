@@ -63,6 +63,9 @@ class WebReaderViewModel @Inject constructor(
     val webLink: LiveData<WebLink>
         get() = _weblink
 
+    // Path of the app's external storage folder
+    var folderPath = ""
+
     /**
      * Loads the [url] as a string and loads (or creates if it doesn't exist) a database entry for the [url].
      *
@@ -73,17 +76,46 @@ class WebReaderViewModel @Inject constructor(
 
         viewModelScope.launch {
             wrapEspressoIdlingResource {
+
                 try {
-                    val page = getPage(url)
-                    _page.value = LoadResult.Success(page.content)
-                    val webLink = webLinkDAO.getLink(url) ?: link ?: WebLink(url, page.title)
+                    var webLink = webLinkDAO.getLink(url)
+                    val pageContent: String
+
+                    if (webLink != null) {
+                        val uuid = webLink.uuid
+                        pageContent = if (uuid != null) {
+                            readContentFile(uuid)
+                        } else {
+                            val page = getPage(url)
+                            page.content
+                        }
+                    } else {
+                        val page = getPage(url)
+                        webLink = link ?: WebLink(url, page.title)
+                        pageContent = page.content
+                    }
+
+                    _page.value = LoadResult.Success(pageContent)
                     cacheWebLink = webLink
-                    _weblink.value = webLink
-                } catch (ex: IOException){
+                    // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
+                    // Bug report: https://issuetracker.google.com/issues/198313895
+                    val safeLink: WebLink = webLink
+                    _weblink.value = safeLink
+                } catch (ex: IOException) {
                     _page.value = LoadResult.Error(ex)
                 }
             }
         }
+    }
+
+    /**
+     * Reads the html file saved in the local storage. With [uuid] being the folder name.
+     */
+    private fun readContentFile(uuid: UUID): String {
+        val rootFolder = File(folderPath, uuid.toString())
+        val file = File(rootFolder, page_filename)
+        val doc = Jsoup.parse(file, null)
+        return doc.outerHtml()
     }
 
     private suspend fun getPage(url: String): Page = withContext(ioDispatcher){
@@ -295,7 +327,7 @@ class WebReaderViewModel @Inject constructor(
         val success = folder.mkdirs()
         if (!success) return
 
-        val contentFile = File(folder, "content.xml")
+        val contentFile = File(folder, page_filename)
 
         contentFile.bufferedWriter().use { it.write(content) }
 
@@ -324,4 +356,8 @@ class WebReaderViewModel @Inject constructor(
     data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
 
     data class Page(val title: String, val content: String)
+
+    companion object {
+        private const val page_filename = "content.xml"
+    }
 }

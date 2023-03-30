@@ -156,6 +156,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             setBackButtonNav()
         }
 
+        viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
         viewModel.loadDoc(args.link)
     }
 
