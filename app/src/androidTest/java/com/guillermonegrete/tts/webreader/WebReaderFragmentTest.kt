@@ -156,7 +156,6 @@ class WebReaderFragmentTest{
         // Click translate and verify correct translation
         server.enqueue(MockResponse().setBody(responseAdapter.toJson(paragraphTranslationResponse)))
         composeTestRule.onNodeWithContentDescription("Translate").performClick()
-        Thread.sleep(500)
 
         onView(withId(R.id.translated_paragraph)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_paragraph)).check(matches(withText(FIRST_PARAGRAPH_TRANS)))
@@ -172,15 +171,14 @@ class WebReaderFragmentTest{
 
     private fun translateSelectionAndReturn(expectedTranslation: String){
         composeTestRule.onNodeWithContentDescription("Translate").performClick()
-        Thread.sleep(500)
 
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText(expectedTranslation)))
+        Thread.sleep(500) // Wait for the sheet to be fully visible, otherwise the press back exits the app. This is the best solution, using idle resource freezes the test
 
         Espresso.pressBack()
 
         onView(withId(R.id.translated_text)).check(matches(not(isDisplayed())))
-        Thread.sleep(500) // wait for the sheet to settle, this is the best solution using idle resource freezes the test
     }
 
     private fun sentenceDispatcher(): Dispatcher {

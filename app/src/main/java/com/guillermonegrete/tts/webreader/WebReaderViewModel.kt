@@ -163,19 +163,21 @@ class WebReaderViewModel @Inject constructor(
         _translatedParagraph.value = LoadResult.Loading
 
         viewModelScope.launch {
-            val result = withContext(ioDispatcher) {
-                getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
-            }
-
-            when(result){
-                is Result.Success -> {
-                    val translation = result.data
-                    paragraph.translation = translation.translatedText
-                    paragraph.sourceLang = translation.src
-                    _translatedParagraphs[pos] = translation
-                    _translatedParagraph.value = LoadResult.Success(pos)
+            wrapEspressoIdlingResource {
+                val result = withContext(ioDispatcher) {
+                    getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
                 }
-                is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
+
+                when(result){
+                    is Result.Success -> {
+                        val translation = result.data
+                        paragraph.translation = translation.translatedText
+                        paragraph.sourceLang = translation.src
+                        _translatedParagraphs[pos] = translation
+                        _translatedParagraph.value = LoadResult.Success(pos)
+                    }
+                    is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
+                }
             }
         }
     }
@@ -310,11 +312,13 @@ class WebReaderViewModel @Inject constructor(
         _textInfo.value = LoadResult.Loading
 
         viewModelScope.launch {
-            getTranslation(sentence.original) { translation ->
-                sentence.translation = translation.translatedText
-                sentence.sourceLang = translation.src
-                val word = Words(sentence.original, translation.src, translation.translatedText)
-                _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+            wrapEspressoIdlingResource {
+                getTranslation(sentence.original) { translation ->
+                    sentence.translation = translation.translatedText
+                    sentence.sourceLang = translation.src
+                    val word = Words(sentence.original, translation.src, translation.translatedText)
+                    _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+                }
             }
         }
     }
