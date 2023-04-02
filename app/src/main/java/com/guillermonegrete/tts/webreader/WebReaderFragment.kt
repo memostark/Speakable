@@ -122,6 +122,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             { onTranslateClicked() },
                             { onArrowClicked(it) },
                             { onBarMenuItemClicked(it) },
+                            { Toast.makeText(context, "Selected page version: $it", Toast.LENGTH_SHORT).show() },
                         ) { index, _ ->
                             val langShort = if (index == 0) null else langShortNames[index]
                             languageFrom = langShort
