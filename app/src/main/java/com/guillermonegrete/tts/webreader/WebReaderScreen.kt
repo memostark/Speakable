@@ -87,11 +87,11 @@ fun WebReaderBottomBar(
                 onDismissRequest = { menuExpanded = false }
             ) {
 
+                val isSaved by isPageSaved
                 DropdownMenuItem(onClick = {
                     onMenuItemClick(0)
                     menuExpanded = false
                 }) {
-                    val isSaved by isPageSaved
                     val icon =
                         if (isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
                     Icon(painter = painterResource(icon), contentDescription = "Desc")
@@ -102,11 +102,13 @@ fun WebReaderBottomBar(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                DropdownMenuItem(onClick = {}) {
-                    MultiToggleButton(pageVersionSelection, pageVersionStates) {
-                        pageVersionSelection = it
-                        menuExpanded = false
-                        onPageVersionChanged(pageVersionSelection)
+                if (isSaved) {
+                    DropdownMenuItem(onClick = {}) {
+                        MultiToggleButton(pageVersionSelection, pageVersionStates) {
+                            pageVersionSelection = it
+                            menuExpanded = false
+                            onPageVersionChanged(pageVersionSelection)
+                        }
                     }
                 }
             }

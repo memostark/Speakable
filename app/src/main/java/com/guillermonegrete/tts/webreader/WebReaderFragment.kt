@@ -71,7 +71,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 var isLoading = false
                 when(it){
                     is LoadResult.Error -> {
-                        Timber.e("Error loading page", it.exception)
+                        Timber.e(it.exception,"Error loading page")
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true
@@ -122,7 +122,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             { onTranslateClicked() },
                             { onArrowClicked(it) },
                             { onBarMenuItemClicked(it) },
-                            { Toast.makeText(context, "Selected page version: $it", Toast.LENGTH_SHORT).show() },
+                            { onPageVersionChanged(it) },
                         ) { index, _ ->
                             val langShort = if (index == 0) null else langShortNames[index]
                             languageFrom = langShort
@@ -159,6 +159,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
         viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
         viewModel.loadDoc(args.link)
+    }
+
+    private fun onPageVersionChanged(pageVersion: String) {
+        when(pageVersion) {
+            "Local" -> viewModel.loadLocalPage()
+            "Web" -> viewModel.loadPageFromWeb()
+        }
     }
 
     private fun onBarMenuItemClicked(index: Int) {
@@ -330,7 +337,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                     is LoadResult.Error -> {
                         Toast.makeText(context, "Couldn't translate text", Toast.LENGTH_SHORT).show()
-                        Timber.e("Error translating selected text", result.exception)
+                        Timber.e(result.exception, "Error translating selected text")
                         true
                     }
                     LoadResult.Loading -> {
@@ -358,7 +365,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                     is LoadResult.Error -> {
                         Toast.makeText(context, "Couldn't translate word", Toast.LENGTH_SHORT).show()
-                        Timber.e("Error translating word in selected text", result.exception)
+                        Timber.e(result.exception,"Error translating word in selected text")
                         true
                     }
                     LoadResult.Loading -> {

@@ -108,6 +108,32 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
+    fun loadLocalPage() {
+        cacheWebLink?.uuid?.let { uuid ->
+            _page.value = LoadResult.Loading
+            try {
+                val content = readContentFile(uuid)
+                _page.value = LoadResult.Success(content)
+            } catch (ex: IOException){
+                _page.value = LoadResult.Error(ex)
+            }
+        }
+    }
+
+    fun loadPageFromWeb(){
+        val webLink = cacheWebLink ?: return
+
+        viewModelScope.launch {
+            _page.value = LoadResult.Loading
+            try {
+                val page = getPage(webLink.url)
+                _page.value = LoadResult.Success(page.content)
+            } catch (ex: IOException){
+                _page.value = LoadResult.Error(ex)
+            }
+        }
+    }
+
     /**
      * Reads the html file saved in the local storage. With [uuid] being the folder name.
      */
