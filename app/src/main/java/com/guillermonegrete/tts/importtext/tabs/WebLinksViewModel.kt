@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,9 +30,24 @@ class WebLinksViewModel @Inject constructor(private val webLinkDAO: WebLinkDAO):
 
     }
 
-    fun delete(link: WebLink){
+    fun delete(link: WebLink, rootFolder: String){
         viewModelScope.launch {
+            deleteLinkFolder(link, rootFolder)
             webLinkDAO.delete(link)
         }
+    }
+
+    private fun deleteLinkFolder(link: WebLink, rootPath: String) {
+        val uuid = link.uuid ?: return
+        val folder = File(rootPath, uuid.toString())
+
+        val files = folder.listFiles()
+        if (files != null) {
+            for (child: File in files) {
+                child.delete()
+            }
+        }
+
+        folder.delete()
     }
 }
