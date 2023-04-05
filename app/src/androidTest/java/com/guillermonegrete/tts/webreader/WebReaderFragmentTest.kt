@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
@@ -47,6 +49,9 @@ class WebReaderFragmentTest{
     @get:Rule
     var hiltRule = HiltAndroidRule(this)
 
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
     private lateinit var server: MockWebServer
 
     private val moshi: Moshi = Moshi.Builder().build()
@@ -92,7 +97,7 @@ class WebReaderFragmentTest{
         clickParagraphList(0, clickIn(0, 0))
 
         Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
-        onView(withId(R.id.menu_bar)).check(matches(not(isDisplayed())))
+        composeTestRule.onNodeWithTag("web_reader_bar").assertIsNotDisplayed()
 
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText("My")))
@@ -120,7 +125,7 @@ class WebReaderFragmentTest{
         for (response in sentencesTranslationResponses){
             val translation = response.sentences.first().trans
             translateSelectionAndReturn(translation)
-            onView(withId(R.id.next_selection)).perform(click())
+            composeTestRule.onNodeWithContentDescription("next selection").performClick()
         }
 
         // Verify the last next_selection click didn't change the selection (the last sentence was selected so no change)
@@ -128,7 +133,7 @@ class WebReaderFragmentTest{
         translateSelectionAndReturn(translation)
 
         // Verify previous_selection works
-        onView(withId(R.id.previous_selection)).perform(click())
+        composeTestRule.onNodeWithContentDescription("previous selection").performClick()
         val secondTranslation = sentencesTranslationResponses[1].sentences.first().trans
         translateSelectionAndReturn(secondTranslation)
     }
@@ -150,7 +155,7 @@ class WebReaderFragmentTest{
 
         // Click translate and verify correct translation
         server.enqueue(MockResponse().setBody(responseAdapter.toJson(paragraphTranslationResponse)))
-        onView(withId(R.id.translate)).perform(click())
+        composeTestRule.onNodeWithContentDescription("Translate").performClick()
 
         onView(withId(R.id.translated_paragraph)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_paragraph)).check(matches(withText(FIRST_PARAGRAPH_TRANS)))
@@ -165,15 +170,15 @@ class WebReaderFragmentTest{
             .context.assets.open("test_page.html").bufferedReader().use { it.readText() }
 
     private fun translateSelectionAndReturn(expectedTranslation: String){
-        onView(withId(R.id.translate)).perform(click())
+        composeTestRule.onNodeWithContentDescription("Translate").performClick()
 
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText(expectedTranslation)))
+        Thread.sleep(500) // Wait for the sheet to be fully visible, otherwise the press back exits the app. This is the best solution, using idle resource freezes the test
 
         Espresso.pressBack()
 
         onView(withId(R.id.translated_text)).check(matches(not(isDisplayed())))
-        Thread.sleep(500) // wait for the sheet to settle, this is the best solution using idle resource freezes the test
     }
 
     private fun sentenceDispatcher(): Dispatcher {

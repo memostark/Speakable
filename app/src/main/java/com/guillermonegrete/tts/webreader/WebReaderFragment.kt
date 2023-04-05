@@ -2,15 +2,14 @@ package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.text.Html
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.text.HtmlCompat
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
@@ -26,9 +25,11 @@ import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
+import com.guillermonegrete.tts.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.*
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -44,6 +45,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var adapter: ParagraphAdapter? = null
 
+    private val loadingDialogVisible = mutableStateOf(false)
+    private val deleteDialogVisible = mutableStateOf(false)
+    private val isPageSaved = mutableStateOf(false)
+
+    private var pageText = ""
+
     override fun onPause() {
         super.onPause()
         viewModel.saveWebLink()
@@ -54,6 +61,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
 
+        val iconsVisible = mutableStateOf(false)
+
         with(binding){
             loadingIcon.isVisible = true
 
@@ -62,11 +71,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 var isLoading = false
                 when(it){
                     is LoadResult.Error -> {
-                        Timber.e("Error loading page", it.exception)
+                        Timber.e(it.exception,"Error loading page")
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true
-                    is LoadResult.Success -> setParagraphList(it.data)
+                    is LoadResult.Success -> setParagraphList(it.data, iconsVisible)
                 }
 
                 retryButton.isVisible = isError
@@ -89,40 +98,53 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.updateExpanded()
             }
 
-            viewModel.webLink.observe(viewLifecycleOwner) {
-                val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
-                languageFrom = it.language ?: langShortNames.first() // First is always "auto"
-                val langAdapter = ArrayAdapter.createFromResource(
-                    requireContext(),
-                    R.array.googleTranslateLangsWithAutoArray,
-                    android.R.layout.simple_spinner_dropdown_item
-                )
-                setLanguage.adapter = langAdapter
-                val index = langShortNames.indexOf(languageFrom)
-                setLanguage.prompt = getString(R.string.web_reader_lang_spinner_prompt)
-                setLanguage.setSelection(index, false)
-                setLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                        val langShort = if (position == 0) null else langShortNames[position]
-                        languageFrom = langShort
-                        viewModel.setLanguage(langShort)
-                    }
+            val spinnerItems = mutableStateOf(emptyList<String>())
+            val langSelection = mutableStateOf(-1)
 
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
-                }
+            val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
+            viewModel.webLink.observe(viewLifecycleOwner) {
+                spinnerItems.value = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
+
+                languageFrom = it.language ?: langShortNames.first() // First is always "auto"
+                langSelection.value = langShortNames.indexOf(languageFrom)
+                isPageSaved.value = it.uuid != null
             }
 
-            translate.setOnClickListener {
-                val adapter = adapter ?: return@setOnClickListener
-                val expandedItemPos = adapter.expandedItemPos
-                if (expandedItemPos != -1) {
-                    viewModel.translateParagraph(expandedItemPos)
-                    return@setOnClickListener
-                }
+            composeBar.apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setContent {
+                    AppTheme {
+                        WebReaderBottomBar(
+                            spinnerItems,
+                            langSelection,
+                            iconsVisible,
+                            isPageSaved,
+                            { onTranslateClicked() },
+                            { onArrowClicked(it) },
+                            { onBarMenuItemClicked(it) },
+                            { onPageVersionChanged(it) },
+                        ) { index, _ ->
+                            val langShort = if (index == 0) null else langShortNames[index]
+                            languageFrom = langShort
+                            viewModel.setLanguage(langShort)
+                        }
 
-                val selected = adapter.selectedSentence
-                if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
-                    viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
+                        val loadingVisible by remember { loadingDialogVisible }
+                        LoadingDialog(loadingVisible)
+
+                        var deleteVisible by remember { deleteDialogVisible }
+                        DeletePageDialog(
+                            deleteVisible,
+                            onDismiss = { deleteVisible = false },
+                            okClicked = {
+                                deleteVisible = false
+                                isPageSaved.value = false
+                                val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
+                                viewModel.deleteLinkFolder(externalDir)
+                            }
+                        )
+                    }
+                }
             }
 
             retryButton.setOnClickListener {
@@ -135,28 +157,48 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             setBackButtonNav()
         }
 
+        viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
         viewModel.loadDoc(args.link)
     }
 
-    private fun setParagraphList(text: String) {
+    private fun onPageVersionChanged(pageVersion: String) {
+        when(pageVersion) {
+            "Local" -> viewModel.loadLocalPage()
+            "Web" -> viewModel.loadPageFromWeb()
+        }
+    }
+
+    private fun onBarMenuItemClicked(index: Int) {
+        if (isPageSaved.value) {
+            deleteDialogVisible.value = true
+        } else {
+            loadingDialogVisible.value = true
+            val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
+            viewModel.saveWebLinkFolder(externalDir, UUID.randomUUID(), pageText)
+
+            isPageSaved.value = true
+            loadingDialogVisible.value = false
+        }
+    }
+
+    private fun setParagraphList(text: String, iconsVisible: MutableState<Boolean>) {
+        pageText = text
+
         with(binding){
             paragraphsList.isVisible = true
             if(adapter == null) {
                 val newParagraphs =  text.split("\n")
-                    .map { HtmlCompat.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).trim() }
+                    .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
                     .filter { it.isNotEmpty() }
                 val splitParagraphs = viewModel.createParagraphs(newParagraphs)
                 val newAdapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
                     hideBottomSheets()
                 }
-                setSentenceNavigator(newAdapter)
                 adapter = newAdapter
             }
             paragraphsList.adapter = adapter
 
-            translate.isVisible = true
-            previousSelection.isVisible = true
-            nextSelection.isVisible = true
+            iconsVisible.value = true
             setAdapterListeners()
         }
     }
@@ -208,7 +250,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN
-                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) menuBar.isVisible = true
+                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -246,7 +288,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.setSelectedPos(selectedPos)
                 linksList.scrollToPosition(selectedPos)
                 linksList.adapter = adapter
-                menuBar.isVisible = false
+                composeBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
@@ -269,7 +311,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         adapter?.unselectWord()
-                        binding.menuBar.isVisible = true
+                        binding.composeBar.isVisible = true
                     }
                 }
 
@@ -290,12 +332,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
 
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                        binding.menuBar.isVisible = false
+                        binding.composeBar.isVisible = false
                         true
                     }
                     is LoadResult.Error -> {
                         Toast.makeText(context, "Couldn't translate text", Toast.LENGTH_SHORT).show()
-                        Timber.e("Error translating selected text", result.exception)
+                        Timber.e(result.exception, "Error translating selected text")
                         true
                     }
                     LoadResult.Loading -> {
@@ -323,7 +365,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                     is LoadResult.Error -> {
                         Toast.makeText(context, "Couldn't translate word", Toast.LENGTH_SHORT).show()
-                        Timber.e("Error translating word in selected text", result.exception)
+                        Timber.e(result.exception,"Error translating word in selected text")
                         true
                     }
                     LoadResult.Loading -> {
@@ -336,20 +378,29 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun setSentenceNavigator(newAdapter: ParagraphAdapter) {
-        with(binding){
-            previousSelection.setOnClickListener {
-                newAdapter.previousSentence()
-                val pos = newAdapter.selectedSentence.paragraphIndex
-                if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
-            }
-
-            nextSelection.setOnClickListener {
-                newAdapter.nextSentence()
-                val pos = newAdapter.selectedSentence.paragraphIndex
-                if(pos != -1) paragraphsList.smoothScrollToPosition(pos)
-            }
+    private fun onArrowClicked(isLeft: Boolean){
+        val paragraphAdapter = adapter ?: return
+        if (isLeft) {
+            paragraphAdapter.previousSentence()
+        } else {
+            paragraphAdapter.nextSentence()
         }
+        val pos = paragraphAdapter.selectedSentence.paragraphIndex
+        if(pos != -1) binding.paragraphsList.smoothScrollToPosition(pos)
+
+    }
+
+    private fun onTranslateClicked(){
+        val adapter = adapter ?: return
+        val expandedItemPos = adapter.expandedItemPos
+        if (expandedItemPos != -1) {
+            viewModel.translateParagraph(expandedItemPos)
+            return
+        }
+
+        val selected = adapter.selectedSentence
+        if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
+            viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
     }
 
     private fun setBackButtonNav() {

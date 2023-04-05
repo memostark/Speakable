@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import org.jsoup.Jsoup
+import java.io.File
 import java.io.IOException
 import java.text.BreakIterator
 import java.util.*
@@ -62,6 +63,9 @@ class WebReaderViewModel @Inject constructor(
     val webLink: LiveData<WebLink>
         get() = _weblink
 
+    // Path of the app's external storage folder
+    var folderPath = ""
+
     /**
      * Loads the [url] as a string and loads (or creates if it doesn't exist) a database entry for the [url].
      *
@@ -72,17 +76,72 @@ class WebReaderViewModel @Inject constructor(
 
         viewModelScope.launch {
             wrapEspressoIdlingResource {
+
                 try {
-                    val page = getPage(url)
-                    _page.value = LoadResult.Success(page.content)
-                    val webLink = webLinkDAO.getLink(url) ?: link ?: WebLink(url, page.title)
+                    var webLink = webLinkDAO.getLink(url)
+                    val pageContent: String
+
+                    if (webLink != null) {
+                        val uuid = webLink.uuid
+                        pageContent = if (uuid != null) {
+                            readContentFile(uuid)
+                        } else {
+                            val page = getPage(url)
+                            page.content
+                        }
+                    } else {
+                        val page = getPage(url)
+                        webLink = link ?: WebLink(url, page.title)
+                        pageContent = page.content
+                    }
+
+                    _page.value = LoadResult.Success(pageContent)
                     cacheWebLink = webLink
-                    _weblink.value = webLink
-                } catch (ex: IOException){
+                    // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
+                    // Bug report: https://issuetracker.google.com/issues/198313895
+                    val safeLink: WebLink = webLink
+                    _weblink.value = safeLink
+                } catch (ex: IOException) {
                     _page.value = LoadResult.Error(ex)
                 }
             }
         }
+    }
+
+    fun loadLocalPage() {
+        cacheWebLink?.uuid?.let { uuid ->
+            _page.value = LoadResult.Loading
+            try {
+                val content = readContentFile(uuid)
+                _page.value = LoadResult.Success(content)
+            } catch (ex: IOException){
+                _page.value = LoadResult.Error(ex)
+            }
+        }
+    }
+
+    fun loadPageFromWeb(){
+        val webLink = cacheWebLink ?: return
+
+        viewModelScope.launch {
+            _page.value = LoadResult.Loading
+            try {
+                val page = getPage(webLink.url)
+                _page.value = LoadResult.Success(page.content)
+            } catch (ex: IOException){
+                _page.value = LoadResult.Error(ex)
+            }
+        }
+    }
+
+    /**
+     * Reads the html file saved in the local storage. With [uuid] being the folder name.
+     */
+    private fun readContentFile(uuid: UUID): String {
+        val rootFolder = File(folderPath, uuid.toString())
+        val file = File(rootFolder, page_filename)
+        val doc = Jsoup.parse(file, null)
+        return doc.outerHtml()
     }
 
     private suspend fun getPage(url: String): Page = withContext(ioDispatcher){
@@ -130,19 +189,21 @@ class WebReaderViewModel @Inject constructor(
         _translatedParagraph.value = LoadResult.Loading
 
         viewModelScope.launch {
-            val result = withContext(ioDispatcher) {
-                getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
-            }
-
-            when(result){
-                is Result.Success -> {
-                    val translation = result.data
-                    paragraph.translation = translation.translatedText
-                    paragraph.sourceLang = translation.src
-                    _translatedParagraphs[pos] = translation
-                    _translatedParagraph.value = LoadResult.Success(pos)
+            wrapEspressoIdlingResource {
+                val result = withContext(ioDispatcher) {
+                    getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
                 }
-                is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
+
+                when(result){
+                    is Result.Success -> {
+                        val translation = result.data
+                        paragraph.translation = translation.translatedText
+                        paragraph.sourceLang = translation.src
+                        _translatedParagraphs[pos] = translation
+                        _translatedParagraph.value = LoadResult.Success(pos)
+                    }
+                    is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
+                }
             }
         }
     }
@@ -277,13 +338,45 @@ class WebReaderViewModel @Inject constructor(
         _textInfo.value = LoadResult.Loading
 
         viewModelScope.launch {
-            getTranslation(sentence.original) { translation ->
-                sentence.translation = translation.translatedText
-                sentence.sourceLang = translation.src
-                val word = Words(sentence.original, translation.src, translation.translatedText)
-                _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+            wrapEspressoIdlingResource {
+                getTranslation(sentence.original) { translation ->
+                    sentence.translation = translation.translatedText
+                    sentence.sourceLang = translation.src
+                    val word = Words(sentence.original, translation.src, translation.translatedText)
+                    _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+                }
             }
         }
+    }
+
+    fun saveWebLinkFolder(rootPath: String, uuid: UUID, content: String) {
+        val link = cacheWebLink ?: return
+        val folder = File(rootPath, uuid.toString())
+
+
+        val success = folder.mkdirs()
+        if (!success) return
+
+        val contentFile = File(folder, page_filename)
+
+        contentFile.bufferedWriter().use { it.write(content) }
+
+        link.uuid = uuid
+    }
+
+    fun deleteLinkFolder(rootPath: String) {
+        val uuid = cacheWebLink?.uuid ?: return
+        val folder = File(rootPath, uuid.toString())
+
+        val files = folder.listFiles()
+        if (files != null) {
+            for (child: File in files) {
+                child.delete()
+            }
+        }
+
+        folder.delete()
+        cacheWebLink?.uuid = null
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
@@ -293,4 +386,8 @@ class WebReaderViewModel @Inject constructor(
     data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
 
     data class Page(val title: String, val content: String)
+
+    companion object {
+        private const val page_filename = "content.xml"
+    }
 }
