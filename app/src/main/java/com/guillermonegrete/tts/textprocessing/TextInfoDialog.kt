@@ -370,12 +370,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showLanguageNotAvailable() {
-        playProgressBar.visibility = View.INVISIBLE
-        playButton.visibility = View.VISIBLE
         playButton.setOnClickListener {
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
         }
-        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+        playButton.setImageResource(R.drawable.baseline_volume_off_24)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
     }
 
     override fun showLoadingTTS() {
