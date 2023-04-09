@@ -370,14 +370,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showLanguageNotAvailable() {
-        // Why do you need to check this?
-
-        // This is function is sometimes called multiple times
-        // Don't show toast if container is already gone
-        if(playIconsContainer.visibility == View.GONE) return
-
-        playIconsContainer.visibility = View.GONE
-        Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
+        playButton.setOnClickListener {
+            Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
+        }
+        playButton.setImageResource(R.drawable.baseline_volume_off_24)
+        playProgressBar.visibility = View.INVISIBLE
+        playButton.visibility = View.VISIBLE
     }
 
     override fun showLoadingTTS() {
