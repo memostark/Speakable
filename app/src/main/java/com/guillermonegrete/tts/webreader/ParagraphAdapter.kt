@@ -72,6 +72,8 @@ class ParagraphAdapter(
     inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
 
         init {
+            // Because of a bug when having a TextView inside a CoordinatorLayout, the paragraph TextView has to have width equals to wrap_content so its text can be selectable.
+            // Using match_parent the text can't be selected
             with(binding){
                 val detector = GestureDetectorCompat(itemView.context, MyGestureListener())
                 paragraph.setOnTouchListener { _, event ->
@@ -103,10 +105,6 @@ class ParagraphAdapter(
 
         private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
 
-            override fun onDown(e: MotionEvent): Boolean {
-                return true
-            }
-
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
                 val wordSpan = binding.paragraph.findWordForRightHanded(offset)
@@ -136,24 +134,20 @@ class ParagraphAdapter(
                 return super.onSingleTapConfirmed(e)
             }
 
-            override fun onLongPress(e: MotionEvent) {
-
-                unselectSentence()
-                removeExpanded()
-
-                val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
-                val index = findSentence(offset)
-                selectSentence(adapterPosition, index)
-                onSentenceSelected()
-
-                super.onLongPress(e)
-            }
-
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                setExpanded()
-                unselectSentence()
+                setSentenceSelected(e)
                 return super.onDoubleTap(e)
             }
+        }
+
+        private fun setSentenceSelected(e: MotionEvent) {
+            unselectSentence()
+            removeExpanded()
+
+            val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+            val index = findSentence(offset)
+            selectSentence(adapterPosition, index)
+            onSentenceSelected()
         }
 
         fun setExpanded(){
