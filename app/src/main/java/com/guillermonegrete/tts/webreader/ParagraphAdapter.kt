@@ -21,6 +21,7 @@ import com.guillermonegrete.tts.utils.findWordForRightHanded
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlin.math.abs
 
 class ParagraphAdapter(
     val items: List<ParagraphItem>,
@@ -137,6 +138,24 @@ class ParagraphAdapter(
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 setSentenceSelected(e)
                 return super.onDoubleTap(e)
+            }
+
+            override fun onFling(
+                e1: MotionEvent,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                val diffY = e2.y - e1.y
+                val diffX = e2.x - e1.x
+                // Detects horizontal swipes in any direction
+                if (abs(diffX) > abs(diffY)) {
+                    if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                        unselectSentence()
+                        setExpanded()
+                    }
+                }
+                return true
             }
         }
 
@@ -342,4 +361,9 @@ class ParagraphAdapter(
     )
 
     data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)
+
+    companion object {
+        private const val SWIPE_THRESHOLD = 0.8
+        private const val SWIPE_VELOCITY_THRESHOLD = 0.8
+    }
 }
