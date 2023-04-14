@@ -211,5 +211,6 @@
     <string name="saving_page_dialog">Saving page…</string>
     <string name="delete_page_dialog_body">The page is going to be deleted from the local storage</string>
     <string name="delete_page_dialog_title">Deleting page</string>
+    <string name="new_note">New note</string>
 
 </resources>

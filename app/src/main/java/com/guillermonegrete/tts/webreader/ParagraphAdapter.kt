@@ -5,8 +5,11 @@ import android.graphics.Color
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
+import android.view.ActionMode
 import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
@@ -80,6 +83,7 @@ class ParagraphAdapter(
                 paragraph.setOnTouchListener { _, event ->
                     detector.onTouchEvent(event)
                 }
+                paragraph.customSelectionActionModeCallback = ParagraphActionModeCallback()
             }
         }
 
@@ -349,6 +353,32 @@ class ParagraphAdapter(
         val color = Color.argb(128, 255, 0, 0)
         text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         this.setText(text, TextView.BufferType.SPANNABLE)
+    }
+
+    class ParagraphActionModeCallback: ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
+
+        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+            menu?.clear()
+            val inflater = mode?.menuInflater
+            menu?.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
+            inflater?.inflate(R.menu.menu_context_web_reader, menu)
+            return true
+        }
+
+        override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+            item ?: return false
+
+            return when(item.itemId) {
+                R.id.add_new_note_action -> {
+                    true
+                }
+                else -> false
+            }
+        }
+
+        override fun onDestroyActionMode(mode: ActionMode?) {}
+
     }
 
     data class ParagraphItem(
