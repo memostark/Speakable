@@ -202,6 +202,38 @@ fun DeletePageDialog(
 }
 
 @Composable
+fun AddNoteDialog() {
+    AlertDialog(
+        onDismissRequest = { /*TODO*/ },
+        modifier = Modifier.padding(top = 8.dp),
+        text = {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            var text by remember { mutableStateOf("") }
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text("Add a new note".addEmptyLines(3)) }
+            )
+        },
+        buttons = {
+
+            Row(Modifier.padding(horizontal = 8.dp)) {
+                Button(onClick = { }, Modifier.weight(1f)) {
+                    Text(stringResource(id = R.string.cancel))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { }, Modifier.weight(1f)) {
+                    Text(stringResource(R.string.save))
+                }
+            }
+        }
+    )
+}
+
+fun String.addEmptyLines(lines: Int) = this + "\n".repeat(lines)
+
+@Composable
 fun MultiToggleButton(
     currentSelection: String,
     toggleStates: List<String>,
@@ -283,6 +315,14 @@ fun LoadingDialogPreview() {
 fun DeletePageDialogPreview() {
     AppTheme {
         DeletePageDialog(true)
+    }
+}
+
+@Preview
+@Composable
+fun AddNoteDialogPreview() {
+    AppTheme {
+        AddNoteDialog()
     }
 }
 
