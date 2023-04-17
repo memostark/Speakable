@@ -47,6 +47,13 @@ class ParagraphAdapter(
     )
     val sentenceClicked = _sentenceClicked.asSharedFlow()
 
+    private val _addNoteClicked = MutableSharedFlow<String>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        BufferOverflow.DROP_OLDEST
+    )
+    val addNoteClicked = _addNoteClicked.asSharedFlow()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return if(viewType == R.layout.paragraph_expanded_item) ExpandedViewHolder(ParagraphExpandedItemBinding.inflate(inflater, parent, false))
@@ -355,7 +362,7 @@ class ParagraphAdapter(
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
 
-    class ParagraphActionModeCallback: ActionMode.Callback {
+    inner class ParagraphActionModeCallback: ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
 
         override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
@@ -371,6 +378,7 @@ class ParagraphAdapter(
 
             return when(item.itemId) {
                 R.id.add_new_note_action -> {
+                    _addNoteClicked.tryEmit("")
                     true
                 }
                 else -> false

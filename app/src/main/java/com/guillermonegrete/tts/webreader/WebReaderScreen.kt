@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import kotlinx.coroutines.android.awaitFrame
 
 
 @Composable
@@ -202,10 +205,18 @@ fun DeletePageDialog(
 }
 
 @Composable
-fun AddNoteDialog() {
+fun AddNoteDialog(
+    isVisible: Boolean,
+    onDismiss: () -> Unit = {},
+    saveClicked: () -> Unit = {},
+) {
+
+    if (!isVisible) return
+    val focusRequester = remember { FocusRequester() }
+
     AlertDialog(
-        onDismissRequest = { /*TODO*/ },
-        modifier = Modifier.padding(top = 8.dp),
+        onDismissRequest = { onDismiss() },
+        title = {},
         text = {
             Spacer(modifier = Modifier.width(8.dp))
 
@@ -213,22 +224,32 @@ fun AddNoteDialog() {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
-                placeholder = { Text("Add a new note".addEmptyLines(3)) }
+                placeholder = { Text("Add a new note".addEmptyLines(3)) },
+                modifier = Modifier.focusRequester(focusRequester)
             )
         },
         buttons = {
 
-            Row(Modifier.padding(horizontal = 8.dp)) {
-                Button(onClick = { }, Modifier.weight(1f)) {
+            Row(Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)) {
+                Button(onClick = { onDismiss() }, Modifier.weight(1f)) {
                     Text(stringResource(id = R.string.cancel))
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { }, Modifier.weight(1f)) {
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(onClick = {
+                    saveClicked()
+                    onDismiss()
+                }, Modifier.weight(1f)) {
                     Text(stringResource(R.string.save))
                 }
             }
         }
     )
+
+    // Used to request focus which shows the keyboard
+    LaunchedEffect(Unit) {
+        awaitFrame()
+        focusRequester.requestFocus()
+    }
 }
 
 fun String.addEmptyLines(lines: Int) = this + "\n".repeat(lines)
@@ -322,7 +343,7 @@ fun DeletePageDialogPreview() {
 @Composable
 fun AddNoteDialogPreview() {
     AppTheme {
-        AddNoteDialog()
+        AddNoteDialog(true)
     }
 }
 

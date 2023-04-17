@@ -47,6 +47,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private val loadingDialogVisible = mutableStateOf(false)
     private val deleteDialogVisible = mutableStateOf(false)
+    private val addNoteDialogVisible = mutableStateOf(false)
     private val isPageSaved = mutableStateOf(false)
 
     private var pageText = ""
@@ -143,6 +144,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 viewModel.deleteLinkFolder(externalDir)
                             }
                         )
+
+                        var addNoteVisible by remember { addNoteDialogVisible }
+                        AddNoteDialog(
+                            addNoteVisible,
+                            onDismiss = { addNoteVisible = false }
+                        )
+
                     }
                 }
             }
@@ -208,16 +216,26 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-                paragraphAdapter.sentenceClicked.collect {
+                launch {
+                    paragraphAdapter.sentenceClicked.collect {
 
-                    val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
-                    if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
-                        paragraphAdapter.unselectSentence()
-                        setWordSheetViews(false)
-                    } else {
-                        viewModel.translateWordInSentence(it)
-                        val itemIndex = paragraphAdapter.selectedSentence.paragraphIndex
-                        paragraphAdapter.notifyItemChanged(itemIndex)
+                        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
+                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
+                            paragraphAdapter.unselectSentence()
+                            setWordSheetViews(false)
+                        } else {
+                            viewModel.translateWordInSentence(it)
+                            val itemIndex = paragraphAdapter.selectedSentence.paragraphIndex
+                            paragraphAdapter.notifyItemChanged(itemIndex)
+                        }
+                    }
+                }
+
+                launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        paragraphAdapter.addNoteClicked.collect {
+                            addNoteDialogVisible.value = true
+                        }
                     }
                 }
             }
