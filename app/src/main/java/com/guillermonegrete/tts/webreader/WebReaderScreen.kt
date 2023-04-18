@@ -214,36 +214,40 @@ fun AddNoteDialog(
     if (!isVisible) return
     val focusRequester = remember { FocusRequester() }
 
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = {},
-        text = {
-            Spacer(modifier = Modifier.width(8.dp))
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Surface {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
 
-            var text by remember { mutableStateOf("") }
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                placeholder = { Text("Add a new note".addEmptyLines(3)) },
-                modifier = Modifier.focusRequester(focusRequester)
-            )
-        },
-        buttons = {
+                var text by remember { mutableStateOf("") }
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    placeholder = { Text("Add a new note") },
+                    minLines = 4,
+                    maxLines = 4,
+                    modifier = Modifier.focusRequester(focusRequester).fillMaxWidth()
+                )
 
-            Row(Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp)) {
-                Button(onClick = { onDismiss() }, Modifier.weight(1f)) {
-                    Text(stringResource(id = R.string.cancel))
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Button(onClick = {
-                    saveClicked()
-                    onDismiss()
-                }, Modifier.weight(1f)) {
-                    Text(stringResource(R.string.save))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row {
+                    Button(onClick = { onDismiss() }, Modifier.weight(1f)) {
+                        Text(stringResource(id = R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(onClick = {
+                        saveClicked()
+                        onDismiss()
+                    }, Modifier.weight(1f)) {
+                        Text(stringResource(R.string.save))
+                    }
                 }
             }
         }
-    )
+    }
 
     // Used to request focus which shows the keyboard
     LaunchedEffect(Unit) {
@@ -251,8 +255,6 @@ fun AddNoteDialog(
         focusRequester.requestFocus()
     }
 }
-
-fun String.addEmptyLines(lines: Int) = this + "\n".repeat(lines)
 
 @Composable
 fun MultiToggleButton(
