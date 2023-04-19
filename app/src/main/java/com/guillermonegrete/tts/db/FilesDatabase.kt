@@ -4,14 +4,16 @@ import android.content.Context
 import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.guillermonegrete.tts.webreader.db.Note
 
 @Database(
-    version = 7,
-    entities = [BookFile::class, WebLink::class],
+    version = 8,
+    entities = [BookFile::class, WebLink::class, Note::class],
     autoMigrations = [
         AutoMigration (from = 4, to = 5),
         AutoMigration (from = 5, to = 6),
         AutoMigration (from = 6, to = 7),
+        AutoMigration (from = 7, to = 8),
     ]
 
 )
