@@ -390,9 +390,22 @@ class ParagraphAdapter(
     }
 
     data class ParagraphItem(
+        /**
+         * The text in its original language,
+         */
         val original: CharSequence,
+        /**
+         * An index is a [Span] that contains the start and end of each sentence on the paragraph
+         */
         val indexes: List<Span>,
         val sentences: List<String>,
+        /**
+         * The index of the paragraph's first char with respect to the whole text.
+         */
+        val firstCharIndex: Int,
+        /**
+         * Index of the selected sentence, -1 means no selection.
+         */
         var selectedIndex: Int = -1,
         var selectedWord: Span? = null,
         var translation: String = "",

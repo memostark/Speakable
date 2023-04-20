@@ -195,11 +195,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding){
             paragraphsList.isVisible = true
             if(adapter == null) {
+                // Split text and parse from html
                 val newParagraphs =  text.split("\n")
                     .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
                     .filter { it.isNotEmpty() }
+                // Create items for adapter
                 val splitParagraphs = viewModel.createParagraphs(newParagraphs)
-                val newAdapter = ParagraphAdapter(splitParagraphs.map { ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences ) }, viewModel) {
+                var index = 0
+                val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
+                splitParagraphs.forEach {
+                    paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, index))
+                    index += it.paragraph.length
+                    Timber.i(index.toString())
+                }
+
+                val newAdapter = ParagraphAdapter(paragraphItems, viewModel) {
                     hideBottomSheets()
                 }
                 adapter = newAdapter
