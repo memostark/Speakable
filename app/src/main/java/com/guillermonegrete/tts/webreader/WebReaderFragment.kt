@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
@@ -51,6 +52,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val isPageSaved = mutableStateOf(false)
 
     private var pageText = ""
+
+    private var paragraphTextSelection: Span? = null
 
     override fun onPause() {
         super.onPause()
@@ -148,7 +151,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         var addNoteVisible by remember { addNoteDialogVisible }
                         AddNoteDialog(
                             addNoteVisible,
-                            onDismiss = { addNoteVisible = false }
+                            onDismiss = { addNoteVisible = false },
+                            onSaveClicked = {
+                                val selection = paragraphTextSelection ?: return@AddNoteDialog
+                                viewModel.saveNote(it.text, selection, it.colorHex)
+                            },
                         )
 
                     }
@@ -244,6 +251,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 launch {
                     repeatOnLifecycle(Lifecycle.State.STARTED) {
                         paragraphAdapter.addNoteClicked.collect {
+                            paragraphTextSelection = it
                             addNoteDialogVisible.value = true
                         }
                     }

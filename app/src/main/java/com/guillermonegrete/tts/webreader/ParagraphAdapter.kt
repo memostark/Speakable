@@ -47,7 +47,7 @@ class ParagraphAdapter(
     )
     val sentenceClicked = _sentenceClicked.asSharedFlow()
 
-    private val _addNoteClicked = MutableSharedFlow<String>(
+    private val _addNoteClicked = MutableSharedFlow<Span>(
         replay = 0,
         extraBufferCapacity = 1,
         BufferOverflow.DROP_OLDEST
@@ -82,6 +82,8 @@ class ParagraphAdapter(
     @SuppressLint("ClickableViewAccessibility")
     inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
 
+        var firstCharIndex = 0
+
         init {
             // Because of a bug when having a TextView inside a CoordinatorLayout, the paragraph TextView has to have width equals to wrap_content so its text can be selectable.
             // Using match_parent the text can't be selected
@@ -113,6 +115,8 @@ class ParagraphAdapter(
                 val span = item.selectedWord
                 if(span != null) binding.paragraph.setHighlightedText(span.start, span.end)
             }
+
+            firstCharIndex = item.firstCharIndex
         }
 
         private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
@@ -186,6 +190,34 @@ class ParagraphAdapter(
             expandedItemPos = if(isExpanded) -1 else adapterPosition
             notifyItemChanged(previousExpandedPos)
             notifyItemChanged(adapterPosition)
+        }
+
+        inner class ParagraphActionModeCallback: ActionMode.Callback {
+            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
+
+            override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                menu?.clear()
+                val inflater = mode?.menuInflater
+                menu?.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
+                inflater?.inflate(R.menu.menu_context_web_reader, menu)
+                return true
+            }
+
+            override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+                item ?: return false
+
+                return when(item.itemId) {
+                    R.id.add_new_note_action -> {
+                        val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
+                        _addNoteClicked.tryEmit(span)
+                        true
+                    }
+                    else -> false
+                }
+            }
+
+            override fun onDestroyActionMode(mode: ActionMode?) {}
+
         }
     }
 
@@ -360,33 +392,6 @@ class ParagraphAdapter(
         val color = Color.argb(128, 255, 0, 0)
         text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         this.setText(text, TextView.BufferType.SPANNABLE)
-    }
-
-    inner class ParagraphActionModeCallback: ActionMode.Callback {
-        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
-
-        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-            menu?.clear()
-            val inflater = mode?.menuInflater
-            menu?.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
-            inflater?.inflate(R.menu.menu_context_web_reader, menu)
-            return true
-        }
-
-        override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
-            item ?: return false
-
-            return when(item.itemId) {
-                R.id.add_new_note_action -> {
-                    _addNoteClicked.tryEmit("")
-                    true
-                }
-                else -> false
-            }
-        }
-
-        override fun onDestroyActionMode(mode: ActionMode?) {}
-
     }
 
     data class ParagraphItem(

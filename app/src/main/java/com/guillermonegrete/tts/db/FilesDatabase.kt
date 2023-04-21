@@ -5,6 +5,7 @@ import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.guillermonegrete.tts.webreader.db.Note
+import com.guillermonegrete.tts.webreader.db.NoteDAO
 
 @Database(
     version = 8,
@@ -22,6 +23,8 @@ abstract class FilesDatabase: RoomDatabase() {
     abstract fun fileDao(): FileDAO
 
     abstract fun linkDao(): WebLinkDAO
+
+    abstract fun noteDao(): NoteDAO
 
     companion object{
         fun getDatabase(context: Context): FilesDatabase{

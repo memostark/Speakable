@@ -13,6 +13,8 @@ import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
+import com.guillermonegrete.tts.webreader.db.Note
+import com.guillermonegrete.tts.webreader.db.NoteDAO
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +33,7 @@ class WebReaderViewModel @Inject constructor(
     private val getExternalLinksInteractor: GetExternalLink,
     private val wordRepository: WordRepositorySource,
     private val webLinkDAO: WebLinkDAO,
+    private val noteDAO: NoteDAO,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
@@ -377,6 +380,13 @@ class WebReaderViewModel @Inject constructor(
 
         folder.delete()
         cacheWebLink?.uuid = null
+    }
+
+    fun saveNote(text: String, selection: Span, color: String) {
+        val webLink = cacheWebLink ?: return
+        viewModelScope.launch {
+            noteDAO.insert(Note(text, selection.start, selection.end - selection.start, color, webLink.id))
+        }
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)

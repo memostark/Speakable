@@ -13,9 +13,16 @@ import com.guillermonegrete.tts.db.WebLink
 @Entity(tableName = "notes")
 data class Note(
     val text: String,
+    /**
+     * The starting character index of the note span in the text file.
+     */
     val position: Int,
+    /**
+     * The length of the note span.
+     */
+    val length: Int,
     var color: String,
-    val fileId: Long,
+    val fileId: Int,
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "note_id")
     var id: Long = 0

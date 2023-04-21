@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -23,7 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.ui.theme.RedNoteHighlight
 import kotlinx.coroutines.android.awaitFrame
+import okhttp3.internal.toHexString
 
 
 @Composable
@@ -208,7 +211,7 @@ fun DeletePageDialog(
 fun AddNoteDialog(
     isVisible: Boolean,
     onDismiss: () -> Unit = {},
-    saveClicked: () -> Unit = {},
+    onSaveClicked: (result: AddNoteResult) -> Unit = {},
 ) {
 
     if (!isVisible) return
@@ -225,7 +228,7 @@ fun AddNoteDialog(
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    placeholder = { Text("Add a new note") },
+                    placeholder = { Text(stringResource(R.string.add_note_placeholder)) },
                     minLines = 4,
                     maxLines = 4,
                     modifier = Modifier.focusRequester(focusRequester).fillMaxWidth()
@@ -239,7 +242,7 @@ fun AddNoteDialog(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
-                        saveClicked()
+                        onSaveClicked(AddNoteResult(text,  RedNoteHighlight.toHex()))
                         onDismiss()
                     }, Modifier.weight(1f)) {
                         Text(stringResource(R.string.save))
@@ -255,6 +258,10 @@ fun AddNoteDialog(
         focusRequester.requestFocus()
     }
 }
+
+data class AddNoteResult(val text: String, val colorHex: String)
+
+fun Color.toHex() = "#${this.toArgb().toHexString()}"
 
 @Composable
 fun MultiToggleButton(
