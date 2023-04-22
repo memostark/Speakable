@@ -211,7 +211,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 var index = 0
                 val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
                 splitParagraphs.forEach {
-                    paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, index))
+                    val notes = listOf(ParagraphAdapter.NoteItem(Span(3, 7), "#FFFF0000"), ParagraphAdapter.NoteItem(Span(10, 15), "#FFFF0000"))
+                    paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, notes, index))
                     index += it.paragraph.length
                     Timber.i(index.toString())
                 }

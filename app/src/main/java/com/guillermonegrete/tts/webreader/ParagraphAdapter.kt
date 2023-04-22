@@ -116,6 +116,11 @@ class ParagraphAdapter(
                 if(span != null) binding.paragraph.setHighlightedText(span.start, span.end)
             }
 
+            item.notes.forEach {
+                val span = it.span
+                binding.paragraph.setHighlightedText(span.start, span.end)
+            }
+
             firstCharIndex = item.firstCharIndex
         }
 
@@ -404,6 +409,7 @@ class ParagraphAdapter(
          */
         val indexes: List<Span>,
         val sentences: List<String>,
+        val notes: List<NoteItem>,
         /**
          * The index of the paragraph's first char with respect to the whole text.
          */
@@ -415,6 +421,8 @@ class ParagraphAdapter(
         var selectedWord: Span? = null,
         var translation: String = "",
     )
+
+    data class NoteItem(val span: Span, val color: String)
 
     data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)
 
