@@ -27,6 +27,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.webreader.db.Note
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -210,10 +211,23 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val splitParagraphs = viewModel.createParagraphs(newParagraphs)
                 var index = 0
                 val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
+                val dbNotes = mutableListOf(
+                    Note("first text", 2, 8, "#FFFF0000", 0),
+                    Note("second text", 14, 3, "#FFFF0000", 0),
+                    Note("third text", 131, 4, "#FFFF0000", 0),
+                )
+
                 splitParagraphs.forEach {
-                    val notes = listOf(ParagraphAdapter.NoteItem(Span(3, 7), "#FFFF0000"), ParagraphAdapter.NoteItem(Span(10, 15), "#FFFF0000"))
+                    val nextIndex = index + it.paragraph.length
+                    val notes = dbNotes.filter { dbNote ->
+                        dbNote.position in index until nextIndex
+                    }.map { note ->
+                        val itemStart = note.position - index
+                        ParagraphAdapter.NoteItem(Span(itemStart, itemStart + note.length), note.color)
+                    }
+
                     paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, notes, index))
-                    index += it.paragraph.length
+                    index = nextIndex
                     Timber.i(index.toString())
                 }
 

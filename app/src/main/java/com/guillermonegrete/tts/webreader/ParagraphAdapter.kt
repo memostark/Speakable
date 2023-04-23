@@ -118,7 +118,7 @@ class ParagraphAdapter(
 
             item.notes.forEach {
                 val span = it.span
-                binding.paragraph.setHighlightedText(span.start, span.end)
+                binding.paragraph.addHighlightedText(span.start, span.end)
             }
 
             firstCharIndex = item.firstCharIndex
