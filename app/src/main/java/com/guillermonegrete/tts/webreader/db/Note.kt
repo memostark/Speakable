@@ -22,9 +22,9 @@ data class Note(
      */
     val length: Int,
     var color: String,
+    @ColumnInfo(name = "file_id")
     val fileId: Int,
     @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "note_id")
     var id: Long = 0
 )
 
@@ -32,7 +32,7 @@ data class LinkWithNotes(
     @Embedded val webLink: WebLink,
     @Relation(
         parentColumn = "id",
-        entityColumn = "note_id"
+        entityColumn = "file_id"
     )
     val notes: List<Note>
 )

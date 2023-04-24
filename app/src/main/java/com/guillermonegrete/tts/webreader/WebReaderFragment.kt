@@ -80,7 +80,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true
-                    is LoadResult.Success -> setParagraphList(it.data, iconsVisible)
+                    is LoadResult.Success -> setParagraphList(it.data.text, it.data.notes, iconsVisible)
                 }
 
                 retryButton.isVisible = isError
@@ -197,12 +197,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun setParagraphList(text: String, iconsVisible: MutableState<Boolean>) {
+    private fun setParagraphList(text: String, notes: List<Note>, iconsVisible: MutableState<Boolean>) {
         pageText = text
 
         with(binding){
             paragraphsList.isVisible = true
-            if(adapter == null) {
+//            if(adapter == null) {
                 // Split text and parse from html
                 val newParagraphs =  text.split("\n")
                     .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
@@ -211,23 +211,23 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val splitParagraphs = viewModel.createParagraphs(newParagraphs)
                 var index = 0
                 val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
-                val dbNotes = mutableListOf(
-                    Note("first text", 2, 8, "#FFFF0000", 0),
-                    Note("second text", 14, 3, "#FFFF0000", 0),
-                    Note("third text", 131, 4, "#FFFF0000", 0),
-                )
+                val dbNotes = notes.toMutableList()
 
                 splitParagraphs.forEach {
                     val nextIndex = index + it.paragraph.length
-                    val notes = dbNotes.filter { dbNote ->
+                    // Search the notes applied to the this paragraph
+                    val paragraphNotes = dbNotes.filter { dbNote ->
                         dbNote.position in index until nextIndex
-                    }.map { note ->
+                    }
+
+                    val noteItems = paragraphNotes.map { note ->
                         val itemStart = note.position - index
                         ParagraphAdapter.NoteItem(Span(itemStart, itemStart + note.length), note.color)
                     }
 
-                    paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, notes, index))
+                    paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems, index))
                     index = nextIndex
+                    dbNotes.removeAll(paragraphNotes)
                     Timber.i(index.toString())
                 }
 
@@ -235,7 +235,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     hideBottomSheets()
                 }
                 adapter = newAdapter
-            }
+//            }
             paragraphsList.adapter = adapter
 
             iconsVisible.value = true

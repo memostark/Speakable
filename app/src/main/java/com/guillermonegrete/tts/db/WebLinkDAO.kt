@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.db
 
 import androidx.room.*
+import com.guillermonegrete.tts.webreader.db.LinkWithNotes
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -20,6 +21,10 @@ interface WebLinkDAO {
 
     @Query("SELECT * FROM web_link WHERE url = :url")
     suspend fun getLink(url: String): WebLink?
+
+    @Transaction
+    @Query("SELECT * FROM web_link WHERE url = :url")
+    suspend fun getLinkWithNotes(url: String): LinkWithNotes?
 
     @Transaction
     fun upsert(file: WebLink) {
