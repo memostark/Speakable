@@ -152,10 +152,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         var addNoteVisible by remember { addNoteDialogVisible }
                         AddNoteDialog(
                             addNoteVisible,
-                            onDismiss = { addNoteVisible = false },
+                            onDismiss = {
+                                addNoteVisible = false
+                                adapter?.textSelectionRemoved()
+                            },
                             onSaveClicked = {
                                 val selection = paragraphTextSelection ?: return@AddNoteDialog
                                 viewModel.saveNote(it.text, selection, it.colorHex)
+                                adapter?.addNote(selection, it)
                             },
                         )
 
@@ -202,40 +206,38 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
         with(binding){
             paragraphsList.isVisible = true
-//            if(adapter == null) {
-                // Split text and parse from html
-                val newParagraphs =  text.split("\n")
-                    .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
-                    .filter { it.isNotEmpty() }
-                // Create items for adapter
-                val splitParagraphs = viewModel.createParagraphs(newParagraphs)
-                var index = 0
-                val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
-                val dbNotes = notes.toMutableList()
 
-                splitParagraphs.forEach {
-                    val nextIndex = index + it.paragraph.length
-                    // Search the notes applied to the this paragraph
-                    val paragraphNotes = dbNotes.filter { dbNote ->
-                        dbNote.position in index until nextIndex
-                    }
+            // Split text and parse from html
+            val newParagraphs =  text.split("\n")
+                .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
+                .filter { it.isNotEmpty() }
+            // Create items for adapter
+            val splitParagraphs = viewModel.createParagraphs(newParagraphs)
+            var index = 0
+            val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
+            val dbNotes = notes.toMutableList()
 
-                    val noteItems = paragraphNotes.map { note ->
-                        val itemStart = note.position - index
-                        ParagraphAdapter.NoteItem(Span(itemStart, itemStart + note.length), note.color)
-                    }
-
-                    paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems, index))
-                    index = nextIndex
-                    dbNotes.removeAll(paragraphNotes)
-                    Timber.i(index.toString())
+            splitParagraphs.forEach {
+                val nextIndex = index + it.paragraph.length
+                // Search the notes applied to the this paragraph
+                val paragraphNotes = dbNotes.filter { dbNote ->
+                    dbNote.position in index until nextIndex
                 }
 
-                val newAdapter = ParagraphAdapter(paragraphItems, viewModel) {
-                    hideBottomSheets()
+                val noteItems = paragraphNotes.map { note ->
+                    val itemStart = note.position - index
+                    ParagraphAdapter.NoteItem(Span(itemStart, itemStart + note.length), note.color)
                 }
-                adapter = newAdapter
-//            }
+
+                paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
+                index = nextIndex
+                dbNotes.removeAll(paragraphNotes)
+            }
+
+            val newAdapter = ParagraphAdapter(paragraphItems, viewModel) {
+                hideBottomSheets()
+            }
+            adapter = newAdapter
             paragraphsList.adapter = adapter
 
             iconsVisible.value = true

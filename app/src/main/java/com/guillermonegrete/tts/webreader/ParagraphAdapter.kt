@@ -38,7 +38,14 @@ class ParagraphAdapter(
     var isLoading = false
 
     val selectedSentence = SelectedSentence()
-    var selectedWordPos = -1
+    /**
+     * The position of the paragraph in the list that contains the selected word.
+     */
+    private var selectedWordPos = -1
+    /**
+     * Index of the paragraph that has selected text (with the long-press gesture)
+     */
+    private var textSelectionPos = -1
 
     private val _sentenceClicked = MutableSharedFlow<String>(
         replay = 0,
@@ -214,7 +221,9 @@ class ParagraphAdapter(
                 return when(item.itemId) {
                     R.id.add_new_note_action -> {
                         val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
+                        textSelectionPos = adapterPosition
                         _addNoteClicked.tryEmit(span)
+                        mode?.finish()
                         true
                     }
                     else -> false
@@ -399,6 +408,19 @@ class ParagraphAdapter(
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
 
+    fun addNote(selection: Span, it: AddNoteResult) {
+        val pos = textSelectionPos
+        val paragraphItem = items[pos]
+        val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
+        paragraphItem.notes.add(NoteItem(span, it.colorHex))
+        notifyItemChanged(pos)
+        textSelectionPos = -1
+    }
+
+    fun textSelectionRemoved() {
+        textSelectionPos = -1
+    }
+
     data class ParagraphItem(
         /**
          * The text in its original language,
@@ -409,7 +431,7 @@ class ParagraphAdapter(
          */
         val indexes: List<Span>,
         val sentences: List<String>,
-        val notes: List<NoteItem>,
+        val notes: MutableList<NoteItem>,
         /**
          * The index of the paragraph's first char with respect to the whole text.
          */
