@@ -13,7 +13,6 @@ import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
-import com.guillermonegrete.tts.webreader.db.LinkWithNotes
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
@@ -38,8 +37,8 @@ class WebReaderViewModel @Inject constructor(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
-    private val _page = MutableLiveData<LoadResult<PageAndNotes>>()
-    val page: LiveData<LoadResult<PageAndNotes>>
+    private val _page = MutableLiveData<LoadResult<PageInfo>>()
+    val page: LiveData<LoadResult<PageInfo>>
         get() = _page
 
     private var cachedParagraphs: List<CachedParagraph>? = null
@@ -83,7 +82,7 @@ class WebReaderViewModel @Inject constructor(
 
                 try {
                     val linkAndNotes = webLinkDAO.getLinkWithNotes(url)
-                    val pageAndNotes: PageAndNotes
+                    val pageInfo: PageInfo
                     val webLink: WebLink
 
                     if (linkAndNotes != null) {
@@ -95,14 +94,15 @@ class WebReaderViewModel @Inject constructor(
                             val page = getPage(url)
                             page.content
                         }
-                        pageAndNotes = PageAndNotes(pageContent, linkAndNotes.notes)
+                        val isPageSaved = uuid != null
+                        pageInfo = PageInfo(pageContent, linkAndNotes.notes, isPageSaved)
                     } else {
                         val page = getPage(url)
                         webLink = link ?: WebLink(url, page.title)
-                        pageAndNotes = PageAndNotes(page.content, emptyList())
+                        pageInfo = PageInfo(page.content, emptyList(), false)
                     }
 
-                    _page.value = LoadResult.Success(pageAndNotes)
+                    _page.value = LoadResult.Success(pageInfo)
                     cacheWebLink = webLink
                     // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
                     // Bug report: https://issuetracker.google.com/issues/198313895
@@ -126,7 +126,7 @@ class WebReaderViewModel @Inject constructor(
                 try {
                     val notes = noteDAO.getNotes(webLink.id)
                     val content = readContentFile(uuid)
-                    _page.value = LoadResult.Success(PageAndNotes(content, notes))
+                    _page.value = LoadResult.Success(PageInfo(content, notes, true))
                 } catch (ex: IOException){
                     _page.value = LoadResult.Error(ex)
                 }
@@ -141,7 +141,7 @@ class WebReaderViewModel @Inject constructor(
             _page.value = LoadResult.Loading
             try {
                 val page = getPage(webLink.url)
-                _page.value = LoadResult.Success(PageAndNotes(page.content, emptyList()))
+                _page.value = LoadResult.Success(PageInfo(page.content, emptyList(), false))
             } catch (ex: IOException){
                 _page.value = LoadResult.Error(ex)
             }
@@ -413,12 +413,12 @@ class WebReaderViewModel @Inject constructor(
 
     data class Page(val title: String, val content: String)
 
-    /**
-     * Return class for the UI, used to display the paragraph with the notes
-     */
-    data class PageAndNotes(val text: String, val notes: List<Note>)
-
     companion object {
         private const val page_filename = "content.xml"
     }
 }
+
+/**
+ * Return class for the UI, used to display the paragraph with the notes
+ */
+data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)

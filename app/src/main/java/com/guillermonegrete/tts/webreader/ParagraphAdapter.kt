@@ -28,6 +28,10 @@ import kotlin.math.abs
 
 class ParagraphAdapter(
     val items: List<ParagraphItem>,
+    /**
+     * Indicates if the page is saved in the local device storage, in contrast to being loaded from the web.
+     */
+    val isPageSaved: Boolean,
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: () -> Unit,
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -99,7 +103,7 @@ class ParagraphAdapter(
                 paragraph.setOnTouchListener { _, event ->
                     detector.onTouchEvent(event)
                 }
-                paragraph.customSelectionActionModeCallback = ParagraphActionModeCallback()
+                if(isPageSaved) paragraph.customSelectionActionModeCallback = ParagraphActionModeCallback()
             }
         }
 

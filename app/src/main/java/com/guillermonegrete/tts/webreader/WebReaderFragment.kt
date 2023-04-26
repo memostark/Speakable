@@ -27,7 +27,6 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.ui.theme.AppTheme
-import com.guillermonegrete.tts.webreader.db.Note
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -80,7 +79,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true
-                    is LoadResult.Success -> setParagraphList(it.data.text, it.data.notes, iconsVisible)
+                    is LoadResult.Success -> setParagraphList(it.data, iconsVisible)
                 }
 
                 retryButton.isVisible = isError
@@ -201,21 +200,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun setParagraphList(text: String, notes: List<Note>, iconsVisible: MutableState<Boolean>) {
-        pageText = text
+    private fun setParagraphList(page: PageInfo, iconsVisible: MutableState<Boolean>) {
+        pageText = page.text
 
         with(binding){
             paragraphsList.isVisible = true
 
             // Split text and parse from html
-            val newParagraphs =  text.split("\n")
+            val newParagraphs =  page.text.split("\n")
                 .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
                 .filter { it.isNotEmpty() }
             // Create items for adapter
             val splitParagraphs = viewModel.createParagraphs(newParagraphs)
             var index = 0
             val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
-            val dbNotes = notes.toMutableList()
+            val dbNotes = page.notes.toMutableList()
 
             splitParagraphs.forEach {
                 val nextIndex = index + it.paragraph.length
@@ -234,7 +233,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 dbNotes.removeAll(paragraphNotes)
             }
 
-            val newAdapter = ParagraphAdapter(paragraphItems, viewModel) {
+            val newAdapter = ParagraphAdapter(paragraphItems, page.isLocalPage, viewModel) {
                 hideBottomSheets()
             }
             adapter = newAdapter
