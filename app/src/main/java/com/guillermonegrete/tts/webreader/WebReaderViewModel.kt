@@ -60,6 +60,9 @@ class WebReaderViewModel @Inject constructor(
     private val _clickedWord = MutableLiveData<WordAndLinks>()
     val clickedWord: LiveData<WordAndLinks> = _clickedWord
 
+    private val _updatedNote = MutableLiveData<Note>()
+    val updatedNote: LiveData<Note> = _updatedNote
+
     private var cacheWebLink: WebLink? = null
 
     private val _weblink = MutableLiveData<WebLink>()
@@ -398,10 +401,14 @@ class WebReaderViewModel @Inject constructor(
         cacheWebLink?.uuid = null
     }
 
-    fun saveNote(text: String, selection: Span, color: String) {
+    fun saveNote(text: String, selection: Span, id: Long, color: String) {
         val webLink = cacheWebLink ?: return
         viewModelScope.launch {
-            noteDAO.insert(Note(text, selection.start, selection.end - selection.start, color, webLink.id))
+            val newNote = Note(text, selection.start, selection.end - selection.start, color, webLink.id, id)
+            val resultId = noteDAO.upsert(newNote)
+            // Upsert returns -1 when the operation was an update, use the parameter ID.
+            val finalId = if(resultId == -1L) id else resultId
+            _updatedNote.value = Note(text, newNote.position, newNote.length, color, webLink.id, finalId)
         }
     }
 

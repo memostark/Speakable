@@ -58,7 +58,7 @@ class ParagraphAdapter(
     )
     val sentenceClicked = _sentenceClicked.asSharedFlow()
 
-    private val _addNoteClicked = MutableSharedFlow<Span>(
+    private val _addNoteClicked = MutableSharedFlow<NoteItem>(
         replay = 0,
         extraBufferCapacity = 1,
         BufferOverflow.DROP_OLDEST
@@ -139,11 +139,23 @@ class ParagraphAdapter(
 
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+
+                // First check if a note was tapped
+                val item = items[adapterPosition]
+                val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
+                if (clickedNote != null) {
+                    textSelectionPos = adapterPosition
+
+                    val span = clickedNote.span
+                    val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
+                    _addNoteClicked.tryEmit(NoteItem(clickedNote.text, absoluteSpan, clickedNote.color, clickedNote.id))
+                    return true
+                }
+
                 val wordSpan = binding.paragraph.findWordForRightHanded(offset)
                 val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
 
                 // If a highlighted sentence was tapped just unselect it and don't select a word
-                val item = items[adapterPosition]
                 if(item.selectedIndex != -1) {
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
@@ -226,7 +238,8 @@ class ParagraphAdapter(
                     R.id.add_new_note_action -> {
                         val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
                         textSelectionPos = adapterPosition
-                        _addNoteClicked.tryEmit(span)
+                        // New note so the text and color are empty and id is zero
+                        _addNoteClicked.tryEmit(NoteItem("", span, "", 0))
                         mode?.finish()
                         true
                     }
@@ -412,11 +425,11 @@ class ParagraphAdapter(
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
 
-    fun addNote(selection: Span, it: AddNoteResult) {
+    fun updateNote(note: NoteItem) {
         val pos = textSelectionPos
         val paragraphItem = items[pos]
-        val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
-        paragraphItem.notes.add(NoteItem(span, it.colorHex))
+        paragraphItem.notes.removeAll { note.id == it.id }
+        paragraphItem.notes.add(note)
         notifyItemChanged(pos)
         textSelectionPos = -1
     }
@@ -448,7 +461,7 @@ class ParagraphAdapter(
         var translation: String = "",
     )
 
-    data class NoteItem(val span: Span, val color: String)
+    data class NoteItem(val text: String, val span: Span, val color: String, val id: Long)
 
     data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)
 

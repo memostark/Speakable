@@ -53,7 +53,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var pageText = ""
 
-    private var paragraphTextSelection: Span? = null
+    private var paragraphTextSelection: ParagraphAdapter.NoteItem? = null
 
     override fun onPause() {
         super.onPause()
@@ -100,6 +100,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                 }
                 adapter.updateExpanded()
+            }
+
+            viewModel.updatedNote.observe(viewLifecycleOwner) { note ->
+                val noteItem = ParagraphAdapter.NoteItem(note.text, Span(note.position, note.position + note.length), note.color, note.id)
+                adapter?.updateNote(noteItem)
             }
 
             val spinnerItems = mutableStateOf(emptyList<String>())
@@ -149,16 +154,22 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         )
 
                         var addNoteVisible by remember { addNoteDialogVisible }
+                        // Flag to know if the dialog saved/updated a note
+                        var noteSaved = false
+
                         AddNoteDialog(
                             addNoteVisible,
+                            paragraphTextSelection?.text ?: "",
                             onDismiss = {
                                 addNoteVisible = false
-                                adapter?.textSelectionRemoved()
+                                // If a note was saved, don't remove the index of the selection because it will be used for updating the paragraph item
+                                if(!noteSaved) adapter?.textSelectionRemoved()
+                                noteSaved = false
                             },
                             onSaveClicked = {
-                                val selection = paragraphTextSelection ?: return@AddNoteDialog
-                                viewModel.saveNote(it.text, selection, it.colorHex)
-                                adapter?.addNote(selection, it)
+                                val noteItem = paragraphTextSelection ?: return@AddNoteDialog
+                                viewModel.saveNote(it.text, noteItem.span, noteItem.id, it.colorHex)
+                                noteSaved = true
                             },
                         )
 
@@ -225,7 +236,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 val noteItems = paragraphNotes.map { note ->
                     val itemStart = note.position - index
-                    ParagraphAdapter.NoteItem(Span(itemStart, itemStart + note.length), note.color)
+                    ParagraphAdapter.NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color, note.id)
                 }
 
                 paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))

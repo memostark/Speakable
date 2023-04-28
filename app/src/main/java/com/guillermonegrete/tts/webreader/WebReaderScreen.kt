@@ -210,6 +210,7 @@ fun DeletePageDialog(
 @Composable
 fun AddNoteDialog(
     isVisible: Boolean,
+    noteText: String,
     onDismiss: () -> Unit = {},
     onSaveClicked: (result: AddNoteResult) -> Unit = {},
 ) {
@@ -224,7 +225,7 @@ fun AddNoteDialog(
                 modifier = Modifier.padding(24.dp)
             ) {
 
-                var text by remember { mutableStateOf("") }
+                var text by remember { mutableStateOf(noteText) }
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
@@ -238,7 +239,7 @@ fun AddNoteDialog(
 
                 Row {
                     Button(onClick = { onDismiss() }, Modifier.weight(1f)) {
-                        Text(stringResource(id = R.string.cancel))
+                        Text(stringResource(id = R.string.delete))
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
@@ -252,6 +253,8 @@ fun AddNoteDialog(
         }
     }
 
+    // We only want to show the keyboard at start when the user is adding a new note.
+    if (noteText.isNotEmpty()) return
     // Used to request focus which shows the keyboard
     LaunchedEffect(Unit) {
         awaitFrame()
@@ -352,7 +355,7 @@ fun DeletePageDialogPreview() {
 @Composable
 fun AddNoteDialogPreview() {
     AppTheme {
-        AddNoteDialog(true)
+        AddNoteDialog(true, "")
     }
 }
 
