@@ -95,6 +95,8 @@ class ParagraphAdapter(
 
         var firstCharIndex = 0
 
+        private val actionModeCallback = ParagraphActionModeCallback()
+
         init {
             // Because of a bug when having a TextView inside a CoordinatorLayout, the paragraph TextView has to have width equals to wrap_content so its text can be selectable.
             // Using match_parent the text can't be selected
@@ -103,7 +105,7 @@ class ParagraphAdapter(
                 paragraph.setOnTouchListener { _, event ->
                     detector.onTouchEvent(event)
                 }
-                if(isPageSaved) paragraph.customSelectionActionModeCallback = ParagraphActionModeCallback()
+                if(isPageSaved) paragraph.customSelectionActionModeCallback = actionModeCallback
             }
         }
 
@@ -132,6 +134,7 @@ class ParagraphAdapter(
                 binding.paragraph.addHighlightedText(span.start, span.end)
             }
 
+            actionModeCallback.item = item
             firstCharIndex = item.firstCharIndex
         }
 
@@ -221,13 +224,32 @@ class ParagraphAdapter(
         }
 
         inner class ParagraphActionModeCallback: ActionMode.Callback {
+
+            var item: ParagraphItem? = null
             override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
 
             override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-                menu?.clear()
+                menu ?: return false
+                val localItem = item ?: return false
+
+                menu.clear()
+                menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
+
+                val selStart = binding.paragraph.selectionStart
+                val selEnd = binding.paragraph.selectionEnd
+
+                // Check if selected text and note spans overlap
+                localItem.notes.map {
+                    val span = it.span
+                    if (span.start < selEnd && span.end > selStart) {
+                        return false
+                    }
+                }
+
+                // We can only add a note if it doesn't overlap with another
                 val inflater = mode?.menuInflater
-                menu?.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
                 inflater?.inflate(R.menu.menu_context_web_reader, menu)
+
                 return true
             }
 
