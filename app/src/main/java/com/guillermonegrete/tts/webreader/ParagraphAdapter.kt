@@ -456,6 +456,14 @@ class ParagraphAdapter(
         textSelectionPos = -1
     }
 
+    fun deleteNote(noteId: Long) {
+        val pos = textSelectionPos
+        val paragraphItem = items[pos]
+        paragraphItem.notes.removeAll { noteId == it.id }
+        notifyItemChanged(pos)
+        textSelectionPos = -1
+    }
+
     fun textSelectionRemoved() {
         textSelectionPos = -1
     }

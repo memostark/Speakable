@@ -212,6 +212,7 @@ fun AddNoteDialog(
     isVisible: Boolean,
     noteText: String,
     onDismiss: () -> Unit = {},
+    onDelete: () -> Unit = {},
     onSaveClicked: (result: AddNoteResult) -> Unit = {},
 ) {
 
@@ -238,13 +239,12 @@ fun AddNoteDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row {
-                    Button(onClick = { onDismiss() }, Modifier.weight(1f)) {
+                    Button(onClick = { onDelete() }, Modifier.weight(1f)) {
                         Text(stringResource(id = R.string.delete))
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
                         onSaveClicked(AddNoteResult(text,  RedNoteHighlight.toHex()))
-                        onDismiss()
                     }, Modifier.weight(1f)) {
                         Text(stringResource(R.string.save))
                     }

@@ -15,6 +15,7 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLin
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -60,8 +61,8 @@ class WebReaderViewModel @Inject constructor(
     private val _clickedWord = MutableLiveData<WordAndLinks>()
     val clickedWord: LiveData<WordAndLinks> = _clickedWord
 
-    private val _updatedNote = MutableLiveData<Note>()
-    val updatedNote: LiveData<Note> = _updatedNote
+    private val _updatedNote = MutableLiveData<ModifiedNote>()
+    val updatedNote: LiveData<ModifiedNote> = _updatedNote
 
     private var cacheWebLink: WebLink? = null
 
@@ -408,7 +409,15 @@ class WebReaderViewModel @Inject constructor(
             val resultId = noteDAO.upsert(newNote)
             // Upsert returns -1 when the operation was an update, use the parameter ID.
             val finalId = if(resultId == -1L) id else resultId
-            _updatedNote.value = Note(text, newNote.position, newNote.length, color, webLink.id, finalId)
+            val result = ModifiedNote.Update(Note(text, newNote.position, newNote.length, color, webLink.id, finalId))
+            _updatedNote.value = result
+        }
+    }
+
+    fun deleteNote(id: Long) {
+        viewModelScope.launch {
+            noteDAO.delete(Note("", 0, 0, "", 0, id)) // only the id is necessary
+            _updatedNote.value = ModifiedNote.Delete(id)
         }
     }
 

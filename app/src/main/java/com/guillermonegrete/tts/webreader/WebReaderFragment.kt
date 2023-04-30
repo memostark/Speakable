@@ -27,6 +27,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -102,9 +103,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.updateExpanded()
             }
 
-            viewModel.updatedNote.observe(viewLifecycleOwner) { note ->
-                val noteItem = ParagraphAdapter.NoteItem(note.text, Span(note.position, note.position + note.length), note.color, note.id)
-                adapter?.updateNote(noteItem)
+            viewModel.updatedNote.observe(viewLifecycleOwner) { result ->
+                when(result){
+                    is ModifiedNote.Update -> {
+                        val note = result.note
+                        val noteItem = ParagraphAdapter.NoteItem(note.text, Span(note.position, note.position + note.length), note.color, note.id)
+                        adapter?.updateNote(noteItem)
+                    }
+                    is ModifiedNote.Delete -> adapter?.deleteNote(result.noteId)
+                }
+
             }
 
             val spinnerItems = mutableStateOf(emptyList<String>())
@@ -154,22 +162,23 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         )
 
                         var addNoteVisible by remember { addNoteDialogVisible }
-                        // Flag to know if the dialog saved/updated a note
-                        var noteSaved = false
 
                         AddNoteDialog(
                             addNoteVisible,
                             paragraphTextSelection?.text ?: "",
                             onDismiss = {
                                 addNoteVisible = false
-                                // If a note was saved, don't remove the index of the selection because it will be used for updating the paragraph item
-                                if(!noteSaved) adapter?.textSelectionRemoved()
-                                noteSaved = false
+                                adapter?.textSelectionRemoved()
+                            },
+                            onDelete = {
+                                val noteItem = paragraphTextSelection ?: return@AddNoteDialog
+                                viewModel.deleteNote(noteItem.id)
+                                addNoteVisible = false
                             },
                             onSaveClicked = {
                                 val noteItem = paragraphTextSelection ?: return@AddNoteDialog
                                 viewModel.saveNote(it.text, noteItem.span, noteItem.id, it.colorHex)
-                                noteSaved = true
+                                addNoteVisible = false
                             },
                         )
 
