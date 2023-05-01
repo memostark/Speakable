@@ -447,11 +447,12 @@ class ParagraphAdapter(
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
 
-    fun updateNote(note: NoteItem) {
+    fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {
         val pos = textSelectionPos
         val paragraphItem = items[pos]
-        paragraphItem.notes.removeAll { note.id == it.id }
-        paragraphItem.notes.add(note)
+        paragraphItem.notes.removeAll { noteId == it.id }
+        val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
+        paragraphItem.notes.add(NoteItem(result.text, span, result.colorHex, noteId))
         notifyItemChanged(pos)
         textSelectionPos = -1
     }

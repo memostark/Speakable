@@ -107,8 +107,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 when(result){
                     is ModifiedNote.Update -> {
                         val note = result.note
-                        val noteItem = ParagraphAdapter.NoteItem(note.text, Span(note.position, note.position + note.length), note.color, note.id)
-                        adapter?.updateNote(noteItem)
+                        val dialogResult = AddNoteResult(note.text, note.color)
+                        adapter?.updateNote(Span(note.position, note.position + note.length), note.id, dialogResult)
                     }
                     is ModifiedNote.Delete -> adapter?.deleteNote(result.noteId)
                 }
@@ -238,7 +238,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             splitParagraphs.forEach {
                 val nextIndex = index + it.paragraph.length
-                // Search the notes applied to the this paragraph
+                // Search the notes applied to this paragraph
                 val paragraphNotes = dbNotes.filter { dbNote ->
                     dbNote.position in index until nextIndex
                 }
