@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -24,7 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
+import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
 import com.guillermonegrete.tts.ui.theme.RedNoteHighlight
+import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import kotlinx.coroutines.android.awaitFrame
 import okhttp3.internal.toHexString
 
@@ -211,6 +215,7 @@ fun DeletePageDialog(
 fun AddNoteDialog(
     isVisible: Boolean,
     noteText: String,
+    noteColor: String,
     onDismiss: () -> Unit = {},
     onDelete: () -> Unit = {},
     onSaveClicked: (result: AddNoteResult) -> Unit = {},
@@ -233,10 +238,40 @@ fun AddNoteDialog(
                     placeholder = { Text(stringResource(R.string.add_note_placeholder)) },
                     minLines = 4,
                     maxLines = 4,
-                    modifier = Modifier.focusRequester(focusRequester).fillMaxWidth()
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                val colors = listOf(YellowNoteHighlight, RedNoteHighlight, GreenNoteHighlight, BlueNoteHighlight)
+                val index = colors.indexOfFirst { noteColor == it.toHex() }
+                val indexColor = if (index == -1) 0 else index
+
+                var colorSel by remember { mutableStateOf(indexColor) }
+
+                Row (verticalAlignment = Alignment.CenterVertically, modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)) {
+                    colors.forEachIndexed { index, color ->
+                        val isSelected = index == colorSel
+                        val modifier = if (isSelected) Modifier
+                            .padding(3.dp) // margin
+                            .border(3.dp, color, shape = CircleShape)
+                            .padding(6.dp) // space between circle and ring, real size is this value minus the border size. 6dp - 3dp = 3dp
+                            .size(36.dp) else Modifier.padding(12.dp).size(36.dp)
+
+                        // use a box with constant size, otherwise the items move when changing selections
+                        Box(Modifier.size(48.dp)) {
+                            OutlinedButton(
+                                onClick = { colorSel = index },
+                                modifier = modifier,
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(backgroundColor = color)
+                            ) {}
+                        }
+
+                    }
+                }
 
                 Row {
                     Button(onClick = { onDelete() }, Modifier.weight(1f)) {
@@ -244,7 +279,7 @@ fun AddNoteDialog(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
-                        onSaveClicked(AddNoteResult(text,  RedNoteHighlight.toHex()))
+                        onSaveClicked(AddNoteResult(text,  colors[colorSel].toHex()))
                     }, Modifier.weight(1f)) {
                         Text(stringResource(R.string.save))
                     }
@@ -355,7 +390,7 @@ fun DeletePageDialogPreview() {
 @Composable
 fun AddNoteDialogPreview() {
     AppTheme {
-        AddNoteDialog(true, "")
+        AddNoteDialog(true, "", "")
     }
 }
 

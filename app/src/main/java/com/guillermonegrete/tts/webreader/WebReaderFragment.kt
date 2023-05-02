@@ -166,6 +166,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         AddNoteDialog(
                             addNoteVisible,
                             paragraphTextSelection?.text ?: "",
+                            paragraphTextSelection?.color ?: "",
                             onDismiss = {
                                 addNoteVisible = false
                                 adapter?.textSelectionRemoved()
