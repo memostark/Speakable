@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
+import androidx.annotation.ColorInt
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -215,7 +216,7 @@ fun DeletePageDialog(
 fun AddNoteDialog(
     isVisible: Boolean,
     noteText: String,
-    noteColor: String,
+    @ColorInt noteColor: Int,
     onDismiss: () -> Unit = {},
     onDelete: () -> Unit = {},
     onSaveClicked: (result: AddNoteResult) -> Unit = {},
@@ -244,7 +245,7 @@ fun AddNoteDialog(
                 )
 
                 val colors = listOf(YellowNoteHighlight, RedNoteHighlight, GreenNoteHighlight, BlueNoteHighlight)
-                val index = colors.indexOfFirst { noteColor == it.toHex() }
+                val index = colors.indexOfFirst { noteColor == it.toArgb() }
                 val indexColor = if (index == -1) 0 else index
 
                 var colorSel by remember { mutableStateOf(indexColor) }
@@ -390,7 +391,7 @@ fun DeletePageDialogPreview() {
 @Composable
 fun AddNoteDialogPreview() {
     AppTheme {
-        AddNoteDialog(true, "", "")
+        AddNoteDialog(true, "", 0)
     }
 }
 

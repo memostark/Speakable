@@ -13,6 +13,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.annotation.ColorInt
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -131,7 +132,7 @@ class ParagraphAdapter(
 
             item.notes.forEach {
                 val span = it.span
-                binding.paragraph.addHighlightedText(span.start, span.end)
+                binding.paragraph.addHighlightedText(span.start, span.end, it.color)
             }
 
             actionModeCallback.item = item
@@ -261,7 +262,7 @@ class ParagraphAdapter(
                         val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
                         textSelectionPos = adapterPosition
                         // New note so the text and color are empty and id is zero
-                        _addNoteClicked.tryEmit(NoteItem("", span, "", 0))
+                        _addNoteClicked.tryEmit(NoteItem("", span, 0, 0))
                         mode?.finish()
                         true
                     }
@@ -439,10 +440,9 @@ class ParagraphAdapter(
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
 
-    private fun TextView.addHighlightedText(start: Int, end: Int){
+    private fun TextView.addHighlightedText(start: Int, end: Int, color: Int = Color.argb(128, 255, 0, 0)){
         val text = SpannableString(this.text)
 
-        val color = Color.argb(128, 255, 0, 0)
         text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
@@ -452,7 +452,7 @@ class ParagraphAdapter(
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
         val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
-        paragraphItem.notes.add(NoteItem(result.text, span, result.colorHex, noteId))
+        paragraphItem.notes.add(NoteItem(result.text, span, Color.parseColor(result.colorHex), noteId))
         notifyItemChanged(pos)
         textSelectionPos = -1
     }
@@ -492,7 +492,12 @@ class ParagraphAdapter(
         var translation: String = "",
     )
 
-    data class NoteItem(val text: String, val span: Span, val color: String, val id: Long)
+    data class NoteItem(
+        val text: String,
+        val span: Span,
+        @ColorInt val color: Int,
+        val id: Long
+    )
 
     data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)
 

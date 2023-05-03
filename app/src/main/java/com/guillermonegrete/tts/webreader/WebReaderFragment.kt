@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
@@ -166,7 +167,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         AddNoteDialog(
                             addNoteVisible,
                             paragraphTextSelection?.text ?: "",
-                            paragraphTextSelection?.color ?: "",
+                            paragraphTextSelection?.color ?: 0,
                             onDismiss = {
                                 addNoteVisible = false
                                 adapter?.textSelectionRemoved()
@@ -246,7 +247,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 val noteItems = paragraphNotes.map { note ->
                     val itemStart = note.position - index
-                    ParagraphAdapter.NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color, note.id)
+                    ParagraphAdapter.NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
                 }
 
                 paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
