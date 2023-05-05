@@ -42,6 +42,11 @@ class ParagraphAdapter(
 
     var isLoading = false
 
+    /**
+     * Background span of the selected sentence
+     */
+    private var selectionSpan: BackgroundColorSpan? = null
+
     val selectedSentence = SelectedSentence()
     /**
      * The position of the paragraph in the list that contains the selected word.
@@ -227,7 +232,17 @@ class ParagraphAdapter(
         inner class ParagraphActionModeCallback: ActionMode.Callback {
 
             var item: ParagraphItem? = null
-            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
+            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                // Remove selected sentence
+                if(adapterPosition == selectedSentence.paragraphIndex) {
+                    // If the selected sentence and the selected text are in the same item position
+                    // Remove the span of the TextView because updating the item removes the text selection.
+                    unselectSentence(binding.paragraph)
+                } else {
+                    unselectSentence()
+                }
+                return true
+            }
 
             override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
                 menu ?: return false
@@ -282,6 +297,25 @@ class ParagraphAdapter(
             previousItem.selectedIndex = -1
             previousItem.selectedWord = null
             notifyItemChanged(previousIndex)
+            selectedSentence.paragraphIndex = -1
+            selectedSentence.sentenceIndex = -1
+        }
+    }
+
+    /**
+     * Unselects sentence but instead of updating the item of the adapter, it directly modifies the TextView span.
+     */
+    fun unselectSentence(textView: TextView){
+        val previousIndex = selectedSentence.paragraphIndex
+        if(previousIndex != -1) {
+            val previousItem = items[previousIndex]
+            previousItem.selectedIndex = -1
+            previousItem.selectedWord = null
+            selectionSpan?.let {
+                val text = textView.text as? Spannable
+                text?.removeSpan(it)
+                selectionSpan = null
+            }
             selectedSentence.paragraphIndex = -1
             selectedSentence.sentenceIndex = -1
         }
@@ -436,7 +470,8 @@ class ParagraphAdapter(
         //Remove previous
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
-        text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        selectionSpan = BackgroundColorSpan(0x6633B5E5)
+        text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         this.setText(text, TextView.BufferType.SPANNABLE)
     }
 
