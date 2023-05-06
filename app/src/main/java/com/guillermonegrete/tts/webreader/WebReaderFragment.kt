@@ -475,6 +475,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val selected = adapter.selectedSentence
         if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
             viewModel.translateSelected(selected.paragraphIndex, selected.sentenceIndex)
+
+        val text = adapter.getHighlightedText()
+        if (text != null) {
+            viewModel.translateText(text.toString())
+        }
     }
 
     private fun setBackButtonNav() {

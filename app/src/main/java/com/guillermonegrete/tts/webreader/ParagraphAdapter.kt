@@ -22,6 +22,7 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
 import com.guillermonegrete.tts.utils.findWordForRightHanded
+import com.guillermonegrete.tts.utils.getSelectedText
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -46,6 +47,11 @@ class ParagraphAdapter(
      * Background span of the selected sentence
      */
     private var selectionSpan: BackgroundColorSpan? = null
+
+    /**
+     * Current TextView highlighted by a long-press.
+     */
+    private var highlightedTextView: TextView? = null
 
     val selectedSentence = SelectedSentence()
     /**
@@ -241,6 +247,7 @@ class ParagraphAdapter(
                 } else {
                     unselectSentence()
                 }
+                highlightedTextView = binding.paragraph
                 return true
             }
 
@@ -285,7 +292,9 @@ class ParagraphAdapter(
                 }
             }
 
-            override fun onDestroyActionMode(mode: ActionMode?) {}
+            override fun onDestroyActionMode(mode: ActionMode?) {
+                highlightedTextView = null
+            }
 
         }
     }
@@ -374,6 +383,8 @@ class ParagraphAdapter(
     fun previousSentence(){
         changeSentence(selectedSentence.sentenceIndex - 1)
     }
+
+    fun getHighlightedText() = highlightedTextView?.getSelectedText()
 
     @SuppressLint("ClickableViewAccessibility")
     inner class ExpandedViewHolder(val binding: ParagraphExpandedItemBinding): RecyclerView.ViewHolder(binding.root){
