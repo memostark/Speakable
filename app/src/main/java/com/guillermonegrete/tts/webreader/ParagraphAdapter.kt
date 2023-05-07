@@ -44,11 +44,6 @@ class ParagraphAdapter(
     var isLoading = false
 
     /**
-     * Background span of the selected sentence
-     */
-    private var selectionSpan: BackgroundColorSpan? = null
-
-    /**
      * Current TextView highlighted by a long-press.
      */
     private var highlightedTextView: TextView? = null
@@ -90,6 +85,27 @@ class ParagraphAdapter(
         }
     }
 
+    /**
+     * This one is called when only the BackgroundSpans are modified.
+     * Avoid reassigning the text, this produces a small flicker in older devices so instead modify the spans.
+     */
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
+            if(holder is ViewHolder) {
+                val payload = payloads.first()
+                if(payload is Int) {
+                    holder.setHighlightedText(items[position], payload)
+                }
+            }
+        }
+    }
+
     override fun getItemCount() = items.size
 
     override fun getItemViewType(position: Int) = if(expandedItemPos == position) R.layout.paragraph_expanded_item else R.layout.paragraph_item
@@ -107,6 +123,10 @@ class ParagraphAdapter(
 
         var firstCharIndex = 0
 
+        /**
+         * Background span of the selected sentence
+         */
+        private var selectionSpan: BackgroundColorSpan? = null
         private val actionModeCallback = ParagraphActionModeCallback()
 
         init {
@@ -133,7 +153,7 @@ class ParagraphAdapter(
             binding.paragraph.text = item.original
             if(item.selectedIndex != -1){
                 val span = item.indexes[item.selectedIndex]
-                binding.paragraph.setHighlightedText(span.start, span.end)
+                selectionSpan = binding.paragraph.setHighlightedText(span.start, span.end)
                 val wordSpan = item.selectedWord
                 if(wordSpan != null) binding.paragraph.addHighlightedText(wordSpan.start, wordSpan.end)
             } else {
@@ -235,6 +255,54 @@ class ParagraphAdapter(
             notifyItemChanged(adapterPosition)
         }
 
+        /**
+         * Set the highlighted span without reassigning the text to the TextView.
+         */
+        fun setHighlightedText(item: ParagraphItem, sentencePos: Int) {
+            val text = binding.paragraph.text as? Spannable ?: return
+            selectionSpan?.let {
+                text.removeSpan(it)
+                selectionSpan = null
+            }
+
+            if(sentencePos != -1) { // add highlight
+                val span = item.indexes[sentencePos]
+                // remove overlapping notes
+                text.getSpans(span.start, span.end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
+
+                // add highlight
+                selectionSpan = BackgroundColorSpan(0x6633B5E5)
+                text.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+                // reapply notes so they are still in front of the selection
+                item.notes.forEach {
+                    val noteSpan = it.span
+                    if (span.start < noteSpan.end && span.end > noteSpan.start)
+                        binding.paragraph.addHighlightedText(noteSpan.start, noteSpan.end, it.color)
+                }
+            }
+
+        }
+
+        /**
+         * Unselects sentence but instead of updating the item of the adapter, it directly modifies the TextView span.
+         */
+        fun unselectSentence(textView: TextView){
+            val previousIndex = selectedSentence.paragraphIndex
+            if(previousIndex != -1) {
+                val previousItem = items[previousIndex]
+                previousItem.selectedIndex = -1
+                previousItem.selectedWord = null
+                selectionSpan?.let {
+                    val text = textView.text as? Spannable
+                    text?.removeSpan(it)
+                    selectionSpan = null
+                }
+                selectedSentence.paragraphIndex = -1
+                selectedSentence.sentenceIndex = -1
+            }
+        }
+
         inner class ParagraphActionModeCallback: ActionMode.Callback {
 
             var item: ParagraphItem? = null
@@ -311,23 +379,26 @@ class ParagraphAdapter(
         }
     }
 
-    /**
-     * Unselects sentence but instead of updating the item of the adapter, it directly modifies the TextView span.
-     */
-    fun unselectSentence(textView: TextView){
+    private fun replaceSentenceSelection(paragraphIndex: Int, sentenceIndex: Int) {
+        // unselect sentence
         val previousIndex = selectedSentence.paragraphIndex
         if(previousIndex != -1) {
             val previousItem = items[previousIndex]
             previousItem.selectedIndex = -1
             previousItem.selectedWord = null
-            selectionSpan?.let {
-                val text = textView.text as? Spannable
-                text?.removeSpan(it)
-                selectionSpan = null
-            }
-            selectedSentence.paragraphIndex = -1
-            selectedSentence.sentenceIndex = -1
+
+            // if the previous and current sentence are in the same paragraph, previous will be removed when adding new
+            if (previousIndex != paragraphIndex) notifyItemChanged(previousIndex, -1)
         }
+
+        val item = items[paragraphIndex]
+        item.selectedIndex = sentenceIndex
+
+        // Update the paragraph item, the payload indicates which sentence to highlight
+        notifyItemChanged(paragraphIndex, sentenceIndex)
+
+        selectedSentence.paragraphIndex = paragraphIndex
+        selectedSentence.sentenceIndex = sentenceIndex
     }
 
     private fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
@@ -374,8 +445,7 @@ class ParagraphAdapter(
             }
 
             if(paragraphIndex in items.indices) {
-                unselectSentence()
-                selectSentence(paragraphIndex, newIndex)
+                replaceSentenceSelection(paragraphIndex, newIndex)
             }
         }
     }
@@ -475,15 +545,16 @@ class ParagraphAdapter(
         notifyItemChanged(previousExpandedPos)
     }
 
-    private fun TextView.setHighlightedText(start: Int, end: Int){
+    private fun TextView.setHighlightedText(start: Int, end: Int): BackgroundColorSpan{
         val text = SpannableString(this.text)
 
         //Remove previous
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
-        selectionSpan = BackgroundColorSpan(0x6633B5E5)
+        val selectionSpan = BackgroundColorSpan(0x6633B5E5)
         text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         this.setText(text, TextView.BufferType.SPANNABLE)
+        return selectionSpan
     }
 
     private fun TextView.addHighlightedText(start: Int, end: Int, color: Int = Color.argb(128, 255, 0, 0)){
