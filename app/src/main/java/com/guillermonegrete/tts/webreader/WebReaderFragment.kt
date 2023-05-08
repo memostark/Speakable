@@ -159,6 +159,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 isPageSaved.value = false
                                 val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
                                 viewModel.deleteLinkFolder(externalDir)
+                                adapter?.isPageSaved = false
                             }
                         )
 
@@ -219,6 +220,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             isPageSaved.value = true
             loadingDialogVisible.value = false
+
+            adapter?.isPageSaved = true
         }
     }
 

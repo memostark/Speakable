@@ -33,7 +33,7 @@ class ParagraphAdapter(
     /**
      * Indicates if the page is saved in the local device storage, in contrast to being loaded from the web.
      */
-    val isPageSaved: Boolean,
+    var isPageSaved: Boolean,
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: () -> Unit,
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -137,7 +137,7 @@ class ParagraphAdapter(
                 paragraph.setOnTouchListener { _, event ->
                     detector.onTouchEvent(event)
                 }
-                if(isPageSaved) paragraph.customSelectionActionModeCallback = actionModeCallback
+                paragraph.customSelectionActionModeCallback = actionModeCallback
             }
         }
 
@@ -320,6 +320,8 @@ class ParagraphAdapter(
             }
 
             override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                if (!isPageSaved) return true
+
                 menu ?: return false
                 val localItem = item ?: return false
 
