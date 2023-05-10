@@ -99,10 +99,10 @@ class ParagraphAdapter(
         } else {
             if(holder is ViewHolder) {
                 for (payload in payloads) {
-                    if(payload is Int) {
-                        holder.setHighlightedText(items[position], payload)
-                    } else if (payload == PAYLOAD_WORD) {
-                        holder.highlightWord(items[position])
+                    when (payload) {
+                        is Int -> holder.setHighlightedText(items[position], payload)
+                        PAYLOAD_WORD -> holder.highlightWord(items[position])
+                        PAYLOAD_WORD_SENTENCE -> holder.highlightInsideWord(items[position])
                     }
                 }
             }
@@ -130,6 +130,11 @@ class ParagraphAdapter(
          * Background span of the selected sentence
          */
         private var selectionSpan: BackgroundColorSpan? = null
+
+        /**
+         * Background span of the selected word inside a sentence.
+         */
+        private var wordInsideSpan: BackgroundColorSpan? = null
         private val actionModeCallback = ParagraphActionModeCallback()
 
         init {
@@ -198,6 +203,7 @@ class ParagraphAdapter(
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
                         item.selectedWord = wordSpan
+                        selectedSentence.wordSelected = true
                         _sentenceClicked.tryEmit(clickedWord)
                         return super.onSingleTapConfirmed(e)
                     }
@@ -269,6 +275,10 @@ class ParagraphAdapter(
                 selectionSpan?.let {
                     text.removeSpan(it)
                     selectionSpan = null
+                    wordInsideSpan?.let { wordSpan ->
+                        text.removeSpan(wordSpan)
+                        wordInsideSpan = null
+                    }
                 }
             } else {
                 val span = item.indexes[sentencePos]
@@ -296,6 +306,21 @@ class ParagraphAdapter(
             val text = binding.paragraph.text as? Spannable
             val span = item.selectedWord
             if (span != null) text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+
+        fun highlightInsideWord(item: ParagraphItem) {
+            val text = binding.paragraph.text as? Spannable ?: return
+            wordInsideSpan?.let { text.removeSpan(it) }
+
+            val span = item.selectedWord
+            if (span == null) {
+                // no span means we only wanted to remove the highlight
+                wordInsideSpan = null
+                return
+            }
+
+            wordInsideSpan = BackgroundColorSpan(Color.argb(128, 255, 0, 0))
+            text.setSpan(wordInsideSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
 
         inner class ParagraphActionModeCallback: ActionMode.Callback {
@@ -366,6 +391,7 @@ class ParagraphAdapter(
             notifyItemChanged(previousIndex, -1)
             selectedSentence.paragraphIndex = -1
             selectedSentence.sentenceIndex = -1
+            selectedSentence.wordSelected = false
         }
     }
 
@@ -388,24 +414,34 @@ class ParagraphAdapter(
 
         selectedSentence.paragraphIndex = paragraphIndex
         selectedSentence.sentenceIndex = sentenceIndex
+        selectedSentence.wordSelected = false
     }
 
     private fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
         val item = items[paragraphIndex]
         item.selectedIndex = sentenceIndex
 
-        notifyItemChanged(paragraphIndex)
+        notifyItemChanged(paragraphIndex, sentenceIndex)
 
         selectedSentence.paragraphIndex = paragraphIndex
         selectedSentence.sentenceIndex = sentenceIndex
     }
 
     fun unselectWord() {
+        // unselect independent word
         if(selectedWordPos != -1) {
             val previousItem = items[selectedWordPos]
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, -1)
             selectedWordPos = -1
+        }
+
+        // unselect word that is within a sentence
+        if(selectedSentence.wordSelected) {
+            val index = selectedSentence.paragraphIndex
+            val item = items[index]
+            item.selectedWord = null
+            notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
         }
     }
 
@@ -575,6 +611,11 @@ class ParagraphAdapter(
         textSelectionPos = -1
     }
 
+    fun updateWordInSentence() {
+        val itemIndex = selectedSentence.paragraphIndex
+        notifyItemChanged(itemIndex, PAYLOAD_WORD_SENTENCE)
+    }
+
     data class ParagraphItem(
         /**
          * The text in its original language,
@@ -605,12 +646,20 @@ class ParagraphAdapter(
         val id: Long
     )
 
-    data class SelectedSentence(var paragraphIndex: Int =-1, var sentenceIndex: Int = -1)
+    data class SelectedSentence(
+        var paragraphIndex: Int = -1,
+        var sentenceIndex: Int = -1,
+        /**
+         * Indicates whether the sentence has a selected word within.
+         */
+        var wordSelected: Boolean = false
+    )
 
     companion object {
         private const val SWIPE_THRESHOLD = 0.8
         private const val SWIPE_VELOCITY_THRESHOLD = 0.8
 
         private const val PAYLOAD_WORD = "update_word"
+        private const val PAYLOAD_WORD_SENTENCE = "word_sentence"
     }
 }

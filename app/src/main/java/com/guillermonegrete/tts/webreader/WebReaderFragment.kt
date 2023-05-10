@@ -283,8 +283,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             setWordSheetViews(false)
                         } else {
                             viewModel.translateWordInSentence(it)
-                            val itemIndex = paragraphAdapter.selectedSentence.paragraphIndex
-                            paragraphAdapter.notifyItemChanged(itemIndex)
+                            paragraphAdapter.updateWordInSentence()
                         }
                     }
                 }
