@@ -44,6 +44,11 @@ class ParagraphAdapter(
     var isLoading = false
 
     /**
+     * Whether the current selected text (started with a long-press) is overlapping a note.
+     */
+    var isOverlappingNotes = false
+
+    /**
      * Current TextView highlighted by a long-press.
      */
     private var highlightedTextView: TextView? = null
@@ -347,7 +352,8 @@ class ParagraphAdapter(
                 // Check if selected text and note spans overlap
                 localItem.notes.map {
                     val span = it.span
-                    if (span.start < selEnd && span.end > selStart) {
+                    isOverlappingNotes = span.start < selEnd && span.end > selStart
+                    if (isOverlappingNotes) {
                         return false
                     }
                 }
@@ -377,6 +383,7 @@ class ParagraphAdapter(
 
             override fun onDestroyActionMode(mode: ActionMode?) {
                 highlightedTextView = null
+                isOverlappingNotes = false
             }
 
         }

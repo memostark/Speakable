@@ -402,6 +402,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         translatedText.text = word.definition
                         notesText.isGone = word.notes.isNullOrEmpty()
                         notesText.text = word.notes
+
+                        // Only show the add note button if selection is a word and doesn't overlap any other note
+                        val paragraphAdapter = adapter
+                        if (paragraphAdapter != null)
+                            addNoteBtn.isGone = wordResult.isSentence || paragraphAdapter.isOverlappingNotes
+
                         moreInfoBtn.isGone = wordResult.isSentence
                         moreInfoBtn.setOnClickListener {
                             viewModel.getLinksForWord(word.word, word.lang)
@@ -421,6 +427,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         notesText.text = ""
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
+                        addNoteBtn.isVisible = false
                         // When showing the sheet, the word views are hidden by default
                         setWordSheetViews(false)
                         false
