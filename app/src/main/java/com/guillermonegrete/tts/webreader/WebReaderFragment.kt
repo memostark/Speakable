@@ -367,6 +367,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 composeBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
+
+            transSheet.addNoteBtn.setOnClickListener {
+                val paragraphAdapter = adapter ?: return@setOnClickListener
+                val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
+                val textView = binding.transSheet.translatedText
+                paragraphTextSelection = ParagraphAdapter.NoteItem(textView.text.toString(), span, 0, 0)
+                addNoteDialogVisible.value = true
+            }
         }
     }
 

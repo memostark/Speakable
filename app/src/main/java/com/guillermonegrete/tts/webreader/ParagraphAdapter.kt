@@ -59,7 +59,7 @@ class ParagraphAdapter(
      */
     private var selectedWordPos = -1
     /**
-     * Index of the paragraph that has selected text (with the long-press gesture)
+     * Index of the paragraph that has selected text used for creating/updating a note.
      */
     private var textSelectionPos = -1
 
@@ -222,6 +222,7 @@ class ParagraphAdapter(
                     // Select new word
                     item.selectedWord = wordSpan
                     selectedWordPos = adapterPosition
+                    textSelectionPos = adapterPosition
                     notifyItemChanged(adapterPosition, PAYLOAD_WORD)
                 }
                 return super.onSingleTapConfirmed(e)
@@ -450,6 +451,8 @@ class ParagraphAdapter(
             item.selectedWord = null
             notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
         }
+
+        textSelectionPos = -1
     }
 
     fun nextSentence(){
@@ -487,6 +490,15 @@ class ParagraphAdapter(
     }
 
     fun getHighlightedText() = highlightedTextView?.getSelectedText()
+
+    fun getSelectedWordSpan(): Span? {
+        if (selectedWordPos != -1) {
+            val item = items[selectedWordPos]
+            val span = item.selectedWord ?: return null
+            return item.toAbsolute(span)
+        }
+        return null
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     inner class ExpandedViewHolder(val binding: ParagraphExpandedItemBinding): RecyclerView.ViewHolder(binding.root){
@@ -644,7 +656,11 @@ class ParagraphAdapter(
         var selectedIndex: Int = -1,
         var selectedWord: Span? = null,
         var translation: String = "",
-    )
+    ) {
+        fun toAbsolute(span: Span) : Span {
+            return Span(firstCharIndex + span.start, firstCharIndex + span.end)
+        }
+    }
 
     data class NoteItem(
         val text: String,
