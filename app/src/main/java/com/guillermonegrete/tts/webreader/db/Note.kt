@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.webreader.db
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.guillermonegrete.tts.db.WebLink
@@ -10,7 +12,15 @@ import com.guillermonegrete.tts.db.WebLink
 /**
  * Represents the text (note) applied to the specified position in a text file.
  */
-@Entity(tableName = "notes")
+@Entity(
+    tableName = "notes",
+    foreignKeys = [ForeignKey(
+        onDelete = CASCADE,
+        entity = WebLink::class,
+        parentColumns = ["id"],
+        childColumns = ["file_id"]
+    )]
+)
 data class Note(
     val text: String,
     /**
