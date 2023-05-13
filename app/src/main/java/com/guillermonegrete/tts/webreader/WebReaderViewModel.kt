@@ -178,11 +178,9 @@ class WebReaderViewModel @Inject constructor(
 
     fun saveWebLink(){
         viewModelScope.launch {
-            withContext(ioDispatcher){
-                cacheWebLink?.let {
-                    it.lastRead = Calendar.getInstance()
-                    webLinkDAO.upsert(it)
-                }
+            cacheWebLink?.let {
+                it.lastRead = Calendar.getInstance()
+                webLinkDAO.upsert(it)
             }
         }
     }
@@ -381,9 +379,12 @@ class WebReaderViewModel @Inject constructor(
 
         link.uuid = uuid
 
-        saveWebLink()
         viewModelScope.launch {
-            cacheWebLink = webLinkDAO.getLink(link.url)
+            cacheWebLink?.let {
+                it.lastRead = Calendar.getInstance()
+                webLinkDAO.upsert(it)
+                cacheWebLink = webLinkDAO.getLink(link.url)
+            }
         }
     }
 

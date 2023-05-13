@@ -7,11 +7,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface WebLinkDAO {
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(link: WebLink): Long
-
-    @Update
-    fun update(link: WebLink)
+    @Upsert
+    suspend fun upsert(link: WebLink): Long
 
     @Delete
     suspend fun delete(link: WebLink)
@@ -25,12 +22,4 @@ interface WebLinkDAO {
     @Transaction
     @Query("SELECT * FROM web_link WHERE url = :url")
     suspend fun getLinkWithNotes(url: String): LinkWithNotes?
-
-    @Transaction
-    fun upsert(file: WebLink) {
-        val id = insert(file)
-        if (id == -1L) {
-            update(file)
-        }
-    }
 }
