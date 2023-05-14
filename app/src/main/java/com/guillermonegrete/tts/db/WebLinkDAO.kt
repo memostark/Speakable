@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface WebLinkDAO {
 
+    @Update
+    suspend fun update(link: WebLink)
+
     @Upsert
     suspend fun upsert(link: WebLink): Long
 

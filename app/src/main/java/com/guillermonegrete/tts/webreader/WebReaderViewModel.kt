@@ -389,7 +389,8 @@ class WebReaderViewModel @Inject constructor(
     }
 
     fun deleteLinkFolder(rootPath: String) {
-        val uuid = cacheWebLink?.uuid ?: return
+        val link = cacheWebLink ?: return
+        val uuid = link.uuid ?: return
         val folder = File(rootPath, uuid.toString())
 
         val files = folder.listFiles()
@@ -400,7 +401,13 @@ class WebReaderViewModel @Inject constructor(
         }
 
         folder.delete()
-        cacheWebLink?.uuid = null
+        link.uuid = null
+
+        viewModelScope.launch {
+            webLinkDAO.update(link)
+            noteDAO.deleteByFileId(link.id)
+            loadPageFromWeb()
+        }
     }
 
     fun saveNote(text: String, selection: Span, id: Long, color: String) {
