@@ -24,7 +24,9 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 import java.io.IOException
+import java.util.UUID
 
 @ExperimentalCoroutinesApi
 class WebReaderViewModelTest {
@@ -43,16 +45,25 @@ class WebReaderViewModelTest {
     private lateinit var notesDAO: FakeNoteDAO
 
     @Before
-    fun setup(){
+    fun setup() {
         wordRepository = FakeWordRepository()
-        val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
+        val getTranslationInteractor =
+            GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
 
         externalLinksSource = FakeExternalLinkSource()
-        val getExternalLink = GetExternalLink(TestThreadExecutor(), TestMainThread(), externalLinksSource)
+        val getExternalLink =
+            GetExternalLink(TestThreadExecutor(), TestMainThread(), externalLinksSource)
 
         webLinkDAO = FakeWebLinkDAO()
         notesDAO = FakeNoteDAO()
-        viewModel = WebReaderViewModel(getTranslationInteractor, getExternalLink, wordRepository, webLinkDAO, notesDAO, mainCoroutineRule.dispatcher)
+        viewModel = WebReaderViewModel(
+            getTranslationInteractor,
+            getExternalLink,
+            wordRepository,
+            webLinkDAO,
+            notesDAO,
+            mainCoroutineRule.dispatcher
+        )
 
         mockkStatic(Jsoup::class)
     }
@@ -74,7 +85,7 @@ class WebReaderViewModelTest {
     @Test
     fun `Given saved url link, when load page, then load success and saved link`() = runTest {
         val url = "https://example.com"
-        val link = WebLink(url, "en", id=10)
+        val link = WebLink(url, "en", id = 10)
         webLinkDAO.upsert(link)
         every { Jsoup.connect(url).get() } returns Jsoup.parse("<body>My document</body>")
 
@@ -98,5 +109,64 @@ class WebReaderViewModelTest {
         val result = viewModel.page.getOrAwaitValue()
         assertTrue(result is LoadResult.Error)
         assertTrue((result as LoadResult.Error).exception is IOException)
+    }
+
+    @Test
+    fun `Given local file, when load page, then load success and saved link`() = runTest {
+        loadLocalPage()
+    }
+
+    @Test
+    fun `Given local file, when load from web and local again, then load success`() = runTest {
+        // First load a local page
+        loadLocalPage()
+
+        // Then switch to web version
+        every {
+            Jsoup.connect("https://example.com").get()
+        } returns Jsoup.parse("<body>My document</body>")
+        viewModel.loadPageFromWeb()
+        advanceUntilIdle()
+
+        val expected = PageInfo("My document", emptyList(), false)
+        assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
+
+        // Finally test loading local page
+        viewModel.loadLocalPage()
+        advanceUntilIdle()
+
+        assertEquals(
+            LoadResult.Success(PageInfo(localContent, emptyList(), true)),
+            viewModel.page.getOrAwaitValue()
+        )
+    }
+
+    private fun loadLocalPage() = runTest {
+        val url = "https://example.com"
+        val path = UUID.randomUUID()
+        val link = WebLink(url, "en", id = 10, uuid = path)
+        webLinkDAO.upsert(link)
+        val dummyRoot = "test_root"
+        viewModel.folderPath = dummyRoot
+        val file = File("$dummyRoot\\" + path.toString(), "content.xml")
+        every { Jsoup.parse(file, null) } returns Jsoup.parse("<body>My document</body>")
+
+        viewModel.loadDoc(url)
+        advanceUntilIdle()
+
+        val expected = PageInfo(localContent, emptyList(), true)
+        assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
+        assertEquals(link, viewModel.webLink.getOrAwaitValue())
+    }
+
+    companion object {
+        val localContent = """
+                            <html>
+                             <head></head>
+                             <body>
+                              My document
+                             </body>
+                            </html>
+                           """.trimIndent()
     }
 }

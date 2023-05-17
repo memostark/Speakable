@@ -14,6 +14,6 @@ class FakeNoteDAO: NoteDAO {
     }
 
     override suspend fun getNotes(fileId: Int): List<Note> {
-        TODO("Not yet implemented")
+        return emptyList()
     }
 }
