@@ -26,6 +26,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.io.File
 import java.io.IOException
+import java.util.Calendar
 import java.util.UUID
 
 @ExperimentalCoroutinesApi
@@ -68,6 +69,7 @@ class WebReaderViewModelTest {
         mockkStatic(Jsoup::class)
     }
 
+    // region Loading page tests
     @Test
     fun `Given no saved url link, when load page, then load success and new link`() = runTest {
         val url = "https://example.com"
@@ -86,7 +88,7 @@ class WebReaderViewModelTest {
     fun `Given saved url link, when load page, then load success and saved link`() = runTest {
         val url = "https://example.com"
         val link = WebLink(url, "en", id = 10)
-        webLinkDAO.upsert(link)
+        webLinkDAO.links.add(link)
         every { Jsoup.connect(url).get() } returns Jsoup.parse("<body>My document</body>")
 
         viewModel.loadDoc(url)
@@ -140,6 +142,67 @@ class WebReaderViewModelTest {
             viewModel.page.getOrAwaitValue()
         )
     }
+
+    // endregion
+
+    // region Loading page tests
+
+    @Test
+    fun `Given no saved url link, when save link, then db link created`() = runTest {
+        val url = "https://example.com"
+        every { Jsoup.connect(url).get() } returns Jsoup.parse("<body>My document</body>")
+        viewModel.loadDoc(url)
+        advanceUntilIdle()
+
+        val time = Calendar.getInstance()
+        mockkStatic(Calendar::class)
+        every { Calendar.getInstance() } returns time // so link's lastRead is saved with this time
+        viewModel.saveWebLink()
+        advanceUntilIdle()
+
+        val savedLink = webLinkDAO.links.find { it.url == url }
+        assertNotNull(savedLink)
+        assertEquals(WebLink(url, "", lastRead = time), savedLink)
+    }
+
+    @Test
+    fun `When save link folder, then db link updated`() = runTest {
+        // Initial page load
+        val url = "https://example.com"
+        every { Jsoup.connect(url).get() } returns Jsoup.parse("<body>My document</body>")
+        viewModel.loadDoc(url)
+        advanceUntilIdle()
+
+        // Create a folder
+        val time = Calendar.getInstance()
+        mockkStatic(Calendar::class)
+        every { Calendar.getInstance() } returns time // so link's lastRead is saved with this time
+        val uuid = UUID.randomUUID()
+        viewModel.saveWebLinkFolder("", uuid, "text")
+        advanceUntilIdle()
+
+        // Verify link saved and uuid created
+        val savedLink = webLinkDAO.links.find { it.url == url }
+        assertNotNull(savedLink)
+        assertEquals(WebLink(url, "", uuid = uuid, lastRead = time), savedLink)
+    }
+
+    @Test
+    fun `When delete link folder, then uuid null`() = runTest {
+        // Load local page because it has a folder and UUID
+        loadLocalPage()
+
+        // Delete folder
+        viewModel.deleteLinkFolder("")
+        advanceUntilIdle()
+
+        // Verify uuid was deleted
+        val updatedLink = webLinkDAO.links.find { it.url == "https://example.com" }
+        assertNotNull(updatedLink)
+        assertNull(updatedLink?.uuid)
+    }
+
+    // endregion
 
     private fun loadLocalPage() = runTest {
         val url = "https://example.com"

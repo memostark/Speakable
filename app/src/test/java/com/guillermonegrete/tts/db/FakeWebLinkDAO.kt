@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 class FakeWebLinkDAO: WebLinkDAO {
 
-    private val links = mutableListOf<WebLink>()
+    val links = mutableListOf<WebLink>()
 
     override suspend fun update(link: WebLink) {
         links.removeIf { it.id == link.id }
@@ -30,6 +30,7 @@ class FakeWebLinkDAO: WebLinkDAO {
     }
 
     override suspend fun getLink(url: String) = links.firstOrNull { it.url == url }
+
     override suspend fun getLinkWithNotes(url: String): LinkWithNotes? {
         val savedLink = links.find { it.url == url } ?: return null
         return LinkWithNotes(savedLink, emptyList())

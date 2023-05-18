@@ -1,6 +1,9 @@
 package com.guillermonegrete.tts.webreader.db
 
 class FakeNoteDAO: NoteDAO {
+
+    val notes = mutableListOf<Note>()
+
     override suspend fun upsert(note: Note): Long {
         TODO("Not yet implemented")
     }
@@ -10,7 +13,7 @@ class FakeNoteDAO: NoteDAO {
     }
 
     override suspend fun deleteByFileId(id: Int) {
-        TODO("Not yet implemented")
+        notes.removeIf { it.fileId == id }
     }
 
     override suspend fun getNotes(fileId: Int): List<Note> {
