@@ -5,11 +5,18 @@ class FakeNoteDAO: NoteDAO {
     val notes = mutableListOf<Note>()
 
     override suspend fun upsert(note: Note): Long {
-        TODO("Not yet implemented")
+        return if (note in notes) {
+            notes.removeIf { it.id == note.id }
+            notes.add(note)
+            -1
+        } else {
+            notes.add(note)
+            note.id
+        }
     }
 
     override suspend fun delete(note: Note) {
-        TODO("Not yet implemented")
+        notes.removeIf { it.id == note.id }
     }
 
     override suspend fun deleteByFileId(id: Int) {

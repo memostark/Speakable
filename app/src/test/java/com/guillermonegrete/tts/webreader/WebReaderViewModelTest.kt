@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.webreader
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.data.source.FakeWordRepository
@@ -14,6 +15,8 @@ import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.threading.TestMainThread
 import com.guillermonegrete.tts.webreader.db.FakeNoteDAO
+import com.guillermonegrete.tts.webreader.db.Note
+import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import io.mockk.every
 import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -145,7 +148,7 @@ class WebReaderViewModelTest {
 
     // endregion
 
-    // region Loading page tests
+    // region Saving link and folder tests
 
     @Test
     fun `Given no saved url link, when save link, then db link created`() = runTest {
@@ -200,6 +203,42 @@ class WebReaderViewModelTest {
         val updatedLink = webLinkDAO.links.find { it.url == "https://example.com" }
         assertNotNull(updatedLink)
         assertNull(updatedLink?.uuid)
+    }
+
+    // endregion
+
+    // region Updating notes
+
+    @Test
+    fun `When save note, then note updated emitted`() = runTest {
+        // Notes only available when local page exists
+        loadLocalPage()
+
+        viewModel.saveNote("new note text", Span(4, 9), 9, "")
+        advanceUntilIdle()
+
+        // Verify uuid was deleted
+        val newNote = Note("new note text", 4, 5, "", 10, 9)
+        val expected = ModifiedNote.Update(newNote)
+        assertEquals(expected, viewModel.updatedNote.getOrAwaitValue())
+        val note = notesDAO.notes.first()
+        assertEquals(newNote, note)
+    }
+
+    @Test
+    fun `When delete note, then note deleted emitted`() = runTest {
+        // Notes only available when local page exists
+        loadLocalPage()
+        val noteId = 9L
+        notesDAO.notes.add(Note("saved text", 0, 4, "", 10, noteId))
+
+        viewModel.deleteNote(noteId)
+        advanceUntilIdle()
+
+        val expected = ModifiedNote.Delete(noteId)
+        assertEquals(expected, viewModel.updatedNote.getOrAwaitValue())
+        val note = notesDAO.notes.firstOrNull()
+        assertNull(note)
     }
 
     // endregion
