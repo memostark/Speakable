@@ -414,7 +414,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         // Only show the add note button if selection is a word and doesn't overlap any other note
                         val paragraphAdapter = adapter
                         if (paragraphAdapter != null)
-                            addNoteBtn.isGone = wordResult.isSentence || paragraphAdapter.isOverlappingNotes
+                            addNoteBtn.isGone = !paragraphAdapter.isPageSaved || wordResult.isSentence || paragraphAdapter.isOverlappingNotes
 
                         moreInfoBtn.isGone = wordResult.isSentence
                         moreInfoBtn.setOnClickListener {
