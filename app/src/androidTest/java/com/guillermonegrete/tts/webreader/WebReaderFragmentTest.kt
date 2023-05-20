@@ -117,7 +117,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
         // Highlight first sentence
-        clickParagraphList(0, longClick())
+        clickParagraphList(0, doubleClick())
 
         server.dispatcher = sentenceDispatcher()
 
@@ -148,8 +148,8 @@ class WebReaderFragmentTest{
 
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
-        // Double click and verify item expanded
-        clickParagraphList(0, doubleClick())
+        // Swipe paragraph and verify it expanded
+        clickParagraphList(0, swipeRight())
 
         onView(withId(R.id.toggle_paragraph)).check(matches(isDisplayed()))
 
@@ -172,9 +172,9 @@ class WebReaderFragmentTest{
     private fun translateSelectionAndReturn(expectedTranslation: String){
         composeTestRule.onNodeWithContentDescription("Translate").performClick()
 
+        Thread.sleep(500) // Wait for the sheet to be fully visible, otherwise the press back exits the app. This is the best solution, using idle resource freezes the test
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText(expectedTranslation)))
-        Thread.sleep(500) // Wait for the sheet to be fully visible, otherwise the press back exits the app. This is the best solution, using idle resource freezes the test
 
         Espresso.pressBack()
 
