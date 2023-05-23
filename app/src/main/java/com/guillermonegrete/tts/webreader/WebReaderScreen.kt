@@ -250,9 +250,12 @@ fun AddNoteDialog(
 
                 var colorSel by remember { mutableStateOf(indexColor) }
 
-                Row (verticalAlignment = Alignment.CenterVertically, modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
                     colors.forEachIndexed { index, color ->
                         val isSelected = index == colorSel
                         val modifier = if (isSelected) Modifier
@@ -280,7 +283,7 @@ fun AddNoteDialog(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
-                        onSaveClicked(AddNoteResult(text,  colors[colorSel].toHex()))
+                        onSaveClicked(AddNoteResult(text, colors[colorSel].toHex()))
                     }, Modifier.weight(1f)) {
                         Text(stringResource(R.string.save))
                     }

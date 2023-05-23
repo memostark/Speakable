@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.core.os.bundleOf
@@ -23,8 +24,11 @@ import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.di.TestApplicationModuleBinds
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
+import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
+import com.guillermonegrete.tts.utils.atPosition
 import com.guillermonegrete.tts.utils.clickIn
+import com.guillermonegrete.tts.utils.withBackgroundSpan
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -201,6 +205,10 @@ class WebReaderFragmentTest{
         onView(withId(R.id.add_note_btn)).perform(click())
 
         composeTestRule.onNodeWithText("Save").performClick()
+        // Verify highlight was added to word "Mi" at the start of the paragraph
+        val color = YellowNoteHighlight.toArgb()
+        onView(withId(R.id.paragraphs_list))
+            .check(matches(atPosition(0, withBackgroundSpan(color, 0 , 2))))
     }
 
     private fun setPageResponse() {
