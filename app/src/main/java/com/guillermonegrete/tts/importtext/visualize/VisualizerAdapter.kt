@@ -202,7 +202,7 @@ class VisualizerAdapter(
         override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
             menu.clear()
             val inflater: MenuInflater = mode.menuInflater
-            menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, "Copy")
+            menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
             inflater.inflate(R.menu.menu_context_text_visualizer, menu)
             return true
         }

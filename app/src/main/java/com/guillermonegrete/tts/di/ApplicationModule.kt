@@ -26,6 +26,7 @@ import com.guillermonegrete.tts.main.TranslatorEnumKey
 import com.guillermonegrete.tts.main.TranslatorType
 import com.guillermonegrete.tts.threading.MainThreadImpl
 import com.guillermonegrete.tts.ui.BrightnessTheme
+import com.guillermonegrete.tts.webreader.db.NoteDAO
 import dagger.Module
 import dagger.Provides
 import javax.inject.Qualifier
@@ -109,6 +110,10 @@ object ApplicationModule {
     @Singleton
     @Provides
     fun provideWebLinkDAO(database: FilesDatabase): WebLinkDAO = database.linkDao()
+
+    @Singleton
+    @Provides
+    fun provideNoteDAO(database: FilesDatabase) = database.noteDao()
 
     @RemoteTranslationSource
     @Provides

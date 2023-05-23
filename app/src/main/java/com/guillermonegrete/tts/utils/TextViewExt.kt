@@ -39,3 +39,17 @@ fun TextView.findWordForRightHanded(
 
     return Span(startIndex, endIndex)
 }
+
+/**
+ * Returns the selected [CharSequence] selected
+ */
+fun TextView.getSelectedText(): CharSequence? {
+    return if (isFocused) {
+
+        // We need to make sure start and end are within the text length
+        val min = 0.coerceAtLeast(selectionStart.coerceAtMost(selectionEnd))
+        val max = 0.coerceAtLeast(selectionStart.coerceAtLeast(selectionEnd))
+
+        text.subSequence(min, max)
+    } else null
+}

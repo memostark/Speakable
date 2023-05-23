@@ -28,11 +28,26 @@
             android:contentDescription="@string/dialog"
             android:minWidth="48dp"
             android:minHeight="48dp"
-            android:src="@drawable/ic_outline_info_24"
-            android:tint="?colorOnSurface"
             android:visibility="invisible"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            app:tint="?colorOnSurface"
+            app:srcCompat="@drawable/ic_outline_info_24"
+            tools:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/add_note_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="@string/dialog"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toStartOf="@+id/more_info_btn"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/baseline_note_add_24"
+            app:tint="?colorOnSurface"
             tools:visibility="visible" />
 
         <TextView
@@ -44,7 +59,7 @@
             android:scrollbars="vertical"
             android:maxLines="4"
             app:layout_constraintBottom_toTopOf="@+id/notes_text"
-            app:layout_constraintEnd_toStartOf="@+id/more_info_btn"
+            app:layout_constraintEnd_toStartOf="@+id/add_note_btn"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0"
@@ -98,12 +113,12 @@
             android:contentDescription="@string/dialog"
             android:minWidth="48dp"
             android:minHeight="48dp"
-            android:src="@drawable/ic_outline_info_24"
-            android:tint="?colorOnSurface"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/word_translation"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/top_border_word_view"
+            app:tint="?colorOnSurface"
+            app:srcCompat="@drawable/ic_outline_info_24"
             tools:visibility="visible" />
 
         <ProgressBar

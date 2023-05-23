@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.core.os.bundleOf
@@ -19,15 +20,21 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.source.remote.GoogleTranslateResponse
 import com.guillermonegrete.tts.data.source.remote.Sentence
+import com.guillermonegrete.tts.db.WebLink
+import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.di.TestApplicationModuleBinds
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
+import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
+import com.guillermonegrete.tts.utils.atPosition
 import com.guillermonegrete.tts.utils.clickIn
+import com.guillermonegrete.tts.utils.withBackgroundSpan
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
+import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -38,6 +45,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
+import java.util.UUID
+import javax.inject.Inject
 
 
 @MediumTest
@@ -52,15 +62,22 @@ class WebReaderFragmentTest{
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val externalFilesPath = context.getExternalFilesDir(null)?.absolutePath.toString()
+
     private lateinit var server: MockWebServer
 
     private val moshi: Moshi = Moshi.Builder().build()
     private val responseAdapter: JsonAdapter<GoogleTranslateResponse> = moshi.adapter(GoogleTranslateResponse::class.java)
 
+    @Inject
+    lateinit var linkDAO: WebLinkDAO
+
     @Before
     fun setup(){
         server = MockWebServer()
         server.start(8081)
+        hiltRule.inject()
     }
 
     @After
@@ -80,8 +97,7 @@ class WebReaderFragmentTest{
 
     @Test
     fun when_word_tapped_then_translation_shown(){
-        val body = readPage()
-        server.enqueue(MockResponse().setBody(body))
+        setPageResponse()
 
         val args = bundleOf("link" to server.url("/").toString())
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
@@ -107,9 +123,8 @@ class WebReaderFragmentTest{
     }
 
     @Test
-    fun when_sentence_long_pressed_then_highlight(){
-        val body = readPage()
-        server.enqueue(MockResponse().setBody(body))
+    fun when_sentence_double_tapped_then_highlight(){
+        setPageResponse()
 
         val args = bundleOf("link" to server.url("/").toString())
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
@@ -117,7 +132,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
         // Highlight first sentence
-        clickParagraphList(0, longClick())
+        clickParagraphList(0, doubleClick())
 
         server.dispatcher = sentenceDispatcher()
 
@@ -139,17 +154,16 @@ class WebReaderFragmentTest{
     }
 
     @Test
-    fun when_sentence_double_tapped_then_show_expanded_item(){
-        val body = readPage()
-        server.enqueue(MockResponse().setBody(body))
+    fun when_sentence_swiped_then_show_expanded_item(){
+        setPageResponse()
 
         val args = bundleOf("link" to server.url("/").toString())
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
 
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
-        // Double click and verify item expanded
-        clickParagraphList(0, doubleClick())
+        // Swipe paragraph and verify it expanded
+        clickParagraphList(0, swipeRight())
 
         onView(withId(R.id.toggle_paragraph)).check(matches(isDisplayed()))
 
@@ -165,16 +179,50 @@ class WebReaderFragmentTest{
         onView(withId(R.id.toggle_paragraph)).check(doesNotExist())
     }
 
-    private fun readPage() =
-        InstrumentationRegistry.getInstrumentation()
+    @Test
+    fun given_local_page_when_word_tapped_and_noted_button_clicked_then_note_saved() {
+        val url = server.url("/").toString()
+        val uuid = UUID.fromString(default_uuid)
+        val link = WebLink(url, uuid = uuid)
+        runBlocking {
+            linkDAO.upsert(link)
+        }
+
+        createXmlFile()
+
+        val args = bundleOf("link" to url)
+        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+
+        val response = GoogleTranslateResponse(listOf(Sentence("My", "Mi")), "es")
+        val jsonResponse = responseAdapter.toJson(response)
+        server.enqueue(MockResponse().setBody(jsonResponse))
+
+        // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
+        // Click on the (0, 0) position to ensure the first word is clicked
+        clickParagraphList(0, clickIn(0, 0))
+
+        Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
+        onView(withId(R.id.add_note_btn)).perform(click())
+
+        composeTestRule.onNodeWithText("Save").performClick()
+        // Verify highlight was added to word "Mi" at the start of the paragraph
+        val color = YellowNoteHighlight.toArgb()
+        onView(withId(R.id.paragraphs_list))
+            .check(matches(atPosition(0, withBackgroundSpan(color, 0 , 2))))
+    }
+
+    private fun setPageResponse() {
+        val body = InstrumentationRegistry.getInstrumentation()
             .context.assets.open("test_page.html").bufferedReader().use { it.readText() }
+        server.enqueue(MockResponse().setBody(body))
+    }
 
     private fun translateSelectionAndReturn(expectedTranslation: String){
         composeTestRule.onNodeWithContentDescription("Translate").performClick()
 
+        Thread.sleep(500) // Wait for the sheet to be fully visible, otherwise the press back exits the app. This is the best solution, using idle resource freezes the test
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText(expectedTranslation)))
-        Thread.sleep(500) // Wait for the sheet to be fully visible, otherwise the press back exits the app. This is the best solution, using idle resource freezes the test
 
         Espresso.pressBack()
 
@@ -205,6 +253,24 @@ class WebReaderFragmentTest{
             )
     }
 
+    /**
+     * Create an local copy of the page using the default folder location
+     */
+    private fun createXmlFile() {
+        val folder = File(externalFilesPath, default_uuid)
+        if(!folder.exists()) folder.mkdir()
+
+        val tempFile = File(folder, "content.xml")
+        tempFile.deleteOnExit()
+
+        val context = InstrumentationRegistry.getInstrumentation().context
+        context.assets.open("test_page.html").use { input ->
+            tempFile.outputStream().use { output ->
+                input.copyTo(output, 1024)
+            }
+        }
+    }
+
     companion object{
         const val FIRST_SENTENCE = "My First Heading\n"
         private const val FIRST_SENTENCE_TRANS = "Primer encabezado"
@@ -222,5 +288,7 @@ class WebReaderFragmentTest{
         private const val FIRST_PARAGRAPH = FIRST_SENTENCE + SECOND_SENTENCE
         private const val FIRST_PARAGRAPH_TRANS = FIRST_SENTENCE_TRANS + SECOND_SENTENCE_TRANS
         val paragraphTranslationResponse = GoogleTranslateResponse(listOf(Sentence(FIRST_PARAGRAPH_TRANS, FIRST_PARAGRAPH)), "es")
+
+        const val default_uuid = "7e57d235-3553-4a57-bd35-37af9d5b1ffb"
     }
 }

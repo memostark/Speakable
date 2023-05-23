@@ -1,16 +1,17 @@
 package com.guillermonegrete.tts.db
 
 import androidx.room.*
+import com.guillermonegrete.tts.webreader.db.LinkWithNotes
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WebLinkDAO {
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(link: WebLink): Long
-
     @Update
-    fun update(link: WebLink)
+    suspend fun update(link: WebLink)
+
+    @Upsert
+    suspend fun upsert(link: WebLink): Long
 
     @Delete
     suspend fun delete(link: WebLink)
@@ -22,10 +23,6 @@ interface WebLinkDAO {
     suspend fun getLink(url: String): WebLink?
 
     @Transaction
-    fun upsert(file: WebLink) {
-        val id = insert(file)
-        if (id == -1L) {
-            update(file)
-        }
-    }
+    @Query("SELECT * FROM web_link WHERE url = :url")
+    suspend fun getLinkWithNotes(url: String): LinkWithNotes?
 }
