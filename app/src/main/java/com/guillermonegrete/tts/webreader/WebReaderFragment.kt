@@ -109,7 +109,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ModifiedNote.Update -> {
                         val note = result.note
                         val dialogResult = AddNoteResult(note.text, note.color)
-                        adapter?.updateNote(Span(note.position, note.position + note.length), note.id, dialogResult)
+                        val span = Span(note.position, note.position + note.length)
+                        adapter?.updateNote(span, note.id, dialogResult)
+
+                        // If spans are equal this note was created using the add note button in the sheet
+                        // Hide button to avoid adding more notes in the same place
+                        val wordSpan = adapter?.getSelectedWordSpan() ?: return@observe
+                        if(wordSpan == span) binding.transSheet.addNoteBtn.isVisible = false
                     }
                     is ModifiedNote.Delete -> adapter?.deleteNote(result.noteId)
                 }
