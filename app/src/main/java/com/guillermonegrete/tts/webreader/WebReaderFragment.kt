@@ -109,7 +109,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ModifiedNote.Update -> {
                         val note = result.note
                         val dialogResult = AddNoteResult(note.text, note.color)
-                        adapter?.updateNote(Span(note.position, note.position + note.length), note.id, dialogResult)
+                        val span = Span(note.position, note.position + note.length)
+                        adapter?.updateNote(span, note.id, dialogResult)
+
+                        // If spans are equal this note was created using the add note button in the sheet
+                        // Hide button to avoid adding more notes in the same place
+                        val wordSpan = adapter?.getSelectedWordSpan() ?: return@observe
+                        if(wordSpan == span) binding.transSheet.addNoteBtn.isVisible = false
                     }
                     is ModifiedNote.Delete -> adapter?.deleteNote(result.noteId)
                 }
@@ -322,8 +328,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-            bottomSheetBehavior.addBottomSheetCallback(object :
-                BottomSheetBehavior.BottomSheetCallback() {
+
+            bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN
                         && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
@@ -367,14 +373,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 composeBar.isVisible = false
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
-
-            transSheet.addNoteBtn.setOnClickListener {
-                val paragraphAdapter = adapter ?: return@setOnClickListener
-                val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
-                val textView = binding.transSheet.translatedText
-                paragraphTextSelection = ParagraphAdapter.NoteItem(textView.text.toString(), span, 0, 0)
-                addNoteDialogVisible.value = true
-            }
         }
     }
 
@@ -402,6 +400,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
             })
 
+            // The position of the paragraph item with the selected text
+            var selectedTextPos = -1
+
             viewModel.textInfo.observe(viewLifecycleOwner) { result ->
                 barLoading.isInvisible = when(result){
                     is LoadResult.Success -> {
@@ -413,8 +414,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                         // Only show the add note button if selection is a word and doesn't overlap any other note
                         val paragraphAdapter = adapter
-                        if (paragraphAdapter != null)
+                        if (paragraphAdapter != null) {
+                            selectedTextPos = paragraphAdapter.textSelectionPos
                             addNoteBtn.isGone = !paragraphAdapter.isPageSaved || wordResult.isSentence || paragraphAdapter.isOverlappingNotes
+                        }
 
                         moreInfoBtn.isGone = wordResult.isSentence
                         moreInfoBtn.setOnClickListener {
@@ -465,6 +468,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         false
                     }
                 }
+            }
+
+            addNoteBtn.setOnClickListener {
+                val paragraphAdapter = adapter ?: return@setOnClickListener
+                val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
+                val textView = binding.transSheet.translatedText
+                paragraphAdapter.textSelectionPos = selectedTextPos
+                paragraphTextSelection = ParagraphAdapter.NoteItem(textView.text.toString(), span, 0, 0)
+                addNoteDialogVisible.value = true
             }
         }
     }

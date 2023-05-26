@@ -61,7 +61,7 @@ class ParagraphAdapter(
     /**
      * Index of the paragraph that has selected text used for creating/updating a note.
      */
-    private var textSelectionPos = -1
+    var textSelectionPos = -1
 
     private val _sentenceClicked = MutableSharedFlow<String>(
         replay = 0,
