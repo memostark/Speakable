@@ -39,7 +39,6 @@ import java.util.concurrent.ExecutorService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 public class ProcessTextPresenterTest {
