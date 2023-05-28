@@ -19,11 +19,15 @@ import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FilesLayoutBinding
 import com.guillermonegrete.tts.databinding.RecentFilesMenuBinding
 import com.guillermonegrete.tts.importtext.FilesViewModel
@@ -34,8 +38,7 @@ import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.BufferedReader
 import java.io.IOException
@@ -43,8 +46,6 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.lang.StringBuilder
 
-@ExperimentalCoroutinesApi
-@FlowPreview
 @AndroidEntryPoint
 class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
@@ -145,21 +146,34 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
                 visualizeEpub(Uri.parse(it.uri), it.id)
             })
 
-            dataLoading.observe(viewLifecycleOwner) {
-                binding.recentFilesProgressBar.visibility = if (it) View.VISIBLE else View.INVISIBLE
-            }
-
             val adapter = RecentFilesAdapter(viewModel)
             binding.recentFilesList.adapter = adapter
-
-            files.observe(viewLifecycleOwner) {
-                binding.noFilesMessage.isVisible = it.isEmpty()
-                adapter.submitList(it)
-            }
 
             openItemMenu.observe(viewLifecycleOwner, EventObserver{
                 RecentFileMenu.newInstance(it).show(childFragmentManager, "Item menu")
             })
+
+            lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    files.collect { uiState ->
+                        when (uiState) {
+                            is LoadResult.Error -> {
+                                Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
+                                Timber.e(uiState.exception, "Failed fetching recent links")
+                                binding.recentFilesProgressBar.isVisible = false
+                            }
+                            is LoadResult.Success -> {
+                                binding.noFilesMessage.isVisible = uiState.data.isEmpty()
+                                adapter.submitList(uiState.data)
+                                binding.recentFilesProgressBar.isVisible = false
+                            }
+                            LoadResult.Loading -> binding.recentFilesProgressBar.isVisible = true
+                        }
+                    }
+                }
+            }
+
+            loadFiles()
         }
     }
 

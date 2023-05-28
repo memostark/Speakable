@@ -2,19 +2,15 @@ package com.guillermonegrete.tts.importtext
 
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.Event
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@FlowPreview
-@ExperimentalCoroutinesApi
 @HiltViewModel
 class FilesViewModel @Inject constructor(
     private val fileRepository: FileRepository,
@@ -27,25 +23,19 @@ class FilesViewModel @Inject constructor(
     private val _openItemMenu = MutableLiveData<Event<Int>>()
     val openItemMenu: LiveData<Event<Int>> = _openItemMenu
 
-    private val _forceUpdate = ConflatedBroadcastChannel<Boolean>()
-
-    val files = _forceUpdate.asFlow()
-        .flatMapLatest {
-            _dataLoading.value = true
-            val files = fileRepository.getRecentFiles()
-            _dataLoading.value = false
-            files
-        }
-        .onCompletion { _dataLoading.value = false }
-        .asLiveData()
-
-    private val _dataLoading = MutableLiveData<Boolean>()
-    val dataLoading: LiveData<Boolean> = _dataLoading
+    private val _files = MutableStateFlow<LoadResult<List<BookFile>>>(LoadResult.Success(emptyList()))
+    val files: StateFlow<LoadResult<List<BookFile>>> = _files
 
     val filesPath = fileManager.filesDir
 
-    init {
-        _forceUpdate.trySend(true)
+    fun loadFiles() {
+        _files.value = LoadResult.Loading
+
+        viewModelScope.launch {
+            fileRepository.getRecentFiles().collect {
+                _files.value = LoadResult.Success(it)
+            }
+        }
     }
 
     fun openVisualizer(book: BookFile){
@@ -56,10 +46,13 @@ class FilesViewModel @Inject constructor(
         _openItemMenu.value = Event(itemPos)
     }
 
-    fun deleteFile(filePos: Int) = viewModelScope.launch {
-        files.value?.let {
-            val files = it.toMutableList()
-            fileRepository.deleteFile(files[filePos])
+    fun deleteFile(filePos: Int) {
+        files.value.let {
+            if (it !is LoadResult.Success) return
+            val files = it.data
+            viewModelScope.launch {
+                fileRepository.deleteFile(files[filePos])
+            }
         }
     }
 }
