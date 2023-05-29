@@ -142,16 +142,13 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
 
     private fun setViewModel(){
         viewModel.apply {
-            openTextVisualizer.observe(viewLifecycleOwner, EventObserver {
-                visualizeEpub(Uri.parse(it.uri), it.id)
-            })
 
-            val adapter = RecentFilesAdapter(viewModel)
+            val adapter = RecentFilesAdapter(
+                viewModel.filesPath,
+                onClick = { visualizeEpub(Uri.parse(it.uri), it.id) },
+                onMenuButtonClick = { RecentFileMenu.newInstance(it).show(childFragmentManager, "Item menu") }
+            )
             binding.recentFilesList.adapter = adapter
-
-            openItemMenu.observe(viewLifecycleOwner, EventObserver{
-                RecentFileMenu.newInstance(it).show(childFragmentManager, "Item menu")
-            })
 
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

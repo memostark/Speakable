@@ -15,12 +15,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class RecentFilesAdapter(
-    private val viewModel: FilesViewModel
+    val filesFolder: File,
+    val onClick: (BookFile) -> Unit,
+    val onMenuButtonClick: (Int) -> Unit,
 ): ListAdapter<BookFile, RecentFilesAdapter.ViewHolder>(BookFileDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layout = LayoutInflater.from(parent.context).inflate(R.layout.recent_file_item, parent, false)
-        return ViewHolder(viewModel, layout)
+        return ViewHolder(layout)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -28,20 +30,18 @@ class RecentFilesAdapter(
         holder.bind(file)
     }
 
-    class ViewHolder(
-        private val viewModel: FilesViewModel,
-        itemView: View
-    ): RecyclerView.ViewHolder(itemView){
+    inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+
         private val binding = RecentFileItemBinding.bind(itemView)
 
         init{
             binding.menuButton.setOnClickListener {
-                viewModel.openItemMenu(adapterPosition)
+                onMenuButtonClick(adapterPosition)
             }
         }
 
         fun bind(file: BookFile){
-            itemView.setOnClickListener { viewModel.openVisualizer(file) }
+            itemView.setOnClickListener { onClick(file) }
 
             with(binding){
                 bookTitle.text = file.title
@@ -50,7 +50,7 @@ class RecentFilesAdapter(
                 val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                 lastRead.text = dateFormatter.format(file.lastRead.time)
 
-                val imageDir = File(viewModel.filesPath, file.folderPath)
+                val imageDir = File(filesFolder, file.folderPath)
                 val imageFile = File(imageDir, "cover_thumbnail.png")
 
                 Glide.with(itemView.context)

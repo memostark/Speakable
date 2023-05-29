@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.importtext
 
 import androidx.lifecycle.*
-import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
@@ -17,12 +16,6 @@ class FilesViewModel @Inject constructor(
     fileManager: EpubFileManager
 ): ViewModel() {
 
-    private val _openTextVisualizer = MutableLiveData<Event<BookFile>>()
-    val openTextVisualizer: LiveData<Event<BookFile>> = _openTextVisualizer
-
-    private val _openItemMenu = MutableLiveData<Event<Int>>()
-    val openItemMenu: LiveData<Event<Int>> = _openItemMenu
-
     private val _files = MutableStateFlow<LoadResult<List<BookFile>>>(LoadResult.Success(emptyList()))
     val files: StateFlow<LoadResult<List<BookFile>>> = _files
 
@@ -36,14 +29,6 @@ class FilesViewModel @Inject constructor(
                 _files.value = LoadResult.Success(it)
             }
         }
-    }
-
-    fun openVisualizer(book: BookFile){
-        _openTextVisualizer.value = Event(book)
-    }
-
-    fun openItemMenu(itemPos: Int){
-        _openItemMenu.value = Event(itemPos)
     }
 
     fun deleteFile(filePos: Int) {
