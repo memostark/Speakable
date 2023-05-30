@@ -14,6 +14,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.util.GregorianCalendar
 
 @FlowPreview
 @ExperimentalCoroutinesApi
@@ -30,15 +31,14 @@ class FilesViewModelTest {
     var instantExecutorRule = InstantTaskExecutorRule()
 
     private val files = listOf(
-        BookFile("fake_uri", "Title 1", ImportedFileType.EPUB, id = 3),
-        BookFile("fake_uri", "Title 1", ImportedFileType.EPUB, id = 4)
+        BookFile("fake_uri", "Title 1", ImportedFileType.EPUB, id = 3, lastRead = GregorianCalendar(2013,1,1)),
+        BookFile("fake_uri", "Title 2", ImportedFileType.EPUB, id = 4, lastRead = GregorianCalendar(2013,0,1))
     )
 
     @Before
     fun setUp(){
         fileRepository = FakeFileRepository()
-
-        fileRepository.addTasks(*files.toTypedArray())
+        fileRepository.addFiles(*files.toTypedArray())
 
         viewModel = FilesViewModel(fileRepository, FakeEpubFileManager())
     }
@@ -51,5 +51,14 @@ class FilesViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LoadResult.Success(files), viewModel.files.value)
+    }
+
+    @Test
+    fun `Given saved book, then delete`() = runTest {
+        viewModel.deleteFile(files.first())
+
+        advanceUntilIdle()
+
+        assertEquals(1, fileRepository.files.size)
     }
 }

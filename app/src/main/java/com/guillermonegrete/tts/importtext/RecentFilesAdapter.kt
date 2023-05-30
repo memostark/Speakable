@@ -17,7 +17,7 @@ import java.util.*
 class RecentFilesAdapter(
     val filesFolder: File,
     val onClick: (BookFile) -> Unit,
-    val onMenuButtonClick: (Int) -> Unit,
+    val onMenuButtonClick: (BookFile) -> Unit,
 ): ListAdapter<BookFile, RecentFilesAdapter.ViewHolder>(BookFileDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -34,9 +34,9 @@ class RecentFilesAdapter(
 
         private val binding = RecentFileItemBinding.bind(itemView)
 
-        init{
+        init {
             binding.menuButton.setOnClickListener {
-                onMenuButtonClick(adapterPosition)
+                onMenuButtonClick(getItem(adapterPosition))
             }
         }
 

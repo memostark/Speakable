@@ -14,10 +14,12 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -25,7 +27,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FilesLayoutBinding
@@ -47,7 +48,7 @@ import java.io.InputStreamReader
 import java.lang.StringBuilder
 
 @AndroidEntryPoint
-class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
+class FilesFragment: Fragment(R.layout.files_layout) {
 
     private  var _binding: FilesLayoutBinding? = null
     private val binding get() = _binding!!
@@ -136,17 +137,19 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
         _binding = null
     }
 
-    override fun onSelection(position: Int) {
-        viewModel.deleteFile(position)
-    }
-
     private fun setViewModel(){
         viewModel.apply {
 
             val adapter = RecentFilesAdapter(
                 viewModel.filesPath,
                 onClick = { visualizeEpub(Uri.parse(it.uri), it.id) },
-                onMenuButtonClick = { RecentFileMenu.newInstance(it).show(childFragmentManager, "Item menu") }
+                onMenuButtonClick = {
+                    RecentFileMenu.newInstance().show(childFragmentManager, "Item menu")
+                    childFragmentManager.setFragmentResultListener(RecentFileMenu.REQUEST_KEY, viewLifecycleOwner) { _, _ ->
+                        // only one option so it has to be delete
+                        viewModel.deleteFile(it)
+                    }
+                }
             )
             binding.recentFilesList.adapter = adapter
 
@@ -356,21 +359,6 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
     private  var _binding: RecentFilesMenuBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var callback: Callback
-
-    private var itemPos: Int? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        itemPos = arguments?.getInt(item_pos_key)
-
-        try{
-            callback = parentFragment as Callback
-        }catch (e: ClassCastException) {
-            throw ClassCastException("Calling fragment must implement Callback interface")
-        }
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -379,7 +367,7 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
         _binding = RecentFilesMenuBinding.inflate(inflater, container, false)
 
         binding.deleteButton.setOnClickListener {
-            callback.onSelection(itemPos ?: -1)
+            setFragmentResult(REQUEST_KEY, bundleOf())
             dismiss()
         }
 
@@ -392,16 +380,8 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
     }
 
     companion object{
-        fun newInstance(itemPos: Int) = RecentFileMenu().apply {
-            arguments = Bundle().apply {
-                putInt(item_pos_key, itemPos)
-            }
-        }
+        fun newInstance() = RecentFileMenu()
 
-        private const val item_pos_key = "item_pos"
-    }
-
-    interface Callback{
-        fun onSelection(position: Int)
+        const val REQUEST_KEY = "recent_file_key"
     }
 }

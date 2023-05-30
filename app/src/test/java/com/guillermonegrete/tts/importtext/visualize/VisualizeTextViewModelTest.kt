@@ -184,7 +184,7 @@ class VisualizeTextViewModelTest {
         val initialPage = 4
         val initialChar = 41
         bookFile.lastChar = initialChar
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(8)
         viewModel.fileId = bookFile.id
@@ -208,7 +208,7 @@ class VisualizeTextViewModelTest {
         val initialChapter = 1
         bookFile.lastChar = initialChar
         bookFile.chapter = initialChapter
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(3)
         viewModel.fileId = bookFile.id
@@ -231,7 +231,7 @@ class VisualizeTextViewModelTest {
         // Set up
         val initialChar = 20
         bookFile.lastChar = initialChar
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(3)
         viewModel.fileId = bookFile.id
@@ -256,7 +256,7 @@ class VisualizeTextViewModelTest {
         val initialChapter = 3
         bookFile.page = initialPage
         bookFile.chapter = initialChapter
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(5)
         viewModel.fileId = bookFile.id
@@ -351,7 +351,7 @@ class VisualizeTextViewModelTest {
         // Set up
         val initialChapter = 2
         bookFile.chapter = initialChapter
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         // Initial state
         viewModel.fileUri = bookFile.uri
@@ -389,7 +389,7 @@ class VisualizeTextViewModelTest {
         // TODO this test and "Updates book files" test are very similar, try to refactor
         val book = BookFile("default_uri", "Title", ImportedFileType.EPUB, folderPath = "", id = 1)
 
-        fileRepository.addTasks(book)
+        fileRepository.addFiles(book)
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = bookFile.id
 
@@ -420,7 +420,7 @@ class VisualizeTextViewModelTest {
     @Test
     fun `Parses book with uri already in db`(){
         // Setup
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = -1
 

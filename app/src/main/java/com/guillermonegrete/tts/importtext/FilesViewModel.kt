@@ -31,13 +31,9 @@ class FilesViewModel @Inject constructor(
         }
     }
 
-    fun deleteFile(filePos: Int) {
-        files.value.let {
-            if (it !is LoadResult.Success) return
-            val files = it.data
-            viewModelScope.launch {
-                fileRepository.deleteFile(files[filePos])
-            }
+    fun deleteFile(file: BookFile) {
+        viewModelScope.launch {
+            fileRepository.deleteFile(file)
         }
     }
 }
