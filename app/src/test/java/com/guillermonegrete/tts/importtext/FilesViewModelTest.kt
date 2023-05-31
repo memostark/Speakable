@@ -7,7 +7,6 @@ import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.visualize.io.FakeEpubFileManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -16,7 +15,6 @@ import org.junit.Rule
 import org.junit.Test
 import java.util.GregorianCalendar
 
-@FlowPreview
 @ExperimentalCoroutinesApi
 class FilesViewModelTest {
 
