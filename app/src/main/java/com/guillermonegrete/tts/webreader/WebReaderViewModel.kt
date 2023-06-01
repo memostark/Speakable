@@ -12,7 +12,10 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
+import com.guillermonegrete.tts.utils.deleteAllFolder
+import com.guillermonegrete.tts.utils.makeDir
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
+import com.guillermonegrete.tts.utils.writeToFile
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
@@ -340,7 +343,7 @@ class WebReaderViewModel @Inject constructor(
         return splitParagraphs
     }
 
-    fun translateSelected(paragraphIndex: Int, sentenceIndex: Int) {
+    fun translateSentence(paragraphIndex: Int, sentenceIndex: Int) {
         val paragraphs = cachedParagraphs ?: return
         val sentence = paragraphs[paragraphIndex].sentences[sentenceIndex]
 
@@ -369,13 +372,10 @@ class WebReaderViewModel @Inject constructor(
         val link = cacheWebLink ?: return
         val folder = File(rootPath, uuid.toString())
 
-
-        val success = folder.mkdirs()
-        if (!success) return
+        if (!makeDir(folder)) return
 
         val contentFile = File(folder, page_filename)
-
-        contentFile.bufferedWriter().use { it.write(content) }
+        writeToFile(contentFile, content)
 
         link.uuid = uuid
 
@@ -391,16 +391,7 @@ class WebReaderViewModel @Inject constructor(
     fun deleteLinkFolder(rootPath: String) {
         val link = cacheWebLink ?: return
         val uuid = link.uuid ?: return
-        val folder = File(rootPath, uuid.toString())
-
-        val files = folder.listFiles()
-        if (files != null) {
-            for (child: File in files) {
-                child.delete()
-            }
-        }
-
-        folder.delete()
+        deleteAllFolder(File(rootPath, uuid.toString()))
         link.uuid = null
 
         viewModelScope.launch {

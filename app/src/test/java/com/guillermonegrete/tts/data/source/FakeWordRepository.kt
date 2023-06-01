@@ -77,7 +77,7 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         languageFrom: String,
         languageTo: String
     ): Result<Translation> {
-        val word = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
+        val word = translationsData[text] ?: return Result.Error(Exception("Translation not found for: $text"))
         return Result.Success(word)
     }
 

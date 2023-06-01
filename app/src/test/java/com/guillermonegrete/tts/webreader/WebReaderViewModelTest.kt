@@ -5,6 +5,8 @@ import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
+import com.guillermonegrete.tts.data.Segment
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.data.source.local.FakeExternalLinkSource
@@ -14,9 +16,13 @@ import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.threading.TestMainThread
+import com.guillermonegrete.tts.utils.deleteAllFolder
+import com.guillermonegrete.tts.utils.makeDir
+import com.guillermonegrete.tts.utils.writeToFile
 import com.guillermonegrete.tts.webreader.db.FakeNoteDAO
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
+import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import io.mockk.every
 import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,6 +76,15 @@ class WebReaderViewModelTest {
         )
 
         mockkStatic(Jsoup::class)
+
+        mockFileUtils()
+    }
+
+    private fun mockFileUtils() {
+        mockkStatic(::makeDir, ::deleteAllFolder, ::writeToFile)
+        every { makeDir(any()) } returns true
+        every { deleteAllFolder(any()) } returns true
+        every { writeToFile(any(), any()) } returns Unit
     }
 
     // region Loading page tests
@@ -147,6 +162,49 @@ class WebReaderViewModelTest {
     }
 
     // endregion
+
+    // region Paragraph tests
+
+    @Test
+    fun `Given two texts, when create paragraph, then two split paragraphs`() {
+        val result = viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+        val expected = listOf(
+            SplitParagraph("First paragraph. Second sentence", listOf(Span(start=0, end=17), Span(start=17, end=32)), listOf("First paragraph. ", "Second sentence")),
+            SplitParagraph("Second paragraph text", listOf(Span(start=0, end=21)), listOf("Second paragraph text"))
+        )
+        assertEquals(expected, result)
+    }
+
+    @Test
+    fun `Given two paragraph, when translate paragraph pos 1, then load and success`() = runTest {
+        // setup translation and paragraphs
+        val expectedTranslation = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+
+        viewModel.translateParagraph(1)
+
+        assertEquals(LoadResult.Loading, viewModel.translatedParagraph.value)
+        advanceUntilIdle()
+        assertEquals(LoadResult.Success(1), viewModel.translatedParagraph.value)
+    }
+
+    @Test
+    fun `Given no translation, when translate paragraph pos 1, then error`() = runTest {
+        // setup translation and paragraphs
+        val text = "Second paragraph text"
+        viewModel.createParagraphs(listOf("First paragraph. Second sentence", text))
+
+        viewModel.translateParagraph(1)
+
+        assertEquals(LoadResult.Loading, viewModel.translatedParagraph.value)
+        advanceUntilIdle()
+        val resultError = (viewModel.translatedParagraph.value as LoadResult.Error).exception.message
+        assertEquals("Translation not found for: $text", resultError)
+    }
+
+    // endregion
+
 
     // region Saving link and folder tests
 
