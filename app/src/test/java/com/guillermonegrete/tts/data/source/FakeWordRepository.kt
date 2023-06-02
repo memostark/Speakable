@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.data.source
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.liveData
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.db.Words
@@ -30,8 +31,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         return MutableLiveData(wordsServiceData.values.toMutableList())
     }
 
-    override fun getLocalWord(word: String, language: String): LiveData<Words> {
-        TODO("Not yet implemented")
+    override fun getLocalWord(word: String, language: String): LiveData<Words?> {
+        return liveData { emit(wordsServiceData[word]) }
     }
 
     override fun getLanguagesISO(): MutableList<String> {

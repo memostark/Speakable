@@ -12,6 +12,7 @@ import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.data.source.local.FakeExternalLinkSource
 import com.guillermonegrete.tts.db.FakeWebLinkDAO
 import com.guillermonegrete.tts.db.WebLink
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
@@ -176,7 +177,7 @@ class WebReaderViewModelTest {
     }
 
     @Test
-    fun `Given two paragraph, when translate paragraph pos 1, then load and success`() = runTest {
+    fun `Given two paragraphs, when translate paragraph pos 1, then load and success`() = runTest {
         // setup translation and paragraphs
         val expectedTranslation = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
         wordRepository.addTranslation(expectedTranslation)
@@ -201,6 +202,102 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
         val resultError = (viewModel.translatedParagraph.value as LoadResult.Error).exception.message
         assertEquals("Translation not found for: $text", resultError)
+    }
+
+    // endregion
+
+    // region Sentence tests
+    @Test
+    fun `Given two paragraphs, when translate sentence 1 paragraph 0, then load and success`() = runTest {
+        val word = Words("Second sentence", "en", "Imagine this is translated")
+        val expectedTranslation = Translation(listOf(Segment(word.definition, word.word)), word.lang)
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+
+        viewModel.translateSentence(0, 1)
+
+        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
+        advanceUntilIdle()
+
+        val expected = WebReaderViewModel.WordResult(word, isSaved = false, isSentence = true)
+        assertTextInfoSuccess(expected)
+    }
+
+    @Test
+    fun `Given already translated sentence, when translate again, then load cache and success`() = runTest {
+        loadLocalPage() // need the language set for the cache to work
+
+        val word = Words("Second sentence", "en", "Imagine this is translated")
+        val expectedTranslation = Translation(listOf(Segment(word.definition, word.word)), word.lang)
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+
+        viewModel.translateSentence(0, 1)
+        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
+
+        advanceUntilIdle()
+        val expected = WebReaderViewModel.WordResult(word, isSaved = false, isSentence = true)
+        assertTextInfoSuccess(expected)
+
+        // translate again with cache
+        viewModel.translateSentence(0, 1)
+        assertTextInfoSuccess(expected)
+    }
+
+    // endregion
+
+    // region Translation tests
+
+    @Test
+    fun `Give saved word, when translate text, then text info update`() = runTest {
+        val word = Words("Hola", "es", "Hello").apply { id = 3 }
+        wordRepository.addWords(word)
+
+        viewModel.translateText("Hola")
+
+        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
+        advanceUntilIdle()
+        val expected = LoadResult.Success(WebReaderViewModel.WordResult(word = word, isSaved = true))
+        assertEquals(expected, viewModel.textInfo.value)
+    }
+
+    @Test
+    fun `Give no saved words, when translate text, then text info update`() = runTest {
+        val word = Words("Hola", "es", "Hello")
+        val expectedTranslation = Translation(listOf(Segment(word.definition, word.word)), word.lang)
+        wordRepository.addTranslation(expectedTranslation)
+
+        viewModel.translateText("Hola")
+
+        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
+        advanceUntilIdle()
+        val result = (viewModel.textInfo.value as LoadResult.Success).data
+        assertFalse(result.isSaved)
+        assertFalse(result.isSentence)
+        assertWords(word, result.word)
+    }
+
+    @Test
+    fun `Given no saved words and translation, when translate text, then error`() = runTest {
+        viewModel.translateText("Hola")
+
+        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
+        advanceUntilIdle()
+        val result = (viewModel.textInfo.value as LoadResult.Error).exception
+        assertEquals("Translation not found for: Hola", result.message)
+    }
+
+    @Test
+    fun `Give saved word, when translate word in sentence, then word info updated`() = runTest {
+        val word = Words("Hola", "es", "Hello").apply { id = 3 }
+        wordRepository.addWords(word)
+
+        viewModel.translateWordInSentence("Hola")
+
+        assertEquals(LoadResult.Loading, viewModel.wordInfo.value)
+        advanceUntilIdle()
+        val expected = LoadResult.Success(WebReaderViewModel.WordResult(word = word, isSaved = true))
+        assertEquals(expected, viewModel.wordInfo.value)
     }
 
     // endregion
@@ -304,7 +401,7 @@ class WebReaderViewModelTest {
     private fun loadLocalPage() = runTest {
         val url = "https://example.com"
         val path = UUID.randomUUID()
-        val link = WebLink(url, "en", id = 10, uuid = path)
+        val link = WebLink(url, language = "en", id = 10, uuid = path)
         webLinkDAO.upsert(link)
         val dummyRoot = "test_root"
         viewModel.folderPath = dummyRoot
@@ -317,6 +414,19 @@ class WebReaderViewModelTest {
         val expected = PageInfo(localContent, emptyList(), true)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
+    }
+
+    private fun assertTextInfoSuccess(expected: WebReaderViewModel.WordResult) {
+        val result = (viewModel.textInfo.value as LoadResult.Success).data
+        assertEquals(expected.isSaved, result.isSaved)
+        assertEquals(expected.isSentence, result.isSentence)
+        assertWords(expected.word, result.word)
+    }
+
+    private fun assertWords(expected: Words, actual: Words) {
+        assertEquals(expected.word, actual.word)
+        assertEquals(expected.definition, actual.definition)
+        assertEquals(expected.lang, actual.lang)
     }
 
     companion object {
