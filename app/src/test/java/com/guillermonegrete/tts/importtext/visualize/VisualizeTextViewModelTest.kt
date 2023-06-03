@@ -60,7 +60,7 @@ class VisualizeTextViewModelTest {
 
     @Before
     fun setUp(){
-        MockitoAnnotations.initMocks(this)
+        MockitoAnnotations.openMocks(this)
 
         fileRepository = FakeFileRepository()
         wordRepository = FakeWordRepository()
@@ -465,7 +465,7 @@ class VisualizeTextViewModelTest {
         advanceUntilIdle()
 
         val errorMsg = viewModel.translationError.getOrAwaitValue()
-        assertEquals("Translation not found", errorMsg.peekContent())
+        assertEquals("Translation not found for: Página para traducir", errorMsg.peekContent())
     }
 
     private fun parse_book(book: Book){

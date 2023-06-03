@@ -7,13 +7,14 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Segment
 import com.guillermonegrete.tts.data.Translation
-import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.data.source.local.FakeExternalLinkSource
+import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.FakeWebLinkDAO
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getOrAwaitValue
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.threading.TestMainThread
@@ -24,6 +25,7 @@ import com.guillermonegrete.tts.webreader.db.FakeNoteDAO
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
+import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import io.mockk.every
 import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,7 +53,7 @@ class WebReaderViewModelTest {
     private lateinit var viewModel: WebReaderViewModel
 
     private lateinit var wordRepository: FakeWordRepository
-    private lateinit var externalLinksSource: ExternalLinksDataSource
+    private lateinit var externalLinksSource: FakeExternalLinkSource
     private lateinit var webLinkDAO: FakeWebLinkDAO
     private lateinit var notesDAO: FakeNoteDAO
 
@@ -162,6 +164,33 @@ class WebReaderViewModelTest {
         )
     }
 
+    @Test
+    fun `Given local file, when switch to web, then error`() = runTest {
+        loadLocalPage()
+        val error = IOException("Error")
+        every { Jsoup.connect("https://example.com") } throws error
+
+        viewModel.loadPageFromWeb()
+        advanceUntilIdle()
+
+        val result = viewModel.page.getOrAwaitValue() as LoadResult.Error
+        assertTrue(result.exception is IOException)
+    }
+
+    @Test
+    fun `Given web page, when switch to local, then error`() = runTest {
+        loadLocalPage()
+
+        viewModel.loadPageFromWeb()
+        advanceUntilIdle()
+
+        every { Jsoup.parse(any<File>(), null) } throws IOException()
+        viewModel.loadLocalPage()
+        advanceUntilIdle()
+
+        val result = viewModel.page.getOrAwaitValue() as LoadResult.Error
+        assertTrue(result.exception is IOException)
+    }
     // endregion
 
     // region Paragraph tests
@@ -178,10 +207,7 @@ class WebReaderViewModelTest {
 
     @Test
     fun `Given two paragraphs, when translate paragraph pos 1, then load and success`() = runTest {
-        // setup translation and paragraphs
-        val expectedTranslation = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
-        wordRepository.addTranslation(expectedTranslation)
-        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+        setParagraphs()
 
         viewModel.translateParagraph(1)
 
@@ -209,39 +235,71 @@ class WebReaderViewModelTest {
     // region Sentence tests
     @Test
     fun `Given two paragraphs, when translate sentence 1 paragraph 0, then load and success`() = runTest {
-        val word = Words("Second sentence", "en", "Imagine this is translated")
-        val expectedTranslation = Translation(listOf(Segment(word.definition, word.word)), word.lang)
-        wordRepository.addTranslation(expectedTranslation)
-        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+        setSentences()
 
         viewModel.translateSentence(0, 1)
 
         assertEquals(LoadResult.Loading, viewModel.textInfo.value)
         advanceUntilIdle()
 
-        val expected = WebReaderViewModel.WordResult(word, isSaved = false, isSentence = true)
+        val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
         assertTextInfoSuccess(expected)
     }
 
     @Test
     fun `Given already translated sentence, when translate again, then load cache and success`() = runTest {
         loadLocalPage() // need the language set for the cache to work
-
-        val word = Words("Second sentence", "en", "Imagine this is translated")
-        val expectedTranslation = Translation(listOf(Segment(word.definition, word.word)), word.lang)
-        wordRepository.addTranslation(expectedTranslation)
-        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+        setSentences()
 
         viewModel.translateSentence(0, 1)
         assertEquals(LoadResult.Loading, viewModel.textInfo.value)
 
         advanceUntilIdle()
-        val expected = WebReaderViewModel.WordResult(word, isSaved = false, isSentence = true)
+        val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
         assertTextInfoSuccess(expected)
 
         // translate again with cache
         viewModel.translateSentence(0, 1)
         assertTextInfoSuccess(expected)
+    }
+
+    @Test
+    fun `Given translated paragraph, when find sentence, then return second sentence`() = runTest {
+        setParagraphs()
+
+        viewModel.translateParagraph(0)
+        advanceUntilIdle()
+
+        val result = viewModel.findSelectedSentence(0, 18) // index 18 is in the second sentence
+        assertEquals(SplitPageSpan(Span(start=17, end=32), Span(start=17, end=35)), result)
+    }
+
+    @Test
+    fun `When find sentence index out of bound, then return null`() = runTest {
+        setParagraphs()
+
+        viewModel.translateParagraph(0)
+        advanceUntilIdle()
+
+        val result = viewModel.findSelectedSentence(0, 36) // index 18 is in the second sentence
+        assertEquals(null, result)
+    }
+
+    /**
+     * Sets up the paragraphs and their translations
+     */
+    private fun setParagraphs() {
+        val first = Translation(listOf(Segment("First translation", "First paragraph. "), Segment("Second translation", "Second sentence")), "en")
+        val second = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
+        wordRepository.addTranslation(first, second)
+        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
+
+    }
+
+    private fun setSentences() {
+        val expectedTranslation = Translation(listOf(Segment(sentenceTrans.definition, sentenceTrans.word)), sentenceTrans.lang)
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
     }
 
     // endregion
@@ -301,6 +359,22 @@ class WebReaderViewModelTest {
     }
 
     // endregion
+
+    @Test
+    fun `When word clicked, then return external links`() = runTest {
+        val links = listOf(
+            ExternalLink("Random site", "link", "es"),
+            ExternalLink("Random site 2", "link 2", "es"),
+        )
+        externalLinksSource.addLinks(*links.toTypedArray())
+        loadLocalPage()
+        viewModel.setLanguage("es")
+
+        viewModel.onWordClicked("hola", 0)
+        advanceUntilIdle()
+
+        assertEquals(WordAndLinks("hola", links), viewModel.clickedWord.getOrAwaitValue())
+    }
 
 
     // region Saving link and folder tests
@@ -402,7 +476,7 @@ class WebReaderViewModelTest {
         val url = "https://example.com"
         val path = UUID.randomUUID()
         val link = WebLink(url, language = "en", id = 10, uuid = path)
-        webLinkDAO.upsert(link)
+        webLinkDAO.addLinks(link)
         val dummyRoot = "test_root"
         viewModel.folderPath = dummyRoot
         val file = File("$dummyRoot\\" + path.toString(), "content.xml")
@@ -438,5 +512,7 @@ class WebReaderViewModelTest {
                              </body>
                             </html>
                            """.trimIndent()
+
+        val sentenceTrans = Words("Second sentence", "en", "Imagine this is translated")
     }
 }

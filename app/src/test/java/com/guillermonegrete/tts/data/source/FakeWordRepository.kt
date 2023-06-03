@@ -123,7 +123,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
     @VisibleForTesting
     fun addTranslation(vararg translations: Translation) {
         for (translation in translations) {
-            translationsData[translation.sentences.first().orig] = translation
+            val originalText = translation.sentences.joinToString(""){ it.orig }
+            translationsData[originalText] = translation
         }
     }
 }
