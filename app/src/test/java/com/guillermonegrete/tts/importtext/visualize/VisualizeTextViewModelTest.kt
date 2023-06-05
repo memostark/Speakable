@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext.visualize
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.Segment
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
@@ -13,6 +14,7 @@ import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.*
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +30,9 @@ import org.junit.Test
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.MockitoAnnotations
+import java.io.IOException
 import java.util.*
+import java.util.concurrent.TimeoutException
 
 @ExperimentalCoroutinesApi
 class VisualizeTextViewModelTest {
@@ -124,6 +128,15 @@ class VisualizeTextViewModelTest {
         assertEquals(expectedPages, resultPages)
     }
 
+    @Test(expected = TimeoutException::class)
+    fun `When parse epub error, no page update `() = runTest {
+        `when`(epubParser.parseBook(fileReader)).thenThrow(IOException())
+
+        viewModel.parseEpub()
+
+        viewModel.pages.getOrAwaitValue() // error because value is not set
+    }
+
     @Test
     fun swipes_to_next_chapter(){
         parse_book(TWO_CHAPTER_BOOK)
@@ -198,6 +211,23 @@ class VisualizeTextViewModelTest {
         val secondLoadPage = viewModel.getPage()
         assertEquals(0, secondLoadPage)
 
+    }
+
+    @Test
+    fun `Given out of bound last char, when epub load, then page zero`(){
+        // Set up
+        val initialPage = 0
+        val initialChar = 100
+        bookFile.lastChar = initialChar
+        fileRepository.addFiles(bookFile)
+
+        splitPages(8)
+        viewModel.fileId = bookFile.id
+        parse_book(DEFAULT_BOOK)
+
+        // Returns initial page in first load
+        val page = viewModel.getPage()
+        assertEquals(initialPage, page)
     }
 
     @Test
@@ -466,6 +496,68 @@ class VisualizeTextViewModelTest {
 
         val errorMsg = viewModel.translationError.getOrAwaitValue()
         assertEquals("Translation not found for: Página para traducir", errorMsg.peekContent())
+    }
+
+    @Test
+    fun `Give simple text, when parse, then success`() = runTest {
+        val twelveChars = "twelve chars"
+        val chunked = twelveChars.chunked(5)
+        `when`(pageSplitter.getPages()).thenReturn(chunked)
+
+        viewModel.parseSimpleText(twelveChars)
+        advanceUntilIdle()
+
+        val resultPages = viewModel.pages.getOrAwaitValue().getContentIfNotHandled()
+        assertEquals(chunked, resultPages)
+    }
+
+    @Test
+    fun `Given translated paragraph, when find sentence, then return second sentence`() = runTest {
+        val twelveChars = "First paragraph. Second sentence. Second paragraph text"
+        val chunked = twelveChars.chunked(34)
+        `when`(pageSplitter.getPages()).thenReturn(chunked)
+        parse_book(TWO_CHAPTER_BOOK)
+        advanceUntilIdle()
+
+        val expectedTranslation = Translation(listOf(Segment("First translation", "First paragraph. "), Segment("Second translation", "Second sentence. ")), "en")
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.translatePage(0)
+        advanceUntilIdle()
+
+        val result = viewModel.findSelectedSentence(0, 18) // index 18 is in the second sentence
+        assertEquals(SplitPageSpan(Span(17, 34), Span(17, 35)), result)
+    }
+
+    @Test
+    fun `Given translated paragraph, when find sentence outside range, then null`() = runTest {
+        val twelveChars = "First paragraph. Second sentence. Second paragraph text"
+        val chunked = twelveChars.chunked(34)
+        `when`(pageSplitter.getPages()).thenReturn(chunked)
+        parse_book(TWO_CHAPTER_BOOK)
+        advanceUntilIdle()
+
+        val expectedTranslation = Translation(listOf(Segment("First translation", "First paragraph. "), Segment("Second translation", "Second sentence. ")), "en")
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.translatePage(0)
+        advanceUntilIdle()
+
+        val result = viewModel.findSelectedSentence(0, 35) // index 18 is in the second sentence
+        assertEquals(null, result)
+    }
+
+    @Test
+    fun `Change and query language from`() = runTest {
+        viewModel.languageFrom = "es"
+
+        assertEquals("es", settingsRepository.getLanguageFrom())
+    }
+
+    @Test
+    fun `Change and query language to`() = runTest {
+        viewModel.languageTo = "de"
+
+        assertEquals("de", settingsRepository.getLanguageTo())
+        assertEquals(emptyList<Translation>(), viewModel.translatedPages)
     }
 
     private fun parse_book(book: Book){

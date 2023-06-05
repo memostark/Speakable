@@ -21,6 +21,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
@@ -291,19 +292,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             translationError.observe(this@VisualizeTextActivity, EventObserver {
                 Toast.makeText(this@VisualizeTextActivity, getString(R.string.error_translation), Toast.LENGTH_SHORT).show()
                 bottomText.text = getString(R.string.click_to_translate_msg)
-            })
-
-            spanSelection.observe(this@VisualizeTextActivity, EventObserver {
-                val text = SpannableString(bottomText.text)
-
-                //Remove previous
-                text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-
-                text.setSpan(BackgroundColorSpan(0x6633B5E5), it.bottomSpan.start, it.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                bottomText.setText(text, TextView.BufferType.SPANNABLE)
-
-                // Notify the adapter to set the highlight, send span payload
-                pagesAdapter.notifyItemChanged(viewPager.currentItem, it.topSpan)
             })
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
@@ -658,7 +646,8 @@ class VisualizeTextActivity: AppCompatActivity() {
                     if(duration < 300
                         && abs(event.x - startX) < radius && abs(event.y - startY) < radius) {
                         val index = bottomText.getOffsetForPosition(event.x, event.y)
-                        viewModel.onTranslatedTextClick(viewPager.currentItem, index)
+                        val splitSpans = viewModel.findSelectedSentence(viewPager.currentItem, index) ?: return@setOnTouchListener true
+                        highlightSpans(splitSpans)
                     }
                 }
             }
@@ -685,6 +674,19 @@ class VisualizeTextActivity: AppCompatActivity() {
         val peekHeight = this.dpToPixel(30) + viewPager.height / 2
 
         bottomSheetBehavior.peekHeight = peekHeight
+    }
+
+    private fun highlightSpans(pageSpans: SplitPageSpan) {
+        val text = SpannableString(bottomText.text)
+
+        //Remove previous
+        text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+
+        text.setSpan(BackgroundColorSpan(0x6633B5E5), pageSpans.bottomSpan.start, pageSpans.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        bottomText.setText(text, TextView.BufferType.SPANNABLE)
+
+        // Notify the adapter to set the highlight, send span payload
+        pagesAdapter.notifyItemChanged(viewPager.currentItem, pageSpans.topSpan)
     }
 
     companion object{
