@@ -128,11 +128,11 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
             browseBtn.setOnClickListener {
                 hideKeyboard()
                 val text = ttsEditText.text.toString()
-                presenter.onClickShowBrowser(text)
+                setDictionaryWebPage(text)
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
 
-            pasteBtn.setOnClickListener { presenter.onClickPaste(clipText) }
+            pasteBtn.setOnClickListener { setEditText(clipText) }
 
             ttsEditText.setOnFocusChangeListener { _, hasFocus ->
                 if (hasFocus) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
@@ -142,9 +142,9 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                 webReaderBtn.isVisible = Patterns.WEB_URL.matcher(it.toString()).matches()
             }
 
-            startBubbleBtn.setOnClickListener { presenter.onStartOverlayMode() }
+            startBubbleBtn.setOnClickListener { startOverlayService() }
 
-            clipboardBtn.setOnClickListener { presenter.onStartClipboardMode() }
+            clipboardBtn.setOnClickListener { startClipboardService() }
 
             val autoText = getString(R.string.auto_detect)
             pickLanguage.text = autoText

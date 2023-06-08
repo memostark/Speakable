@@ -37,9 +37,7 @@ class MainTTSPresenterTest {
     fun `Given idle, when reproduce clicked, then play icon update`() {
         presenter.onClickReproduce("to play", "en")
 
-        val listenerSlot = slot<CustomTTS.Listener>()
-        verify { tts.initializeTTS("en", capture(listenerSlot)) }
-        val listener = listenerSlot.captured
+        val listener = getTTSListener()
         listener.onEngineReady()
         listener.onSpeakStart()
         listener.onSpeakDone()
@@ -52,16 +50,36 @@ class MainTTSPresenterTest {
     }
 
     @Test
-    fun `Given no language, when reproduce clicked, then lang detected and play icon update`() {
+    fun `Given tts unavailable, when reproduce clicked, then language unavailable`() {
+        presenter.onClickReproduce("to play", "en")
+
+        val listener = getTTSListener()
+        listener.onLanguageUnavailable()
+
+        verifyOrder {
+            view.showLoadingTTS()
+            view.showLanguageNotAvailable()
+        }
+    }
+
+    @Test
+    fun `Given tts error, when reproduce clicked, then no change`() {
+        presenter.onClickReproduce("to play", "en")
+
+        val listener = getTTSListener()
+        listener.onError()
+
+        verifyOrder { view.showLoadingTTS() }
+    }
+
+    @Test
+    fun `Given null language, when reproduce clicked, then lang detected and play icon update`() {
         presenter.onClickReproduce("to play", null)
 
-        val translationSlot = slot<WordRepositorySource.GetTranslationCallback>()
-        verify { wordRepository.getLanguageAndTranslation("to play", capture(translationSlot)) }
-        translationSlot.captured.onTranslationAndLanguage(Words("to play", "en", "translation"))
+        val translationCallback = getTranslationListener()
+        translationCallback.onTranslationAndLanguage(Words("to play", "en", "translation"))
 
-        val listenerSlot = slot<CustomTTS.Listener>()
-        verify { tts.initializeTTS("en", capture(listenerSlot)) }
-        val listener = listenerSlot.captured
+        val listener = getTTSListener()
         listener.onEngineReady()
         listener.onSpeakStart()
         listener.onSpeakDone()
@@ -75,12 +93,20 @@ class MainTTSPresenterTest {
     }
 
     @Test
+    fun `Given null language, when reproduce clicked and data unavailable, then no change`() {
+        presenter.onClickReproduce("to play", null)
+
+        val translationCallback = getTranslationListener()
+        translationCallback.onDataNotAvailable()
+
+        verifyOrder { view.showLoadingTTS() }
+    }
+
+    @Test
     fun `Given tts playing, when reproduce clicked, then tts stopped`() {
         presenter.onClickReproduce("to play", "en")
 
-        val listenerSlot = slot<CustomTTS.Listener>()
-        verify { tts.initializeTTS("en", capture(listenerSlot)) }
-        val listener = listenerSlot.captured
+        val listener = getTTSListener()
         listener.onEngineReady()
         listener.onSpeakStart()
 
@@ -92,5 +118,37 @@ class MainTTSPresenterTest {
             tts.stop()
             view.showPlayIcon()
         }
+    }
+
+    @Test
+    fun `When full lifecycle, then tts closed`() {
+        presenter.start()
+
+        presenter.onClickReproduce("to play", "en")
+
+        val listener = getTTSListener()
+        listener.onEngineReady()
+        listener.onSpeakStart()
+
+        presenter.pause()
+        presenter.stop()
+        presenter.destroy()
+
+        verifyOrder {
+            tts.stop()
+            tts.removeListener(any())
+        }
+    }
+
+    private fun getTTSListener(): CustomTTS.Listener {
+        val listenerSlot = slot<CustomTTS.Listener>()
+        verify { tts.initializeTTS("en", capture(listenerSlot)) }
+        return listenerSlot.captured
+    }
+
+    private fun getTranslationListener(): WordRepositorySource.GetTranslationCallback {
+        val translationSlot = slot<WordRepositorySource.GetTranslationCallback>()
+        verify { wordRepository.getLanguageAndTranslation("to play", capture(translationSlot)) }
+        return translationSlot.captured
     }
 }
