@@ -27,13 +27,16 @@ class SavedWordsViewModelTest {
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
 
+    private val words = listOf(
+        Words("gato", "es", "cat").apply { id = 1 },
+        Words("hund", "de", "dog").apply { id = 2 },
+        Words("azul", "es", "blue").apply { id = 3 }
+    )
+
     @Before
     fun setupViewModel(){
         wordRepository = FakeWordRepository()
-        val word1 = Words("gato", "es", "cat").apply { id = 1 }
-        val word2 = Words("hund", "de", "dog").apply { id = 2 }
-        val word3 = Words("azul", "es", "blue").apply { id = 3 }
-        wordRepository.addWords(word1, word2, word3)
+        wordRepository.addWords(*words.toTypedArray())
 
         viewModel = SavedWordsViewModel(wordRepository, UnconfinedTestDispatcher())
     }
@@ -48,5 +51,11 @@ class SavedWordsViewModelTest {
     fun load_all_languages_from_repository() = runTest {
         val langs = viewModel.languagesList.getOrAwaitValue()
         assertEquals(2, langs.size)
+    }
+
+    @Test
+    fun `Given saved word, then delete`() = runTest {
+        viewModel.delete(words.first())
+        assertEquals(listOf(words[1], words[2]), wordRepository.words)
     }
 }

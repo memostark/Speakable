@@ -90,8 +90,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun delete(vararg words: Words?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun delete(vararg words: Words) {
+        wordsServiceData.values.removeAll(words.toSet())
     }
 
     override fun insert(vararg words: Words?) {

@@ -31,16 +31,6 @@ class SavedWordsViewModel @Inject constructor(
         emit(wordRepository.languagesISO)
     }
 
-    fun insert(vararg words: Words) {
-        wordRepository.insert(*words)
-    }
-
-    fun delete(word: String){
-        viewModelScope.launch(ioDispatcher) {
-            wordRepository.deleteWord(word)
-        }
-    }
-
     fun delete(vararg words: Words){
         viewModelScope.launch(ioDispatcher){
             wordRepository.delete(*words)

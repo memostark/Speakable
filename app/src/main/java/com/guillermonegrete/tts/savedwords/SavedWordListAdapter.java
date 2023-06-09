@@ -65,6 +65,10 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
         return filteredWords.size();
     }
 
+    public Words getItem(int position) {
+        return filteredWords.get(position);
+    }
+
     // Taken from: https://blog.teamtreehouse.com/contextual-action-bars-removing-items-recyclerview
     public final ActionMode.Callback actionModeCallback =  new ActionMode.Callback() {
         @Override
