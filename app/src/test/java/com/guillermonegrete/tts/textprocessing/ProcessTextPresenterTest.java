@@ -6,7 +6,6 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 
 import com.guillermonegrete.tts.LiveDataTestUtilKt;
 import com.guillermonegrete.tts.customtts.CustomTTS;
-import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.TestThreadExecutor;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
@@ -34,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -61,7 +59,7 @@ public class ProcessTextPresenterTest {
     private ArgumentCaptor<WordRepositorySource.GetTranslationCallback> getTranslationCallbackCaptor;
 
     @Captor
-    private ArgumentCaptor<DictionaryDataSource.GetDefinitionCallback> getDefinitionCallbacCaptor;
+    private ArgumentCaptor<DictionaryDataSource.GetDefinitionCallback> getDefinitionCallbackCaptor;
 
     @Captor
     private ArgumentCaptor<ExternalLinksDataSource.Callback> getLinksCaptor;
@@ -85,17 +83,56 @@ public class ProcessTextPresenterTest {
 
     @Before
     public void setupPresenter(){
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         presenter = givenPresenter();
     }
 
     private ProcessTextPresenter givenPresenter(){
-        MainThread mainThread = new TestMainThread();
-        ExecutorService executor = new TestThreadExecutor();
-        ProcessTextPresenter presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, sharedPreferences, customTTS, getTranslationInteractor);
+        var mainThread = new TestMainThread();
+        var executor = new TestThreadExecutor();
+        var presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, sharedPreferences, customTTS, getTranslationInteractor);
         presenter.setView(view);
         return presenter;
     }
+
+    // region start presenter tests
+
+    @Test
+    public void when_start_with_word_then_dictionary_load_success(){
+        var word = new Words("comida", "es", "food");
+        presenter.start(word);
+
+        verify(dictionaryRepository).getDefinition(eq("comida"), getDefinitionCallbackCaptor.capture());
+        var wiktionaryItems = new ArrayList<WikiItem>();
+        getDefinitionCallbackCaptor.getValue().onDefinitionLoaded(wiktionaryItems);
+
+        var expected = new GetLayoutResult.DictionarySuccess.DictionarySuccess(word, wiktionaryItems);
+        assertEquals(expected, LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()));
+    }
+
+    @Test
+    public void given_no_definition_when_start_with_word_then_word_success(){
+        var word = new Words("comida", languageFrom, languageTo);
+        presenter.start(word);
+
+        verify(dictionaryRepository).getDefinition(eq("comida"), getDefinitionCallbackCaptor.capture());
+        getDefinitionCallbackCaptor.getValue().onDataNotAvailable();
+
+        var expected = new GetLayoutResult.DictionarySuccess.WordSuccess(ProcessTextLayoutType.SAVED_WORD, word);
+        assertEquals(expected, LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()));
+    }
+
+    @Test
+    public void given_word_input_when_start_with_service_then_get_layout_success(){
+        presenter.startWithService("comida", languageFrom, languageTo);
+
+        var word = loadLocalWord("comida");
+
+        var expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.SAVED_WORD, word);
+        assertEquals(LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()), expected);
+    }
+
+    // endregion
 
 
     @Test
@@ -104,11 +141,9 @@ public class ProcessTextPresenterTest {
 
         presenter.getLayout(test_text, languageFrom, languageTo);
 
-        verify(wordRepository).getWordLanguageInfo(eq(test_text), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
-        Words return_word = new Words(test_text,"ES", "Test");
-        getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
+        var word = loadLocalWord(test_text);
 
-        GetLayoutResult expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.SAVED_WORD, return_word);
+        GetLayoutResult expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.SAVED_WORD, word);
         assertEquals(LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()), expected);
     }
 
@@ -136,8 +171,8 @@ public class ProcessTextPresenterTest {
         Words return_word = new Words(test_text,"ES", "Test");
         getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
 
-        verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
-        getDefinitionCallbacCaptor.getValue().onDataNotAvailable();
+        verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbackCaptor.capture());
+        getDefinitionCallbackCaptor.getValue().onDataNotAvailable();
 
         GetLayoutResult expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.WORD_TRANSLATION, return_word);
         assertEquals(LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()), expected);
@@ -156,8 +191,8 @@ public class ProcessTextPresenterTest {
         getWordCallbackCaptor.getValue().onRemoteWordLoaded(return_word);
 
         List<WikiItem> wiktionaryLanguages = new ArrayList<>();
-        verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbacCaptor.capture());
-        getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(wiktionaryLanguages);
+        verify(dictionaryRepository).getDefinition(eq(test_text), getDefinitionCallbackCaptor.capture());
+        getDefinitionCallbackCaptor.getValue().onDefinitionLoaded(wiktionaryLanguages);
 
         GetLayoutResult expected = new GetLayoutResult.DictionarySuccess(return_word, new ArrayList<>());
         assertEquals(expected, LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()));
@@ -166,14 +201,10 @@ public class ProcessTextPresenterTest {
     @Test
     public void showLanguageNotAvailable(){
         String inputText = "desconocido";
-        String languageFrom = "ES";
 
         // Gets saved word layout
         presenter.getLayout(inputText, languageFrom, languageTo);
-        verify(wordRepository).getWordLanguageInfo(eq(inputText), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
-
-        Words return_word = new Words(inputText, languageFrom, "unknown");
-        getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
+        loadLocalWord(inputText);
 
         // Reproduce tts
         presenter.onClickReproduce(inputText);
@@ -186,14 +217,12 @@ public class ProcessTextPresenterTest {
     @Test
     public void new_language_available_and_previous_not_available(){
         String inputText = "desconocido";
-        String unknownLanguageFrom = "ES";
+        String unknownLanguageFrom = languageFrom;
 
         // Gets saved word layout
         presenter.getLayout(inputText, unknownLanguageFrom, languageTo);
-        verify(wordRepository).getWordLanguageInfo(eq(inputText), eq(unknownLanguageFrom), eq(languageTo), getWordCallbackCaptor.capture());
 
-        Words unknowWord = new Words(inputText, unknownLanguageFrom, "desconocido");
-        getWordCallbackCaptor.getValue().onLocalWordLoaded(unknowWord);
+        loadLocalWord(inputText);
 
         // Tts returns language not available
         presenter.onClickReproduce(inputText);
@@ -202,16 +231,12 @@ public class ProcessTextPresenterTest {
         verify(view).showLanguageNotAvailable();
 
         inputText = "correct";
-        String languageFrom = "EN";
 
         when(customTTS.getLanguage()).thenReturn(unknownLanguageFrom);
 
         // Gets saved word layout
         presenter.getLayout(inputText, languageFrom, languageTo);
-        verify(wordRepository).getWordLanguageInfo(eq(inputText), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
-
-        Words return_word = new Words(inputText, languageFrom, "correct");
-        getWordCallbackCaptor.getValue().onLocalWordLoaded(return_word);
+        loadLocalWord(inputText);
 
         // Reproduce tts
         presenter.onClickReproduce(inputText);
@@ -233,8 +258,8 @@ public class ProcessTextPresenterTest {
         getWordCallbackCaptor.getValue().onDataNotAvailable(emptyWord);
 
         // Return dictionary definitions
-        verify(dictionaryRepository).getDefinition(eq(inputText), getDefinitionCallbacCaptor.capture());
-        getDefinitionCallbacCaptor.getValue().onDefinitionLoaded(defaultDictionaryItems);
+        verify(dictionaryRepository).getDefinition(eq(inputText), getDefinitionCallbackCaptor.capture());
+        getDefinitionCallbackCaptor.getValue().onDefinitionLoaded(defaultDictionaryItems);
 
         // Two values are set, first the dictionary result and then the error when translating
         // Because LiveData is a data holder, not a stream, only the last value is available
@@ -247,6 +272,13 @@ public class ProcessTextPresenterTest {
         getLinksCaptor.getValue().onLinksRetrieved(defaultLinksItems);
 
         verify(view).setTranslationErrorMessage();
+    }
+
+    private Words loadLocalWord(String wordText) {
+        verify(wordRepository).getWordLanguageInfo(eq(wordText), eq(languageFrom), eq(languageTo), getWordCallbackCaptor.capture());
+        var returnWord = new Words(wordText,"ES", "Test");
+        getWordCallbackCaptor.getValue().onLocalWordLoaded(returnWord);
+        return returnWord;
     }
 
 }
