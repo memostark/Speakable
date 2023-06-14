@@ -43,10 +43,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private final CustomTTS customTTS;
     private final GetLangAndTranslation getTranslationInteractor;
 
-    private boolean insideLocalDatabase;
     private Words foundWord;
 
-    private boolean isLoading;
     private boolean isPlaying;
     private boolean isAvailable;
     private boolean hasTranslation;
@@ -73,37 +71,19 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         this.customTTS = customTTS;
         this.getTranslationInteractor = getTranslationInteractor;
 
-        insideLocalDatabase = false;
-        isLoading = false;
         isPlaying = false;
         isAvailable = true;
 
         hasTranslation = false;
     }
 
-
-
-
-    @Override
-    public void addNewWord() {
-
-    }
-
-
-    @Override
-    public void editWord() {
-
-    }
-
     @Override
     public void start(Words word) {
-        insideLocalDatabase = true;
         getDictionaryEntry(word, true);
     }
 
     @Override
     public void startWithService(String selectedText, String languageFrom, String languageTo) {
-        insideLocalDatabase = false;
         mView.startService();
         getLayout(selectedText, languageFrom, languageTo);
     }
@@ -115,20 +95,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         EspressoIdlingResource.increment();
 
-        GetLayout interactor = new GetLayout(executorService, mMainThread, new GetLayoutInteractor.Callback() {
+        var interactor = new GetLayout(executorService, mMainThread, new GetLayoutInteractor.Callback() {
             @Override
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
                 foundWord = word;
                 checkTTSInitialization();
 
-                switch (layoutType){
-                    case WORD_TRANSLATION:
-                        getExternalLinks(word.lang);
-                        break;
-                    case SAVED_WORD:
-                        insideLocalDatabase = true;
-                        getExternalLinks(word.lang);
-                        break;
+                switch (layoutType) {
+                    case WORD_TRANSLATION, SAVED_WORD -> getExternalLinks(word.lang);
                 }
 
                 layoutResult.setValue(new GetLayoutResult.WordSuccess(layoutType, word));
@@ -171,7 +145,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
      */
     @Override
     public void getDictionaryEntry(final Words word, boolean isSaved) {
-        insideLocalDatabase = isSaved;
         foundWord = word;
         hasTranslation = true;
         viewIsActive = true;
@@ -180,7 +153,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         checkTTSInitialization();
 
-        GetDictionaryEntry interactor = new GetDictionaryEntry(executorService, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
+        var interactor = new GetDictionaryEntry(executorService, mMainThread, dictionaryRepository, word.word, new GetDictionaryEntryInteractor.Callback(){
 
             @Override
             public void onEntryNotAvailable() {
@@ -207,7 +180,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     private void getExternalLinks(String language) {
-        GetExternalLink link_interactor = new GetExternalLink(executorService, mMainThread, linksRepository);
+        var link_interactor = new GetExternalLink(executorService, mMainThread, linksRepository);
         link_interactor.invoke(language, links -> {
                     mView.setExternalDictionary(links);
                     if(!hasTranslation) mView.setTranslationErrorMessage();
@@ -215,22 +188,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     @Override
-    public void onClickBookmark() {
-        if(insideLocalDatabase) mView.showDeleteDialog(foundWord.word);
-        else mView.showSaveDialog(foundWord);
-    }
-
-    @Override
-    public void onClickSaveWord(Words word) {
-        insideLocalDatabase = true;
-    }
-
-    @Override
     public void onClickDeleteWord(String word) {
-        DeleteWord interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
+        var interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
         interactor.execute();
         mView.showWordDeleted();
-        insideLocalDatabase = false;
     }
 
     @Override
@@ -240,16 +201,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isPlaying = false;
             mView.showPlayIcon();
         }else if(isAvailable){
-            isLoading = true;
             mView.showLoadingTTS();
-            PlayTTS interactor = new PlayTTS(executorService, mMainThread, customTTS, ttsListener, text);
+            var interactor = new PlayTTS(executorService, mMainThread, customTTS, ttsListener, text);
             interactor.execute();
         }
-    }
-
-    @Override
-    public void onClickEdit() {
-
     }
 
     @Override
@@ -272,33 +227,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             }
         }, languageFrom, languageTo);
 
-        GetExternalLink linkInteractor = new GetExternalLink(executorService, mMainThread, linksRepository);
+        var linkInteractor = new GetExternalLink(executorService, mMainThread, linksRepository);
 
         linkInteractor.invoke(languageFrom, links -> mView.updateExternalLinks(links));
-    }
-
-
-    /**
-     * This kind of a hack,
-     * This is called when the layout has been finally created to show status of the play button icon
-     *
-     */
-    @Override
-    public void onPlayIconSet() {
-        if(isLoading){
-            mView.showLoadingTTS();
-            return;
-        }
-
-        if(isAvailable){
-            if(isPlaying){
-                mView.showStopIcon();
-            }else {
-                mView.showPlayIcon();
-            }
-        }else {
-            mView.showLanguageNotAvailable();
-        }
     }
 
     @Override
@@ -354,8 +285,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         @Override
         public void onEngineReady() {
-            isLoading = false;
-            boolean autoPlay = getAutoTTSPreference();
+            var autoPlay = getAutoTTSPreference();
 
             if(autoPlay && viewIsActive) {
                 onClickReproduce(foundWord.word);
@@ -367,7 +297,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         @Override
         public void onLanguageUnavailable() {
-            isLoading = false;
             isPlaying = false;
             isAvailable = false;
             mMainThread.post(() -> {
@@ -378,7 +307,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         @Override
         public void onSpeakStart() {
-            isLoading = false;
             isPlaying = true;
 
             mMainThread.post(() -> mView.showStopIcon());
