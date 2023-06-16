@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.db
 
 import com.guillermonegrete.tts.webreader.db.LinkWithNotes
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 class FakeWebLinkDAO: WebLinkDAO {
 
@@ -22,11 +23,11 @@ class FakeWebLinkDAO: WebLinkDAO {
     }
 
     override suspend fun delete(link: WebLink) {
-        TODO("Not yet implemented")
+        links.removeIf { it.id == link.id }
     }
 
     override fun getRecentLinks(): Flow<List<WebLink>> {
-        TODO("Not yet implemented")
+        return flowOf(links.sortedByDescending { it.lastRead })
     }
 
     override suspend fun getLink(url: String) = links.firstOrNull { it.url == url }
@@ -34,5 +35,9 @@ class FakeWebLinkDAO: WebLinkDAO {
     override suspend fun getLinkWithNotes(url: String): LinkWithNotes? {
         val savedLink = links.find { it.url == url } ?: return null
         return LinkWithNotes(savedLink, emptyList())
+    }
+
+    fun addLinks(vararg links: WebLink) {
+        this.links.addAll(links)
     }
 }

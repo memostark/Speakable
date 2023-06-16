@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext.visualize
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.Segment
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
@@ -13,14 +14,15 @@ import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.*
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.threading.TestMainThread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -28,7 +30,9 @@ import org.junit.Test
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.MockitoAnnotations
+import java.io.IOException
 import java.util.*
+import java.util.concurrent.TimeoutException
 
 @ExperimentalCoroutinesApi
 class VisualizeTextViewModelTest {
@@ -60,7 +64,7 @@ class VisualizeTextViewModelTest {
 
     @Before
     fun setUp(){
-        MockitoAnnotations.initMocks(this)
+        MockitoAnnotations.openMocks(this)
 
         fileRepository = FakeFileRepository()
         wordRepository = FakeWordRepository()
@@ -91,7 +95,7 @@ class VisualizeTextViewModelTest {
         advanceUntilIdle()
 
         // Then progress indicator is hidden
-        Assert.assertFalse(viewModel.dataLoading.getOrAwaitValue())
+        assertFalse(viewModel.dataLoading.getOrAwaitValue())
 
         val resultBook = viewModel.book.getOrAwaitValue()
         assertEquals(DEFAULT_BOOK, resultBook)
@@ -107,6 +111,8 @@ class VisualizeTextViewModelTest {
 
         val resultPages = getUnitLiveDataValue(viewModel.pages).getContentIfNotHandled()
         assertEquals(pages, resultPages)
+        assertEquals(2, viewModel.pagesSize)
+        assertEquals(5, viewModel.spineSize)
     }
 
     @Test
@@ -122,6 +128,15 @@ class VisualizeTextViewModelTest {
         // If it has only one page, then returns two pages (swipe doesn't work with 1 page)
         val expectedPages = listOf("This shouldn't be here", "")
         assertEquals(expectedPages, resultPages)
+    }
+
+    @Test(expected = TimeoutException::class)
+    fun `When parse epub error, no page update `() = runTest {
+        `when`(epubParser.parseBook(fileReader)).thenThrow(IOException())
+
+        viewModel.parseEpub()
+
+        viewModel.pages.getOrAwaitValue() // error because value is not set
     }
 
     @Test
@@ -184,7 +199,7 @@ class VisualizeTextViewModelTest {
         val initialPage = 4
         val initialChar = 41
         bookFile.lastChar = initialChar
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(8)
         viewModel.fileId = bookFile.id
@@ -201,6 +216,23 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
+    fun `Given out of bound last char, when epub load, then page zero`(){
+        // Set up
+        val initialPage = 0
+        val initialChar = 100
+        bookFile.lastChar = initialChar
+        fileRepository.addFiles(bookFile)
+
+        splitPages(8)
+        viewModel.fileId = bookFile.id
+        parse_book(DEFAULT_BOOK)
+
+        // Returns initial page in first load
+        val page = viewModel.getPage()
+        assertEquals(initialPage, page)
+    }
+
+    @Test
     fun when_changed_to_previous_chapter_set_last_page() = runTest {
         // Set up
         val initialPage = 2
@@ -208,7 +240,7 @@ class VisualizeTextViewModelTest {
         val initialChapter = 1
         bookFile.lastChar = initialChar
         bookFile.chapter = initialChapter
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(3)
         viewModel.fileId = bookFile.id
@@ -231,7 +263,7 @@ class VisualizeTextViewModelTest {
         // Set up
         val initialChar = 20
         bookFile.lastChar = initialChar
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(3)
         viewModel.fileId = bookFile.id
@@ -256,7 +288,7 @@ class VisualizeTextViewModelTest {
         val initialChapter = 3
         bookFile.page = initialPage
         bookFile.chapter = initialChapter
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         splitPages(5)
         viewModel.fileId = bookFile.id
@@ -351,7 +383,7 @@ class VisualizeTextViewModelTest {
         // Set up
         val initialChapter = 2
         bookFile.chapter = initialChapter
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
 
         // Initial state
         viewModel.fileUri = bookFile.uri
@@ -389,7 +421,7 @@ class VisualizeTextViewModelTest {
         // TODO this test and "Updates book files" test are very similar, try to refactor
         val book = BookFile("default_uri", "Title", ImportedFileType.EPUB, folderPath = "", id = 1)
 
-        fileRepository.addTasks(book)
+        fileRepository.addFiles(book)
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = bookFile.id
 
@@ -420,7 +452,7 @@ class VisualizeTextViewModelTest {
     @Test
     fun `Parses book with uri already in db`(){
         // Setup
-        fileRepository.addTasks(bookFile)
+        fileRepository.addFiles(bookFile)
         viewModel.fileUri = bookFile.uri
         viewModel.fileId = -1
 
@@ -465,7 +497,76 @@ class VisualizeTextViewModelTest {
         advanceUntilIdle()
 
         val errorMsg = viewModel.translationError.getOrAwaitValue()
-        assertEquals("Translation not found", errorMsg.peekContent())
+        assertEquals("Translation not found for: Página para traducir", errorMsg.peekContent())
+    }
+
+    @Test
+    fun `Give simple text, when parse, then success`() = runTest {
+        val twelveChars = "twelve chars"
+        val chunked = twelveChars.chunked(5)
+        `when`(pageSplitter.getPages()).thenReturn(chunked)
+
+        viewModel.parseSimpleText(twelveChars)
+        advanceUntilIdle()
+
+        val resultPages = viewModel.pages.getOrAwaitValue().getContentIfNotHandled()
+        assertEquals(chunked, resultPages)
+    }
+
+    @Test
+    fun `Given translated paragraph, when find sentence, then return second sentence`() = runTest {
+        val twelveChars = "First paragraph. Second sentence. Second paragraph text"
+        val chunked = twelveChars.chunked(34)
+        `when`(pageSplitter.getPages()).thenReturn(chunked)
+        parse_book(TWO_CHAPTER_BOOK)
+        advanceUntilIdle()
+
+        val expectedTranslation = Translation(listOf(Segment("First translation", "First paragraph. "), Segment("Second translation", "Second sentence. ")), "en")
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.translatePage(0)
+        advanceUntilIdle()
+
+        val result = viewModel.findSelectedSentence(0, 18) // index 18 is in the second sentence
+        assertEquals(SplitPageSpan(Span(17, 34), Span(17, 35)), result)
+    }
+
+    @Test
+    fun `Given translated paragraph, when find sentence outside range, then null`() = runTest {
+        val twelveChars = "First paragraph. Second sentence. Second paragraph text"
+        val chunked = twelveChars.chunked(34)
+        `when`(pageSplitter.getPages()).thenReturn(chunked)
+        parse_book(TWO_CHAPTER_BOOK)
+        advanceUntilIdle()
+
+        val expectedTranslation = Translation(listOf(Segment("First translation", "First paragraph. "), Segment("Second translation", "Second sentence. ")), "en")
+        wordRepository.addTranslation(expectedTranslation)
+        viewModel.translatePage(0)
+        advanceUntilIdle()
+
+        val result = viewModel.findSelectedSentence(0, 35) // index 18 is in the second sentence
+        assertEquals(null, result)
+    }
+
+    @Test
+    fun `Change and query language from`() = runTest {
+        viewModel.languageFrom = "es"
+
+        assertEquals("es", settingsRepository.getLanguageFrom())
+    }
+
+    @Test
+    fun `Change and query language to`() = runTest {
+        viewModel.languageTo = "de"
+
+        assertEquals("de", settingsRepository.getLanguageTo())
+        assertEquals(emptyList<Translation>(), viewModel.translatedPages)
+    }
+
+    @Test
+    fun `Check default UI settings, saved during configuration changes`() = runTest {
+        assertFalse(viewModel.hasBottomSheet)
+        assertFalse(viewModel.isSheetExpanded)
+        assertFalse(viewModel.fullScreen)
     }
 
     private fun parse_book(book: Book){

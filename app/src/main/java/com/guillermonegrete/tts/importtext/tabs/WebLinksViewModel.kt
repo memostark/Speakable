@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
+import com.guillermonegrete.tts.utils.deleteAllFolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,15 +40,7 @@ class WebLinksViewModel @Inject constructor(private val webLinkDAO: WebLinkDAO):
 
     private fun deleteLinkFolder(link: WebLink, rootPath: String) {
         val uuid = link.uuid ?: return
-        val folder = File(rootPath, uuid.toString())
 
-        val files = folder.listFiles()
-        if (files != null) {
-            for (child: File in files) {
-                child.delete()
-            }
-        }
-
-        folder.delete()
+        deleteAllFolder(File(rootPath, uuid.toString()))
     }
 }

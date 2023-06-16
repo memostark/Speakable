@@ -30,5 +30,5 @@ public interface WordDataSource {
 
     LiveData<Words> loadWord(String word, String language);
 
-    Words getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo);
+    int update(@NonNull Words word);
 }

@@ -62,26 +62,6 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
         }
     }
 
-    @Override
-    public void onClickShowBrowser(String text) {
-        view.setDictionaryWebPage(text);
-    }
-
-    @Override
-    public void onClickPaste(String text) {
-        view.setEditText(text);
-    }
-
-    @Override
-    public void onStartOverlayMode() {
-        view.startOverlayService();
-    }
-
-    @Override
-    public void onStartClipboardMode() {
-        view.startClipboardService();
-    }
-
     private final CustomTTS.Listener ttsListener = new CustomTTS.Listener() {
 
         @Override

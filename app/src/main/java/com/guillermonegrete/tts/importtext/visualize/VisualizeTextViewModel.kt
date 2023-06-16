@@ -85,9 +85,6 @@ class VisualizeTextViewModel @Inject constructor(
     private val _translationError = MutableLiveData<Event<String>>()
     val translationError: LiveData<Event<String>> = _translationError
 
-    private val _spanSelection = MutableLiveData<Event<SplitPageSpan>>()
-    val spanSelection: LiveData<Event<SplitPageSpan>> = _spanSelection
-
     // Settings
     var hasBottomSheet = false
     var isSheetExpanded = false
@@ -124,10 +121,6 @@ class VisualizeTextViewModel @Inject constructor(
                 return@launch
             }
 
-            val imageGetter = pageSplitter?.imageGetter
-            if(imageGetter is InputStreamImageGetter){
-                imageGetter.basePath = epubParser.basePath
-            }
             text = parsedBook.currentChapter
             spineSize = parsedBook.spine.size
             currentBook = parsedBook
@@ -288,11 +281,9 @@ class VisualizeTextViewModel @Inject constructor(
 
         val chapterPath = tempBook.spine[index].href
 
-        if(index != -1) {
-            currentChapter = index
-            changeEpubChapter(chapterPath)
-            splitToPages()
-        }
+        currentChapter = index
+        changeEpubChapter(chapterPath)
+        splitToPages()
     }
 
     private suspend fun splitToPages() {
@@ -401,8 +392,8 @@ class VisualizeTextViewModel @Inject constructor(
         return sum
     }
 
-    fun onTranslatedTextClick(page: Int, charIndex: Int) {
-        val translation = translatedPages[page] ?: return
+    fun findSelectedSentence(page: Int, charIndex: Int): SplitPageSpan? {
+        val translation = translatedPages[page] ?: return null
 
         var start = 0
         var originStart = 0
@@ -412,13 +403,13 @@ class VisualizeTextViewModel @Inject constructor(
             val originalEnd = originStart + sentence.orig.length
             if(charIndex < end){
                 // indicate UI to highlight this sentence
-                 val splitSpan = SplitPageSpan(Span(originStart, originalEnd), Span(start, end))
-                _spanSelection.value = Event(splitSpan)
-                return
+                return SplitPageSpan(Span(originStart, originalEnd), Span(start, end))
             }
             start = end
             originStart = originalEnd
         }
+
+        return null
     }
 
 }

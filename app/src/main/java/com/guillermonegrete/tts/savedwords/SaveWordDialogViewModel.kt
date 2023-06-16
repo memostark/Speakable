@@ -4,16 +4,21 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
-import com.guillermonegrete.tts.db.WordsDAO
+import com.guillermonegrete.tts.di.ApplicationModule.WordsLocalDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class SaveWordDialogViewModel @Inject constructor(private val wordsDAO: WordsDAO): ViewModel() {
+class SaveWordDialogViewModel @Inject constructor(
+    @WordsLocalDataSource private val wordSource: WordDataSource,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+): ViewModel() {
 
     private val _update = MutableLiveData<ResultType>()
     val update: LiveData<ResultType> = _update
@@ -24,26 +29,20 @@ class SaveWordDialogViewModel @Inject constructor(private val wordsDAO: WordsDAO
             return
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { wordsDAO.insert(word) }
+            withContext(ioDispatcher) { wordSource.insertWords(word) }
             _update.value = ResultType.Insert(word)
         }
     }
 
     fun update(newWord: Words){
         viewModelScope.launch {
-            val word = withContext(Dispatchers.IO) { wordsDAO.findWord(newWord.word) }
-
-            word ?: return@launch
-
-            word.definition = newWord.definition
-            word.notes = newWord.notes
-            withContext(Dispatchers.IO) { wordsDAO.update(word) }
-            _update.value = ResultType.Update
+            val rowsUpdated = withContext(ioDispatcher) { wordSource.update(newWord) }
+            if(rowsUpdated > 0) _update.value = ResultType.Update
         }
     }
 }
 
 sealed class ResultType {
-    class Insert(val word: Words): ResultType()
+    data class Insert(val word: Words): ResultType()
     object Update : ResultType()
 }

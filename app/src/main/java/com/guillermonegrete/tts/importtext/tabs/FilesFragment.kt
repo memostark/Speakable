@@ -14,16 +14,21 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FilesLayoutBinding
 import com.guillermonegrete.tts.databinding.RecentFilesMenuBinding
 import com.guillermonegrete.tts.importtext.FilesViewModel
@@ -34,8 +39,7 @@ import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.BufferedReader
 import java.io.IOException
@@ -43,10 +47,8 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.lang.StringBuilder
 
-@ExperimentalCoroutinesApi
-@FlowPreview
 @AndroidEntryPoint
-class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
+class FilesFragment: Fragment(R.layout.files_layout) {
 
     private  var _binding: FilesLayoutBinding? = null
     private val binding get() = _binding!!
@@ -135,31 +137,43 @@ class FilesFragment: Fragment(R.layout.files_layout), RecentFileMenu.Callback {
         _binding = null
     }
 
-    override fun onSelection(position: Int) {
-        viewModel.deleteFile(position)
-    }
-
     private fun setViewModel(){
         viewModel.apply {
-            openTextVisualizer.observe(viewLifecycleOwner, EventObserver {
-                visualizeEpub(Uri.parse(it.uri), it.id)
-            })
 
-            dataLoading.observe(viewLifecycleOwner) {
-                binding.recentFilesProgressBar.visibility = if (it) View.VISIBLE else View.INVISIBLE
-            }
-
-            val adapter = RecentFilesAdapter(viewModel)
+            val adapter = RecentFilesAdapter(
+                viewModel.filesPath,
+                onClick = { visualizeEpub(Uri.parse(it.uri), it.id) },
+                onMenuButtonClick = {
+                    RecentFileMenu.newInstance().show(childFragmentManager, "Item menu")
+                    childFragmentManager.setFragmentResultListener(RecentFileMenu.REQUEST_KEY, viewLifecycleOwner) { _, _ ->
+                        // only one option so it has to be delete
+                        viewModel.deleteFile(it)
+                    }
+                }
+            )
             binding.recentFilesList.adapter = adapter
 
-            files.observe(viewLifecycleOwner) {
-                binding.noFilesMessage.isVisible = it.isEmpty()
-                adapter.submitList(it)
+            lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    files.collect { uiState ->
+                        when (uiState) {
+                            is LoadResult.Error -> {
+                                Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
+                                Timber.e(uiState.exception, "Failed fetching recent links")
+                                binding.recentFilesProgressBar.isVisible = false
+                            }
+                            is LoadResult.Success -> {
+                                binding.noFilesMessage.isVisible = uiState.data.isEmpty()
+                                adapter.submitList(uiState.data)
+                                binding.recentFilesProgressBar.isVisible = false
+                            }
+                            LoadResult.Loading -> binding.recentFilesProgressBar.isVisible = true
+                        }
+                    }
+                }
             }
 
-            openItemMenu.observe(viewLifecycleOwner, EventObserver{
-                RecentFileMenu.newInstance(it).show(childFragmentManager, "Item menu")
-            })
+            loadFiles()
         }
     }
 
@@ -345,21 +359,6 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
     private  var _binding: RecentFilesMenuBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var callback: Callback
-
-    private var itemPos: Int? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        itemPos = arguments?.getInt(item_pos_key)
-
-        try{
-            callback = parentFragment as Callback
-        }catch (e: ClassCastException) {
-            throw ClassCastException("Calling fragment must implement Callback interface")
-        }
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -368,7 +367,7 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
         _binding = RecentFilesMenuBinding.inflate(inflater, container, false)
 
         binding.deleteButton.setOnClickListener {
-            callback.onSelection(itemPos ?: -1)
+            setFragmentResult(REQUEST_KEY, bundleOf())
             dismiss()
         }
 
@@ -381,16 +380,8 @@ class RecentFileMenu private constructor(): BottomSheetDialogFragment(){
     }
 
     companion object{
-        fun newInstance(itemPos: Int) = RecentFileMenu().apply {
-            arguments = Bundle().apply {
-                putInt(item_pos_key, itemPos)
-            }
-        }
+        fun newInstance() = RecentFileMenu()
 
-        private const val item_pos_key = "item_pos"
-    }
-
-    interface Callback{
-        fun onSelection(position: Int)
+        const val REQUEST_KEY = "recent_file_key"
     }
 }

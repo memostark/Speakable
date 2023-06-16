@@ -10,6 +10,8 @@ class FakeFileRepository: FileRepository {
 
     var filesServiceData: LinkedHashMap<Int, BookFile> = LinkedHashMap()
 
+    var files = filesServiceData.values
+
     override suspend fun getFiles(): List<BookFile> {
         return filesServiceData.values.toList()
     }
@@ -35,7 +37,7 @@ class FakeFileRepository: FileRepository {
     }
 
     @VisibleForTesting
-    fun addTasks(vararg files: BookFile) {
+    fun addFiles(vararg files: BookFile) {
         for (file in files) {
             filesServiceData[file.id] = file
         }

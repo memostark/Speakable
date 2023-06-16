@@ -49,10 +49,6 @@ public interface ProcessTextContract {
 
     interface Presenter extends BasePresenter<View>{
 
-        void addNewWord();
-
-        void editWord();
-
         void start(Words word);
 
         void startWithService(String selectedText, String languageFrom, String languageTo);
@@ -63,19 +59,11 @@ public interface ProcessTextContract {
 
         void getDictionaryEntry(Words word, boolean isSaved);
 
-        void onClickBookmark();
-
-        void onClickSaveWord(Words word);
-
         void onClickDeleteWord(String word);
 
         void onClickReproduce(String text);
 
-        void onClickEdit();
-
         void onLanguageSpinnerChange(String languageFrom, String languageTo);
-
-        void onPlayIconSet();
 
     }
 }

@@ -4,20 +4,23 @@ import kotlinx.coroutines.flow.Flow
 
 class FakeSettingsRepository: SettingsRepository {
 
+    private var languageFrom = "auto"
+    private var languageTo = "auto"
+
     override fun setLanguageTo(language: String) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        languageTo = language
     }
 
     override fun setLanguageFrom(language: String) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        languageFrom = language
     }
 
     override fun getLanguageTo(): String {
-        return "en"
+        return languageTo
     }
 
     override fun getLanguageFrom(): String {
-        return "auto"
+        return languageFrom
     }
 
     override fun getImportTabPosition(): Flow<Int> {

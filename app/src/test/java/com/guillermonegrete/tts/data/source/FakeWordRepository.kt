@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.data.source
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.liveData
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.db.Words
@@ -30,8 +31,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         return MutableLiveData(wordsServiceData.values.toMutableList())
     }
 
-    override fun getLocalWord(word: String, language: String): LiveData<Words> {
-        TODO("Not yet implemented")
+    override fun getLocalWord(word: String, language: String): LiveData<Words?> {
+        return liveData { emit(wordsServiceData[word]) }
     }
 
     override fun getLanguagesISO(): MutableList<String> {
@@ -77,7 +78,7 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         languageFrom: String,
         languageTo: String
     ): Result<Translation> {
-        val word = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
+        val word = translationsData[text] ?: return Result.Error(Exception("Translation not found for: $text"))
         return Result.Success(word)
     }
 
@@ -89,8 +90,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun delete(vararg words: Words?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun delete(vararg words: Words) {
+        wordsServiceData.values.removeAll(words.toSet())
     }
 
     override fun insert(vararg words: Words?) {
@@ -122,7 +123,8 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
     @VisibleForTesting
     fun addTranslation(vararg translations: Translation) {
         for (translation in translations) {
-            translationsData[translation.sentences.first().orig] = translation
+            val originalText = translation.sentences.joinToString(""){ it.orig }
+            translationsData[originalText] = translation
         }
     }
 }

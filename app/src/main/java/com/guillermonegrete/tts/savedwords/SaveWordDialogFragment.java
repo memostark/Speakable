@@ -127,8 +127,7 @@ public class SaveWordDialogFragment extends DialogFragment {
         saveWordViewModel.getUpdate().observe(this, resultType -> {
             if(resultType instanceof ResultType.Update){
                 Toast.makeText(getActivity(), "Word updated", Toast.LENGTH_SHORT).show();
-            } else if(resultType instanceof ResultType.Insert){
-                ResultType.Insert result = (ResultType.Insert) resultType;
+            } else if(resultType instanceof ResultType.Insert result){
                 Toast.makeText(getActivity(), "New word saved", Toast.LENGTH_SHORT).show();
 
                 Fragment fragment = getParentFragment();
@@ -149,7 +148,8 @@ public class SaveWordDialogFragment extends DialogFragment {
 
     private void saveWord(String word, String language, String translation, String notes){
 
-        Words word_entry = new Words(word, language, translation);
+        var word_entry = new Words(word, language, translation);
+        if(wordItem != null) word_entry.id = wordItem.id;
         if(!TextUtils.isEmpty(notes)) word_entry.notes = notes;
 
         if(TAG_DIALOG_UPDATE_WORD.equals(getTag())){

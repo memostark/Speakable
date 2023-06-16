@@ -17,7 +17,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -31,7 +30,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.guillermonegrete.tts.R;
@@ -174,15 +172,14 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     }
 
     private void showSaveDialog() {
-        DialogFragment dialogFragment;
-        dialogFragment = SaveWordDialogFragment.newInstance(null);
+        var dialogFragment = SaveWordDialogFragment.newInstance(null);
         dialogFragment.show(requireActivity().getSupportFragmentManager(), "New word");
     }
 
     private void setUpItemTouchHelper(RecyclerView recyclerView){
-        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+        var simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
 
-            Drawable deleteIcon ;
+            Drawable deleteIcon;
             Drawable backgroundColor;
 
             boolean initiated;
@@ -208,11 +205,11 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-                TextView saved_word_text = viewHolder.itemView.findViewById(R.id.saved_word_text);
-                String word_text = saved_word_text.getText().toString();
-                Toast.makeText(requireContext(), "Swiped word: " + word_text, Toast.LENGTH_SHORT).show();
+                var pos = viewHolder.getAdapterPosition();
+                var word = wordListAdapter.getItem(pos);
+                Toast.makeText(requireContext(), "Swiped word: " + word.word, Toast.LENGTH_SHORT).show();
 
-                wordsViewModel.delete(word_text);
+                wordsViewModel.delete(word);
             }
 
             @Override

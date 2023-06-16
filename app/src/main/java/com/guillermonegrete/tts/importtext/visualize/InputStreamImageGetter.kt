@@ -14,9 +14,7 @@ class InputStreamImageGetter(
     private val zipFileReader: ZipFileReader
 ): Html.ImageGetter {
 
-    var basePath = ""
-
-    override fun getDrawable(source: String?): Drawable? {
+    override fun getDrawable(source: String?): Drawable {
         return runBlocking {
             val inputStream = source?.let {
                 val fullPath = it.trimStart('/')

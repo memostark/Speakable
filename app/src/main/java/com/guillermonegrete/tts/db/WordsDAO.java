@@ -29,7 +29,7 @@ public interface WordsDAO {
     void insert(Words... words);
 
     @Update(onConflict = OnConflictStrategy.IGNORE)
-    void update(Words words);
+    int update(Words words);
 
     @Query("DELETE FROM words where word = :word")
     void deleteWord(String word);

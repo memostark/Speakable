@@ -17,15 +17,12 @@ import java.util.*
 class VisualizerAdapter(
     private val pages: List<CharSequence>,
     private val showTextDialog: (CharSequence) -> Unit,
-    val viewModel: VisualizeTextViewModel,
     private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    val hasBottomSheet
-        get() = viewModel.hasBottomSheet
+    var hasBottomSheet = false
 
-    val isPageSplit
-        get() = viewModel.isSheetExpanded
+    var isPageSplit = false
 
     private var pageMarginsSize = 0
     private var lineSpacingExtra = 0f

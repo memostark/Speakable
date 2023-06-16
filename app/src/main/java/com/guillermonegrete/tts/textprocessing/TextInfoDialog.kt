@@ -228,16 +228,16 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private fun setWordLayout(word: Words) {
         textFromLanguage.text = word.lang
 
-        bindingWord.saveIcon.setOnClickListener { presenter.onClickBookmark() }
+        bindingWord.saveIcon.setOnClickListener { showSaveDialog(mFoundWords) }
     }
 
     private fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
         val isLargeWindow = preferences.getBoolean(SettingsFragment.PREF_WINDOW_SIZE, ButtonsPreference.DEFAULT_VALUE)
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
-        setWordLayout(word)
         dictionaryAdapter = WiktionaryAdapter(items)
 
         mFoundWords = word
+        setWordLayout(word)
 
         if (isLargeWindow) createViewPager() else createSmallViewPager()
     }
@@ -247,7 +247,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         setBottomDialog()
         mFoundWords = word
 
-        setWordLayout(word)
+//        setWordLayout(word)
         createSmallViewPager()
 
         setSavedWordToolbar()
@@ -352,8 +352,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showWordDeleted() {
-        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
         bindingWord.editIcon.visibility = View.GONE
+        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
+        bindingWord.saveIcon.setOnClickListener { showSaveDialog(mFoundWords) }
     }
 
     override fun showErrorPlayingAudio() {
@@ -541,6 +542,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     private fun setSavedWordToolbar() {
         bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
+        bindingWord.saveIcon.setOnClickListener { showDeleteDialog(mFoundWords.word) }
 
         with(bindingWord.editIcon) {
             visibility = View.VISIBLE
@@ -604,15 +606,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun onWordSaved(word: Words) {
-        presenter.onClickSaveWord(word)
-        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
-
-        val editIcon = bindingWord.editIcon
-        editIcon.visibility = View.VISIBLE
-        editIcon.setOnClickListener {
-            val dialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
-            dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
-        }
+        setSavedWordToolbar()
     }
 
     /**

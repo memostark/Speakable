@@ -26,13 +26,5 @@ public interface MainTTSContract {
 
     interface Presenter extends BasePresenter<View> {
         void onClickReproduce(String text, String lang);
-
-        void onClickShowBrowser(String text);
-
-        void onClickPaste(String text);
-
-        void onStartOverlayMode();
-
-        void onStartClipboardMode();
     }
 }

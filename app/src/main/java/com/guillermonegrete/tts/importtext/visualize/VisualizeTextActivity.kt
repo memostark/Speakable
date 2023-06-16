@@ -21,6 +21,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
@@ -99,7 +100,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf(""),
-            {}, viewModel, true) // Empty callback, not necessary at the moment
+            {}, true) // Empty callback, not necessary at the moment
         viewPager.setPageTransformer { view, position ->
             pageItemView = view
 
@@ -293,25 +294,8 @@ class VisualizeTextActivity: AppCompatActivity() {
                 bottomText.text = getString(R.string.click_to_translate_msg)
             })
 
-            spanSelection.observe(this@VisualizeTextActivity, EventObserver {
-                val text = SpannableString(bottomText.text)
-
-                //Remove previous
-                text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-
-                text.setSpan(BackgroundColorSpan(0x6633B5E5), it.bottomSpan.start, it.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                bottomText.setText(text, TextView.BufferType.SPANNABLE)
-
-                // Notify the adapter to set the highlight, send span payload
-                pagesAdapter.notifyItemChanged(viewPager.currentItem, it.topSpan)
-            })
-
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
-
-        // Restore UI state in case of config change
-        bottomSheet.visibility = if(viewModel.hasBottomSheet) View.VISIBLE else View.GONE
-        setFullBottomSheet(viewModel.isSheetExpanded)
     }
 
     private fun initParse(){
@@ -328,7 +312,9 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
-        pagesAdapter = VisualizerAdapter(pages, { showTextDialog(it) }, viewModel)
+        pagesAdapter = VisualizerAdapter(pages, { showTextDialog(it) })
+        pagesAdapter.hasBottomSheet = viewModel.hasBottomSheet
+        pagesAdapter.isPageSplit = viewModel.isSheetExpanded
         viewPager.adapter = pagesAdapter
 
         val position = viewModel.getPage()
@@ -338,9 +324,15 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Subtract 1 because seek bar is zero based numbering
         pagesSeekBar.max = pages.size - 1
         pagesSeekBar.progress = position
+
+        // Restore UI state in case of config change
+        bottomSheet.visibility = if(viewModel.hasBottomSheet) View.VISIBLE else View.GONE
+        setFullBottomSheet(viewModel.isSheetExpanded)
     }
 
     private fun showSettingsPopUp(view: View) {
+
+        val languagesISO = viewModel.languagesISO
 
         val popUpCallback = object: VisualizerSettingsWindow.Callback{
 
@@ -351,31 +343,41 @@ class VisualizeTextActivity: AppCompatActivity() {
             override fun onPageMode(isSplit: Boolean) {
                 setSplitPageMode(isSplit)
             }
+
+            override fun onLanguageToChanged(position: Int) {
+                viewModel.languageTo = languagesISO[position]
+            }
+
+            override fun onLanguageFromChanged(position: Int) {
+                viewModel.languageFrom = if (position == 0) "auto" else languagesISO[position - 1]
+            }
         }
 
         VisualizerSettingsWindow(
             view,
-            viewModel,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            viewModel.hasBottomSheet,
+            languagesISO,
+            viewModel.languageFrom,
+            viewModel.languageTo,
+            popUpCallback,
         ).apply {
             isFocusable = true
             elevation = 8f
-            callback = popUpCallback
             showAtLocation(view, Gravity.START or Gravity.BOTTOM, 24, 24)
         }
-
-
     }
 
-    private fun setSplitPageMode(splitPage: Boolean){
+    private fun setSplitPageMode(isEnabled: Boolean){
         val position = viewModel.currentPage
 
-        viewModel.hasBottomSheet = splitPage
+        viewModel.hasBottomSheet = isEnabled
+        pagesAdapter.hasBottomSheet = isEnabled
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
 
-        bottomSheet.visibility = if(splitPage) View.VISIBLE else View.GONE
+        bottomSheet.visibility = if(isEnabled) View.VISIBLE else View.GONE
     }
 
     private fun setBackgroundColor(theme: BrightnessTheme){
@@ -636,6 +638,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             private fun setSplitMode(isSplit: Boolean){
                 pagesAdapter.notifyItemRangeChanged(0, pagesAdapter.itemCount, isSplit)
                 viewModel.isSheetExpanded = isSplit
+                pagesAdapter.isPageSplit = isSplit
             }
         })
 
@@ -658,7 +661,8 @@ class VisualizeTextActivity: AppCompatActivity() {
                     if(duration < 300
                         && abs(event.x - startX) < radius && abs(event.y - startY) < radius) {
                         val index = bottomText.getOffsetForPosition(event.x, event.y)
-                        viewModel.onTranslatedTextClick(viewPager.currentItem, index)
+                        val splitSpans = viewModel.findSelectedSentence(viewPager.currentItem, index) ?: return@setOnTouchListener true
+                        highlightSpans(splitSpans)
                     }
                 }
             }
@@ -685,6 +689,19 @@ class VisualizeTextActivity: AppCompatActivity() {
         val peekHeight = this.dpToPixel(30) + viewPager.height / 2
 
         bottomSheetBehavior.peekHeight = peekHeight
+    }
+
+    private fun highlightSpans(pageSpans: SplitPageSpan) {
+        val text = SpannableString(bottomText.text)
+
+        //Remove previous
+        text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+
+        text.setSpan(BackgroundColorSpan(0x6633B5E5), pageSpans.bottomSpan.start, pageSpans.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        bottomText.setText(text, TextView.BufferType.SPANNABLE)
+
+        // Notify the adapter to set the highlight, send span payload
+        pagesAdapter.notifyItemChanged(viewPager.currentItem, pageSpans.topSpan)
     }
 
     companion object{

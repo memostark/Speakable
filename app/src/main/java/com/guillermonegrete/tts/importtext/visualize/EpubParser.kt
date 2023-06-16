@@ -39,6 +39,7 @@ class EpubParser constructor(
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
     }
 
+    @Throws(IOException::class)
     suspend fun parseBook(
         zipFileReader: ZipFileReader
     ): Book {
