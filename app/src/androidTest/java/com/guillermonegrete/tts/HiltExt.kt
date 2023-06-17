@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts
 
+import android.app.Application
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
@@ -8,6 +9,8 @@ import androidx.core.util.Preconditions
 import androidx.fragment.app.Fragment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import dagger.hilt.android.testing.CustomTestApplication
+import timber.log.Timber
 
 /**
  * launchFragmentInContainer from the androidx.fragment:fragment-testing library
@@ -45,5 +48,16 @@ inline fun <reified T : Fragment> launchFragmentInHiltContainer(
             .commitNow()
 
         fragment.action()
+    }
+}
+
+@CustomTestApplication(TestSpeakableApplication::class)
+interface HiltTestApplication
+
+open class TestSpeakableApplication: Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+        if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())
     }
 }
