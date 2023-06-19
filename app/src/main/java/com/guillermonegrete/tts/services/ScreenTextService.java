@@ -14,8 +14,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -29,8 +27,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.Observer;
+import androidx.preference.PreferenceManager;
 
-import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.Gravity;
@@ -58,8 +56,6 @@ import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customviews.BubbleView;
 import com.guillermonegrete.tts.customviews.TrashView;
 import com.guillermonegrete.tts.R;
-import com.guillermonegrete.tts.main.SettingsFragment;
-import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 
@@ -97,7 +93,6 @@ public class ScreenTextService extends Service {
     static final int STATE_INTERSECTING = 1;
 //    static final int STATE_FINISHING = 2;
 
-    private ClipboardManager clipboard;
     private SharedPreferences sharedPreferences;
     private String languageToPreference;
 
@@ -155,10 +150,8 @@ public class ScreenTextService extends Service {
         windowParams = new WindowManager.LayoutParams();
         mParamsTrash = new WindowManager.LayoutParams();
 
-        clipboard = (ClipboardManager) getApplication().getSystemService(Context.CLIPBOARD_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 //        setTextRecognizer();
-        setClipboardCallback();
     }
 
     private void destroyLayouts() {
@@ -194,8 +187,7 @@ public class ScreenTextService extends Service {
                 playLoadingIcon.setVisibility(View.VISIBLE);
                 playButton.setVisibility(View.INVISIBLE);
 
-            } else if (state instanceof PlayAudioState.Error) {
-                var error = (PlayAudioState.Error) state;
+            } else if (state instanceof PlayAudioState.Error error) {
                 Toast.makeText(this, error.getException().getMessage(), Toast.LENGTH_SHORT).show();
             }
         };
@@ -214,11 +206,9 @@ public class ScreenTextService extends Service {
             binding.loadingTranslate.setVisibility(View.GONE);
             binding.translateIconButton.setVisibility(View.VISIBLE);
 
-            if (result instanceof LoadResult.Success) {
-                var wordResult = (LoadResult.Success<Translation>) result;
+            if (result instanceof LoadResult.Success<Translation> wordResult) {
                 showPopUpTranslation(wordResult.getData());
-            } else if (result instanceof LoadResult.Error) {
-                var errorResult = (LoadResult.Error<Translation>) result;
+            } else if (result instanceof LoadResult.Error<Translation> errorResult) {
                 handleTranslationError(errorResult.getException());
             } else if (result instanceof LoadResult.Loading) {
                 binding.translateIconButton.setVisibility(View.INVISIBLE);
@@ -256,32 +246,6 @@ public class ScreenTextService extends Service {
 
     private boolean isSnipViewVisible(){
         return binding.snipView.getVisibility() == View.VISIBLE;
-    }
-
-    private final ClipboardManager.OnPrimaryClipChangedListener clipboardListener = new ClipboardManager.OnPrimaryClipChangedListener(){
-
-        @Override
-        public void onPrimaryClipChanged() {
-            if (!sharedPreferences.getBoolean(SettingsFragment.PREF_CLIPBOARD_SWITCH, false)) return;
-
-            ClipData clip = clipboard.getPrimaryClip();
-
-            if(clip == null) return;
-            if(clip.getItemCount() <= 0) return;
-
-            final CharSequence pasteData = clip.getItemAt(0).getText();
-
-            if (pasteData == null) return;
-
-            Intent dialogIntent = new Intent(ScreenTextService.this, ProcessTextActivity.class);
-            dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            dialogIntent.putExtra("android.intent.extra.PROCESS_TEXT", pasteData);
-            startActivity(dialogIntent);
-        }
-    };
-
-    private void setClipboardCallback(){
-        if(clipboard != null) clipboard.addPrimaryClipChangedListener(clipboardListener);
     }
 
 
@@ -505,7 +469,7 @@ public class ScreenTextService extends Service {
                         final int state = bubble.getState();
                         trash_layout.onTouchFloatingView(event, windowParams.x, windowParams.y);
                         switch (event.getAction()) {
-                            case MotionEvent.ACTION_DOWN:
+                            case MotionEvent.ACTION_DOWN -> {
                                 bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                                 bubble.mAnimationHandler.sendAnimationMessage(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                                 initialX = windowParams.x;
@@ -514,45 +478,44 @@ public class ScreenTextService extends Service {
                                 initialTouchY = event.getRawY();
                                 //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
                                 return true;
-
-                            case MotionEvent.ACTION_UP:
+                            }
+                            case MotionEvent.ACTION_UP -> {
                                 if (state == STATE_INTERSECTING) {
                                     bubble.setFinishing();
                                     trash_layout.setScaleTrashIcon(false);
                                     destroyLayouts();
                                     windowParams.x = 0;
                                     windowParams.y = 100;
-                                }else animateToEdge();
-
+                                } else animateToEdge();
                                 bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                                 return true;
-
-                            case MotionEvent.ACTION_MOVE:
+                            }
+                            case MotionEvent.ACTION_MOVE -> {
                                 xByTouch = initialX + (int) (event.getRawX() - initialTouchX);
                                 yByTouch = initialY + (int) (event.getRawY() - initialTouchY);
-
                                 final boolean isIntersecting = isIntersectingWithTrash();
                                 final boolean isIntersect = state == STATE_INTERSECTING;
                                 if (isIntersecting) {
-                                    bubble.setIntersecting( (int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
+                                    bubble.setIntersecting((int) trash_layout.getTrashIconCenterX(), (int) trash_layout.getTrashIconCenterY());
                                     int containerWidth = icon_container.getWidth() / 2;
                                     int containerHeight = icon_container.getHeight() / 2;
 
                                     windowParams.x = (int) trash_layout.getTrashIconCenterX() - containerWidth;
                                     windowParams.y = (int) trash_layout.getTrashIconCenterY() - containerHeight;
-                                }else{
+                                } else {
                                     windowParams.x = xByTouch;
                                     windowParams.y = yByTouch;
                                 }
-                                if(isIntersecting && !isIntersect){
+                                if (isIntersecting && !isIntersect) {
                                     bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                                     trash_layout.setScaleTrashIcon(true);
-                                }else if(!isIntersecting && isIntersect){
+                                } else if (!isIntersecting && isIntersect) {
                                     bubble.mAnimationHandler.setState(STATE_NORMAL);
                                     trash_layout.setScaleTrashIcon(false);
                                 }
                                 windowManager.updateViewLayout(binding.getRoot(), windowParams);
                                 return true;
+                            }
                         }
                     }
                     return true;
@@ -626,9 +589,6 @@ public class ScreenTextService extends Service {
         }
         if (trash_layout != null) {
             if(trash_layout.getWindowToken() != null) windowManager.removeView(trash_layout);
-        }
-        if(clipboard != null) {
-            clipboard.removePrimaryClipChangedListener(clipboardListener);
         }
         if(tts!=null) tts.finishTTS();
 
