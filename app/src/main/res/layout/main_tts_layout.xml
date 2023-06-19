@@ -67,20 +67,9 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="@string/startBubble_button_name"
-        app:layout_constraintEnd_toStartOf="@+id/clipboard_btn"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/browse_btn" />
-
-    <Button
-        android:id="@+id/clipboard_btn"
-        style="@style/Widget.MaterialComponents.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="48dp"
-        android:text="@string/clipboard_btn_caption"
-        app:layout_constraintBottom_toBottomOf="@+id/startBubble_btn"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/startBubble_btn"
-        app:layout_constraintTop_toTopOf="@+id/startBubble_btn" />
 
     <FrameLayout
         android:id="@+id/play_icons_container"

@@ -8,8 +8,6 @@ public interface MainTTSContract {
 
         void setEditText(String text);
 
-        void startClipboardService();
-
         void startOverlayService();
 
         void showDetectedLanguage(String language);

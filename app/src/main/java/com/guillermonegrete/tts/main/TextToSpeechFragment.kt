@@ -40,7 +40,6 @@ import com.guillermonegrete.tts.databinding.FragmentMainTtsBinding
 import com.guillermonegrete.tts.services.ScreenTextService
 
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
-import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -144,8 +143,6 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
             startBubbleBtn.setOnClickListener { startOverlayService() }
 
-            clipboardBtn.setOnClickListener { startClipboardService() }
-
             val autoText = getString(R.string.auto_detect)
             pickLanguage.text = autoText
             pickLanguage.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_pickLanguageFragment) }
@@ -212,12 +209,6 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         binding.main.ttsEditText.setText(text)
     }
 
-    override fun startClipboardService() {
-        val intent = Intent(activity, ScreenTextService::class.java)
-        intent.action = NO_FLOATING_ICON_SERVICE
-        activity?.startService(intent)
-    }
-
     override fun startOverlayService() {
         // For versions of android older than Android M (sdk 23), only it was necessary to request the screen capture permission
         // For newer versions it's necessary to first ask for the permission to draw overlays, then ask for the screen capture one
@@ -278,7 +269,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     private fun playTutorial(){
         activity?.let {
 
-            val guideOverlay: TourGuide = TourGuide.create(it){
+            TourGuide.create(it){
                 toolTip {
                     title{"Enable overlay mode"}
                     description { "Shows floating icon that allows you to select text to reproduce" }
@@ -288,22 +279,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                     disableClickThroughHole(true)
                     setOnClickListener { this@create.cleanUp() }
                 }
-            }
-
-            TourGuide.create(it){
-                toolTip {
-                    title{"Enable clipboard mode"}
-                    description { "Shows dialog with translation whenever text is copied to clipboard" }
-                }
-                overlay {
-                    backgroundColor { Color.parseColor("#66FF0000") }
-                    disableClickThroughHole(true)
-                    setOnClickListener {
-                        this@create.cleanUp()
-                        guideOverlay.playOn(binding.main.startBubbleBtn)
-                    }
-                }
-            }.playOn(binding.main.clipboardBtn)
+            }.playOn(binding.main.startBubbleBtn)
         }
     }
 
