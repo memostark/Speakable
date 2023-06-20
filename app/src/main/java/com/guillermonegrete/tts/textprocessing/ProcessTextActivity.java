@@ -10,9 +10,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -42,15 +44,15 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
     }
 
     private String getSelectedText() {
-        Intent intent = getIntent();
+        var intent = getIntent();
         final CharSequence selected_text = intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
         return selected_text.toString();
     }
 
     private void showDialog(){
-        String selectedText = getSelectedText();
+        var selectedText = getSelectedText();
 
-        TextInfoDialog dialog = TextInfoDialog.newInstance(
+        var dialog = TextInfoDialog.newInstance(
                 selectedText,
                 getIntent().getAction(),
                 getIntent().getParcelableExtra("Word")
@@ -60,7 +62,7 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
 
     private void hideSystemUI() {
 
-        View decorView = getWindow().getDecorView();
+        var decorView = getWindow().getDecorView();
         decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE
                         // Set the content to appear under the system bars so that the
@@ -75,14 +77,18 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
 
     /**
      * If SDK is Android M or higher, we need to ask for permission to create the layout to detect the status bar.
-     * More here: https://developer.android.com/reference/android/Manifest.permission.html#SYSTEM_ALERT_WINDOW
-     *
+     * More <a href="https://developer.android.com/reference/android/Manifest.permission.html#SYSTEM_ALERT_WINDOW">here</a>
+     * <p>
      * Because of this we just hide the UI by default if we don't have permission.
      */
     private void hasOverlayDrawPermission(){
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)){
-            hideSystemUI();
-        }else{
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(Settings.canDrawOverlays(this)) {
+                detectStatusBar();
+            } else {
+                requestOverlayPermission();
+            }
+        } else {
             detectStatusBar();
         }
     }
@@ -140,6 +146,18 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
             LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
         }
         return LAYOUT_FLAG;
+    }
+
+    private void requestOverlayPermission() {
+        var requestOverlayPermission = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (Settings.canDrawOverlays(this)) {
+                detectStatusBar();
+            } else {
+                finish();
+            }
+        });
+        var intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+        requestOverlayPermission.launch(intent);
     }
 
     @Override
