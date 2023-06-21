@@ -8,21 +8,20 @@ package com.guillermonegrete.tts.textprocessing;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.PixelFormat;
-import android.graphics.Point;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import android.provider.Settings;
-import android.view.Display;
-import android.view.Gravity;
-import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.Window;
-import android.view.WindowManager;
 
 import com.guillermonegrete.tts.R;
 
@@ -36,21 +35,21 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         setFinishOnTouchOutside(false);
         hasOverlayDrawPermission();
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
     }
 
     private String getSelectedText() {
-        Intent intent = getIntent();
+        var intent = getIntent();
         final CharSequence selected_text = intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
         return selected_text.toString();
     }
 
     private void showDialog(){
-        String selectedText = getSelectedText();
+        var selectedText = getSelectedText();
 
-        TextInfoDialog dialog = TextInfoDialog.newInstance(
+        var dialog = TextInfoDialog.newInstance(
                 selectedText,
                 getIntent().getAction(),
                 getIntent().getParcelableExtra("Word")
@@ -60,86 +59,59 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
 
     private void hideSystemUI() {
 
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
+        var decorView = getWindow().getDecorView();
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        WindowInsetsControllerCompat controllerCompat = new WindowInsetsControllerCompat(getWindow(), decorView);
+        controllerCompat.hide(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.navigationBars());
+        controllerCompat.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     }
 
     /**
      * If SDK is Android M or higher, we need to ask for permission to create the layout to detect the status bar.
-     * More here: https://developer.android.com/reference/android/Manifest.permission.html#SYSTEM_ALERT_WINDOW
-     *
+     * More <a href="https://developer.android.com/reference/android/Manifest.permission.html#SYSTEM_ALERT_WINDOW">here</a>
+     * <p>
      * Because of this we just hide the UI by default if we don't have permission.
      */
     private void hasOverlayDrawPermission(){
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)){
-            hideSystemUI();
-        }else{
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(Settings.canDrawOverlays(this)) {
+                detectStatusBar();
+            } else {
+                requestOverlayPermission();
+            }
+        } else {
             detectStatusBar();
         }
     }
 
     /**
-     * Creates transparent layout that covers the whole screen height, waits until the view has been added.
-     * If view height is the same as the screen height then status bar is hidden.
-     * If bar is hidden we configure the dialog with immersive mode. Taken from: https://stackoverflow.com/a/9195733/10244759
+     * Checks if the status bar and other bars are initially visible.
+     * If the bars are hidden we configure the dialog with immersive mode.
      */
     private void detectStatusBar(){
+        var decorView = getWindow().getDecorView();
+        ViewCompat.setOnApplyWindowInsetsListener(decorView, (v, insets) -> {
 
-        final WindowManager.LayoutParams p = new WindowManager.LayoutParams();
-        p.type = getLayoutParamType();
-        p.gravity = Gravity.END | Gravity.TOP;
-        p.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        p.width = 1;
-        p.height = WindowManager.LayoutParams.MATCH_PARENT;
-        p.format = PixelFormat.TRANSPARENT;
-
-        View helperWnd = new View(this);
-        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-
-        if(wm != null) {
-            Display display = wm.getDefaultDisplay();
-            Point size = new Point();
-            display.getSize(size);
-            int heightScreen = size.y;
-
-            wm.addView(helperWnd, p);
-
-            final ViewTreeObserver vto = helperWnd.getViewTreeObserver();
-            vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    boolean isStatusBarHidden = heightScreen == helperWnd.getHeight();
-                    if(isStatusBarHidden) {
-                        hideSystemUI();
-                    }
-                    showDialog();
-                    wm.removeView(helperWnd);
-                    helperWnd.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                }
-            });
-
-        }else{
+            if (insets.isVisible(WindowInsetsCompat.Type.systemBars())) {
+                hideSystemUI();
+            }
             showDialog();
-        }
+            // Only need the initial state, remove to avoid calling again.
+            ViewCompat.setOnApplyWindowInsetsListener(decorView, null);
+            return insets;
+        });
     }
 
-    private int getLayoutParamType(){
-        int LAYOUT_FLAG;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-        } else {
-            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
-        }
-        return LAYOUT_FLAG;
+    private void requestOverlayPermission() {
+        var requestOverlayPermission = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (Settings.canDrawOverlays(this)) {
+                detectStatusBar();
+            } else {
+                finish();
+            }
+        });
+        var intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+        requestOverlayPermission.launch(intent);
     }
 
     @Override
