@@ -435,6 +435,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                     LoadResult.Loading -> {
                         translatedText.text = ""
+                        translatedText.scrollTo(0, 0)
                         notesText.text = ""
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
