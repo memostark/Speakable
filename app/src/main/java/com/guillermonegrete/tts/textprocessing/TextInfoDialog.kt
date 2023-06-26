@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -32,6 +33,7 @@ import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
+import com.guillermonegrete.tts.utils.makeScrollableInsideScrollView
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.*
@@ -68,7 +70,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private lateinit var playIconsContainer: View
 
     private lateinit var spinnerLanguageFrom: Spinner
-    private lateinit var textFromLanguage: TextView
+    private lateinit var textFromLanguage: AppCompatTextView
 
     @Inject
     internal lateinit var preferences: SharedPreferences
@@ -279,7 +281,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun setSentenceLayout(word: Words) {
+        (bindingSentence.textTts as AppCompatTextView).makeScrollableInsideScrollView()
         bindingSentence.textTranslation.text = word.definition
+        (bindingSentence.textTranslation as AppCompatTextView).makeScrollableInsideScrollView()
         textFromLanguage.text = word.lang
     }
 
