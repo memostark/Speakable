@@ -1,6 +1,9 @@
 package com.guillermonegrete.tts.utils
 
+import android.text.method.ScrollingMovementMethod
+import android.view.MotionEvent
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatTextView
 import com.guillermonegrete.tts.common.models.Span
 
 /**
@@ -52,4 +55,23 @@ fun TextView.getSelectedText(): CharSequence? {
 
         text.subSequence(min, max)
     } else null
+}
+
+/**
+ * If this [AppCompatTextView] is placed inside ScrollView then we allow it get scrolled inside
+ * that ScrollView
+ */
+fun AppCompatTextView.makeScrollableInsideScrollView() {
+    movementMethod = ScrollingMovementMethod()
+    setOnTouchListener { v, event ->
+        v.parent.requestDisallowInterceptTouchEvent(true)
+        when (event.action and MotionEvent.ACTION_MASK) {
+            MotionEvent.ACTION_UP -> {
+                v.parent.requestDisallowInterceptTouchEvent(false)
+                // It is required to call performClick() in onTouch event.
+                performClick()
+            }
+        }
+        false
+    }
 }
