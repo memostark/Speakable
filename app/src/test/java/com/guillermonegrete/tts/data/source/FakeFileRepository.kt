@@ -28,8 +28,9 @@ class FakeFileRepository: FileRepository {
         return filesServiceData.filter { it.value.uri == uri }.values.firstOrNull()
     }
 
-    override suspend fun saveFile(file: BookFile) {
+    override suspend fun saveFile(file: BookFile): Long {
         filesServiceData[file.id] = file
+        return file.id.toLong()
     }
 
     override suspend fun deleteFile(file: BookFile) {

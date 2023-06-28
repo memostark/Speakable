@@ -6,6 +6,8 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.visualize.io.FakeEpubFileManager
+import com.guillermonegrete.tts.utils.deleteAllFolder
+import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -39,6 +41,8 @@ class FilesViewModelTest {
         fileRepository.addFiles(*files.toTypedArray())
 
         viewModel = FilesViewModel(fileRepository, FakeEpubFileManager())
+
+        mockkStatic(::deleteAllFolder)
     }
 
     @Test
