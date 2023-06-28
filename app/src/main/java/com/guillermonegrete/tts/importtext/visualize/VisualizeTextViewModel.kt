@@ -187,6 +187,7 @@ class VisualizeTextViewModel @Inject constructor(
     private suspend fun initPageSplit(isEpub: Boolean = false) {
         if(isEpub){
             databaseBookFile = getBookFile()
+            if (databaseBookFile == null) databaseBookFile = createNewBook()
             val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
 
             // Create files folder and save image cover
@@ -315,14 +316,13 @@ class VisualizeTextViewModel @Inject constructor(
         // This operation is intended to be synchronous
         // TODO: Change to async, with context call or work manager.
         runBlocking{
-            val progress = calculateProgress()
 
             val charPos = getCharPos()
             databaseBookFile?.apply {
                 lastChar = charPos
                 chapter = currentChapter
                 lastRead = date
-                percentageDone = progress
+                percentageDone = calculateProgress()
                 if(folderPath.isBlank()) folderPath = path
             }
 
@@ -342,25 +342,42 @@ class VisualizeTextViewModel @Inject constructor(
         }
     }
 
-    private fun calculateProgress(): Int{
-        var percentage = 0
+    private suspend fun createNewBook(): BookFile? {
+        val uri = fileUri ?: return null
+        val book = currentBook ?: return null
 
-        val book = currentBook ?: return percentage
+        val charPos = getCharPos()
+        val title = book.metadata.title
+        val bookFile = BookFile(
+            uri,
+            title,
+            fileType,
+            folderPath = uuid,
+            lastChar = charPos,
+            percentageDone =  calculateProgress(),
+            lastRead =  Calendar.getInstance()
+        )
+        val id = fileRepository.saveFile(bookFile)
+        bookFile.id = id.toInt()
+        return bookFile
+    }
+
+    private fun calculateProgress(): Int {
+
+        val book = currentBook ?: return 0
         var sumPreviousChars = 0
 
         // Sum of previous spine items (chapters)
-        for (i in 0 until currentChapter){
+        for (i in 0 until currentChapter) {
             sumPreviousChars += book.spine[i].charCount
         }
 
         // Sum of previous and current pages
-        for(i in 0..currentPage){
+        for (i in 0..currentPage) {
             sumPreviousChars += currentPages[i].length
         }
 
-        percentage = 100 * sumPreviousChars / book.totalChars
-
-        return percentage
+        return 100 * sumPreviousChars / book.totalChars
     }
 
     /**

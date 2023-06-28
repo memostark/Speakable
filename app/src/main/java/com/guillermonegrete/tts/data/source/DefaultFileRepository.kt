@@ -31,8 +31,8 @@ class DefaultFileRepository @Inject constructor(private val fileDAO: FileDAO): F
         }
     }
 
-    override suspend fun saveFile(file: BookFile) {
-        withContext(Dispatchers.IO){
+    override suspend fun saveFile(file: BookFile): Long {
+        return withContext(Dispatchers.IO){
             fileDAO.upsert(file)
         }
     }
