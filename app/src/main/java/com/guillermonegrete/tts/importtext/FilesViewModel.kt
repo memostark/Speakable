@@ -5,9 +5,11 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
+import com.guillermonegrete.tts.utils.deleteAllFolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,6 +36,8 @@ class FilesViewModel @Inject constructor(
     fun deleteFile(file: BookFile) {
         viewModelScope.launch {
             fileRepository.deleteFile(file)
+            val folder = File(filesPath, file.folderPath)
+            deleteAllFolder(folder)
         }
     }
 }
