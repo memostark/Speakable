@@ -463,7 +463,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addWordNoteBtn.isGone = !paragraphAdapter.isPageSaved
                         }
 
-                        //
                         addWordNoteBtn.setOnClickListener {
                             paragraphAdapter ?: return@setOnClickListener
                             val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
@@ -482,7 +481,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     LoadResult.Loading -> {
                         wordTranslation.text = ""
                         moreInfoWordBtn.isInvisible = true
-                        addNoteBtn.isInvisible = true
+                        addWordNoteBtn.isInvisible = true
                         false
                     }
                 }
