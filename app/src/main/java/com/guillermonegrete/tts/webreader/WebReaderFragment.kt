@@ -394,6 +394,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         adapter?.unselectWord()
+                        setWordSheetViews(false)
                         binding.composeBar.isVisible = true
                     }
                 }
@@ -441,8 +442,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
                         addNoteBtn.isVisible = false
-                        // When showing the sheet, the word views are hidden by default
-                        setWordSheetViews(false)
                         false
                     }
                 }
