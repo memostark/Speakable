@@ -213,5 +213,8 @@
     <string name="delete_page_dialog_title">Deleting page</string>
     <string name="new_note">New note</string>
     <string name="add_note_placeholder">Add a new note</string>
+    <string name="add_note_for_word">Add note for word</string>
+    <string name="more_information">More information for text</string>
+    <string name="more_information_word">More information for word</string>
 
 </resources>

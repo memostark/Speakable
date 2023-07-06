@@ -115,7 +115,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         // If spans are equal this note was created using the add note button in the sheet
                         // Hide button to avoid adding more notes in the same place
                         val wordSpan = adapter?.getSelectedWordSpan() ?: return@observe
-                        if(wordSpan == span) binding.transSheet.addNoteBtn.isVisible = false
+                        if(wordSpan == span) {
+                            binding.transSheet.addNoteBtn.isVisible = false
+                            binding.transSheet.addWordNoteBtn.isVisible = false
+                        }
                     }
                     is ModifiedNote.Delete -> adapter?.deleteNote(result.noteId)
                 }
@@ -295,11 +298,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
 
                 launch {
-                    repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        paragraphAdapter.addNoteClicked.collect {
-                            paragraphTextSelection = it
-                            addNoteDialogVisible.value = true
-                        }
+                    paragraphAdapter.addNoteClicked.collect {
+                        paragraphTextSelection = it
+                        addNoteDialogVisible.value = true
                     }
                 }
             }
@@ -393,6 +394,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         adapter?.unselectWord()
+                        setWordSheetViews(false)
                         binding.composeBar.isVisible = true
                     }
                 }
@@ -440,8 +442,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
                         addNoteBtn.isVisible = false
-                        // When showing the sheet, the word views are hidden by default
-                        setWordSheetViews(false)
                         false
                     }
                 }
@@ -455,6 +455,20 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         moreInfoWordBtn.setOnClickListener {
                             viewModel.getLinksForWord(word.word, word.lang)
                         }
+
+                        val paragraphAdapter = adapter
+                        if (paragraphAdapter != null) {
+                            selectedTextPos = paragraphAdapter.textSelectionPos
+                            addWordNoteBtn.isGone = !paragraphAdapter.isPageSaved
+                        }
+
+                        addWordNoteBtn.setOnClickListener {
+                            paragraphAdapter ?: return@setOnClickListener
+                            val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
+                            paragraphAdapter.textSelectionPos = paragraphAdapter.selectedSentence.paragraphIndex
+                            paragraphTextSelection = ParagraphAdapter.NoteItem(wordTranslation.text.toString(), span, 0, 0)
+                            addNoteDialogVisible.value = true
+                        }
                         setWordSheetViews(true)
                         true
                     }
@@ -466,6 +480,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     LoadResult.Loading -> {
                         wordTranslation.text = ""
                         moreInfoWordBtn.isInvisible = true
+                        addWordNoteBtn.isInvisible = true
                         false
                     }
                 }
@@ -474,9 +489,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             addNoteBtn.setOnClickListener {
                 val paragraphAdapter = adapter ?: return@setOnClickListener
                 val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
-                val textView = binding.transSheet.translatedText
                 paragraphAdapter.textSelectionPos = selectedTextPos
-                paragraphTextSelection = ParagraphAdapter.NoteItem(textView.text.toString(), span, 0, 0)
+                paragraphTextSelection = ParagraphAdapter.NoteItem(translatedText.text.toString(), span, 0, 0)
                 addNoteDialogVisible.value = true
             }
         }
@@ -536,9 +550,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun setWordSheetViews(isVisible: Boolean){
-        val sheet = binding.transSheet
-        sheet.topBorderWordView.isVisible = isVisible
-        sheet.wordTranslation.isVisible = isVisible
-        sheet.moreInfoWordBtn.isVisible = isVisible
+        with(binding.transSheet) {
+            topBorderWordView.isVisible = isVisible
+            wordTranslation.isVisible = isVisible
+            addWordNoteBtn.isVisible = isVisible
+            moreInfoWordBtn.isVisible = isVisible
+        }
     }
 }

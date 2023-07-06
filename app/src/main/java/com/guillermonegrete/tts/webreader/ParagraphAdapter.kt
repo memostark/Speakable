@@ -59,7 +59,7 @@ class ParagraphAdapter(
      */
     private var selectedWordPos = -1
     /**
-     * Index of the paragraph that has selected text used for creating/updating a note.
+     * Index of the paragraph that has the selected text used for creating/updating a note.
      */
     var textSelectionPos = -1
 
@@ -203,7 +203,7 @@ class ParagraphAdapter(
                 val wordSpan = binding.paragraph.findWordForRightHanded(offset)
                 val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
 
-                // If a highlighted sentence was tapped just unselect it and don't select a word
+                // If a highlighted sentence was tapped, notify sentence clicked to observers
                 if(item.selectedIndex != -1) {
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
@@ -450,6 +450,7 @@ class ParagraphAdapter(
             val item = items[index]
             item.selectedWord = null
             notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
+            selectedSentence.wordSelected = false
         }
 
         textSelectionPos = -1
@@ -494,6 +495,13 @@ class ParagraphAdapter(
     fun getSelectedWordSpan(): Span? {
         if (selectedWordPos != -1) {
             val item = items[selectedWordPos]
+            val span = item.selectedWord ?: return null
+            return item.toAbsolute(span)
+        }
+
+        if(selectedSentence.wordSelected) {
+            val index = selectedSentence.paragraphIndex
+            val item = items[index]
             val span = item.selectedWord ?: return null
             return item.toAbsolute(span)
         }
