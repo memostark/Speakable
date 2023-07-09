@@ -10,10 +10,10 @@ You can enter text or a link to a webpage in the main screen, multiple action ca
 
 <img src="readme_images/main_screen.jpg" alt="drawing" width="350"/>
 
-## Clipboard mode
-When you enable clipboard mode, you can use various features outside the app. When you highlight text and copy to the clipboard a dialog will show the Wiktionary definition (if available), the translation and links to other resources.
+## Get text information
+You can use various features outside the app. When you highlight text, the shown toolbar has a TTS option that will show the Wiktionary definition (if available), the translation, and links to other resources.
 
-<img src="readme_images/clipboard-mode-gif.gif" alt="drawing" width="350"/><br/>
+<img src="readme_images/highlight-text.gif" alt="drawing" width="350"/><br/>
 
 <p float="left">
 <img src="readme_images/process_text_dictionary.png" alt="drawing" width="350"/>
