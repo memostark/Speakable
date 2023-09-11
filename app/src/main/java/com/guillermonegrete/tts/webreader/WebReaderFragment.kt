@@ -298,9 +298,27 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
 
                 launch {
-                    paragraphAdapter.addNoteClicked.collect {
-                        paragraphTextSelection = it
-                        addNoteDialogVisible.value = true
+                    paragraphAdapter.addNoteClicked.collect { note ->
+                        paragraphTextSelection = note
+                        if (note.id == 0L) {
+                            // zero means new note, show dialog to add note
+                            addNoteDialogVisible.value = true
+                        } else {
+                            with(binding.transSheet) {
+                                val translateSheetBehavior = BottomSheetBehavior.from(root)
+                                translatedText.text = note.text
+                                addNoteBtn.isVisible = true
+                                addNoteBtn.setOnClickListener {
+                                    addNoteDialogVisible.value = true
+                                }
+
+                                moreInfoBtn.isVisible = true
+                                moreInfoBtn.setOnClickListener {
+                                    viewModel.getLinksForWord(note.text)
+                                }
+                                translateSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                            }
+                        }
                     }
                 }
             }

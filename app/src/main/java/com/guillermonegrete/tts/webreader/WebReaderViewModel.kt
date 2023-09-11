@@ -311,6 +311,11 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
+    fun getLinksForWord(word: String) {
+        val lang = cacheWebLink?.language ?: return
+        getLinksForWord(word, lang)
+    }
+
     fun setLanguage(langShort: String?) {
         cacheWebLink?.language = langShort
     }
