@@ -70,7 +70,7 @@ class ParagraphAdapter(
     )
     val sentenceClicked = _sentenceClicked.asSharedFlow()
 
-    private val _addNoteClicked = MutableSharedFlow<NoteItem>(
+    private val _addNoteClicked = MutableSharedFlow<EditNote>(
         replay = 0,
         extraBufferCapacity = 1,
         BufferOverflow.DROP_OLDEST
@@ -195,8 +195,9 @@ class ParagraphAdapter(
                     textSelectionPos = adapterPosition
 
                     val span = clickedNote.span
+                    val text = item.original.substring(span.start, span.end)
                     val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
-                    _addNoteClicked.tryEmit(NoteItem(clickedNote.text, absoluteSpan, clickedNote.color, clickedNote.id))
+                    _addNoteClicked.tryEmit(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, clickedNote.id))
                     return true
                 }
 
@@ -374,7 +375,8 @@ class ParagraphAdapter(
                         val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
                         textSelectionPos = adapterPosition
                         // New note so the text and color are empty and id is zero
-                        _addNoteClicked.tryEmit(NoteItem("", span, 0, 0))
+                        val text = highlightedTextView?.getSelectedText().toString()
+                        _addNoteClicked.tryEmit(EditNote(text, "", span, 0, 0))
                         mode?.finish()
                         true
                     }
@@ -672,6 +674,14 @@ class ParagraphAdapter(
 
     data class NoteItem(
         val text: String,
+        val span: Span,
+        @ColorInt val color: Int,
+        val id: Long
+    )
+
+    data class EditNote(
+        val text: String,
+        val noteText: String,
         val span: Span,
         @ColorInt val color: Int,
         val id: Long

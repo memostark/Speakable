@@ -55,7 +55,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var pageText = ""
 
-    private var paragraphTextSelection: ParagraphAdapter.NoteItem? = null
+    private var paragraphTextSelection: ParagraphAdapter.EditNote? = null
 
     override fun onPause() {
         super.onPause()
@@ -312,10 +312,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     addNoteDialogVisible.value = true
                                 }
 
-                                moreInfoBtn.isVisible = true
-                                moreInfoBtn.setOnClickListener {
-                                    viewModel.getLinksForWord(note.text)
+                                val text = adapter?.getHighlightedText()
+                                if(text != null) {
+                                    val isWord = text.split(" ").size == 1
+                                    moreInfoBtn.isVisible = isWord
+                                    moreInfoBtn.setOnClickListener {
+                                        viewModel.getLinksForWord(text.toString())
+                                    }
                                 }
+
                                 translateSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                             }
                         }
@@ -484,7 +489,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             paragraphAdapter ?: return@setOnClickListener
                             val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
                             paragraphAdapter.textSelectionPos = paragraphAdapter.selectedSentence.paragraphIndex
-                            paragraphTextSelection = ParagraphAdapter.NoteItem(wordTranslation.text.toString(), span, 0, 0)
+                            paragraphTextSelection = ParagraphAdapter.EditNote("", wordTranslation.text.toString(), span, 0, 0)
                             addNoteDialogVisible.value = true
                         }
                         setWordSheetViews(true)
@@ -508,7 +513,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val paragraphAdapter = adapter ?: return@setOnClickListener
                 val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
                 paragraphAdapter.textSelectionPos = selectedTextPos
-                paragraphTextSelection = ParagraphAdapter.NoteItem(translatedText.text.toString(), span, 0, 0)
+                paragraphTextSelection = ParagraphAdapter.EditNote("", translatedText.text.toString(), span, 0, 0)
                 addNoteDialogVisible.value = true
             }
         }
