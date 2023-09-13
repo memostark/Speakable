@@ -625,7 +625,6 @@ class ParagraphAdapter(
         val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
         paragraphItem.notes.add(NoteItem(result.text, span, Color.parseColor(result.colorHex), noteId))
         notifyItemChanged(pos)
-        textSelectionPos = -1
     }
 
     fun deleteNote(noteId: Long) {
@@ -633,7 +632,6 @@ class ParagraphAdapter(
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
         notifyItemChanged(pos)
-        textSelectionPos = -1
     }
 
     fun textSelectionRemoved() {
