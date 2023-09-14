@@ -111,12 +111,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         val note = result.note
                         val dialogResult = AddNoteResult(note.text, note.color)
                         val span = Span(note.position, note.position + note.length)
-                        adapter?.updateNote(span, note.id, dialogResult)
+                        val paragraphAdapter = adapter ?: return@observe
+                        paragraphAdapter.updateNote(span, note.id, dialogResult)
 
                         if(isSheetVisible()) {
-                            sheet.translatedText.text = note.text
-                            sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-                            noteInfo = ParagraphAdapter.NoteItem(note.text, span, Color.parseColor(note.color), note.id)
+                            if(paragraphAdapter.selectedSentence.wordSelected){
+                                sheet.notesText.text = note.text
+                                sheet.addWordNoteBtn.isVisible = false
+                            } else {
+                                sheet.translatedText.text = note.text
+                                sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+                                noteInfo = ParagraphAdapter.NoteItem(note.text, span, Color.parseColor(note.color), note.id)
+                            }
                         }
                     }
                     is ModifiedNote.Delete -> {
@@ -306,21 +312,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             // zero means new note, show dialog to add note
                             addNoteDialogVisible.value = true
                         } else {
-                            with(binding.transSheet) {
-                                translatedText.text = note.noteText
-                                addNoteBtn.isVisible = true
-                                addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-
-                                val text = note.text
-                                val isWord = text.split(" ").size == 1
-                                moreInfoBtn.isVisible = isWord
-                                moreInfoBtn.setOnClickListener {
-                                    viewModel.getLinksForWord(text)
-                                }
-
-                                val translateSheetBehavior = BottomSheetBehavior.from(root)
-                                translateSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                            }
+                            showSheetWithNote(paragraphAdapter, note)
                         }
                     }
                 }
@@ -539,6 +531,41 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         if (text != null) {
             viewModel.translateText(text.toString())
         }
+    }
+
+    private fun showSheetWithNote(paragraphAdapter: ParagraphAdapter, note: ParagraphAdapter.EditNote) {
+        with(binding.transSheet) {
+            val text = note.text
+            val isWord = text.split(" ").size == 1
+            // Check if sheet is visible and if the note is within the sentence
+            if(isSheetVisible() && paragraphAdapter.isInsideSelectedSentence(note.span)){
+                // Update the word text and buttons
+                setWordSheetViews(true)
+
+                wordTranslation.text = note.noteText
+                addWordNoteBtn.isVisible = false
+                moreInfoWordBtn.isVisible = isWord
+                moreInfoWordBtn.setOnClickListener {
+                    viewModel.getLinksForWord(note.text)
+                }
+            } else {
+                // Otherwise show the regular sheet
+                translatedText.text = note.noteText
+                addNoteBtn.isVisible = true
+                addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+
+                moreInfoBtn.isVisible = isWord
+                moreInfoBtn.setOnClickListener {
+                    viewModel.getLinksForWord(text)
+                }
+                setWordSheetViews(false)
+
+                val translateSheetBehavior = BottomSheetBehavior.from(root)
+                translateSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                paragraphAdapter.unselectSentence()
+            }
+        }
+        paragraphAdapter.unselectWord()
     }
 
     private fun setBackButtonNav() {

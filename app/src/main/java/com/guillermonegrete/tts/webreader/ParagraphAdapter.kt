@@ -510,6 +510,26 @@ class ParagraphAdapter(
         return null
     }
 
+    /**
+     * Check if the given [span] is within the selected sentence.
+     * If no sentence is selected false is returned.
+     *
+     * Assumes [span] is absolute.
+     */
+    fun isInsideSelectedSentence(span: Span): Boolean {
+        val paragraphIndex = selectedSentence.paragraphIndex
+        if(paragraphIndex != -1) {
+            val item = items[paragraphIndex]
+            val lSpan= span.toLocal(item)
+            val index = selectedSentence.sentenceIndex
+            if(index != -1) {
+                val sentenceSpan = item.indexes[index]
+                return lSpan.start >= sentenceSpan.start && lSpan.end <= sentenceSpan.end
+            }
+        }
+        return false
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     inner class ExpandedViewHolder(val binding: ParagraphExpandedItemBinding): RecyclerView.ViewHolder(binding.root){
 
@@ -693,6 +713,10 @@ class ParagraphAdapter(
          */
         var wordSelected: Boolean = false
     )
+
+    private fun Span.toLocal(paragraphItem: ParagraphItem): Span {
+        return Span(start - paragraphItem.firstCharIndex, end - paragraphItem.firstCharIndex)
+    }
 
     companion object {
         private const val SWIPE_THRESHOLD = 0.8
