@@ -444,6 +444,7 @@ class ParagraphAdapter(
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, -1)
             selectedWordPos = -1
+            textSelectionPos = -1
         }
 
         // unselect word that is within a sentence
@@ -453,9 +454,8 @@ class ParagraphAdapter(
             item.selectedWord = null
             notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
             selectedSentence.wordSelected = false
+            textSelectionPos = -1
         }
-
-        textSelectionPos = -1
     }
 
     fun nextSentence(){
@@ -639,7 +639,8 @@ class ParagraphAdapter(
     }
 
     fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {
-        val pos = textSelectionPos
+        val pos = items.indexOfFirst { it.firstCharIndex + it.original.length > selection.start }
+        if (pos == -1) return
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
         val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
