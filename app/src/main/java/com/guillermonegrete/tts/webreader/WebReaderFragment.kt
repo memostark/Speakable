@@ -55,7 +55,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var pageText = ""
 
+    /**
+     * Contains information used to update/create/delete a note.
+     *
+     * This information is the one displayed in the bottom sheet
+     */
     private var noteInfo: ParagraphAdapter.NoteItem? = null
+
+    /**
+     * The data for creating a note using the text highlight method.
+     *
+     * This data is independent from the one displayed in the bottom sheet
+     */
     private var highlightNote: ParagraphAdapter.NoteItem? = null
 
     override fun onPause() {
@@ -192,7 +203,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             onDismiss = {
                                 addNoteVisible = false
                                 highlightNote = null
-                                adapter?.textSelectionRemoved()
                             },
                             onDelete = {
                                 if (highlightNote != null) highlightNote = null
@@ -482,7 +492,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         addWordNoteBtn.setOnClickListener {
                             paragraphAdapter ?: return@setOnClickListener
                             val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
-                            paragraphAdapter.textSelectionPos = paragraphAdapter.selectedSentence.paragraphIndex
                             noteInfo = ParagraphAdapter.NoteItem(wordTranslation.text.toString(), span, 0, 0)
                             addNoteDialogVisible.value = true
                         }

@@ -58,10 +58,6 @@ class ParagraphAdapter(
      * The position of the paragraph in the list that contains the selected word.
      */
     private var selectedWordPos = -1
-    /**
-     * Index of the paragraph that has the selected text used for creating/updating a note.
-     */
-    var textSelectionPos = -1
 
     private val _sentenceClicked = MutableSharedFlow<String>(
         replay = 0,
@@ -192,7 +188,6 @@ class ParagraphAdapter(
                 val item = items[adapterPosition]
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (clickedNote != null) {
-                    textSelectionPos = adapterPosition
 
                     val span = clickedNote.span
                     val text = item.original.substring(span.start, span.end)
@@ -223,7 +218,6 @@ class ParagraphAdapter(
                     // Select new word
                     item.selectedWord = wordSpan
                     selectedWordPos = adapterPosition
-                    textSelectionPos = adapterPosition
                     notifyItemChanged(adapterPosition, PAYLOAD_WORD)
                 }
                 return super.onSingleTapConfirmed(e)
@@ -373,7 +367,6 @@ class ParagraphAdapter(
                 return when(item.itemId) {
                     R.id.add_new_note_action -> {
                         val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
-                        textSelectionPos = adapterPosition
                         // New note so the text and color are empty and id is zero
                         val text = highlightedTextView?.getSelectedText().toString()
                         _addNoteClicked.tryEmit(EditNote(text, "", span, 0, 0))
@@ -444,7 +437,6 @@ class ParagraphAdapter(
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, -1)
             selectedWordPos = -1
-            textSelectionPos = -1
         }
 
         // unselect word that is within a sentence
@@ -454,7 +446,6 @@ class ParagraphAdapter(
             item.selectedWord = null
             notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
             selectedSentence.wordSelected = false
-            textSelectionPos = -1
         }
     }
 
@@ -649,14 +640,14 @@ class ParagraphAdapter(
     }
 
     fun deleteNote(noteId: Long) {
-        val pos = textSelectionPos
+        val pos = items.indexOfFirst {
+            val note = it.notes.firstOrNull { note -> note.id == noteId }
+            note != null
+        }
+        if (pos == -1) return
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
         notifyItemChanged(pos)
-    }
-
-    fun textSelectionRemoved() {
-        textSelectionPos = -1
     }
 
     fun updateWordInSentence() {
