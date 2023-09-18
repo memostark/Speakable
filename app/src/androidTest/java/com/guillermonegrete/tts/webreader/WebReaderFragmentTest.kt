@@ -29,6 +29,8 @@ import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import com.guillermonegrete.tts.utils.atPosition
 import com.guillermonegrete.tts.utils.clickIn
 import com.guillermonegrete.tts.utils.withBackgroundSpan
+import com.guillermonegrete.tts.webreader.db.Note
+import com.guillermonegrete.tts.webreader.db.NoteDAO
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -73,6 +75,9 @@ class WebReaderFragmentTest{
     @Inject
     lateinit var linkDAO: WebLinkDAO
 
+    @Inject
+    lateinit var noteDAO: NoteDAO
+
     @Before
     fun setup(){
         server = MockWebServer()
@@ -112,7 +117,6 @@ class WebReaderFragmentTest{
         // Click on the (0, 0) position to ensure the first word is clicked
         clickParagraphList(0, clickIn(0, 0))
 
-        Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
         composeTestRule.onNodeWithTag("web_reader_bar").assertIsNotDisplayed()
 
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
@@ -211,6 +215,42 @@ class WebReaderFragmentTest{
             .check(matches(atPosition(0, withBackgroundSpan(color, 0 , 2))))
     }
 
+    @Test
+    fun given_saved_note_when_edited_sheet_updated() {
+        // Initial data with saved link and note at the start of the 1st paragraph
+        val url = server.url("/").toString()
+        val uuid = UUID.fromString(default_uuid)
+        val link = WebLink(url, uuid = uuid, id = 2)
+        val note = Note("note text", 37, 5, YellowNoteHighlight.toHex(), link.id)
+        runBlocking {
+            linkDAO.upsert(link)
+            noteDAO.upsert(note)
+        }
+        createXmlFile()
+
+        val args = bundleOf("link" to url)
+        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+
+        // Click note and open note dialog
+        clickParagraphList(1, clickIn(0, 0))
+        onView(withId(R.id.add_note_btn)).perform(click())
+
+        // Modify the text, color and save
+        composeTestRule.onNodeWithTag(NOTE_TEXT_TAG).performTextInput(" new")
+        val colorBtnPos = 1
+        composeTestRule.onNodeWithTag(colorBtnPos.toString()).performClick()
+        composeTestRule.onNodeWithTag(ACCEPT_BTN_TAG).performClick()
+
+        // Verify bottom sheet note text changed
+        onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
+        onView(withId(R.id.translated_text)).check(matches(withText("note text new")))
+
+        // Verify highlight color for the note changed
+        val color = COLORS[colorBtnPos].toArgb()
+        onView(withId(R.id.paragraphs_list))
+            .check(matches(atPosition(1, withBackgroundSpan(color, 0 , 5))))
+    }
+
     private fun setPageResponse() {
         val body = InstrumentationRegistry.getInstrumentation()
             .context.assets.open("test_page.html").bufferedReader().use { it.readText() }
@@ -251,10 +291,11 @@ class WebReaderFragmentTest{
             .perform(
                 RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(position, action)
             )
+        Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
     }
 
     /**
-     * Create an local copy of the page using the default folder location
+     * Create a local copy of the page using the default folder location
      */
     private fun createXmlFile() {
         val folder = File(externalFilesPath, default_uuid)
