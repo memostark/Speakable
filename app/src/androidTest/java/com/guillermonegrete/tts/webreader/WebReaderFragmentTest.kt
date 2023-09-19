@@ -28,6 +28,7 @@ import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import com.guillermonegrete.tts.utils.atPosition
 import com.guillermonegrete.tts.utils.clickIn
+import com.guillermonegrete.tts.utils.hasNoBackgroundSpan
 import com.guillermonegrete.tts.utils.withBackgroundSpan
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
@@ -115,7 +116,7 @@ class WebReaderFragmentTest{
 
         // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
         // Click on the (0, 0) position to ensure the first word is clicked
-        clickParagraphList(0, clickIn(0, 0))
+        tapParagraphItemStart(0)
 
         composeTestRule.onNodeWithTag("web_reader_bar").assertIsNotDisplayed()
 
@@ -167,7 +168,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
         // Swipe paragraph and verify it expanded
-        clickParagraphList(0, swipeRight())
+        clickParagraphList(1, swipeRight())
 
         onView(withId(R.id.toggle_paragraph)).check(matches(isDisplayed()))
 
@@ -185,27 +186,17 @@ class WebReaderFragmentTest{
 
     @Test
     fun given_local_page_when_word_tapped_and_noted_button_clicked_then_note_saved() {
-        val url = server.url("/").toString()
-        val uuid = UUID.fromString(default_uuid)
-        val link = WebLink(url, uuid = uuid)
-        runBlocking {
-            linkDAO.upsert(link)
-        }
+        setLocalPage()
 
-        createXmlFile()
-
-        val args = bundleOf("link" to url)
+        val args = bundleOf("link" to server.url("/").toString())
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
 
         val response = GoogleTranslateResponse(listOf(Sentence("My", "Mi")), "es")
         val jsonResponse = responseAdapter.toJson(response)
         server.enqueue(MockResponse().setBody(jsonResponse))
 
-        // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
-        // Click on the (0, 0) position to ensure the first word is clicked
-        clickParagraphList(0, clickIn(0, 0))
+        tapParagraphItemStart(0)
 
-        Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
         onView(withId(R.id.add_note_btn)).perform(click())
 
         composeTestRule.onNodeWithText("Save").performClick()
@@ -218,21 +209,17 @@ class WebReaderFragmentTest{
     @Test
     fun given_saved_note_when_edited_sheet_updated() {
         // Initial data with saved link and note at the start of the 1st paragraph
-        val url = server.url("/").toString()
-        val uuid = UUID.fromString(default_uuid)
-        val link = WebLink(url, uuid = uuid, id = 2)
-        val note = Note("note text", 37, 5, YellowNoteHighlight.toHex(), link.id)
+        setLocalPage()
+        val note = Note("note text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
         runBlocking {
-            linkDAO.upsert(link)
             noteDAO.upsert(note)
         }
-        createXmlFile()
 
-        val args = bundleOf("link" to url)
+        val args = bundleOf("link" to server.url("/").toString())
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
 
         // Click note and open note dialog
-        clickParagraphList(1, clickIn(0, 0))
+        tapParagraphItemStart(1)
         onView(withId(R.id.add_note_btn)).perform(click())
 
         // Modify the text, color and save
@@ -251,10 +238,45 @@ class WebReaderFragmentTest{
             .check(matches(atPosition(1, withBackgroundSpan(color, 0 , 5))))
     }
 
+    @Test
+    fun given_saved_note_when_delete_sheet_updated() {
+        // Initial data with saved link and note at the start of the 1st paragraph
+        setLocalPage()
+        val note = Note("note text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
+        runBlocking {
+            noteDAO.upsert(note)
+        }
+
+        val args = bundleOf("link" to server.url("/").toString())
+        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+
+        // Click note and open note dialog
+        tapParagraphItemStart(1)
+        onView(withId(R.id.add_note_btn)).perform(click())
+
+        // Delete note
+        composeTestRule.onNodeWithTag(DELETE_BTN_TAG).performClick()
+
+        // Verify note removed
+        onView(withId(R.id.paragraphs_list))
+            .check(matches(atPosition(1, hasNoBackgroundSpan())))
+    }
+
     private fun setPageResponse() {
         val body = InstrumentationRegistry.getInstrumentation()
             .context.assets.open("test_page.html").bufferedReader().use { it.readText() }
         server.enqueue(MockResponse().setBody(body))
+    }
+
+    private fun setLocalPage() {
+        val url = server.url("/").toString()
+        val uuid = UUID.fromString(default_uuid)
+        val link = WebLink(url, uuid = uuid, id = DEFAULT_LINK_ID)
+        runBlocking {
+            linkDAO.upsert(link)
+        }
+
+        createXmlFile()
     }
 
     private fun translateSelectionAndReturn(expectedTranslation: String){
@@ -290,6 +312,15 @@ class WebReaderFragmentTest{
         onView(withId(R.id.paragraphs_list))
             .perform(
                 RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(position, action)
+            )
+    }
+
+    private fun tapParagraphItemStart(itemPos: Int) {
+        // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
+        // Click on the (0, 0) position to ensure the first word is clicked
+        onView(withId(R.id.paragraphs_list))
+            .perform(
+                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(itemPos, clickIn(0, 0))
             )
         Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
     }
@@ -331,5 +362,6 @@ class WebReaderFragmentTest{
         val paragraphTranslationResponse = GoogleTranslateResponse(listOf(Sentence(FIRST_PARAGRAPH_TRANS, FIRST_PARAGRAPH)), "es")
 
         const val default_uuid = "7e57d235-3553-4a57-bd35-37af9d5b1ffb"
+        const val DEFAULT_LINK_ID = 2
     }
 }

@@ -214,6 +214,7 @@ fun DeletePageDialog(
 
 const val NOTE_TEXT_TAG = "note text field"
 const val ACCEPT_BTN_TAG = "add note accept btn"
+const val DELETE_BTN_TAG = "add note delete btn"
 
 val COLORS = listOf(YellowNoteHighlight, RedNoteHighlight, GreenNoteHighlight, BlueNoteHighlight)
 
@@ -283,7 +284,10 @@ fun AddNoteDialog(
                 }
 
                 Row {
-                    Button(onClick = { onDelete() }, Modifier.weight(1f)) {
+                    Button(onClick = { onDelete() },
+                        Modifier
+                            .weight(1f)
+                            .testTag(DELETE_BTN_TAG)) {
                         Text(stringResource(id = R.string.delete))
                     }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -292,7 +296,8 @@ fun AddNoteDialog(
                     },
                         Modifier
                             .weight(1f)
-                            .testTag(ACCEPT_BTN_TAG)) {
+                            .testTag(ACCEPT_BTN_TAG)
+                    ) {
                         Text(stringResource(R.string.save))
                     }
                 }
