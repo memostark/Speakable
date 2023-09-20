@@ -58,10 +58,6 @@ class ParagraphAdapter(
      * The position of the paragraph in the list that contains the selected word.
      */
     private var selectedWordPos = -1
-    /**
-     * Index of the paragraph that has the selected text used for creating/updating a note.
-     */
-    var textSelectionPos = -1
 
     private val _sentenceClicked = MutableSharedFlow<String>(
         replay = 0,
@@ -70,7 +66,7 @@ class ParagraphAdapter(
     )
     val sentenceClicked = _sentenceClicked.asSharedFlow()
 
-    private val _addNoteClicked = MutableSharedFlow<NoteItem>(
+    private val _addNoteClicked = MutableSharedFlow<EditNote>(
         replay = 0,
         extraBufferCapacity = 1,
         BufferOverflow.DROP_OLDEST
@@ -192,11 +188,11 @@ class ParagraphAdapter(
                 val item = items[adapterPosition]
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (clickedNote != null) {
-                    textSelectionPos = adapterPosition
 
                     val span = clickedNote.span
+                    val text = item.original.substring(span.start, span.end)
                     val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
-                    _addNoteClicked.tryEmit(NoteItem(clickedNote.text, absoluteSpan, clickedNote.color, clickedNote.id))
+                    _addNoteClicked.tryEmit(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, clickedNote.id))
                     return true
                 }
 
@@ -222,7 +218,6 @@ class ParagraphAdapter(
                     // Select new word
                     item.selectedWord = wordSpan
                     selectedWordPos = adapterPosition
-                    textSelectionPos = adapterPosition
                     notifyItemChanged(adapterPosition, PAYLOAD_WORD)
                 }
                 return super.onSingleTapConfirmed(e)
@@ -372,9 +367,9 @@ class ParagraphAdapter(
                 return when(item.itemId) {
                     R.id.add_new_note_action -> {
                         val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
-                        textSelectionPos = adapterPosition
                         // New note so the text and color are empty and id is zero
-                        _addNoteClicked.tryEmit(NoteItem("", span, 0, 0))
+                        val text = highlightedTextView?.getSelectedText().toString()
+                        _addNoteClicked.tryEmit(EditNote(text, "", span, 0, 0))
                         mode?.finish()
                         true
                     }
@@ -452,8 +447,6 @@ class ParagraphAdapter(
             notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
             selectedSentence.wordSelected = false
         }
-
-        textSelectionPos = -1
     }
 
     fun nextSentence(){
@@ -506,6 +499,26 @@ class ParagraphAdapter(
             return item.toAbsolute(span)
         }
         return null
+    }
+
+    /**
+     * Check if the given [span] is within the selected sentence.
+     * If no sentence is selected false is returned.
+     *
+     * Assumes [span] is absolute.
+     */
+    fun isInsideSelectedSentence(span: Span): Boolean {
+        val paragraphIndex = selectedSentence.paragraphIndex
+        if(paragraphIndex != -1) {
+            val item = items[paragraphIndex]
+            val lSpan= span.toLocal(item)
+            val index = selectedSentence.sentenceIndex
+            if(index != -1) {
+                val sentenceSpan = item.indexes[index]
+                return lSpan.start >= sentenceSpan.start && lSpan.end <= sentenceSpan.end
+            }
+        }
+        return false
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -617,25 +630,24 @@ class ParagraphAdapter(
     }
 
     fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {
-        val pos = textSelectionPos
+        val pos = items.indexOfFirst { it.firstCharIndex + it.original.length > selection.start }
+        if (pos == -1) return
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
         val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
         paragraphItem.notes.add(NoteItem(result.text, span, Color.parseColor(result.colorHex), noteId))
         notifyItemChanged(pos)
-        textSelectionPos = -1
     }
 
     fun deleteNote(noteId: Long) {
-        val pos = textSelectionPos
+        val pos = items.indexOfFirst {
+            val note = it.notes.firstOrNull { note -> note.id == noteId }
+            note != null
+        }
+        if (pos == -1) return
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
         notifyItemChanged(pos)
-        textSelectionPos = -1
-    }
-
-    fun textSelectionRemoved() {
-        textSelectionPos = -1
     }
 
     fun updateWordInSentence() {
@@ -677,6 +689,14 @@ class ParagraphAdapter(
         val id: Long
     )
 
+    data class EditNote(
+        val text: String,
+        val noteText: String,
+        val span: Span,
+        @ColorInt val color: Int,
+        val id: Long
+    )
+
     data class SelectedSentence(
         var paragraphIndex: Int = -1,
         var sentenceIndex: Int = -1,
@@ -685,6 +705,10 @@ class ParagraphAdapter(
          */
         var wordSelected: Boolean = false
     )
+
+    private fun Span.toLocal(paragraphItem: ParagraphItem): Span {
+        return Span(start - paragraphItem.firstCharIndex, end - paragraphItem.firstCharIndex)
+    }
 
     companion object {
         private const val SWIPE_THRESHOLD = 0.8

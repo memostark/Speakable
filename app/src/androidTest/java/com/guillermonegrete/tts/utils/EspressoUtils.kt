@@ -105,3 +105,22 @@ fun withBackgroundSpan(color: Int, start: Int, end: Int): Matcher<View?> {
         }
     }
 }
+
+/**
+ * Matches that the [TextView] has no background spans.
+ */
+fun hasNoBackgroundSpan(): Matcher<View?> {
+
+    return object : BoundedMatcher<View?, TextView>(TextView::class.java) {
+
+        override fun describeTo(description: Description) {
+            description.appendText("view has no background spans")
+        }
+
+        override fun matchesSafely(foundView: TextView): Boolean {
+            val text = (foundView.text as? Spannable) ?: return false
+
+            return text.getSpans(0, text.length, BackgroundColorSpan::class.java).isEmpty()
+        }
+    }
+}

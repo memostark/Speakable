@@ -212,6 +212,12 @@ fun DeletePageDialog(
     }
 }
 
+const val NOTE_TEXT_TAG = "note text field"
+const val ACCEPT_BTN_TAG = "add note accept btn"
+const val DELETE_BTN_TAG = "add note delete btn"
+
+val COLORS = listOf(YellowNoteHighlight, RedNoteHighlight, GreenNoteHighlight, BlueNoteHighlight)
+
 @Composable
 fun AddNoteDialog(
     isVisible: Boolean,
@@ -242,10 +248,10 @@ fun AddNoteDialog(
                     modifier = Modifier
                         .focusRequester(focusRequester)
                         .fillMaxWidth()
+                        .testTag(NOTE_TEXT_TAG)
                 )
 
-                val colors = listOf(YellowNoteHighlight, RedNoteHighlight, GreenNoteHighlight, BlueNoteHighlight)
-                val index = colors.indexOfFirst { noteColor == it.toArgb() }
+                val index = COLORS.indexOfFirst { noteColor == it.toArgb() }
                 val indexColor = if (index == -1) 0 else index
 
                 var colorSel by remember { mutableStateOf(indexColor) }
@@ -256,7 +262,7 @@ fun AddNoteDialog(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    colors.forEachIndexed { index, color ->
+                    COLORS.forEachIndexed { index, color ->
                         val isSelected = index == colorSel
                         val modifier = if (isSelected) Modifier
                             .padding(3.dp) // margin
@@ -268,7 +274,7 @@ fun AddNoteDialog(
                         Box(Modifier.size(48.dp)) {
                             OutlinedButton(
                                 onClick = { colorSel = index },
-                                modifier = modifier,
+                                modifier = modifier.testTag(index.toString()),
                                 shape = CircleShape,
                                 colors = ButtonDefaults.buttonColors(backgroundColor = color)
                             ) {}
@@ -278,13 +284,20 @@ fun AddNoteDialog(
                 }
 
                 Row {
-                    Button(onClick = { onDelete() }, Modifier.weight(1f)) {
+                    Button(onClick = { onDelete() },
+                        Modifier
+                            .weight(1f)
+                            .testTag(DELETE_BTN_TAG)) {
                         Text(stringResource(id = R.string.delete))
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
-                        onSaveClicked(AddNoteResult(text, colors[colorSel].toHex()))
-                    }, Modifier.weight(1f)) {
+                        onSaveClicked(AddNoteResult(text, COLORS[colorSel].toHex()))
+                    },
+                        Modifier
+                            .weight(1f)
+                            .testTag(ACCEPT_BTN_TAG)
+                    ) {
                         Text(stringResource(R.string.save))
                     }
                 }
