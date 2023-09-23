@@ -445,8 +445,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         if (paragraphAdapter != null) {
                             addNoteBtn.isGone = !paragraphAdapter.isPageSaved || wordResult.isSentence || paragraphAdapter.isOverlappingNotes
                             addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
-                            val span = paragraphAdapter.getSelectedWordSpan()
-                            if(span != null) noteInfo = ParagraphAdapter.NoteItem(word.definition, span, 0, 0)
+                            val span = paragraphAdapter.getSelectedWordSpan() ?: paragraphAdapter.getHighlightedTextSpan()
+                            if(span != null) {
+                                noteInfo = ParagraphAdapter.NoteItem(word.definition, span, 0, 0)
+                            }
                         }
 
                         moreInfoBtn.isGone = wordResult.isSentence

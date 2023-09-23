@@ -59,6 +59,8 @@ class ParagraphAdapter(
      */
     private var selectedWordPos = -1
 
+    private var highlightedTextPos = -1
+
     private val _sentenceClicked = MutableSharedFlow<String>(
         replay = 0,
         extraBufferCapacity = 1,
@@ -330,6 +332,7 @@ class ParagraphAdapter(
             override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
                 unselectSentence()
                 highlightedTextView = binding.paragraph
+                highlightedTextPos = adapterPosition
                 return true
             }
 
@@ -379,6 +382,7 @@ class ParagraphAdapter(
 
             override fun onDestroyActionMode(mode: ActionMode?) {
                 highlightedTextView = null
+                highlightedTextPos = -1
                 isOverlappingNotes = false
             }
 
@@ -484,6 +488,16 @@ class ParagraphAdapter(
     }
 
     fun getHighlightedText() = highlightedTextView?.getSelectedText()
+
+    fun getHighlightedTextSpan(): Span? {
+        if(highlightedTextPos != -1) {
+            val item = items[highlightedTextPos]
+            highlightedTextView?.let {
+                return item.toAbsolute(Span(it.selectionStart, it.selectionEnd))
+            }
+        }
+        return null
+    }
 
     fun getSelectedWordSpan(): Span? {
         if (selectedWordPos != -1) {
