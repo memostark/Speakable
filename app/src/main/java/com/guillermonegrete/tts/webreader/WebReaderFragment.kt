@@ -290,9 +290,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 dbNotes.removeAll(paragraphNotes)
             }
 
-            val newAdapter = ParagraphAdapter(paragraphItems, page.isLocalPage, viewModel) {
-                hideBottomSheets()
-            }
+            val newAdapter = ParagraphAdapter(paragraphItems, page.isLocalPage, viewModel,
+                onSentenceSelected = { hideBottomSheets() },
+                onTextHighlighted = {
+                val highlightSpan = adapter?.getHighlightedTextSpan()
+                val sheetSpan = noteInfo?.span
+                if(highlightSpan != sheetSpan) {
+                    hideBottomSheets()
+                }
+            })
             adapter = newAdapter
             paragraphsList.adapter = adapter
 

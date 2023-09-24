@@ -36,6 +36,7 @@ class ParagraphAdapter(
     var isPageSaved: Boolean,
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: () -> Unit,
+    val onTextHighlighted: () -> Unit = {},
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var expandedItemPos = -1
@@ -333,6 +334,7 @@ class ParagraphAdapter(
                 unselectSentence()
                 highlightedTextView = binding.paragraph
                 highlightedTextPos = adapterPosition
+                onTextHighlighted()
                 return true
             }
 
