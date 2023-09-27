@@ -60,14 +60,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
      *
      * This information is the one displayed in the bottom sheet
      */
-    private var noteInfo: ParagraphAdapter.NoteItem? = null
+    private var noteInfo: ParagraphAdapter.EditNote? = null
 
     /**
      * The data for creating a note using the text highlight method.
      *
      * This data is independent from the one displayed in the bottom sheet
      */
-    private var highlightNote: ParagraphAdapter.NoteItem? = null
+    private var highlightNote: ParagraphAdapter.EditNote? = null
 
     override fun onPause() {
         super.onPause()
@@ -133,7 +133,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             } else {
                                 sheet.translatedText.text = note.text
                                 sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-                                noteInfo = ParagraphAdapter.NoteItem(note.text, span, Color.parseColor(note.color), note.id)
+                                noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), note.id)
                             }
                         } else {
                             highlightNote = null
@@ -198,7 +198,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                         AddNoteDialog(
                             addNoteVisible,
-                            highlightNote?.text ?: noteInfo?.text ?: "",
+                            highlightNote?.noteText ?: noteInfo?.noteText ?: "",
                             highlightNote?.color ?: noteInfo?.color ?: 0,
                             onDismiss = {
                                 addNoteVisible = false
@@ -210,9 +210,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 viewModel.deleteNote(noteItem.id)
                                 addNoteVisible = false
                             },
-                            onSaveClicked = {
+                            onSaveClicked = { newNote ->
                                 val noteItem = highlightNote ?: noteInfo ?: return@AddNoteDialog
-                                viewModel.saveNote(it.text, noteItem.span, noteItem.id, it.colorHex)
+                                viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
                                 addNoteVisible = false
                             },
                         )
@@ -330,10 +330,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     paragraphAdapter.addNoteClicked.collect { note ->
                         if (note.id == 0L) {
                             // zero means new note, show dialog to add note
-                            highlightNote = ParagraphAdapter.NoteItem(note.noteText, note.span, note.color, 0L)
+                            highlightNote = note
                             addNoteDialogVisible.value = true
                         } else {
-                            noteInfo = ParagraphAdapter.NoteItem(note.noteText, note.span, note.color, note.id)
+                            noteInfo = note
                             showSheetWithNote(paragraphAdapter, note)
                         }
                     }
@@ -453,7 +453,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                             val span = paragraphAdapter.getSelectedWordSpan() ?: paragraphAdapter.getHighlightedTextSpan()
                             if(span != null) {
-                                noteInfo = ParagraphAdapter.NoteItem(word.definition, span, 0, 0)
+                                noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                             }
                         }
 
@@ -500,7 +500,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         addWordNoteBtn.setOnClickListener {
                             paragraphAdapter ?: return@setOnClickListener
                             val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
-                            noteInfo = ParagraphAdapter.NoteItem(wordTranslation.text.toString(), span, 0, 0)
+                            noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                             addNoteDialogVisible.value = true
                         }
                         setWordSheetViews(true)

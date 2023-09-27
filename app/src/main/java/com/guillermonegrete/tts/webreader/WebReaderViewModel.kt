@@ -406,21 +406,21 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun saveNote(text: String, selection: Span, id: Long, color: String) {
+    fun saveNote(text:String, noteText: String, selection: Span, id: Long, color: String) {
         val webLink = cacheWebLink ?: return
         viewModelScope.launch {
-            val newNote = Note(text, selection.start, selection.end - selection.start, color, webLink.id, id)
+            val newNote = Note(noteText, text, selection.start, selection.end - selection.start, color, webLink.id, id)
             val resultId = noteDAO.upsert(newNote)
             // Upsert returns -1 when the operation was an update, use the parameter ID.
             val finalId = if(resultId == -1L) id else resultId
-            val result = ModifiedNote.Update(Note(text, newNote.position, newNote.length, color, webLink.id, finalId))
+            val result = ModifiedNote.Update(Note(noteText, text, newNote.position, newNote.length, color, webLink.id, finalId))
             _updatedNote.value = result
         }
     }
 
     fun deleteNote(id: Long) {
         viewModelScope.launch {
-            noteDAO.delete(Note("", 0, 0, "", 0, id)) // only the id is necessary
+            noteDAO.delete(Note("", "", 0, 0, "", 0, id)) // only the id is necessary
             _updatedNote.value = ModifiedNote.Delete(id)
         }
     }

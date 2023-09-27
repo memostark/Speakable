@@ -23,6 +23,8 @@ import com.guillermonegrete.tts.db.WebLink
 )
 data class Note(
     val text: String,
+    @ColumnInfo(defaultValue = "")
+    val originalText: String,
     /**
      * The starting character index of the note span in the text file.
      */
