@@ -210,7 +210,7 @@ class WebReaderFragmentTest{
     fun given_saved_note_when_edited_sheet_updated() {
         // Initial data with saved link and note at the start of the 1st paragraph
         setLocalPage()
-        val note = Note("note text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
+        val note = Note("note text", "original text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
         runBlocking {
             noteDAO.upsert(note)
         }
@@ -242,7 +242,7 @@ class WebReaderFragmentTest{
     fun given_saved_note_when_delete_sheet_updated() {
         // Initial data with saved link and note at the start of the 1st paragraph
         setLocalPage()
-        val note = Note("note text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
+        val note = Note("note text", "original text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
         runBlocking {
             noteDAO.upsert(note)
         }

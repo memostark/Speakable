@@ -443,11 +443,11 @@ class WebReaderViewModelTest {
         // Notes only available when local page exists
         loadLocalPage()
 
-        viewModel.saveNote("new note text", Span(4, 9), 9, "")
+        viewModel.saveNote("original text", "new note text", Span(4, 9), 9, "")
         advanceUntilIdle()
 
         // Verify uuid was deleted
-        val newNote = Note("new note text", 4, 5, "", 10, 9)
+        val newNote = Note("new note text", "original text", 4, 5, "", 10, 9)
         val expected = ModifiedNote.Update(newNote)
         assertEquals(expected, viewModel.updatedNote.getOrAwaitValue())
         val note = notesDAO.notes.first()
@@ -459,7 +459,7 @@ class WebReaderViewModelTest {
         // Notes only available when local page exists
         loadLocalPage()
         val noteId = 9L
-        notesDAO.notes.add(Note("saved text", 0, 4, "", 10, noteId))
+        notesDAO.notes.add(Note( "saved text", "original text", 0, 4, "", 10, noteId))
 
         viewModel.deleteNote(noteId)
         advanceUntilIdle()
