@@ -478,6 +478,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
                         addNoteBtn.isVisible = false
+                        setWordSheetViews(false)
                         false
                     }
                 }
