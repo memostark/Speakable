@@ -478,6 +478,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
                         addNoteBtn.isVisible = false
+                        setWordSheetViews(false)
                         false
                     }
                 }
@@ -486,6 +487,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             viewModel.wordInfo.observe(viewLifecycleOwner) { result ->
                 barLoading.isInvisible = when(result){
                     is LoadResult.Success -> {
+                        setWordSheetViews(true)
                         val word = result.data.word
                         wordTranslation.text = word.definition
                         moreInfoWordBtn.setOnClickListener {
@@ -503,7 +505,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                             addNoteDialogVisible.value = true
                         }
-                        setWordSheetViews(true)
                         true
                     }
                     is LoadResult.Error -> {
