@@ -28,6 +28,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -622,6 +623,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             addWordNoteBtn.isVisible = isVisible
             moreInfoWordBtn.isVisible = isVisible
         }
+
+        val bottomPad = if (isVisible) 200 else 140
+        binding.paragraphsList.updatePadding(bottom = requireContext().dpToPixel(bottomPad))
     }
 
     private fun isSheetVisible(): Boolean {
