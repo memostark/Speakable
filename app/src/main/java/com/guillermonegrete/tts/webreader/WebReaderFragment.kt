@@ -576,6 +576,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             } else {
                 // Otherwise show the regular sheet
                 translatedText.text = note.noteText
+                translatedText.scrollTo(0, 0)
                 addNoteBtn.isVisible = true
                 addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
 
