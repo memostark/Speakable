@@ -470,7 +470,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.getLinksForWord(word.word, word.lang)
                         }
 
-                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) {
+                            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                        } else {
+                            // Sheet layout modified but the sheet was already expanded, manually update padding
+                            translatedText.post {
+                                updateBottomPadding(this.root.height)
+                            }
+                        }
                         binding.composeBar.isVisible = false
                         true
                     }
