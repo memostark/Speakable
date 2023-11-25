@@ -21,7 +21,7 @@
             android:id="@+id/paragraphs_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingBottom="140dp"
+            android:paddingBottom="?attr/actionBarSize"
             android:clipToPadding="false"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/paragraph_item"/>
