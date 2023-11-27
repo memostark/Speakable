@@ -28,6 +28,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
@@ -70,6 +71,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
      */
     private var highlightNote: ParagraphAdapter.EditNote? = null
 
+    private var appBarSize = 0
+
     override fun onPause() {
         super.onPause()
         viewModel.saveWebLink()
@@ -77,6 +80,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (activity as? AppCompatActivity)?.supportActionBar?.hide()
+        appBarSize = requireContext().actionBarSize
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
 
@@ -432,6 +436,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         adapter?.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
+                        updateBottomPadding(0)
+                    } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                        updateBottomPadding(root.height)
                     }
                 }
 
@@ -463,7 +470,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.getLinksForWord(word.word, word.lang)
                         }
 
-                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) {
+                            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                        } else {
+                            // Sheet layout modified but the sheet was already expanded, manually update padding
+                            translatedText.post {
+                                updateBottomPadding(this.root.height)
+                            }
+                        }
                         binding.composeBar.isVisible = false
                         true
                     }
@@ -476,10 +490,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         translatedText.text = ""
                         translatedText.scrollTo(0, 0)
                         notesText.text = ""
-                        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         moreInfoBtn.isVisible = false
                         addNoteBtn.isVisible = false
                         setWordSheetViews(false)
+                        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         false
                     }
                 }
@@ -488,7 +502,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             viewModel.wordInfo.observe(viewLifecycleOwner) { result ->
                 barLoading.isInvisible = when(result){
                     is LoadResult.Success -> {
-                        setWordSheetViews(true)
                         val word = result.data.word
                         wordTranslation.text = word.definition
                         moreInfoWordBtn.setOnClickListener {
@@ -506,6 +519,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                             addNoteDialogVisible.value = true
                         }
+                        setWordSheetViews(true)
                         true
                     }
                     is LoadResult.Error -> {
@@ -565,14 +579,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             // Check if sheet is visible and if the note is within the sentence
             if(isSheetVisible() && paragraphAdapter.isInsideSelectedSentence(note.span)){
                 // Update the word text and buttons
-                setWordSheetViews(true)
-
                 wordTranslation.text = note.noteText
                 addWordNoteBtn.isVisible = false
                 moreInfoWordBtn.isVisible = isWord
                 moreInfoWordBtn.setOnClickListener {
                     viewModel.getLinksForWord(note.text)
                 }
+
+                setWordSheetViews(true)
             } else {
                 // Otherwise show the regular sheet
                 translatedText.text = note.noteText
@@ -623,10 +637,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             wordTranslation.isVisible = isVisible
             addWordNoteBtn.isVisible = isVisible
             moreInfoWordBtn.isVisible = isVisible
+            if(isVisible) {
+                wordTranslation.post {
+                    updateBottomPadding(root.height)
+                }
+            }
         }
+    }
 
-        val bottomPad = if (isVisible) 200 else 140
-        binding.paragraphsList.updatePadding(bottom = requireContext().dpToPixel(bottomPad))
+    private fun updateBottomPadding(pixels: Int) {
+        val extra = if(pixels == 0) appBarSize else requireContext().dpToPixel(16)
+        binding.paragraphsList.updatePadding(bottom = pixels + extra)
     }
 
     private fun isSheetVisible(): Boolean {
