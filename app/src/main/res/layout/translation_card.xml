@@ -6,7 +6,7 @@
     android:id="@+id/translation_bottom_sheet"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
+    android:layout_marginHorizontal="8dp"
     app:strokeColor="?colorOnSurface"
     app:strokeWidth="1dp"
     app:behavior_hideable="true"
@@ -14,6 +14,7 @@
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraint_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="?colorSurface"
@@ -65,6 +66,7 @@
             app:layout_constraintVertical_bias="0.0"
             app:layout_constraintVertical_chainStyle="packed"
             app:layout_constrainedHeight="true"
+            app:layout_goneMarginEnd="16dp"
             tools:text="A secondary color provides more ways to accent and distinguish your product. Having a secondary color is optional, and should be applied sparingly to accent select parts of your UI." />
 
         <TextView
@@ -109,12 +111,11 @@
             android:id="@+id/add_word_note_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackgroundBorderless"
+            android:background="?android:selectableItemBackground"
             android:contentDescription="@string/add_note_for_word"
             android:minWidth="48dp"
             android:minHeight="48dp"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/word_translation"
             app:layout_constraintEnd_toStartOf="@id/more_info_word_btn"
             app:layout_constraintTop_toBottomOf="@+id/top_border_word_view"
             app:tint="?colorOnSurface"
@@ -125,12 +126,11 @@
             android:id="@+id/more_info_word_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackgroundBorderless"
+            android:background="?android:selectableItemBackground"
             android:contentDescription="@string/more_information_word"
             android:minWidth="48dp"
             android:minHeight="48dp"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/word_translation"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/top_border_word_view"
             app:tint="?colorOnSurface"

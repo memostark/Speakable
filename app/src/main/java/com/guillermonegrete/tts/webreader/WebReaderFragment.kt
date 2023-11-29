@@ -642,6 +642,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     updateBottomPadding(root.height)
                 }
             }
+            val padding = if (isVisible) 0 else resources.getDimensionPixelSize(R.dimen.default_dialog_padding)
+            constraintLayout.updatePadding(bottom = padding)
         }
     }
 
