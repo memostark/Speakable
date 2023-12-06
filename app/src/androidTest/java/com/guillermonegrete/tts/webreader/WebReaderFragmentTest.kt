@@ -28,6 +28,7 @@ import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import com.guillermonegrete.tts.utils.atPosition
 import com.guillermonegrete.tts.utils.clickIn
+import com.guillermonegrete.tts.utils.clickPercent
 import com.guillermonegrete.tts.utils.hasNoBackgroundSpan
 import com.guillermonegrete.tts.utils.withBackgroundSpan
 import com.guillermonegrete.tts.webreader.db.Note
@@ -114,8 +115,6 @@ class WebReaderFragmentTest{
         val jsonResponse = responseAdapter.toJson(response)
         server.enqueue(MockResponse().setBody(jsonResponse))
 
-        // The regular click() is performed in the center of the view, this makes the click position vary and sometimes empty text is returned
-        // Click on the (0, 0) position to ensure the first word is clicked
         tapParagraphItemStart(0)
 
         composeTestRule.onNodeWithTag("web_reader_bar").assertIsNotDisplayed()
@@ -123,12 +122,11 @@ class WebReaderFragmentTest{
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText("My")))
 
-        onView(withId(R.id.more_info_btn)).perform(click())
-        onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
+        showWebBottomSheet()
     }
 
     @Test
-    fun when_sentence_double_tapped_then_highlight(){
+    fun when_sentence_double_tapped_then_highlight_and_navigate(){
         setPageResponse()
 
         val args = bundleOf("link" to server.url("/").toString())
@@ -141,7 +139,7 @@ class WebReaderFragmentTest{
 
         server.dispatcher = sentenceDispatcher()
 
-        // translate selection then move to the next one, until all the sentences were translated
+        // Translate selection then navigate to the next one, until all the sentences are translated
         for (response in sentencesTranslationResponses){
             val translation = response.sentences.first().trans
             translateSelectionAndReturn(translation)
@@ -210,10 +208,7 @@ class WebReaderFragmentTest{
     fun given_saved_note_when_edited_sheet_updated() {
         // Initial data with saved link and note at the start of the 1st paragraph
         setLocalPage()
-        val note = Note("note text", "original text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
-        runBlocking {
-            noteDAO.upsert(note)
-        }
+        addDefaultNote()
 
         val args = bundleOf("link" to server.url("/").toString())
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
@@ -235,7 +230,9 @@ class WebReaderFragmentTest{
         // Verify highlight color for the note changed
         val color = COLORS[colorBtnPos].toArgb()
         onView(withId(R.id.paragraphs_list))
-            .check(matches(atPosition(1, withBackgroundSpan(color, 0 , 5))))
+            .check(matches(atPosition(1, withBackgroundSpan(color, 0 , 2))))
+
+        showWebBottomSheet()
     }
 
     @Test
@@ -250,8 +247,11 @@ class WebReaderFragmentTest{
         val args = bundleOf("link" to server.url("/").toString())
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
 
-        // Click note and open note dialog
+        // Click note
         tapParagraphItemStart(1)
+        // Text is a sentence so this shouldn't be visible
+        onView(withId(R.id.more_info_btn)).check(matches(not(isDisplayed())))
+        // Open note dialog
         onView(withId(R.id.add_note_btn)).perform(click())
 
         // Delete note
@@ -260,6 +260,55 @@ class WebReaderFragmentTest{
         // Verify note removed
         onView(withId(R.id.paragraphs_list))
             .check(matches(atPosition(1, hasNoBackgroundSpan())))
+    }
+
+    @Test
+    fun given_selected_sentence_when_word_and_note_clicked_then_sheet_updated(){
+        setLocalPage()
+        addDefaultNote()
+
+        val args = bundleOf("link" to server.url("/").toString())
+        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+
+        server.dispatcher = sentenceDispatcher()
+
+        // For this test the 2nd paragraph will be used
+        val listPos = 1
+        // Highlight sentence
+        clickParagraphList(listPos, doubleClick())
+
+        composeTestRule.onNodeWithContentDescription("Translate").performClick()
+        clickParagraphList(listPos, clickPercent(0.9f, 0f))
+        Thread.sleep(500)
+
+        onView(withId(R.id.word_translation)).check(matches(isDisplayed()))
+        onView(withId(R.id.word_translation)).check(matches(withText("parrafo")))
+
+        // Add note
+        onView(withId(R.id.add_word_note_btn)).perform(click())
+        updateWordNote("New note text", 1, 10, 19, listPos)
+
+        // Show more info
+        onView(withId(R.id.more_info_word_btn)).perform(click())
+        onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
+
+        // Close web view sheet and translation sheet
+        Espresso.pressBack()
+        Espresso.pressBack()
+        Thread.sleep(500)
+
+        composeTestRule.onNodeWithContentDescription("Translate").performClick()
+        Thread.sleep(500)
+
+        tapParagraphItemStart(listPos)
+
+        // Modify note
+        onView(withId(R.id.add_word_note_btn)).perform(click())
+        updateWordNote("Modified note text", 3, 0, 2, listPos)
+
+        // Show more info
+        onView(withId(R.id.more_info_word_btn)).perform(click())
+        onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
     }
 
     private fun setPageResponse() {
@@ -277,6 +326,13 @@ class WebReaderFragmentTest{
         }
 
         createXmlFile()
+    }
+
+    private fun addDefaultNote() {
+        val note = Note("note text", "My", 37, 2, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
+        runBlocking {
+            noteDAO.upsert(note)
+        }
     }
 
     private fun translateSelectionAndReturn(expectedTranslation: String){
@@ -300,6 +356,7 @@ class WebReaderFragmentTest{
                     FIRST_SENTENCE -> sentencesTranslationResponses.first()
                     SECOND_SENTENCE -> sentencesTranslationResponses[1]
                     THIRD_SENTENCE -> sentencesTranslationResponses.last()
+                    LAST_WORD -> lastWordTransResponse
                     else -> throw IllegalArgumentException()
                 }
                 val body = responseAdapter.toJson(response)
@@ -323,6 +380,32 @@ class WebReaderFragmentTest{
                 RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(itemPos, clickIn(0, 0))
             )
         Thread.sleep(500) // it's necessary to wait for the single tap confirmed event in the ParagraphAdapter
+    }
+
+    private fun showWebBottomSheet() {
+        onView(withId(R.id.more_info_btn)).perform(click())
+        onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
+    }
+
+    private fun updateWordNote(
+        text: String,
+        colorIndex: Int,
+        spanStart: Int,
+        spanEnd: Int,
+        listPos: Int = 0
+    ){
+        // Modify the text, color and save
+        composeTestRule.onNodeWithTag(NOTE_TEXT_TAG).performTextReplacement(text)
+        composeTestRule.onNodeWithTag(colorIndex.toString()).performClick()
+        composeTestRule.onNodeWithTag(ACCEPT_BTN_TAG).performClick()
+
+        // Verify bottom sheet note text changed
+        onView(withId(R.id.word_translation)).check(matches(isDisplayed()))
+        onView(withId(R.id.word_translation)).check(matches(withText(text)))
+
+        val modifiedColor = COLORS[colorIndex].toArgb()
+        onView(withId(R.id.paragraphs_list))
+            .check(matches(atPosition(listPos, withBackgroundSpan(modifiedColor, spanStart, spanEnd))))
     }
 
     /**
@@ -356,6 +439,9 @@ class WebReaderFragmentTest{
             GoogleTranslateResponse(listOf(Sentence(SECOND_SENTENCE_TRANS, SECOND_SENTENCE)), "en"),
             GoogleTranslateResponse(listOf(Sentence(THIRD_SENTENCE_TRANS, THIRD_SENTENCE)), "en"),
         )
+
+        const val LAST_WORD = "paragraph"
+        val lastWordTransResponse = GoogleTranslateResponse(listOf(Sentence("parrafo", LAST_WORD)), "en")
 
         private const val FIRST_PARAGRAPH = FIRST_SENTENCE + SECOND_SENTENCE
         private const val FIRST_PARAGRAPH_TRANS = FIRST_SENTENCE_TRANS + SECOND_SENTENCE_TRANS

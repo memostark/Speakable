@@ -62,6 +62,31 @@ fun clickIn(x: Int, y: Int): ViewAction {
 }
 
 /**
+ * Performs a click in the given percentage coordinates
+ */
+fun clickPercent(pctX: Float, pctY: Float): ViewAction {
+    return GeneralClickAction(
+        Tap.SINGLE,
+        { view ->
+            val screenPos = IntArray(2)
+            view.getLocationOnScreen(screenPos)
+            val w = view.width
+            val h = view.height
+
+            val x = w * pctX
+            val y = h * pctY
+
+            val screenX = screenPos[0] + x
+            val screenY = screenPos[1] + y
+
+            floatArrayOf(screenX, screenY)
+        },
+        Press.FINGER,
+        InputDevice.SOURCE_MOUSE,
+        MotionEvent.BUTTON_PRIMARY)
+}
+
+/**
  * Taken from: https://stackoverflow.com/a/34795431/10244759
  */
 fun atPosition(position: Int, itemMatcher: Matcher<View?>): Matcher<View?> {
@@ -90,6 +115,8 @@ fun withBackgroundSpan(color: Int, start: Int, end: Int): Matcher<View?> {
 
         override fun describeTo(description: Description) {
             description.appendText("with background color span: ").appendValue(span.backgroundColor)
+                .appendText(" at position start: ").appendValue(start)
+                .appendText(" and end: ").appendValue(end)
         }
 
         override fun matchesSafely(foundView: TextView): Boolean {
