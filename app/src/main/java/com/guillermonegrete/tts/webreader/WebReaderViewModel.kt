@@ -320,6 +320,8 @@ class WebReaderViewModel @Inject constructor(
         cacheWebLink?.language = langShort
     }
 
+    fun getLanguage() = cacheWebLink?.language
+
     private fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
         val iterator = BreakIterator.getSentenceInstance()
 

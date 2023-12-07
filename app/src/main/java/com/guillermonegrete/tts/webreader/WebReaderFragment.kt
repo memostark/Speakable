@@ -9,6 +9,8 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.material.SnackbarHost
+import androidx.compose.material.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.text.HtmlCompat
@@ -32,6 +34,7 @@ import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
@@ -54,6 +57,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val deleteDialogVisible = mutableStateOf(false)
     private val addNoteDialogVisible = mutableStateOf(false)
     private val isPageSaved = mutableStateOf(false)
+
+    private var sbScope: CoroutineScope? = null
+    private val snackbarHostState = mutableStateOf(SnackbarHostState())
 
     private var pageText = ""
 
@@ -222,6 +228,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             },
                         )
 
+                    }
+                }
+            }
+
+            composeRoot.apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setContent {
+                    AppTheme {
+                        sbScope = rememberCoroutineScope()
+                        SnackbarHost(hostState = snackbarHostState.value)
                     }
                 }
             }
@@ -438,6 +454,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         binding.composeBar.isVisible = true
                         updateBottomPadding(0)
                     } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                        binding.composeBar.isVisible = false
                         updateBottomPadding(root.height)
                     }
                 }
@@ -478,7 +495,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 updateBottomPadding(this.root.height)
                             }
                         }
-                        binding.composeBar.isVisible = false
                         true
                     }
                     is LoadResult.Error -> {
@@ -596,7 +612,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 moreInfoBtn.isVisible = isWord
                 moreInfoBtn.setOnClickListener {
-                    viewModel.getLinksForWord(text)
+                    val language = viewModel.getLanguage()
+                    if (language == null) {
+                        sbScope?.launch {
+                            snackbarHostState.value.showSnackbar(getString(R.string.pick_language_web_reader))
+                        }
+                    } else {
+                        viewModel.getLinksForWord(text)
+                    }
                 }
                 setWordSheetViews(false)
 
