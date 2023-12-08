@@ -138,14 +138,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         paragraphAdapter.updateNote(span, note.id, dialogResult)
 
                         if(span != highlightNote?.span) {
-                            if (paragraphAdapter.selectedSentence.wordSelected) {
-                                sheet.notesText.text = note.text
-                                sheet.addWordNoteBtn.isVisible = false
+                            if (paragraphAdapter.selectedSentence.wordSelected ||
+                                paragraphAdapter.isInsideSelectedSentence(span)) { // if not word selected but still inside the sentence then it must be a note
+                                sheet.wordTranslation.text = note.text
+                                sheet.addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
                             } else {
                                 sheet.translatedText.text = note.text
                                 sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-                                noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), note.id)
                             }
+                            noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), note.id)
                         } else {
                             highlightNote = null
                         }
@@ -535,6 +536,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                             addNoteDialogVisible.value = true
                         }
+                        addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                         setWordSheetViews(true)
                         true
                     }
@@ -596,10 +598,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             if(isSheetVisible() && paragraphAdapter.isInsideSelectedSentence(note.span)){
                 // Update the word text and buttons
                 wordTranslation.text = note.noteText
-                addWordNoteBtn.isVisible = false
                 moreInfoWordBtn.isVisible = isWord
                 moreInfoWordBtn.setOnClickListener {
-                    viewModel.getLinksForWord(note.text)
+                    getLinksForWord(note.text)
+                }
+
+                addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+                addWordNoteBtn.setOnClickListener {
+                    addNoteDialogVisible.value = true
                 }
 
                 setWordSheetViews(true)
@@ -612,14 +618,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 moreInfoBtn.isVisible = isWord
                 moreInfoBtn.setOnClickListener {
-                    val language = viewModel.getLanguage()
-                    if (language == null) {
-                        sbScope?.launch {
-                            snackbarHostState.value.showSnackbar(getString(R.string.pick_language_web_reader))
-                        }
-                    } else {
-                        viewModel.getLinksForWord(text)
-                    }
+                    getLinksForWord(text)
                 }
                 setWordSheetViews(false)
 
@@ -629,6 +628,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
         }
         paragraphAdapter.unselectWord()
+    }
+
+    private fun getLinksForWord(text: String) {
+        val language = viewModel.getLanguage()
+        if (language == null) {
+            sbScope?.launch {
+                snackbarHostState.value.showSnackbar(getString(R.string.pick_language_web_reader))
+            }
+        } else {
+            viewModel.getLinksForWord(text)
+        }
     }
 
     private fun setBackButtonNav() {
