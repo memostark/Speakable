@@ -18,9 +18,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -30,7 +33,6 @@ import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
 import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
 import com.guillermonegrete.tts.ui.theme.RedNoteHighlight
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
-import kotlinx.coroutines.android.awaitFrame
 import okhttp3.internal.toHexString
 
 
@@ -230,6 +232,7 @@ fun AddNoteDialog(
 
     if (!isVisible) return
     val focusRequester = remember { FocusRequester() }
+    var textFieldLoaded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = { onDismiss() }) {
         Surface {
@@ -238,15 +241,21 @@ fun AddNoteDialog(
                 modifier = Modifier.padding(24.dp)
             ) {
 
-                var text by remember { mutableStateOf(noteText) }
+                var textFieldValue by remember { mutableStateOf(TextFieldValue(noteText, TextRange(noteText.length))) }
                 OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
+                    value = textFieldValue,
+                    onValueChange = { textFieldValue = it },
                     placeholder = { Text(stringResource(R.string.add_note_placeholder)) },
                     minLines = 4,
                     maxLines = 4,
                     modifier = Modifier
                         .focusRequester(focusRequester)
+                        .onGloballyPositioned {
+                            if (!textFieldLoaded) {
+                                focusRequester.requestFocus()
+                                textFieldLoaded = true // stop cyclic recompositions
+                            }
+                        }
                         .fillMaxWidth()
                         .testTag(NOTE_TEXT_TAG)
                 )
@@ -292,7 +301,7 @@ fun AddNoteDialog(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
-                        onSaveClicked(AddNoteResult(text, COLORS[colorSel].toHex()))
+                        onSaveClicked(AddNoteResult(textFieldValue.text, COLORS[colorSel].toHex()))
                     },
                         Modifier
                             .weight(1f)
@@ -303,14 +312,6 @@ fun AddNoteDialog(
                 }
             }
         }
-    }
-
-    // We only want to show the keyboard at start when the user is adding a new note.
-    if (noteText.isNotEmpty()) return
-    // Used to request focus which shows the keyboard
-    LaunchedEffect(Unit) {
-        awaitFrame()
-        focusRequester.requestFocus()
     }
 }
 
