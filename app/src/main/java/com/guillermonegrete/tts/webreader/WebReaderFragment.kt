@@ -152,6 +152,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
                     }
                     is ModifiedNote.Delete -> {
+                        val paragraphAdapter = adapter
+                        if(paragraphAdapter != null) {
+                            if (binding.transSheet.wordTranslation.isVisible) {
+                                // Note info is visible, because the note was deleted hide the word/note views
+                                setWordSheetViews(false)
+                            } else {
+                                // Otherwise just hide the regular sheet
+                                val behavior = BottomSheetBehavior.from(binding.transSheet.root)
+                                behavior.state = BottomSheetBehavior.STATE_HIDDEN
+                            }
+                            paragraphAdapter.unselectWord()
+                        }
+
                         adapter?.deleteNote(result.noteId)
                         sheet.addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                     }
@@ -528,12 +541,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         val paragraphAdapter = adapter
                         if (paragraphAdapter != null) {
                             addWordNoteBtn.isGone = !paragraphAdapter.isPageSaved
+                            val span = paragraphAdapter.getSelectedWordSpan()
+                            if(span != null) noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                         }
 
                         addWordNoteBtn.setOnClickListener {
-                            paragraphAdapter ?: return@setOnClickListener
-                            val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
-                            noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                             addNoteDialogVisible.value = true
                         }
                         addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
