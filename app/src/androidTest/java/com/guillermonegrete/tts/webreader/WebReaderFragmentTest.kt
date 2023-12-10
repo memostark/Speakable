@@ -183,11 +183,8 @@ class WebReaderFragmentTest{
     }
 
     @Test
-    fun given_local_page_when_word_tapped_and_noted_button_clicked_then_note_saved() {
+    fun given_local_page_when_word_tapped_and_note_button_clicked_then_note_saved() {
         setLocalPage()
-
-        val args = bundleOf("link" to server.url("/").toString())
-        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
 
         val response = GoogleTranslateResponse(listOf(Sentence("My", "Mi")), "es")
         val jsonResponse = responseAdapter.toJson(response)
@@ -206,19 +203,15 @@ class WebReaderFragmentTest{
 
     @Test
     fun given_saved_note_when_edited_sheet_updated() {
-        // Initial data with saved link and note at the start of the 1st paragraph
-        setLocalPage()
-        addDefaultNote()
-
-        val args = bundleOf("link" to server.url("/").toString())
-        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+        setLocalPage(language = "en", initialNote = DEFAULT_NOTE)
 
         // Click note and open note dialog
         tapParagraphItemStart(1)
         onView(withId(R.id.add_note_btn)).perform(click())
 
         // Modify the text, color and save
-        composeTestRule.onNodeWithTag(NOTE_TEXT_TAG).performTextInput(" new")
+        // performTextInput() is inconsistent, sometimes adds the text at the end and other times it replaces text so use this method instead
+        composeTestRule.onNodeWithTag(NOTE_TEXT_TAG).performTextReplacement("note text new")
         val colorBtnPos = 1
         composeTestRule.onNodeWithTag(colorBtnPos.toString()).performClick()
         composeTestRule.onNodeWithTag(ACCEPT_BTN_TAG).performClick()
@@ -238,14 +231,8 @@ class WebReaderFragmentTest{
     @Test
     fun given_saved_note_when_delete_sheet_updated() {
         // Initial data with saved link and note at the start of the 1st paragraph
-        setLocalPage()
         val note = Note("note text", "original text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
-        runBlocking {
-            noteDAO.upsert(note)
-        }
-
-        val args = bundleOf("link" to server.url("/").toString())
-        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+        setLocalPage(initialNote = note)
 
         // Click note
         tapParagraphItemStart(1)
@@ -260,15 +247,13 @@ class WebReaderFragmentTest{
         // Verify note removed
         onView(withId(R.id.paragraphs_list))
             .check(matches(atPosition(1, hasNoBackgroundSpan())))
+        // Verify sheet hidden removed
+        onView(withId(R.id.add_note_btn)).check(matches(not(isDisplayed())))
     }
 
     @Test
     fun given_selected_sentence_when_word_and_note_clicked_then_sheet_updated(){
-        setLocalPage()
-        addDefaultNote()
-
-        val args = bundleOf("link" to server.url("/").toString())
-        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+        setLocalPage(language = "en", initialNote = DEFAULT_NOTE)
 
         server.dispatcher = sentenceDispatcher()
 
@@ -300,6 +285,7 @@ class WebReaderFragmentTest{
         composeTestRule.onNodeWithContentDescription("Translate").performClick()
         Thread.sleep(500)
 
+        // Tap note
         tapParagraphItemStart(listPos)
 
         // Modify note
@@ -311,21 +297,72 @@ class WebReaderFragmentTest{
         onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
     }
 
+    @Test
+    fun given_selected_sentence_then_delete_new_and_old_notes() {
+        setLocalPage(language = "en", initialNote = DEFAULT_NOTE)
+
+        server.dispatcher = sentenceDispatcher()
+
+        // For this test the 2nd paragraph will be used
+        val listPos = 1
+        // Highlight sentence
+        clickParagraphList(listPos, doubleClick())
+
+        // Translate sentence and tap last word within the sentence
+        composeTestRule.onNodeWithContentDescription("Translate").performClick()
+        clickParagraphList(listPos, clickPercent(0.9f, 0f))
+        Thread.sleep(500)
+
+        // Verify word translation shown
+        onView(withId(R.id.word_translation)).check(matches(isDisplayed()))
+        onView(withId(R.id.word_translation)).check(matches(withText("parrafo")))
+
+        // Add new note
+        onView(withId(R.id.add_word_note_btn)).perform(click())
+        updateWordNote("New note text", 1, 10, 19, listPos)
+
+        // Delete new note
+        onView(withId(R.id.add_word_note_btn)).perform(click())
+        composeTestRule.onNodeWithTag(DELETE_BTN_TAG).performClick()
+
+        // Verify word layout removed from sheet
+        onView(withId(R.id.word_translation)).check(matches(not(isDisplayed())))
+
+        // Tap old note
+        tapParagraphItemStart(listPos)
+
+        // Delete old note
+        onView(withId(R.id.add_word_note_btn)).perform(click())
+        composeTestRule.onNodeWithTag(DELETE_BTN_TAG).performClick()
+
+        // Verify word layout removed from sheet
+        onView(withId(R.id.word_translation)).check(matches(not(isDisplayed())))
+    }
+
     private fun setPageResponse() {
         val body = InstrumentationRegistry.getInstrumentation()
             .context.assets.open("test_page.html").bufferedReader().use { it.readText() }
         server.enqueue(MockResponse().setBody(body))
     }
 
-    private fun setLocalPage() {
+    private fun setLocalPage(language: String? = null, initialNote: Note? = null) {
         val url = server.url("/").toString()
         val uuid = UUID.fromString(default_uuid)
-        val link = WebLink(url, uuid = uuid, id = DEFAULT_LINK_ID)
+        val link = WebLink(url, language = language, uuid = uuid, id = DEFAULT_LINK_ID)
         runBlocking {
             linkDAO.upsert(link)
         }
 
         createXmlFile()
+
+        if(initialNote != null) {
+            runBlocking {
+                noteDAO.upsert(initialNote)
+            }
+        }
+
+        val args = bundleOf("link" to server.url("/").toString())
+        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
     }
 
     private fun addDefaultNote() {
@@ -449,5 +486,7 @@ class WebReaderFragmentTest{
 
         const val default_uuid = "7e57d235-3553-4a57-bd35-37af9d5b1ffb"
         const val DEFAULT_LINK_ID = 2
+
+        val DEFAULT_NOTE = Note("note text", "My", 37, 2, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
     }
 }
