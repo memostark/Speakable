@@ -353,7 +353,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
                             paragraphAdapter.unselectSentence()
-                            setWordSheetViews(false)
                         } else {
                             viewModel.translateWordInSentence(it)
                             paragraphAdapter.updateWordInSentence()
@@ -466,10 +465,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         adapter?.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
-                        updateBottomPadding(0)
+                        updateListBottomPadding(0)
                     } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
                         binding.composeBar.isVisible = false
-                        updateBottomPadding(root.height)
+                        updateListBottomPadding(root.height)
                     }
                 }
 
@@ -506,7 +505,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         } else {
                             // Sheet layout modified but the sheet was already expanded, manually update padding
                             translatedText.post {
-                                updateBottomPadding(this.root.height)
+                                updateListBottomPadding(root.height)
                             }
                         }
                         true
@@ -538,6 +537,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.getLinksForWord(word.word, word.lang)
                         }
 
+                        setWordSheetViews(true)
+
                         val paragraphAdapter = adapter
                         if (paragraphAdapter != null) {
                             addWordNoteBtn.isGone = !paragraphAdapter.isPageSaved
@@ -549,7 +550,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addNoteDialogVisible.value = true
                         }
                         addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
-                        setWordSheetViews(true)
                         true
                     }
                     is LoadResult.Error -> {
@@ -610,6 +610,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             if(isSheetVisible() && paragraphAdapter.isInsideSelectedSentence(note.span)){
                 // Update the word text and buttons
                 wordTranslation.text = note.noteText
+                setWordSheetViews(true)
                 moreInfoWordBtn.isVisible = isWord
                 moreInfoWordBtn.setOnClickListener {
                     getLinksForWord(note.text)
@@ -619,8 +620,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 addWordNoteBtn.setOnClickListener {
                     addNoteDialogVisible.value = true
                 }
-
-                setWordSheetViews(true)
             } else {
                 // Otherwise show the regular sheet
                 translatedText.text = note.noteText
@@ -684,7 +683,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             moreInfoWordBtn.isVisible = isVisible
             if(isVisible) {
                 wordTranslation.post {
-                    updateBottomPadding(root.height)
+                    updateListBottomPadding(root.height)
                 }
             }
             val padding = if (isVisible) 0 else resources.getDimensionPixelSize(R.dimen.default_dialog_padding)
@@ -692,7 +691,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun updateBottomPadding(pixels: Int) {
+    private fun updateListBottomPadding(pixels: Int) {
         val extra = if(pixels == 0) appBarSize else requireContext().dpToPixel(16)
         binding.paragraphsList.updatePadding(bottom = pixels + extra)
     }

@@ -42,6 +42,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.QueueDispatcher
 import okhttp3.mockwebserver.RecordedRequest
 import org.hamcrest.CoreMatchers.not
 import org.junit.After
@@ -102,18 +103,15 @@ class WebReaderFragmentTest{
         IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
     }
 
+    // region Remote web page tests
+
     @Test
     fun when_word_tapped_then_translation_shown(){
-        setPageResponse()
-
-        val args = bundleOf("link" to server.url("/").toString())
-        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+        setRemotePage()
 
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
-        val response = GoogleTranslateResponse(listOf(Sentence("My", "Mi")), "es")
-        val jsonResponse = responseAdapter.toJson(response)
-        server.enqueue(MockResponse().setBody(jsonResponse))
+        setFirstWordResponse()
 
         tapParagraphItemStart(0)
 
@@ -121,16 +119,15 @@ class WebReaderFragmentTest{
 
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText("My")))
+        // Add note button is not visible because the page is not saved
+        onView(withId(R.id.add_note_btn)).check(matches(not(isDisplayed())))
 
         showWebBottomSheet()
     }
 
     @Test
     fun when_sentence_double_tapped_then_highlight_and_navigate(){
-        setPageResponse()
-
-        val args = bundleOf("link" to server.url("/").toString())
-        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+        setRemotePage()
 
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
@@ -158,10 +155,7 @@ class WebReaderFragmentTest{
 
     @Test
     fun when_sentence_swiped_then_show_expanded_item(){
-        setPageResponse()
-
-        val args = bundleOf("link" to server.url("/").toString())
-        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
+        setRemotePage()
 
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
@@ -181,6 +175,35 @@ class WebReaderFragmentTest{
         onView(withId(R.id.toggle_paragraph)).perform(click())
         onView(withId(R.id.toggle_paragraph)).check(doesNotExist())
     }
+
+    @Test
+    fun given_sentence_selected_when_word_tapped_then_big_sheet_shown(){
+        setRemotePage()
+
+        // Highlight first sentence
+        clickParagraphList(0, doubleClick())
+
+        server.dispatcher = sentenceDispatcher()
+
+        // Translate
+        composeTestRule.onNodeWithContentDescription("Translate").performClick()
+        Thread.sleep(500)
+
+        // Tap first word
+        server.dispatcher = QueueDispatcher()
+        setFirstWordResponse()
+        tapParagraphItemStart(0)
+
+        // Verify sheet is correct
+        onView(withId(R.id.word_translation)).check(matches(isDisplayed()))
+        onView(withId(R.id.word_translation)).check(matches(withText("My")))
+        // Add note button is not visible because the page is not saved
+        onView(withId(R.id.add_note_btn)).check(matches(not(isDisplayed())))
+    }
+
+    // endregion
+
+    // region Local page tests
 
     @Test
     fun given_local_page_when_word_tapped_and_note_button_clicked_then_note_saved() {
@@ -243,6 +266,7 @@ class WebReaderFragmentTest{
 
         // Delete note
         composeTestRule.onNodeWithTag(DELETE_BTN_TAG).performClick()
+        Thread.sleep(300) // wait for the sheet to hide
 
         // Verify note removed
         onView(withId(R.id.paragraphs_list))
@@ -339,10 +363,15 @@ class WebReaderFragmentTest{
         onView(withId(R.id.word_translation)).check(matches(not(isDisplayed())))
     }
 
-    private fun setPageResponse() {
+    // endregion
+
+    private fun setRemotePage() {
         val body = InstrumentationRegistry.getInstrumentation()
             .context.assets.open("test_page.html").bufferedReader().use { it.readText() }
         server.enqueue(MockResponse().setBody(body))
+
+        val args = bundleOf("link" to server.url("/").toString())
+        launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
     }
 
     private fun setLocalPage(language: String? = null, initialNote: Note? = null) {
@@ -365,11 +394,10 @@ class WebReaderFragmentTest{
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
     }
 
-    private fun addDefaultNote() {
-        val note = Note("note text", "My", 37, 2, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
-        runBlocking {
-            noteDAO.upsert(note)
-        }
+    private fun setFirstWordResponse() {
+        val response = GoogleTranslateResponse(listOf(Sentence("My", "Mi")), "es")
+        val jsonResponse = responseAdapter.toJson(response)
+        server.enqueue(MockResponse().setBody(jsonResponse))
     }
 
     private fun translateSelectionAndReturn(expectedTranslation: String){
