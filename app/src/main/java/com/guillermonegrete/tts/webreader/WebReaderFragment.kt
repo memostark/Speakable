@@ -435,6 +435,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val adapter = ExternalLinksAdapter(it.links) { index ->
                     selectedPos = index
                     infoWebview.loadUrl(links[index].link)
+                    linksList.scrollToPosition(index)
                 }
                 adapter.setFlatButton(true)
                 adapter.setSelectedPos(selectedPos)
@@ -450,6 +451,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun setTranslateBottomPanel() {
         with(binding.transSheet) {
             translatedText.movementMethod = ScrollingMovementMethod()
+            wordTranslation.movementMethod = ScrollingMovementMethod()
+            wordTranslation.setHorizontallyScrolling(true)
             // This disables scrolling the bottom sheet when scrolling the translation text
             // This is done to allow the TextView to scroll up
             translatedText.setOnTouchListener { view, _ ->
