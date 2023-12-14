@@ -225,6 +225,7 @@ fun AddNoteDialog(
     isVisible: Boolean,
     noteText: String,
     @ColorInt noteColor: Int,
+    noteSaved: Boolean = false,
     onDismiss: () -> Unit = {},
     onDelete: () -> Unit = {},
     onSaveClicked: (result: AddNoteResult) -> Unit = {},
@@ -293,13 +294,15 @@ fun AddNoteDialog(
                 }
 
                 Row {
-                    Button(onClick = { onDelete() },
-                        Modifier
-                            .weight(1f)
-                            .testTag(DELETE_BTN_TAG)) {
-                        Text(stringResource(id = R.string.delete))
+                    if(noteSaved) {
+                        Button(onClick = { onDelete() },
+                            Modifier
+                                .weight(1f)
+                                .testTag(DELETE_BTN_TAG)) {
+                            Text(stringResource(id = R.string.delete))
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = {
                         onSaveClicked(AddNoteResult(textFieldValue.text, COLORS[colorSel].toHex()))
                     },
@@ -408,7 +411,7 @@ fun DeletePageDialogPreview() {
 @Composable
 fun AddNoteDialogPreview() {
     AppTheme {
-        AddNoteDialog(true, "", 0)
+        AddNoteDialog(true, "", 0, true)
     }
 }
 

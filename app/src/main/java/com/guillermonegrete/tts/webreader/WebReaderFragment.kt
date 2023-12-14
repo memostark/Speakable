@@ -146,7 +146,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 sheet.translatedText.text = note.text
                                 sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
                             }
-                            noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), note.id)
+                            noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
                         } else {
                             highlightNote = null
                         }
@@ -225,6 +225,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addNoteVisible,
                             highlightNote?.noteText ?: noteInfo?.noteText ?: "",
                             highlightNote?.color ?: noteInfo?.color ?: 0,
+                            highlightNote?.noteSaved ?: noteInfo?.noteSaved ?: false,
                             onDismiss = {
                                 addNoteVisible = false
                                 highlightNote = null
@@ -494,7 +495,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                             val span = paragraphAdapter.getSelectedWordSpan() ?: paragraphAdapter.getHighlightedTextSpan()
                             if(span != null) {
-                                noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
+                                noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, false, 0)
                             }
                         }
 
@@ -546,7 +547,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         if (paragraphAdapter != null) {
                             addWordNoteBtn.isGone = !paragraphAdapter.isPageSaved
                             val span = paragraphAdapter.getSelectedWordSpan()
-                            if(span != null) noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
+                            if(span != null) noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, false, 0)
                         }
 
                         addWordNoteBtn.setOnClickListener {
