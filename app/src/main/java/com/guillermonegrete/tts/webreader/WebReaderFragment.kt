@@ -9,6 +9,8 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.material.SnackbarHost
+import androidx.compose.material.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.text.HtmlCompat
@@ -32,6 +34,7 @@ import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
@@ -54,6 +57,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val deleteDialogVisible = mutableStateOf(false)
     private val addNoteDialogVisible = mutableStateOf(false)
     private val isPageSaved = mutableStateOf(false)
+
+    private var sbScope: CoroutineScope? = null
+    private val snackbarHostState = mutableStateOf(SnackbarHostState())
 
     private var pageText = ""
 
@@ -132,19 +138,33 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         paragraphAdapter.updateNote(span, note.id, dialogResult)
 
                         if(span != highlightNote?.span) {
-                            if (paragraphAdapter.selectedSentence.wordSelected) {
-                                sheet.notesText.text = note.text
-                                sheet.addWordNoteBtn.isVisible = false
+                            if (paragraphAdapter.selectedSentence.wordSelected ||
+                                paragraphAdapter.isInsideSelectedSentence(span)) { // if not word selected but still inside the sentence then it must be a note
+                                sheet.wordTranslation.text = note.text
+                                sheet.addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
                             } else {
                                 sheet.translatedText.text = note.text
                                 sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-                                noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), note.id)
                             }
+                            noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
                         } else {
                             highlightNote = null
                         }
                     }
                     is ModifiedNote.Delete -> {
+                        val paragraphAdapter = adapter
+                        if(paragraphAdapter != null) {
+                            if (binding.transSheet.wordTranslation.isVisible) {
+                                // Note info is visible, because the note was deleted hide the word/note views
+                                setWordSheetViews(false)
+                            } else {
+                                // Otherwise just hide the regular sheet
+                                val behavior = BottomSheetBehavior.from(binding.transSheet.root)
+                                behavior.state = BottomSheetBehavior.STATE_HIDDEN
+                            }
+                            paragraphAdapter.unselectWord()
+                        }
+
                         adapter?.deleteNote(result.noteId)
                         sheet.addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                     }
@@ -205,6 +225,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addNoteVisible,
                             highlightNote?.noteText ?: noteInfo?.noteText ?: "",
                             highlightNote?.color ?: noteInfo?.color ?: 0,
+                            highlightNote?.noteSaved ?: noteInfo?.noteSaved ?: false,
                             onDismiss = {
                                 addNoteVisible = false
                                 highlightNote = null
@@ -222,6 +243,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             },
                         )
 
+                    }
+                }
+            }
+
+            composeRoot.apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setContent {
+                    AppTheme {
+                        sbScope = rememberCoroutineScope()
+                        SnackbarHost(hostState = snackbarHostState.value)
                     }
                 }
             }
@@ -323,7 +354,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
                         if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
                             paragraphAdapter.unselectSentence()
-                            setWordSheetViews(false)
                         } else {
                             viewModel.translateWordInSentence(it)
                             paragraphAdapter.updateWordInSentence()
@@ -406,6 +436,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val adapter = ExternalLinksAdapter(it.links) { index ->
                     selectedPos = index
                     infoWebview.loadUrl(links[index].link)
+                    linksList.scrollToPosition(index)
                 }
                 adapter.setFlatButton(true)
                 adapter.setSelectedPos(selectedPos)
@@ -421,6 +452,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun setTranslateBottomPanel() {
         with(binding.transSheet) {
             translatedText.movementMethod = ScrollingMovementMethod()
+            wordTranslation.movementMethod = ScrollingMovementMethod()
+            wordTranslation.setHorizontallyScrolling(true)
             // This disables scrolling the bottom sheet when scrolling the translation text
             // This is done to allow the TextView to scroll up
             translatedText.setOnTouchListener { view, _ ->
@@ -436,9 +469,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         adapter?.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
-                        updateBottomPadding(0)
+                        updateListBottomPadding(0)
                     } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                        updateBottomPadding(root.height)
+                        binding.composeBar.isVisible = false
+                        updateListBottomPadding(root.height)
                     }
                 }
 
@@ -461,7 +495,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                             val span = paragraphAdapter.getSelectedWordSpan() ?: paragraphAdapter.getHighlightedTextSpan()
                             if(span != null) {
-                                noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
+                                noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, false, 0)
                             }
                         }
 
@@ -475,10 +509,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         } else {
                             // Sheet layout modified but the sheet was already expanded, manually update padding
                             translatedText.post {
-                                updateBottomPadding(this.root.height)
+                                updateListBottomPadding(root.height)
                             }
                         }
-                        binding.composeBar.isVisible = false
                         true
                     }
                     is LoadResult.Error -> {
@@ -508,18 +541,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.getLinksForWord(word.word, word.lang)
                         }
 
+                        setWordSheetViews(true)
+
                         val paragraphAdapter = adapter
                         if (paragraphAdapter != null) {
                             addWordNoteBtn.isGone = !paragraphAdapter.isPageSaved
+                            val span = paragraphAdapter.getSelectedWordSpan()
+                            if(span != null) noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, false, 0)
                         }
 
                         addWordNoteBtn.setOnClickListener {
-                            paragraphAdapter ?: return@setOnClickListener
-                            val span = paragraphAdapter.getSelectedWordSpan() ?: return@setOnClickListener
-                            noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, 0)
                             addNoteDialogVisible.value = true
                         }
-                        setWordSheetViews(true)
+                        addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                         true
                     }
                     is LoadResult.Error -> {
@@ -580,13 +614,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             if(isSheetVisible() && paragraphAdapter.isInsideSelectedSentence(note.span)){
                 // Update the word text and buttons
                 wordTranslation.text = note.noteText
-                addWordNoteBtn.isVisible = false
+                setWordSheetViews(true)
                 moreInfoWordBtn.isVisible = isWord
                 moreInfoWordBtn.setOnClickListener {
-                    viewModel.getLinksForWord(note.text)
+                    getLinksForWord(note.text)
                 }
 
-                setWordSheetViews(true)
+                addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+                addWordNoteBtn.setOnClickListener {
+                    addNoteDialogVisible.value = true
+                }
             } else {
                 // Otherwise show the regular sheet
                 translatedText.text = note.noteText
@@ -596,7 +633,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 moreInfoBtn.isVisible = isWord
                 moreInfoBtn.setOnClickListener {
-                    viewModel.getLinksForWord(text)
+                    getLinksForWord(text)
                 }
                 setWordSheetViews(false)
 
@@ -606,6 +643,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
         }
         paragraphAdapter.unselectWord()
+    }
+
+    private fun getLinksForWord(text: String) {
+        val language = viewModel.getLanguage()
+        if (language == null) {
+            sbScope?.launch {
+                snackbarHostState.value.showSnackbar(getString(R.string.pick_language_web_reader))
+            }
+        } else {
+            viewModel.getLinksForWord(text)
+        }
     }
 
     private fun setBackButtonNav() {
@@ -639,7 +687,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             moreInfoWordBtn.isVisible = isVisible
             if(isVisible) {
                 wordTranslation.post {
-                    updateBottomPadding(root.height)
+                    updateListBottomPadding(root.height)
                 }
             }
             val padding = if (isVisible) 0 else resources.getDimensionPixelSize(R.dimen.default_dialog_padding)
@@ -647,7 +695,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun updateBottomPadding(pixels: Int) {
+    private fun updateListBottomPadding(pixels: Int) {
         val extra = if(pixels == 0) appBarSize else requireContext().dpToPixel(16)
         binding.paragraphsList.updatePadding(bottom = pixels + extra)
     }

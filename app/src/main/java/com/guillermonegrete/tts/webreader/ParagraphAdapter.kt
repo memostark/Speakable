@@ -195,7 +195,7 @@ class ParagraphAdapter(
                     val span = clickedNote.span
                     val text = item.original.substring(span.start, span.end)
                     val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
-                    _addNoteClicked.tryEmit(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, clickedNote.id))
+                    _addNoteClicked.tryEmit(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id))
                     return true
                 }
 
@@ -374,7 +374,7 @@ class ParagraphAdapter(
                         val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
                         // New note so the text and color are empty and id is zero
                         val text = highlightedTextView?.getSelectedText().toString()
-                        _addNoteClicked.tryEmit(EditNote(text, "", span, 0, 0))
+                        _addNoteClicked.tryEmit(EditNote(text, "", span, 0, false, 0))
                         mode?.finish()
                         true
                     }
@@ -710,6 +710,7 @@ class ParagraphAdapter(
         val noteText: String,
         val span: Span,
         @ColorInt val color: Int,
+        val noteSaved: Boolean,
         val id: Long
     )
 
