@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.textprocessing;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +16,7 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -96,7 +96,6 @@ public class ExternalLinksFragment extends Fragment {
     private DefaultWebBrowser getDefaultWebBrowser(){
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
         String preference = preferences.getString(DefaultWebBrowser.PREFERENCE_KEY, "");
-        if (preference == null) preference = "";
         return DefaultWebBrowser.Companion.get(preference);
     }
 
