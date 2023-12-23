@@ -17,7 +17,7 @@
     </string-array>
 
     <string-array name="defaultBrowserArray">
-        <item>Chrome custom tabs</item>
+        <item>Custom tabs</item>
         <item>Device default</item>
     </string-array>
 
