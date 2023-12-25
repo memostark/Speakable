@@ -14,6 +14,7 @@ import android.os.Bundle;
 
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -61,8 +62,8 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
 
         var decorView = getWindow().getDecorView();
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        WindowInsetsControllerCompat controllerCompat = new WindowInsetsControllerCompat(getWindow(), decorView);
-        controllerCompat.hide(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.navigationBars());
+        var controllerCompat = WindowCompat.getInsetsController(getWindow(), decorView);
+        controllerCompat.hide(WindowInsetsCompat.Type.systemBars());
         controllerCompat.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     }
 
@@ -98,14 +99,15 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
             showDialog();
             // Only need the initial state, remove to avoid calling again.
             ViewCompat.setOnApplyWindowInsetsListener(decorView, null);
-            return insets;
+            return ViewCompat.onApplyWindowInsets(v, insets);
         });
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     private void requestOverlayPermission() {
         var requestOverlayPermission = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (Settings.canDrawOverlays(this)) {
-                detectStatusBar();
+                showDialog();
             } else {
                 finish();
             }
