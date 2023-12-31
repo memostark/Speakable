@@ -7,11 +7,15 @@ package com.guillermonegrete.tts.customviews
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
+import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 import com.guillermonegrete.tts.R
+import timber.log.Timber
 import kotlin.math.sqrt
 
 class SnippingView : View {
@@ -45,29 +49,19 @@ class SnippingView : View {
 
     constructor(context: Context) : super(context) {
         isFocusable = true // necessary for getting the touch events
-        setBitmaps(context)
+//        setBitmaps(context)
     }
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         isFocusable = true // necessary for getting the touch events
-        setBitmaps(context)
+//        setBitmaps(context)
     }
 
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle) {
-        setBitmaps(context)
+//        setBitmaps(context)
     }
 
-    private fun setBitmaps(context: Context) {
-        // Screen dimensions without the navigation bar because we don't draw over it
-        wParent = context.resources.displayMetrics.widthPixels
-        hParent = context.resources.displayMetrics.heightPixels
-
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        val statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
-
-        snipTop = statusBarHeight
-        snipRight = wParent
-        snipBottom = hParent
+    private fun setBitmaps(statusBarHeight: Int) {
 
         val firstBitmap = BitmapFactory.decodeResource(context.resources, bitmaps.first())
         val bitmapWidth = firstBitmap.width
@@ -83,6 +77,46 @@ class SnippingView : View {
         for ((j, point) in cornerPoints.withIndex()) {
             val bitmap = BitmapFactory.decodeResource(context.resources, bitmaps[j])
             colorBalls.add(ColorBall(bitmap, j, point))
+        }
+
+        invalidate()
+    }
+
+    fun prepareLayout() {
+        // Screen dimensions without the navigation bar because we don't draw over it
+        wParent = context.resources.displayMetrics.widthPixels
+        hParent = context.resources.displayMetrics.heightPixels
+
+        if (colorBalls.isNotEmpty()) return
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
+                val statusbarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+                val statusBarHeight = statusbarInsets.top
+                Timber.d("Listener status height: $statusbarInsets, bar visible: ${insets.isVisible(WindowInsetsCompat.Type.statusBars())}")
+                snipTop = statusBarHeight
+                snipRight = wParent
+                snipBottom = hParent
+
+                ViewCompat.setOnApplyWindowInsetsListener(this, null)
+                setBitmaps(statusBarHeight)
+
+                insets
+            }
+        } else {
+            setOnSystemUiVisibilityChangeListener {visibility ->
+                val statusBarHeight = if (visibility and SYSTEM_UI_FLAG_FULLSCREEN == 0)
+                    resources.getIdentifier("status_bar_height", "dimen", "android") else 0
+
+                Timber.d("Listener old method $statusBarHeight")
+
+                snipTop = statusBarHeight
+                snipRight = wParent
+                snipBottom = hParent
+
+                setOnSystemUiVisibilityChangeListener(null)
+                setBitmaps(statusBarHeight)
+            }
         }
     }
 

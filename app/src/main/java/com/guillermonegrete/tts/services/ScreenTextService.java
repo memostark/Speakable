@@ -151,7 +151,6 @@ public class ScreenTextService extends Service {
         mParamsTrash = new WindowManager.LayoutParams();
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-//        setTextRecognizer();
     }
 
     private void destroyLayouts() {
@@ -287,7 +286,6 @@ public class ScreenTextService extends Service {
     private void showSnippingView(){
         var frameLayoutParams = (FrameLayout.LayoutParams) binding.iconContainer.getLayoutParams();
         frameLayoutParams.setMargins(0,0,0,35);
-        binding.snipView.setVisibility(View.VISIBLE);
         showContainerActionButtons();
         setContainerBackground();
         windowParams.x=0;
@@ -298,6 +296,8 @@ public class ScreenTextService extends Service {
                 | WindowManager.LayoutParams.FLAG_FULLSCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         windowManager.updateViewLayout(binding.getRoot(), windowParams);
+        binding.snipView.prepareLayout();
+        binding.snipView.setVisibility(View.VISIBLE);
     }
 
     private void setFloatingIconView(){
