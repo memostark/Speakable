@@ -47,19 +47,15 @@ class SnippingView : View {
     val snipRectangle: Rect
         get() = Rect(snipLeft, snipTop, snipRight, snipBottom)
 
-    constructor(context: Context) : super(context) {
-        isFocusable = true // necessary for getting the touch events
-//        setBitmaps(context)
+    init {
+        isFocusable = true
     }
 
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        isFocusable = true // necessary for getting the touch events
-//        setBitmaps(context)
-    }
+    constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle) {
-//        setBitmaps(context)
-    }
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
 
     private fun setBitmaps(statusBarHeight: Int) {
 
@@ -104,19 +100,16 @@ class SnippingView : View {
                 insets
             }
         } else {
-            setOnSystemUiVisibilityChangeListener {visibility ->
-                val statusBarHeight = if (visibility and SYSTEM_UI_FLAG_FULLSCREEN == 0)
-                    resources.getIdentifier("status_bar_height", "dimen", "android") else 0
+            val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+            val statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
 
-                Timber.d("Listener old method $statusBarHeight")
+            Timber.d("Listener old method $statusBarHeight")
 
-                snipTop = statusBarHeight
-                snipRight = wParent
-                snipBottom = hParent
+            snipTop = statusBarHeight
+            snipRight = wParent
+            snipBottom = hParent
 
-                setOnSystemUiVisibilityChangeListener(null)
-                setBitmaps(statusBarHeight)
-            }
+            setBitmaps(statusBarHeight)
         }
     }
 
