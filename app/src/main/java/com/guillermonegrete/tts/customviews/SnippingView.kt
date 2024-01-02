@@ -11,11 +11,11 @@ import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowManager
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-
 import com.guillermonegrete.tts.R
-import timber.log.Timber
 import kotlin.math.sqrt
 
 class SnippingView : View {
@@ -79,9 +79,7 @@ class SnippingView : View {
     }
 
     fun prepareLayout() {
-        // Screen dimensions without the navigation bar because we don't draw over it
-        wParent = context.resources.displayMetrics.widthPixels
-        hParent = context.resources.displayMetrics.heightPixels
+        getWindowSize()
 
         if (colorBalls.isNotEmpty()) return
 
@@ -89,21 +87,25 @@ class SnippingView : View {
             ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
                 val statusbarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
                 val statusBarHeight = statusbarInsets.top
-                Timber.d("Listener status height: $statusbarInsets, bar visible: ${insets.isVisible(WindowInsetsCompat.Type.statusBars())}")
-                snipTop = statusBarHeight
-                snipRight = wParent
-                snipBottom = hParent
 
-                ViewCompat.setOnApplyWindowInsetsListener(this, null)
-                setBitmaps(statusBarHeight)
+                val statusBarVisible = insets.isVisible(WindowInsetsCompat.Type.statusBars())
+                if (!statusBarVisible ||
+                    statusBarHeight > 0) { // sometimes the status bar is visible but the height is 0, ignore those insets until the height has a value
+
+                    snipTop = statusBarHeight
+                    snipRight = wParent
+                    snipBottom = hParent
+
+
+                    ViewCompat.setOnApplyWindowInsetsListener(this, null)
+                    setBitmaps(statusBarHeight)
+                }
 
                 insets
             }
         } else {
             val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
             val statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
-
-            Timber.d("Listener old method $statusBarHeight")
 
             snipTop = statusBarHeight
             snipRight = wParent
@@ -113,12 +115,28 @@ class SnippingView : View {
         }
     }
 
-    override fun onDraw(canvas: Canvas) {
+    private fun getWindowSize() {
 
-        /*snipLeft = colorBalls[0].left
-        snipTop = colorBalls[0].top
-        snipRight = colorBalls[2].right
-        snipBottom = colorBalls[2].bottom*/
+        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val windowMetrics = wm.currentWindowMetrics
+            val windowInsets = windowMetrics.windowInsets
+
+            val insets = windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout())
+            val insetsWidth = insets.right + insets.left
+            val insetsHeight = insets.bottom // Ignore top inset because the app draws over it
+
+            val b = windowMetrics.bounds
+            wParent = b.width() - insetsWidth
+            hParent = b.height() - insetsHeight
+
+        } else {
+            wParent = context.resources.displayMetrics.widthPixels
+            hParent = context.resources.displayMetrics.heightPixels
+        }
+    }
+
+    override fun onDraw(canvas: Canvas) {
 
         paint.apply {
             isAntiAlias = true

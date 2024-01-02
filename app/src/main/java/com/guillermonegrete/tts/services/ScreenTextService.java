@@ -295,6 +295,9 @@ public class ScreenTextService extends Service {
         windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_FULLSCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            windowParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
         windowManager.updateViewLayout(binding.getRoot(), windowParams);
         binding.snipView.prepareLayout();
         binding.snipView.setVisibility(View.VISIBLE);
