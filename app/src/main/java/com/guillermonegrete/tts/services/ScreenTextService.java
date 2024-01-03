@@ -267,6 +267,10 @@ public class ScreenTextService extends Service {
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         mParamsTrash.format = PixelFormat.TRANSLUCENT;
+        // Android 12 requires this alpha value to allow touch events to pass to other apps or the system UI.
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S) {
+            mParamsTrash.alpha = 0.8f;
+        }
 
         mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
         mParamsTrash.x = 0;
