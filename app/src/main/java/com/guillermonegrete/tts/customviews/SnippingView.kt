@@ -93,6 +93,12 @@ class SnippingView : View {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
+                // Recalculate height because nav size might have changed
+                // Don't use the nav height from the insets because it always return 0 when using an overlay layout
+                val navBarVisible = insets.isVisible(WindowInsetsCompat.Type.navigationBars())
+                val navSize = if (navBarVisible) sizes.navHeight else 0
+                hParent = sizes.height - navSize
+
                 val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
                 val statusBarHeight = statusBarInsets.top
 
@@ -100,25 +106,18 @@ class SnippingView : View {
                 if (!statusBarVisible ||
                     statusBarHeight > 0) { // sometimes the status bar is visible but the height is 0, ignore those insets until the height has a value
 
-                    // Recalculate height because nav size might have changed
-                    // Don't use the nav height from the insets because it always return 0 when using an overlay layout
-                    val navBarVisible = insets.isVisible(WindowInsetsCompat.Type.navigationBars())
-                    val navSize = if (navBarVisible) sizes.navHeight else 0
-                    hParent = sizes.height - navSize
-
                     if (colorBalls.isEmpty()) {
-                        snipTop = statusBarHeight
+                        snipTop = sizes.statusHeight
                         snipRight = wParent
                         snipBottom = hParent
-                        setBitmaps(statusBarHeight)
+                        setBitmaps(sizes.statusHeight)
                     }
                 }
 
                 insets
             }
         } else {
-            val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-            val statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
+            val statusBarHeight = sizes.statusHeight
 
             snipTop = statusBarHeight
             snipRight = wParent
@@ -145,20 +144,22 @@ class SnippingView : View {
             wParent = b.width() - insetsWidth
             hParent = b.height() - insetsHeight
 
-            sizes = Sizes(b.width(), b.height(), insets.bottom)
+            sizes = Sizes(b.width(), b.height(), insets.top, insets.bottom)
         } else {
             wParent = context.resources.displayMetrics.widthPixels
             hParent = context.resources.displayMetrics.heightPixels
 
             val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
             val navHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
-            sizes = Sizes(wParent, hParent, navHeight)
+            val statusResourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+            val statusBarHeight = if (statusResourceId > 0) resources.getDimensionPixelSize(statusResourceId) else 0
+            sizes = Sizes(wParent, hParent, statusBarHeight, navHeight)
         }
 
         return sizes
     }
 
-    data class Sizes(val width: Int, val height: Int, val navHeight: Int)
+    data class Sizes(val width: Int, val height: Int, val statusHeight: Int, val navHeight: Int)
 
     override fun onDraw(canvas: Canvas) {
 
