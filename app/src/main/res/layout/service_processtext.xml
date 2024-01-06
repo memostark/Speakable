@@ -77,12 +77,13 @@
             android:background="?android:selectableItemBackgroundBorderless"
             android:contentDescription="@string/translate_description"
             android:src="@drawable/ic_translate_black_24dp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@+id/play_icons_container"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/play_icons_container"
             app:layout_constraintTop_toTopOf="@+id/play_icons_container"
-            tools:visibility="invisible" />
+            tools:visibility="visible" />
 
         <ProgressBar
             android:id="@+id/loading_translate"

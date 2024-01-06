@@ -257,6 +257,9 @@ public class ScreenTextService extends Service {
         windowParams.type = getLayoutParamType();
         windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         windowParams.format = PixelFormat.TRANSLUCENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            windowParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
     }
 
     private void defaultTrashViewParams(){
@@ -270,6 +273,10 @@ public class ScreenTextService extends Service {
         // Android 12 requires this alpha value to allow touch events to pass to other apps or the system UI.
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S) {
             mParamsTrash.alpha = 0.8f;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            mParamsTrash.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
 
         mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
@@ -299,9 +306,6 @@ public class ScreenTextService extends Service {
         windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_FULLSCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            windowParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-        }
         windowManager.updateViewLayout(binding.getRoot(), windowParams);
         binding.snipView.prepareLayout();
         binding.snipView.setVisibility(View.VISIBLE);
