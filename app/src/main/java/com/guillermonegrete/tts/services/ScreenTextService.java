@@ -177,17 +177,16 @@ public class ScreenTextService extends Service {
                 playButton.setVisibility(View.VISIBLE);
 
             } else if (state instanceof PlayAudioState.Stopped) {
-                playLoadingIcon.setVisibility(View.INVISIBLE);
-                playButton.setVisibility(View.VISIBLE);
-                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
-                binding.languageText.setVisibility(View.INVISIBLE);
-
+                defaultPlayButton();
             } else if (state instanceof PlayAudioState.Loading) {
                 playLoadingIcon.setVisibility(View.VISIBLE);
                 playButton.setVisibility(View.INVISIBLE);
 
             } else if (state instanceof PlayAudioState.Error error) {
-                Toast.makeText(this, error.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                String message = error.getException().getMessage();
+                if (message == null) message = "Unknown error";
+                Snackbar.make(binding.iconContainer, message, Snackbar.LENGTH_SHORT).show();
+                defaultPlayButton();
             }
         };
         viewModel.getPlayingAudio().observeForever(playAudioObserver);
@@ -217,13 +216,16 @@ public class ScreenTextService extends Service {
         viewModel.getTextTranslated().observeForever(textTranslatedObserver);
     }
 
+    private void defaultPlayButton() {
+        binding.playLoadingIcon.setVisibility(View.INVISIBLE);
+        binding.playIconButton.setVisibility(View.VISIBLE);
+        binding.playIconButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+        binding.languageText.setVisibility(View.INVISIBLE);
+    }
+
     private void handleTranslationError(Exception error) {
-        String errorText;
-        if(error instanceof MlKitException) {
-            errorText = "Waiting for the text recognition module to be downloaded";
-        } else {
-            errorText = "Couldn't detect text from image";
-        }
+        String errorText = error.getMessage();
+        if (errorText == null) errorText = "Unknown error";
         Snackbar.make(binding.iconContainer, errorText, Snackbar.LENGTH_SHORT).show();
     }
 
