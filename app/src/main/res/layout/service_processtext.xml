@@ -49,13 +49,14 @@
             app:layout_constraintTop_toTopOf="@+id/image_bubble"
             tools:visibility="visible">
 
-            <ImageButton
+            <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/play_icon_button"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="?android:selectableItemBackgroundBorderless"
                 android:contentDescription="@string/reproduce_description"
-                android:src="@drawable/ic_volume_up_black_24dp" />
+                app:srcCompat="@drawable/ic_volume_up_black_24dp"
+                app:tint="@android:color/black" />
 
             <ProgressBar
                 android:id="@+id/play_loading_icon"
@@ -68,7 +69,7 @@
                 tools:visibility="visible" />
         </FrameLayout>
 
-        <ImageButton
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/translate_icon_button"
             android:layout_width="0dp"
             android:layout_height="0dp"
@@ -76,8 +77,8 @@
             android:layout_marginEnd="8dp"
             android:background="?android:selectableItemBackgroundBorderless"
             android:contentDescription="@string/translate_description"
-            android:src="@drawable/ic_translate_black_24dp"
             android:visibility="gone"
+            app:srcCompat="@drawable/ic_translate_black_24dp"
             app:layout_constraintBottom_toBottomOf="@+id/play_icons_container"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"

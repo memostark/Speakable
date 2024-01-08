@@ -17,6 +17,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -25,6 +26,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.Observer;
 import androidx.preference.PreferenceManager;
@@ -42,7 +44,6 @@ import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.google.android.material.snackbar.Snackbar;
-import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.LoadResult;
 import com.guillermonegrete.tts.data.PlayAudioState;
@@ -58,6 +59,7 @@ import com.guillermonegrete.tts.customviews.TrashView;
 import com.guillermonegrete.tts.R;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.utils.ThemeHelperKt;
 
 import java.util.Arrays;
 import java.util.List;
@@ -123,6 +125,11 @@ public class ScreenTextService extends Service {
     private String[] languagesNames;
     private List<String> languagesISO;
 
+    /**
+     * These contexts are used for inflating views with either night or light mode.
+     */
+    private Context nightContext;
+    private Context lightContext;
 
     @Nullable
     @Override
@@ -151,6 +158,9 @@ public class ScreenTextService extends Service {
         mParamsTrash = new WindowManager.LayoutParams();
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        nightContext = createNightModeContext(this, true);
+        lightContext = createNightModeContext(this, false);
     }
 
     private void destroyLayouts() {
@@ -342,8 +352,24 @@ public class ScreenTextService extends Service {
         binding.translateIconButton.setVisibility(View.GONE);
     }
 
+    /**
+     * Creates a context wrapper used for inflating views with the dark/light theme.
+     * By default, views inflated in a Service use the system's theme instead of the one set for the app.
+     * If you want to use a specific dark/light theme you need to use this wrapped context.
+     * <p>
+     * Taken from <a href="https://gist.github.com/chrisbanes/bcf4b11154cb59e3f302f278902eb3f7">here</a>.
+     */
+    public Context createNightModeContext(Context context, boolean isNightMode) {
+        var uiModeFlag = isNightMode ? Configuration.UI_MODE_NIGHT_YES : Configuration.UI_MODE_NIGHT_NO;
+        var config = new Configuration(context.getResources().getConfiguration());
+        config.uiMode = uiModeFlag | (config.uiMode & ~Configuration.UI_MODE_NIGHT_MASK);
+        return new ContextThemeWrapper(context.createConfigurationContext(config), R.style.AppTheme);
+    }
+
     private void showPopUpTranslation(Translation translation){
-        var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(this));
+        boolean isNightMode = ThemeHelperKt.isNightMode(this);
+        var context = isNightMode ? nightContext: lightContext;
+        var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(context));
         popupBinding.textViewPopupTranslation.setText(translation.getTranslatedText());
         popupBinding.textViewPopupTranslation.setMovementMethod(new ScrollingMovementMethod());
         popupBinding.languageFromText.setText(getLanguageName(translation.getSrc()));
