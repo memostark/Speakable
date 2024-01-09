@@ -59,6 +59,8 @@ import com.guillermonegrete.tts.customviews.TrashView;
 import com.guillermonegrete.tts.R;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.utils.ContextExtKt;
+import com.guillermonegrete.tts.utils.ScreenInfo;
 import com.guillermonegrete.tts.utils.ThemeHelperKt;
 
 import java.util.Arrays;
@@ -113,6 +115,7 @@ public class ScreenTextService extends Service {
     public static final String NO_FLOATING_ICON_SERVICE = "startNoFloatingIcon";
 
     private Point screenSize;
+    private ScreenInfo screenSizes;
 
     private ScreenTextViewModel viewModel;
 
@@ -153,6 +156,7 @@ public class ScreenTextService extends Service {
 
         screenSize = new Point();
         windowManager.getDefaultDisplay().getRealSize(screenSize);
+        screenSizes = ContextExtKt.getScreenSizes(this);
 
         windowParams = new WindowManager.LayoutParams();
         mParamsTrash = new WindowManager.LayoutParams();
@@ -599,15 +603,28 @@ public class ScreenTextService extends Service {
     //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
     private void animateToEdge() {
         int currentX = windowParams.x;
+        int currentY = windowParams.y;
+        // If the status bar is visible then the Y zero coordinate starts after the bar, above the bar the y is negative
+        boolean statusBarVisible = ContextExtKt.statusBarVisible(this);
+        if (statusBarVisible) {
+            currentY = currentY + screenSizes.getStatusHeight();
+        }
         int bubbleWidth =  binding.iconContainer.getMeasuredWidth();
         ValueAnimator ani;
         int toPosition;
         if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2 * bubbleWidth / 3;
         else toPosition = -bubbleWidth / 3;
+        if (currentY < screenSizes.getStatusHeight()) {
+            windowParams.y = statusBarVisible ? 0 : screenSizes.getStatusHeight();
+        }
 
-        System.out.println("currentX: " + currentX + " bubble width: " + bubbleWidth + " to: " + toPosition);
+        int heightNoNav = screenSizes.getHeight() - screenSizes.getNavHeight();
+        if(currentY > heightNoNav) {
+            int bubbleHeight = binding.iconContainer.getMeasuredHeight();
+            int statusBarOffset = statusBarVisible ? screenSizes.getStatusHeight() : 0;
+            windowParams.y = heightNoNav - bubbleHeight - statusBarOffset;
+        }
         ani = ValueAnimator.ofInt(currentX, toPosition);
-        //windowParams.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
 
         ani.addUpdateListener(animation -> {
             windowParams.x = (Integer) animation.getAnimatedValue();
