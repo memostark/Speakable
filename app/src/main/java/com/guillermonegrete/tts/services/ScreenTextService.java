@@ -134,6 +134,8 @@ public class ScreenTextService extends Service {
     private Context nightContext;
     private Context lightContext;
 
+    private int eightDp = 0;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -165,6 +167,8 @@ public class ScreenTextService extends Service {
 
         nightContext = createNightModeContext(this, true);
         lightContext = createNightModeContext(this, false);
+
+        eightDp = ContextExtKt.dpToPixel(this, 8);
     }
 
     private void destroyLayouts() {
@@ -311,8 +315,10 @@ public class ScreenTextService extends Service {
     }
 
     private void showSnippingView(){
-        var frameLayoutParams = (FrameLayout.LayoutParams) binding.iconContainer.getLayoutParams();
+        var frameLayoutParams = (ViewGroup.MarginLayoutParams) binding.iconContainer.getLayoutParams();
         frameLayoutParams.setMargins(0,0,0,35);
+        var bubbleParams = (ViewGroup.MarginLayoutParams) binding.imageBubble.getLayoutParams();
+        bubbleParams.setMargins(eightDp, eightDp, eightDp, eightDp);
         showContainerActionButtons();
         setContainerBackground();
         windowParams.x=0;
@@ -329,6 +335,10 @@ public class ScreenTextService extends Service {
 
     private void setFloatingIconView(){
         binding.snipView.setVisibility(View.GONE);
+        var frameLayoutParams = (ViewGroup.MarginLayoutParams) binding.iconContainer.getLayoutParams();
+        frameLayoutParams.setMargins(0,0,0,0);
+        var bubbleParams = (ViewGroup.MarginLayoutParams) binding.imageBubble.getLayoutParams();
+        bubbleParams.setMargins(0,0,0, 0);
 
         hideContainerActionButtons();
         removeContainerBackground();
@@ -604,8 +614,15 @@ public class ScreenTextService extends Service {
     private void animateToEdge() {
         int currentX = windowParams.x;
         int currentY = windowParams.y;
+
+        boolean statusBarVisible;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            statusBarVisible = ContextExtKt.statusBarVisible(this);
+        } else {
+            // For older APIs there is no way to tell if the bar is visible for an overlay service
+            statusBarVisible = true;
+        }
         // If the status bar is visible then the Y zero coordinate starts after the bar, above the bar the y is negative
-        boolean statusBarVisible = ContextExtKt.statusBarVisible(this);
         if (statusBarVisible) {
             currentY = currentY + screenSizes.getStatusHeight();
         }
@@ -614,15 +631,18 @@ public class ScreenTextService extends Service {
         int toPosition;
         if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2 * bubbleWidth / 3;
         else toPosition = -bubbleWidth / 3;
+
+        // Make sure the bubble doesn't overlap the status or nav bars
         if (currentY < screenSizes.getStatusHeight()) {
             windowParams.y = statusBarVisible ? 0 : screenSizes.getStatusHeight();
         }
 
         int heightNoNav = screenSizes.getHeight() - screenSizes.getNavHeight();
-        if(currentY > heightNoNav) {
-            int bubbleHeight = binding.iconContainer.getMeasuredHeight();
+        int bubbleHeight = binding.iconContainer.getMeasuredHeight();
+        int bubbleHeightThird = bubbleHeight / 3; // A tolerance to avoid the bubble ending up almost covered by the navbar
+        if(currentY >= (heightNoNav - bubbleHeightThird)) {
             int statusBarOffset = statusBarVisible ? screenSizes.getStatusHeight() : 0;
-            windowParams.y = heightNoNav - bubbleHeight - statusBarOffset;
+            windowParams.y = heightNoNav - bubbleHeightThird - statusBarOffset;
         }
         ani = ValueAnimator.ofInt(currentX, toPosition);
 
