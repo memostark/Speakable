@@ -7,10 +7,14 @@ package com.guillermonegrete.tts.customviews
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
+import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-
+import android.view.WindowInsets
+import android.view.WindowManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.guillermonegrete.tts.R
 import kotlin.math.sqrt
 
@@ -43,31 +47,17 @@ class SnippingView : View {
     val snipRectangle: Rect
         get() = Rect(snipLeft, snipTop, snipRight, snipBottom)
 
-    constructor(context: Context) : super(context) {
-        isFocusable = true // necessary for getting the touch events
-        setBitmaps(context)
+    init {
+        isFocusable = true
     }
 
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        isFocusable = true // necessary for getting the touch events
-        setBitmaps(context)
-    }
+    constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle) {
-        setBitmaps(context)
-    }
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
 
-    private fun setBitmaps(context: Context) {
-        // Screen dimensions without the navigation bar because we don't draw over it
-        wParent = context.resources.displayMetrics.widthPixels
-        hParent = context.resources.displayMetrics.heightPixels
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
 
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        val statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
-
-        snipTop = statusBarHeight
-        snipRight = wParent
-        snipBottom = hParent
+    private fun setBitmaps(statusBarHeight: Int) {
 
         val firstBitmap = BitmapFactory.decodeResource(context.resources, bitmaps.first())
         val bitmapWidth = firstBitmap.width
@@ -84,14 +74,94 @@ class SnippingView : View {
             val bitmap = BitmapFactory.decodeResource(context.resources, bitmaps[j])
             colorBalls.add(ColorBall(bitmap, j, point))
         }
+
+        invalidate()
     }
 
-    override fun onDraw(canvas: Canvas) {
+    fun prepareLayout() {
 
-        /*snipLeft = colorBalls[0].left
-        snipTop = colorBalls[0].top
-        snipRight = colorBalls[2].right
-        snipBottom = colorBalls[2].bottom*/
+        if (colorBalls.isNotEmpty()) {
+            // The usable window height may have shrunk, if that's the case adjust the bottom
+            if (snipBottom > hParent) {
+                updateBottom(hParent)
+                invalidate()
+            }
+            return
+        }
+
+        val sizes = getWindowSize()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
+                // Recalculate height because nav size might have changed
+                // Don't use the nav height from the insets because it always return 0 when using an overlay layout
+                val navBarVisible = insets.isVisible(WindowInsetsCompat.Type.navigationBars())
+                val navSize = if (navBarVisible) sizes.navHeight else 0
+                hParent = sizes.height - navSize
+
+                val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+                val statusBarHeight = statusBarInsets.top
+
+                val statusBarVisible = insets.isVisible(WindowInsetsCompat.Type.statusBars())
+                if (!statusBarVisible ||
+                    statusBarHeight > 0) { // sometimes the status bar is visible but the height is 0, ignore those insets until the height has a value
+
+                    if (colorBalls.isEmpty()) {
+                        snipTop = sizes.statusHeight
+                        snipRight = wParent
+                        snipBottom = hParent
+                        setBitmaps(sizes.statusHeight)
+                    }
+                }
+
+                insets
+            }
+        } else {
+            val statusBarHeight = sizes.statusHeight
+
+            snipTop = statusBarHeight
+            snipRight = wParent
+            snipBottom = hParent
+
+            setBitmaps(statusBarHeight)
+        }
+    }
+
+    private fun getWindowSize(): Sizes {
+
+        val sizes: Sizes
+
+        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val windowMetrics = wm.currentWindowMetrics
+            val windowInsets = windowMetrics.windowInsets
+
+            val insets = windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout())
+            val insetsWidth = insets.right + insets.left
+            val insetsHeight = insets.bottom // Ignore top inset because the app draws over it
+
+            val b = windowMetrics.bounds
+            wParent = b.width() - insetsWidth
+            hParent = b.height() - insetsHeight
+
+            sizes = Sizes(b.width(), b.height(), insets.top, insets.bottom)
+        } else {
+            wParent = context.resources.displayMetrics.widthPixels
+            hParent = context.resources.displayMetrics.heightPixels
+
+            val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+            val navHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
+            val statusResourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+            val statusBarHeight = if (statusResourceId > 0) resources.getDimensionPixelSize(statusResourceId) else 0
+            sizes = Sizes(wParent, hParent, statusBarHeight, navHeight)
+        }
+
+        return sizes
+    }
+
+    data class Sizes(val width: Int, val height: Int, val statusHeight: Int, val navHeight: Int)
+
+    override fun onDraw(canvas: Canvas) {
 
         paint.apply {
             isAntiAlias = true
@@ -259,6 +329,15 @@ class SnippingView : View {
         invalidate()
         return true
 
+    }
+
+    /**
+     * Updates the position of the snip bottom along with the bottom corners.
+     */
+    private fun updateBottom(bottomPos: Int) {
+        snipBottom = bottomPos
+        colorBalls[1].top = bottomPos - colorBalls[1].height
+        colorBalls[2].top = bottomPos - colorBalls[2].height
     }
 
     private fun ensureRange(value: Int, min: Int, max: Int) = minOf(maxOf(value, min), max)

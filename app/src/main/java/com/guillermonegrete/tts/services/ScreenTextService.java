@@ -17,6 +17,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -25,6 +26,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.Observer;
 import androidx.preference.PreferenceManager;
@@ -42,7 +44,6 @@ import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.google.android.material.snackbar.Snackbar;
-import com.google.mlkit.common.MlKitException;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.LoadResult;
 import com.guillermonegrete.tts.data.PlayAudioState;
@@ -58,6 +59,9 @@ import com.guillermonegrete.tts.customviews.TrashView;
 import com.guillermonegrete.tts.R;
 
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.utils.ContextExtKt;
+import com.guillermonegrete.tts.utils.ScreenInfo;
+import com.guillermonegrete.tts.utils.ThemeHelperKt;
 
 import java.util.Arrays;
 import java.util.List;
@@ -111,6 +115,7 @@ public class ScreenTextService extends Service {
     public static final String NO_FLOATING_ICON_SERVICE = "startNoFloatingIcon";
 
     private Point screenSize;
+    private ScreenInfo screenSizes;
 
     private ScreenTextViewModel viewModel;
 
@@ -123,6 +128,13 @@ public class ScreenTextService extends Service {
     private String[] languagesNames;
     private List<String> languagesISO;
 
+    /**
+     * These contexts are used for inflating views with either night or light mode.
+     */
+    private Context nightContext;
+    private Context lightContext;
+
+    private int eightDp = 0;
 
     @Nullable
     @Override
@@ -146,12 +158,17 @@ public class ScreenTextService extends Service {
 
         screenSize = new Point();
         windowManager.getDefaultDisplay().getRealSize(screenSize);
+        screenSizes = ContextExtKt.getScreenSizes(this);
 
         windowParams = new WindowManager.LayoutParams();
         mParamsTrash = new WindowManager.LayoutParams();
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-//        setTextRecognizer();
+
+        nightContext = createNightModeContext(this, true);
+        lightContext = createNightModeContext(this, false);
+
+        eightDp = ContextExtKt.dpToPixel(this, 8);
     }
 
     private void destroyLayouts() {
@@ -178,17 +195,16 @@ public class ScreenTextService extends Service {
                 playButton.setVisibility(View.VISIBLE);
 
             } else if (state instanceof PlayAudioState.Stopped) {
-                playLoadingIcon.setVisibility(View.INVISIBLE);
-                playButton.setVisibility(View.VISIBLE);
-                playButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
-                binding.languageText.setVisibility(View.INVISIBLE);
-
+                defaultPlayButton();
             } else if (state instanceof PlayAudioState.Loading) {
                 playLoadingIcon.setVisibility(View.VISIBLE);
                 playButton.setVisibility(View.INVISIBLE);
 
             } else if (state instanceof PlayAudioState.Error error) {
-                Toast.makeText(this, error.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                String message = error.getException().getMessage();
+                if (message == null) message = "Unknown error";
+                Snackbar.make(binding.iconContainer, message, Snackbar.LENGTH_SHORT).show();
+                defaultPlayButton();
             }
         };
         viewModel.getPlayingAudio().observeForever(playAudioObserver);
@@ -218,13 +234,16 @@ public class ScreenTextService extends Service {
         viewModel.getTextTranslated().observeForever(textTranslatedObserver);
     }
 
+    private void defaultPlayButton() {
+        binding.playLoadingIcon.setVisibility(View.INVISIBLE);
+        binding.playIconButton.setVisibility(View.VISIBLE);
+        binding.playIconButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+        binding.languageText.setVisibility(View.INVISIBLE);
+    }
+
     private void handleTranslationError(Exception error) {
-        String errorText;
-        if(error instanceof MlKitException) {
-            errorText = "Waiting for the text recognition module to be downloaded";
-        } else {
-            errorText = "Couldn't detect text from image";
-        }
+        String errorText = error.getMessage();
+        if (errorText == null) errorText = "Unknown error";
         Snackbar.make(binding.iconContainer, errorText, Snackbar.LENGTH_SHORT).show();
     }
 
@@ -258,6 +277,9 @@ public class ScreenTextService extends Service {
         windowParams.type = getLayoutParamType();
         windowParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         windowParams.format = PixelFormat.TRANSLUCENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            windowParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
     }
 
     private void defaultTrashViewParams(){
@@ -268,6 +290,14 @@ public class ScreenTextService extends Service {
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         mParamsTrash.format = PixelFormat.TRANSLUCENT;
+        // Android 12 requires this alpha value to allow touch events to pass to other apps or the system UI.
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S) {
+            mParamsTrash.alpha = 0.8f;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            mParamsTrash.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
 
         mParamsTrash.gravity = Gravity.START | Gravity.BOTTOM;
         mParamsTrash.x = 0;
@@ -285,9 +315,10 @@ public class ScreenTextService extends Service {
     }
 
     private void showSnippingView(){
-        var frameLayoutParams = (FrameLayout.LayoutParams) binding.iconContainer.getLayoutParams();
+        var frameLayoutParams = (ViewGroup.MarginLayoutParams) binding.iconContainer.getLayoutParams();
         frameLayoutParams.setMargins(0,0,0,35);
-        binding.snipView.setVisibility(View.VISIBLE);
+        var bubbleParams = (ViewGroup.MarginLayoutParams) binding.imageBubble.getLayoutParams();
+        bubbleParams.setMargins(eightDp, eightDp, eightDp, eightDp);
         showContainerActionButtons();
         setContainerBackground();
         windowParams.x=0;
@@ -298,10 +329,16 @@ public class ScreenTextService extends Service {
                 | WindowManager.LayoutParams.FLAG_FULLSCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         windowManager.updateViewLayout(binding.getRoot(), windowParams);
+        binding.snipView.prepareLayout();
+        binding.snipView.setVisibility(View.VISIBLE);
     }
 
     private void setFloatingIconView(){
         binding.snipView.setVisibility(View.GONE);
+        var frameLayoutParams = (ViewGroup.MarginLayoutParams) binding.iconContainer.getLayoutParams();
+        frameLayoutParams.setMargins(0,0,0,0);
+        var bubbleParams = (ViewGroup.MarginLayoutParams) binding.imageBubble.getLayoutParams();
+        bubbleParams.setMargins(0,0,0, 0);
 
         hideContainerActionButtons();
         removeContainerBackground();
@@ -329,8 +366,24 @@ public class ScreenTextService extends Service {
         binding.translateIconButton.setVisibility(View.GONE);
     }
 
+    /**
+     * Creates a context wrapper used for inflating views with the dark/light theme.
+     * By default, views inflated in a Service use the system's theme instead of the one set for the app.
+     * If you want to use a specific dark/light theme you need to use this wrapped context.
+     * <p>
+     * Taken from <a href="https://gist.github.com/chrisbanes/bcf4b11154cb59e3f302f278902eb3f7">here</a>.
+     */
+    public Context createNightModeContext(Context context, boolean isNightMode) {
+        var uiModeFlag = isNightMode ? Configuration.UI_MODE_NIGHT_YES : Configuration.UI_MODE_NIGHT_NO;
+        var config = new Configuration(context.getResources().getConfiguration());
+        config.uiMode = uiModeFlag | (config.uiMode & ~Configuration.UI_MODE_NIGHT_MASK);
+        return new ContextThemeWrapper(context.createConfigurationContext(config), R.style.AppTheme);
+    }
+
     private void showPopUpTranslation(Translation translation){
-        var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(this));
+        boolean isNightMode = ThemeHelperKt.isNightMode(this);
+        var context = isNightMode ? nightContext: lightContext;
+        var popupBinding = PopUpTranslationBinding.inflate(LayoutInflater.from(context));
         popupBinding.textViewPopupTranslation.setText(translation.getTranslatedText());
         popupBinding.textViewPopupTranslation.setMovementMethod(new ScrollingMovementMethod());
         popupBinding.languageFromText.setText(getLanguageName(translation.getSrc()));
@@ -560,15 +613,38 @@ public class ScreenTextService extends Service {
     //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
     private void animateToEdge() {
         int currentX = windowParams.x;
+        int currentY = windowParams.y;
+
+        boolean statusBarVisible;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            statusBarVisible = ContextExtKt.statusBarVisible(this);
+        } else {
+            // For older APIs there is no way to tell if the bar is visible for an overlay service
+            statusBarVisible = true;
+        }
+        // If the status bar is visible then the Y zero coordinate starts after the bar, above the bar the y is negative
+        if (statusBarVisible) {
+            currentY = currentY + screenSizes.getStatusHeight();
+        }
         int bubbleWidth =  binding.iconContainer.getMeasuredWidth();
         ValueAnimator ani;
         int toPosition;
         if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2 * bubbleWidth / 3;
         else toPosition = -bubbleWidth / 3;
 
-        System.out.println("currentX: " + currentX + " bubble width: " + bubbleWidth + " to: " + toPosition);
+        // Make sure the bubble doesn't overlap the status or nav bars
+        if (currentY < screenSizes.getStatusHeight()) {
+            windowParams.y = statusBarVisible ? 0 : screenSizes.getStatusHeight();
+        }
+
+        int heightNoNav = screenSizes.getHeight() - screenSizes.getNavHeight();
+        int bubbleHeight = binding.iconContainer.getMeasuredHeight();
+        int bubbleHeightThird = bubbleHeight / 3; // A tolerance to avoid the bubble ending up almost covered by the navbar
+        if(currentY >= (heightNoNav - bubbleHeightThird)) {
+            int statusBarOffset = statusBarVisible ? screenSizes.getStatusHeight() : 0;
+            windowParams.y = heightNoNav - bubbleHeightThird - statusBarOffset;
+        }
         ani = ValueAnimator.ofInt(currentX, toPosition);
-        //windowParams.y = Math.min(Math.max(0, initialY),mMetrics.heightPixels - bubble.getMeasuredHeight());
 
         ani.addUpdateListener(animation -> {
             windowParams.x = (Integer) animation.getAnimatedValue();

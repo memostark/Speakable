@@ -137,7 +137,7 @@ class ScreenTextViewModel @JvmOverloads constructor(
 
         override fun onLanguageUnavailable() {
             isPlayingValue = false
-            setErrorState("TTS error: Language Unavailable")
+            setErrorState("TTS error: Language Unknown/Unavailable")
         }
 
         override fun onSpeakStart() {
