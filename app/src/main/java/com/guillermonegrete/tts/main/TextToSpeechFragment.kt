@@ -1,9 +1,11 @@
 package com.guillermonegrete.tts.main
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
@@ -26,6 +28,9 @@ import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
@@ -55,6 +60,15 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     private lateinit var requestOverlayPermission: ActivityResultLauncher<Intent>
     private lateinit var requestScreenCapture: ActivityResultLauncher<Intent>
 
+    private var screenCaptureIntent: Intent? = null
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {granted ->
+            val data = screenCaptureIntent ?: return@registerForActivityResult
+            // The 2nd condition is always false because we only do this for API 33+ but was added to remove the API warning
+            if (granted || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+                launchService(data) else showNotificationRationalDialog(data, false)
+        }
+
     private val clipText: String
         get() {
             val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -79,13 +93,13 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
         requestScreenCapture = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val data = result.data ?: return@registerForActivityResult
+
             if (result.resultCode == AppCompatActivity.RESULT_OK) {
-                val intent = Intent(activity, ScreenTextService::class.java)
-                intent.action = NORMAL_SERVICE
-                intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, result.resultCode)
-                intent.putExtras(data)
-                activity?.startService(intent)
-                activity?.finish()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    checkNotificationPermission(data)
+                } else {
+                    launchService(data)
+                }
             }
         }
     }
@@ -220,10 +234,58 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         }
     }
 
+    private fun launchService(data: Intent) {
+        val intent = Intent(activity, ScreenTextService::class.java)
+        intent.action = NORMAL_SERVICE
+        intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, AppCompatActivity.RESULT_OK)
+        intent.putExtras(data)
+        activity?.startService(intent)
+        activity?.finish()
+    }
+
     private fun getScreenCaptureIntent(){
         val manager = activity?.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val permissionIntent = manager.createScreenCaptureIntent()
         requestScreenCapture.launch(permissionIntent)
+    }
+
+    /**
+     * For Android 13, in order to show a foreground notification you need to ask for the post notification permission.
+     */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun checkNotificationPermission(data: Intent) {
+        val permission = Manifest.permission.POST_NOTIFICATIONS
+        when {
+            ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED -> {
+                launchService(data)
+            }
+            shouldShowRequestPermissionRationale(permission) -> {
+                showNotificationRationalDialog(data, true)
+            }
+            else -> {
+                screenCaptureIntent = data
+                requestNotificationPermission.launch(permission)
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun showNotificationRationalDialog(data: Intent, askPermission: Boolean) {
+
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setMessage(getString(R.string.overlay_notification_permission_rationale))
+            .setCancelable(false)
+            .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                if (askPermission) {
+                    screenCaptureIntent = data
+                    requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    launchService(data)
+                }
+                dialog.dismiss()
+            }
+
+        builder.create().show()
     }
 
     override fun showDetectedLanguage(language: String?) {
