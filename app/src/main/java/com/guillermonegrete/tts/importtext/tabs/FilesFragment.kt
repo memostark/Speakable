@@ -1,10 +1,8 @@
 package com.guillermonegrete.tts.importtext.tabs
 
-import android.Manifest
 import android.animation.Animator
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,7 +11,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
@@ -45,7 +42,6 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.lang.StringBuilder
 
 @AndroidEntryPoint
 class FilesFragment: Fragment(R.layout.files_layout) {
@@ -105,7 +101,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
             pickTxtFileBtn.apply {
                 setOnClickListener {
                     fileType = ImportedFileType.TXT
-                    checkFileReadPermission()
+                    pickFile()
                 }
                 post { translationY = height.toFloat() }
             }
@@ -113,7 +109,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
             pickEpubFileBtn.apply {
                 setOnClickListener {
                     fileType = ImportedFileType.EPUB
-                    checkFileReadPermission()
+                    pickFile()
                 }
                 post { translationY = height.toFloat() }
             }
@@ -177,39 +173,6 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         }
     }
 
-    private fun checkFileReadPermission(){
-
-        val con = context ?: return
-
-        if (ContextCompat.checkSelfPermission(con, Manifest.permission.READ_EXTERNAL_STORAGE)
-            != PackageManager.PERMISSION_GRANTED) {
-            // Permission is not granted
-            requestPermissions(
-                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                READ_STORAGE_PERMISSION_REQUEST
-            )
-        } else {
-            pickFile()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        when (requestCode) {
-            READ_STORAGE_PERMISSION_REQUEST -> {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    pickFile()
-                } else {
-                    Toast.makeText(context, getString(R.string.no_file_read_permission), Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
     /**
      * How to persist uri access permission: https://stackoverflow.com/questions/25414352/how-to-persist-permission-in-android-api-19-kitkat
      */
@@ -225,6 +188,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         }
 
         pickFile.launch(intent)
+        hidePickButtons()
     }
 
     // TODO execute in background thread
@@ -284,16 +248,18 @@ class FilesFragment: Fragment(R.layout.files_layout) {
     private fun toggleButtons(){
         fabOpen = !fabOpen
 
-        val pickEpub = binding.pickEpubFileBtn
-        val pickText = binding.pickTxtFileBtn
-
         if(fabOpen) {
-            ViewAnimation.showIn(pickEpub)
-            ViewAnimation.showIn(pickText)
+            ViewAnimation.showIn(binding.pickEpubFileBtn)
+            ViewAnimation.showIn(binding.pickTxtFileBtn)
         }else{
-            ViewAnimation.showOut(pickEpub)
-            ViewAnimation.showOut(pickText)
+            hidePickButtons()
         }
+    }
+
+    private fun hidePickButtons() {
+        fabOpen = false
+        ViewAnimation.showOut(binding.pickEpubFileBtn)
+        ViewAnimation.showOut(binding.pickTxtFileBtn)
     }
 
     object ViewAnimation{
@@ -347,10 +313,6 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
     private fun View.setBottomMargin(margin: Int) {
         (layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = margin
-    }
-
-    companion object{
-        private const val READ_STORAGE_PERMISSION_REQUEST = 113
     }
 }
 
