@@ -182,6 +182,9 @@
     <string name="add">Add</string>
     <string name="unknown_language">Unknown</string>
 
+    <!--Text to speech fragment-->
+    <string name="overlay_notification_permission_rationale">Notifications make the experience better by allowing you to easily show and close the floating icon</string>
+
     <!--Saved words fragment-->
     <string name="no_words_saved">No words found</string>
 
