@@ -185,6 +185,12 @@
     <!--Text to speech fragment-->
     <string name="overlay_notification_permission_rationale">Notifications make the experience better by allowing you to easily show and close the floating icon</string>
 
+    <!--Screen Text Service-->
+    <string name="clipboard_notification_title">Clipboard translation is activated</string>
+    <string name="notification_title">Speakable overlay</string>
+    <string name="notification_text">Tap to start text recognition</string>
+    <string name="notification_text_short">Tap to start</string>
+
     <!--Saved words fragment-->
     <string name="no_words_saved">No words found</string>
 
