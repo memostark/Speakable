@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <SwitchPreferenceCompat
         android:key="auto_tts_switch"
         android:title="TTS automatically"
-        android:summary="Enable automatically text to speech"
-        />
+        android:summary="Enable automatically text to speech" />
+
     <SwitchPreferenceCompat
         android:key="clipboard_show_dialog"
-        android:title="Show when text copied"
+        android:title="Show dialog on copy"
         android:summary="Show dialog when text is copied to clipboard"
-        />
+        app:isPreferenceVisible="false"/>
 
     <PreferenceCategory
         android:title="Text recognizer">

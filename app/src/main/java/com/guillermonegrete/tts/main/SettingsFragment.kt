@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.main
 
 
+import android.os.Build
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
@@ -8,6 +9,7 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
 import androidx.preference.ListPreference
+import androidx.preference.Preference
 
 import com.guillermonegrete.tts.R
 
@@ -42,6 +44,11 @@ class SettingsFragment : PreferenceFragmentCompat(), MenuProvider {
         setPreferencesFromResource(R.xml.preferences_main, rootKey)
 
         val themePreference: ListPreference? = findPreference(PREF_THEME)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            val clipboardPreference: Preference? = findPreference(PREF_CLIPBOARD_SWITCH)
+            clipboardPreference?.isVisible = true
+        }
 
         themePreference?.setOnPreferenceChangeListener { _, newValue ->
             val themeOption = newValue as String
