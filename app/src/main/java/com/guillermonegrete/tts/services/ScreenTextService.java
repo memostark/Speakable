@@ -14,6 +14,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -58,7 +60,9 @@ import com.guillermonegrete.tts.customviews.BubbleView;
 import com.guillermonegrete.tts.customviews.TrashView;
 import com.guillermonegrete.tts.R;
 
+import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.textprocessing.ProcessTextActivity;
 import com.guillermonegrete.tts.utils.ContextExtKt;
 import com.guillermonegrete.tts.utils.ScreenInfo;
 import com.guillermonegrete.tts.utils.ThemeHelperKt;
@@ -97,6 +101,7 @@ public class ScreenTextService extends Service {
     static final int STATE_INTERSECTING = 1;
 //    static final int STATE_FINISHING = 2;
 
+    private ClipboardManager clipboard;
     private SharedPreferences sharedPreferences;
     private String languageToPreference;
 
@@ -163,6 +168,10 @@ public class ScreenTextService extends Service {
         windowParams = new WindowManager.LayoutParams();
         mParamsTrash = new WindowManager.LayoutParams();
 
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            clipboard = (ClipboardManager) getApplication().getSystemService(Context.CLIPBOARD_SERVICE);
+            setClipboardCallback();
+        }
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         nightContext = createNightModeContext(this, true);
@@ -265,6 +274,32 @@ public class ScreenTextService extends Service {
 
     private boolean isSnipViewVisible(){
         return binding.snipView.getVisibility() == View.VISIBLE;
+    }
+
+    private final ClipboardManager.OnPrimaryClipChangedListener clipboardListener = new ClipboardManager.OnPrimaryClipChangedListener(){
+
+        @Override
+        public void onPrimaryClipChanged() {
+            if (!sharedPreferences.getBoolean(SettingsFragment.PREF_CLIPBOARD_SWITCH, false)) return;
+
+            ClipData clip = clipboard.getPrimaryClip();
+
+            if(clip == null) return;
+            if(clip.getItemCount() <= 0) return;
+
+            final CharSequence pasteData = clip.getItemAt(0).getText();
+
+            if (pasteData == null) return;
+
+            Intent dialogIntent = new Intent(ScreenTextService.this, ProcessTextActivity.class);
+            dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            dialogIntent.putExtra("android.intent.extra.PROCESS_TEXT", pasteData);
+            startActivity(dialogIntent);
+        }
+    };
+
+    private void setClipboardCallback(){
+        if(clipboard != null) clipboard.addPrimaryClipChangedListener(clipboardListener);
     }
 
 
@@ -462,12 +497,13 @@ public class ScreenTextService extends Service {
             CHANNEL_IMPORTANCE = "service_notification";
         }
 
+        var title = getString(Build.VERSION.SDK_INT < Build.VERSION_CODES.N ? R.string.clipboard_notification_title : R.string.notification_title);
         var notification = new NotificationCompat.Builder(this, CHANNEL_IMPORTANCE)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Clipboard translation is activated")
-                .setContentText("Tap to start")
+                .setContentTitle(title)
+                .setContentText(getString(R.string.notification_text_short))
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Tap to start text recognition"))
+                        .bigText(getString(R.string.notification_text)))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .addAction(R.drawable.ic_close, getString(R.string.close_notification), stopServiceIntent)
                 .setOngoing(true)
@@ -665,6 +701,9 @@ public class ScreenTextService extends Service {
         }
         if (trash_layout != null) {
             if(trash_layout.getWindowToken() != null) windowManager.removeView(trash_layout);
+        }
+        if(clipboard != null) {
+            clipboard.removePrimaryClipChangedListener(clipboardListener);
         }
         if(tts!=null) tts.finishTTS();
 

@@ -13,10 +13,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Patterns
-import androidx.fragment.app.Fragment
-import androidx.appcompat.app.AppCompatActivity
-import tourguide.tourguide.TourGuide
-
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -30,22 +26,24 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
-
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FragmentMainTtsBinding
 import com.guillermonegrete.tts.services.ScreenTextService
-
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
+import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import dagger.hilt.android.AndroidEntryPoint
+import tourguide.tourguide.TourGuide
 import javax.inject.Inject
 
 
@@ -157,6 +155,11 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
             startBubbleBtn.setOnClickListener { startOverlayService() }
 
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                clipboardBtn.isVisible = true
+                clipboardBtn.setOnClickListener { startClipboardService() }
+            }
+
             val autoText = getString(R.string.auto_detect)
             pickLanguage.text = autoText
             pickLanguage.setOnClickListener { findNavController().navigate(R.id.action_textToSpeech_to_pickLanguageFragment) }
@@ -232,6 +235,12 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         } else {
             getScreenCaptureIntent()
         }
+    }
+
+    private fun startClipboardService() {
+        val intent = Intent(activity, ScreenTextService::class.java)
+        intent.action = NO_FLOATING_ICON_SERVICE
+        activity?.startService(intent)
     }
 
     private fun launchService(data: Intent) {
@@ -331,7 +340,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     private fun playTutorial(){
         activity?.let {
 
-            TourGuide.create(it){
+            val guideOverlay = TourGuide.create(it) {
                 toolTip {
                     title{"Enable overlay mode"}
                     description { "Shows floating icon that allows you to select text to reproduce" }
@@ -341,7 +350,28 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
                     disableClickThroughHole(true)
                     setOnClickListener { this@create.cleanUp() }
                 }
-            }.playOn(binding.main.startBubbleBtn)
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                // API 23+ only have the Overlay button, so just play that part
+                guideOverlay.playOn(binding.main.startBubbleBtn)
+                return
+            }
+
+            TourGuide.create(it){
+                toolTip {
+                    title{"Enable clipboard mode"}
+                    description { "Shows dialog with translation whenever text is copied to clipboard" }
+                }
+                overlay {
+                    backgroundColor { Color.parseColor("#66FF0000") }
+                    disableClickThroughHole(true)
+                    setOnClickListener {
+                        this@create.cleanUp()
+                        guideOverlay.playOn(binding.main.startBubbleBtn)
+                    }
+                }
+            }.playOn(binding.main.clipboardBtn)
         }
     }
 
