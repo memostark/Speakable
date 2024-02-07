@@ -28,7 +28,7 @@ fun Context.getScreenSizes(): ScreenInfo {
         Timber.d("Insets: $insets")
 
         ScreenInfo(b.width(), b.height(), insets.top, insets.bottom)
-    } else @Suppress("DEPRECATION") {
+    } else @Suppress("DEPRECATION", "InternalInsetResource", "DiscouragedApi") {
         val display = wm.defaultDisplay // deprecated in API 30
         val realSize = Point()
         display?.getRealSize(realSize) // deprecated in API 30

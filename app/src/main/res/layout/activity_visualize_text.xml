@@ -143,8 +143,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page"
         app:srcCompat="@drawable/ic_list_grey_24dp"
-        android:tint="?attr/iconTintColor"
-        tools:visibility="visible"/>
+        tools:visibility="visible"
+        app:tint="?attr/iconTintColor" />
 
     <ImageButton
         android:id="@+id/brightness_settings_btn"
@@ -157,7 +157,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page"
         app:srcCompat="@drawable/ic_settings_black_24dp"
-        android:tint="?attr/iconTintColor"/>
+        app:tint="?attr/iconTintColor" />
 
     <ProgressBar
         android:id="@+id/visualizer_progress_bar"

@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.text.Selection
@@ -16,6 +17,14 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.marginBottom
+import androidx.core.view.marginTop
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
@@ -25,9 +34,9 @@ import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
+import com.guillermonegrete.tts.utils.getScreenSizes
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-import java.lang.IllegalArgumentException
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -78,6 +87,11 @@ class VisualizeTextActivity: AppCompatActivity() {
         pagesSeekBar = findViewById(R.id.pages_seekBar)
 
         textCardView = findViewById(R.id.text_reader_card_view)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+        }
+        window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION, WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+        currentPageLabel = findViewById(R.id.reader_current_page)
         setUpCardViewDimensions()
 
         // Bottom sheet
@@ -86,7 +100,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
         translationProgress = findViewById(R.id.page_translation_progress)
 
-        currentPageLabel = findViewById(R.id.reader_current_page)
         currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
@@ -129,7 +142,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         scaleDetector = ScaleGestureDetector(this, PinchListener())
 
-        setUIChangesListener()
+//        setUIChangesListener()
         setUpSeekBar()
     }
 
@@ -140,18 +153,18 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setUpCardViewDimensions() {
 
         val cardParams = textCardView.layoutParams
-        val metrics = resources.displayMetrics
+        val screenSizes = getScreenSizes()
 
-        cardWidth = (metrics.widthPixels * ratio).toInt()
+        cardWidth = (screenSizes.width * ratio).toInt()
         cardParams.width = cardWidth
-        cardParams.height = (metrics.heightPixels * ratio).toInt()
+        cardParams.height = ((screenSizes.height - screenSizes.statusHeight) * ratio).toInt() // use height that includes navbar if the navbar is not physical
         textCardView.layoutParams = cardParams
 
-        // In case a status bar exists, offset the card view in order to keep it centered with the screen
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
+        statusBarHeight = screenSizes.statusHeight
 
-        textCardView.translationY = - statusBarHeight / 2f
+        currentPageLabel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+            bottomMargin = currentPageLabel.marginBottom + screenSizes.navHeight
+        }
     }
 
     override fun onPause() {
@@ -534,7 +547,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(lastWidth < middleWidth){
                     toggleImmersiveMode()
                     scale = 1f
-                    textCardView.translationY = - statusBarHeight.toFloat() / 2f
+                    //textCardView.translationY = - statusBarHeight.toFloat() / 2f
                 }
             }
 
