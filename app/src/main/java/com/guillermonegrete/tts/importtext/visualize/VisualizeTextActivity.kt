@@ -17,14 +17,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.marginBottom
-import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
-import androidx.core.view.updatePadding
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
@@ -88,9 +85,11 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         textCardView = findViewById(R.id.text_reader_card_view)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // Never draw on the cutout because it may obstruct text in full screen
             window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
         }
-        window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION, WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+        // Let the layout cover the full screen (except cutout) this way the card is always centered
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         currentPageLabel = findViewById(R.id.reader_current_page)
         setUpCardViewDimensions()
 
@@ -595,7 +594,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(viewModel.fullScreen){
             hideSystemUi()
         }else{
-            window.decorView.systemUiVisibility = 0
+            val decorView = window.decorView
+            val controllerCompat = WindowCompat.getInsetsController(window, decorView)
+            controllerCompat.show(WindowInsetsCompat.Type.systemBars())
             actionBar?.show()
         }
 
@@ -607,16 +608,10 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun hideSystemUi(){
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN)
-
+        val decorView = window.decorView
+        val controllerCompat = WindowCompat.getInsetsController(window, decorView)
+        controllerCompat.hide(WindowInsetsCompat.Type.systemBars())
+        controllerCompat.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         actionBar?.hide()
     }
 
