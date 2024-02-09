@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableString
@@ -17,10 +16,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.marginBottom
+import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -73,7 +74,7 @@ class VisualizeTextActivity: AppCompatActivity() {
      * The ratio between the size of the screen and card view, ratio = cardWith / screenWidth
      * Used to get the desired dimensions of the card.
      */
-    private val ratio = 0.8f
+    private val ratio = 0.75f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,15 +92,13 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Let the layout cover the full screen (except cutout) this way the card is always centered
         WindowCompat.setDecorFitsSystemWindows(window, false)
         currentPageLabel = findViewById(R.id.reader_current_page)
-        setUpCardViewDimensions()
+        currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         // Bottom sheet
         bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
         bottomText = findViewById(R.id.page_bottom_text_view)
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
         translationProgress = findViewById(R.id.page_translation_progress)
-
-        currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
         brightnessButton.setOnClickListener { showSettingsPopUp(it) }
@@ -141,7 +140,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         scaleDetector = ScaleGestureDetector(this, PinchListener())
 
-//        setUIChangesListener()
+        setUIChangesListener()
         setUpSeekBar()
     }
 
@@ -149,21 +148,16 @@ class VisualizeTextActivity: AppCompatActivity() {
      *  Changes the dimensions of the card to have the same aspect ratio as the screen
      *  and smaller size given by the defined ratio.
      */
-    private fun setUpCardViewDimensions() {
+    private fun setUpCardViewDimensions(hasCutOut: Boolean) {
+        val screenSizes = getScreenSizes()
+        cardWidth = (screenSizes.width * ratio).toInt()
+        // Remove cutout height because it's not used
+        val screenHeight = if(!hasCutOut) screenSizes.height else screenSizes.height - screenSizes.statusHeight
 
         val cardParams = textCardView.layoutParams
-        val screenSizes = getScreenSizes()
-
-        cardWidth = (screenSizes.width * ratio).toInt()
         cardParams.width = cardWidth
-        cardParams.height = ((screenSizes.height - screenSizes.statusHeight) * ratio).toInt() // use height that includes navbar if the navbar is not physical
+        cardParams.height = (screenHeight * ratio).toInt()
         textCardView.layoutParams = cardParams
-
-        statusBarHeight = screenSizes.statusHeight
-
-        currentPageLabel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-            bottomMargin = currentPageLabel.marginBottom + screenSizes.navHeight
-        }
     }
 
     override fun onPause() {
@@ -228,12 +222,26 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUIChangesListener() {
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && viewModel.fullScreen) {
-                // The system bars are visible
-                val handler = Handler()
-                handler.postDelayed({ hideSystemUi() }, 3000)
+
+        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
+            val systembarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            val hasCutOut = insets.isVisible(WindowInsetsCompat.Type.displayCutout())
+            if (!hasCutOut) { // Phones with a normal status bar require extra margin to avoid overlapping with the bar
+                currentChapterLabel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    topMargin = currentChapterLabel.marginTop + systembarInsets.top
+                }
             }
+
+            // Margin for the bottom icons
+            currentPageLabel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = currentPageLabel.marginBottom + systembarInsets.bottom
+            }
+
+            setUpCardViewDimensions(hasCutOut)
+
+            ViewCompat.setOnApplyWindowInsetsListener(window.decorView, null)
+            insets
         }
     }
 
