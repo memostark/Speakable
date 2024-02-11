@@ -68,13 +68,13 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var scaleDetector: ScaleGestureDetector
 
     private var cardWidth = 0
-    private var statusBarHeight = 0
+    private var cardYOffset = 50f
 
     /**
      * The ratio between the size of the screen and card view, ratio = cardWith / screenWidth
      * Used to get the desired dimensions of the card.
      */
-    private val ratio = 0.75f
+    private val ratio = 0.8f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -158,6 +158,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         cardParams.width = cardWidth
         cardParams.height = (screenHeight * ratio).toInt()
         textCardView.layoutParams = cardParams
+        textCardView.translationY = -cardYOffset
     }
 
     override fun onPause() {
@@ -532,9 +533,16 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
 
+        /**
+         * The inverse of the ratio between the widths of the card and the screen.
+         * This is the ratio/scale the card should have when fully expanded (max scale).
+         */
         private val invRatio
             get() = 1f / ratio
+        private val minScale = 1f
         private var scale = 1f
+
+        private val constantTerm = (cardYOffset / (invRatio - minScale))
 
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             viewPager.isUserInputEnabled = false
@@ -554,7 +562,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(lastWidth < middleWidth){
                     toggleImmersiveMode()
                     scale = 1f
-                    //textCardView.translationY = - statusBarHeight.toFloat() / 2f
+                    textCardView.translationY = -cardYOffset
                 }
             }
 
@@ -570,9 +578,17 @@ class VisualizeTextActivity: AppCompatActivity() {
                 val newScale = scale * factor
 
                 // Avoid making the card smaller
-                if (newScale >= 1f) {
+                if (newScale >= minScale) {
                     textCardView.scaleX = newScale
                     textCardView.scaleY = newScale
+                    // When the card scale is minimum (e.g. 1) the Y offset is full length, when the scale reaches the inverse ratio (e.g. 1.5) the Y offset is 0
+                    // To calculate the new Y offset, using cross-multiplication: newScale / invRatio = newYOffset / cardYOffset
+                    // To normalize the scale/ratio to start from 0 , the min ratio is subtracted, therefore solving for newYOffset yields:
+                    // newYOffset = (newScale - minScale) * (cardYOffset / (invRatio - minScale))
+                    // Because when the factor increases the Y offset decreases, we need to subtract the new value to the initial offset (cardYOffset)
+                    val newYOffset = cardYOffset - (newScale - minScale) * constantTerm
+                    if (newYOffset >= 0) textCardView.translationY = -newYOffset
+
                     textCardView.invalidate()
                 }
 
