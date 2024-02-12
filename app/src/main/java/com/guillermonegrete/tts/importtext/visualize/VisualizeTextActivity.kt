@@ -68,13 +68,18 @@ class VisualizeTextActivity: AppCompatActivity() {
     private lateinit var scaleDetector: ScaleGestureDetector
 
     private var cardWidth = 0
-    private var cardYOffset = 50f
+    /**
+     * The vertical pixel distance between the center of the card and the center of the screen.
+     *
+     * A positive distance means the screen's center is below the card's, negative means the card's center is below.
+     */
+    private var cardYOffset = 0f
 
     /**
      * The ratio between the size of the screen and card view, ratio = cardWith / screenWidth
      * Used to get the desired dimensions of the card.
      */
-    private val ratio = 0.8f
+    private var ratio = 0.8f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,15 +155,18 @@ class VisualizeTextActivity: AppCompatActivity() {
      */
     private fun setUpCardViewDimensions(hasCutOut: Boolean) {
         val screenSizes = getScreenSizes()
-        cardWidth = (screenSizes.width * ratio).toInt()
         // Remove cutout height because it's not used
         val screenHeight = if(!hasCutOut) screenSizes.height else screenSizes.height - screenSizes.statusHeight
 
+        val cardHeight = textCardView.height
+        val cardCenterY = textCardView.y + cardHeight / 2
+        cardYOffset = (screenHeight / 2) - cardCenterY
+        ratio = cardHeight / screenHeight.toFloat()
+        cardWidth = (screenSizes.width * ratio).toInt()
+
         val cardParams = textCardView.layoutParams
         cardParams.width = cardWidth
-        cardParams.height = (screenHeight * ratio).toInt()
         textCardView.layoutParams = cardParams
-        textCardView.translationY = -cardYOffset
     }
 
     override fun onPause() {
@@ -239,7 +247,9 @@ class VisualizeTextActivity: AppCompatActivity() {
                 bottomMargin = currentPageLabel.marginBottom + systembarInsets.bottom
             }
 
-            setUpCardViewDimensions(hasCutOut)
+            textCardView.post {
+                setUpCardViewDimensions(hasCutOut)
+            }
 
             ViewCompat.setOnApplyWindowInsetsListener(window.decorView, null)
             insets
@@ -537,16 +547,17 @@ class VisualizeTextActivity: AppCompatActivity() {
          * The inverse of the ratio between the widths of the card and the screen.
          * This is the ratio/scale the card should have when fully expanded (max scale).
          */
-        private val invRatio
-            get() = 1f / ratio
+        private var invRatio = 1f
         private val minScale = 1f
         private var scale = 1f
 
-        private val constantTerm = (cardYOffset / (invRatio - minScale))
+        private var constantTerm = 0f
 
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             viewPager.isUserInputEnabled = false
             pinchDetected = false
+            invRatio = 1f / ratio
+            constantTerm = (cardYOffset / (invRatio - minScale))
             return true
         }
 
@@ -562,12 +573,12 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(lastWidth < middleWidth){
                     toggleImmersiveMode()
                     scale = 1f
-                    textCardView.translationY = -cardYOffset
                 }
             }
 
             textCardView.scaleX = scale
             textCardView.scaleY = scale
+            if (!viewModel.fullScreen) textCardView.translationY = 0f
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
@@ -581,15 +592,15 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if (newScale >= minScale) {
                     textCardView.scaleX = newScale
                     textCardView.scaleY = newScale
-                    // When the card scale is minimum (e.g. 1) the Y offset is full length, when the scale reaches the inverse ratio (e.g. 1.5) the Y offset is 0
                     // To calculate the new Y offset, using cross-multiplication: newScale / invRatio = newYOffset / cardYOffset
                     // To normalize the scale/ratio to start from 0 , the min ratio is subtracted, therefore solving for newYOffset yields:
                     // newYOffset = (newScale - minScale) * (cardYOffset / (invRatio - minScale))
-                    // Because when the factor increases the Y offset decreases, we need to subtract the new value to the initial offset (cardYOffset)
-                    val newYOffset = cardYOffset - (newScale - minScale) * constantTerm
-                    if (newYOffset >= 0) textCardView.translationY = -newYOffset
-
-                    textCardView.invalidate()
+                    val newYOffset = (newScale - minScale) * constantTerm
+                    if (newScale <= invRatio) textCardView.translationY = newYOffset
+                } else {
+                    textCardView.scaleX = minScale
+                    textCardView.scaleY = minScale
+                    textCardView.translationY = 0f
                 }
 
                 val fullScreen = viewModel.fullScreen
@@ -600,8 +611,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                     scale = invRatio
                     textCardView.scaleX = invRatio
                     textCardView.scaleY = invRatio
-                    // Remove the offset for the full screen, only necessary when the status bar is visible
-                    textCardView.translationY = 0f
+                    textCardView.translationY = cardYOffset
                     return true
                 }
             }

@@ -22,21 +22,23 @@
         android:layout_height="0dp"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
+        android:layout_marginVertical="8dp"
         android:elevation="4dp"
         app:cardBackgroundColor="?attr/cardBackground"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/brightness_settings_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/reader_current_chapter">
 
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:weightSum="1">
+
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/text_reader_viewpager"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/visualizer_bottom_sheet"
@@ -125,7 +127,7 @@
         android:id="@+id/reader_current_page"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/show_toc_btn"
@@ -135,6 +137,8 @@
         android:id="@+id/show_toc_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         android:layout_marginEnd="16dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/table_of_contents"
@@ -150,6 +154,8 @@
         android:id="@+id/brightness_settings_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         android:layout_marginStart="16dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/brightness_settings"
@@ -176,8 +182,7 @@
         android:id="@+id/pages_seekBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginHorizontal="8dp"
         app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
         app:layout_constraintEnd_toStartOf="@+id/reader_current_page"
         app:layout_constraintStart_toEndOf="@+id/brightness_settings_btn"
