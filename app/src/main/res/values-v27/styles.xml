@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppMaterialTheme.White">
+        <item name="android:textColor">#000</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="cardBackground">@color/white</item>
+        <item name="borderColor">@color/black</item>
+        <item name="iconTintColor">@color/grey</item>
+        <item name="popUpBackground">?android:windowBackground</item>
+
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <item name="alertDialogTheme">@style/DialogTheme.White</item>
+    </style>
+
+    <style name="AppMaterialTheme.Beige">
+        <item name="android:textColor">#000</item>
+        <item name="android:windowBackground">@color/beige</item>
+        <item name="cardBackground">@color/beige</item>
+        <item name="borderColor">@color/black</item>
+        <item name="iconTintColor">@color/grey</item>
+        <item name="popUpBackground">?android:windowBackground</item>
+
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <item name="alertDialogTheme">@style/DialogTheme.Beige</item>
+    </style>
+</resources>
