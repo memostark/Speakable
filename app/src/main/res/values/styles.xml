@@ -48,7 +48,7 @@
     <style name="DialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert"/>
 
     <!--White theme-->
-    <style name="AppMaterialTheme.White">
+    <style name="BaseThemeWhite" parent="AppMaterialTheme">
         <item name="android:textColor">#000</item>
         <item name="android:windowBackground">@color/white</item>
         <item name="cardBackground">@color/white</item>
@@ -58,10 +58,10 @@
 
         <item name="android:statusBarColor">@color/black30percent</item>
         <item name="android:navigationBarColor">@color/black30percent</item>
-        <item name="android:windowLightNavigationBar">true</item>
 
         <item name="alertDialogTheme">@style/DialogTheme.White</item>
     </style>
+    <style name="AppMaterialTheme.White" parent="BaseThemeWhite"/>
 
     <style name="DialogTheme.White">
         <item name="android:background">@color/white</item>
@@ -69,7 +69,7 @@
     </style>
 
     <!--Beige theme-->
-    <style name="AppMaterialTheme.Beige">
+    <style name="BaseThemeBeige" parent="AppMaterialTheme">
         <item name="android:textColor">#000</item>
         <item name="android:windowBackground">@color/beige</item>
         <item name="cardBackground">@color/beige</item>
@@ -79,10 +79,10 @@
 
         <item name="android:statusBarColor">@color/black30percent</item>
         <item name="android:navigationBarColor">@color/black30percent</item>
-        <item name="android:windowLightNavigationBar">true</item>
 
         <item name="alertDialogTheme">@style/DialogTheme.Beige</item>
     </style>
+    <style name="AppMaterialTheme.Beige" parent="BaseThemeBeige"/>
 
     <style name="DialogTheme.Beige">
         <item name="android:background">@color/beige</item>
