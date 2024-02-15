@@ -117,25 +117,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf(""),
             {}, true) // Empty callback, not necessary at the moment
-        viewPager.setPageTransformer { view, position ->
-            pageItemView = view
 
-            setUpPageParsing(view)
-
-            removeSelection()
-
-            // A new page is shown when position is 0.0f,
-            // so we request focus in order to highlight text correctly.
-            if(position == 0.0f) setPageTextFocus()
-
-            // Remove highlights when page is mostly hidden.
-            if(position > 0.9f || position < -0.9f){
-                val topText: TextView = view.findViewById(R.id.page_text_view) ?: return@setPageTransformer
-                val text = SpannableString(topText.text)
-                val spans = text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-                if(spans.isNotEmpty()) topText.setText(text, TextView.BufferType.SPANNABLE)
-            }
-        }
         viewPager.post{
             addPagerCallback()
 
@@ -172,6 +154,31 @@ class VisualizeTextActivity: AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         viewModel.saveBookData()
+    }
+
+    private fun setPageTransformListener() {
+        // Before setting the transformer make sure the card has finished updating.
+        textCardView.post {
+            viewPager.setPageTransformer { view, position ->
+                pageItemView = view
+
+                setUpPageParsing(view)
+
+                removeSelection()
+
+                // A new page is shown when position is 0.0f,
+                // so we request focus in order to highlight text correctly.
+                if(position == 0.0f) setPageTextFocus()
+
+                // Remove highlights when page is mostly hidden.
+                if(position > 0.9f || position < -0.9f){
+                    val topText: TextView = view.findViewById(R.id.page_text_view) ?: return@setPageTransformer
+                    val text = SpannableString(topText.text)
+                    val spans = text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+                    if(spans.isNotEmpty()) topText.setText(text, TextView.BufferType.SPANNABLE)
+                }
+            }
+        }
     }
 
     /**
@@ -249,6 +256,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             textCardView.post {
                 setUpCardViewDimensions(hasCutOut)
+                setPageTransformListener()
             }
 
             ViewCompat.setOnApplyWindowInsetsListener(window.decorView, null)
@@ -484,25 +492,13 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun createPageSplitter(textView: TextView): PageSplitter {
-        val lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
-        val lineSpacingMultiplier = 1f
-        val pageItemPadding = this.dpToPixel(80 )
-
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
             val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri), this)
             InputStreamImageGetter( this, zipReader)
         } else null
 
-        return PageSplitter(
-            viewPager.width - pageItemPadding,
-            viewPager.height - pageItemPadding,
-            lineSpacingMultiplier,
-            lineSpacingExtra,
-            textView.paint,
-            textView.includeFontPadding,
-            imageGetter
-        )
+        return PageSplitter(textView, imageGetter)
     }
 
     private fun showTableOfContents(navPoints: List<NavPoint>){
