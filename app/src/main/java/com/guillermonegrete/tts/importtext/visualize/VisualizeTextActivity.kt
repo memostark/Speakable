@@ -14,12 +14,13 @@ import android.widget.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
 import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
@@ -27,6 +28,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
@@ -43,18 +45,12 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private val viewModel: VisualizeTextViewModel by viewModels()
 
+    private lateinit var binding: ActivityVisualizeTextBinding
+
     private lateinit var viewPager: ViewPager2
-    private lateinit var progressBar: ProgressBar
-    private lateinit var pagesSeekBar: SeekBar
-    private lateinit var currentPageLabel: TextView
-    private lateinit var currentChapterLabel: TextView
-    private lateinit var textCardView: CardView
 
     // Bottom sheet layout
-    private lateinit var bottomSheet: ViewGroup
-    private lateinit var bottomText: TextView
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<ViewGroup>
-    private lateinit var translationProgress: ProgressBar
 
     private var pageItemView: View? = null
 
@@ -84,35 +80,27 @@ class VisualizeTextActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
-        setContentView(R.layout.activity_visualize_text)
+        binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        progressBar = findViewById(R.id.visualizer_progress_bar)
-        pagesSeekBar = findViewById(R.id.pages_seekBar)
-
-        textCardView = findViewById(R.id.text_reader_card_view)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // Never draw on the cutout because it may obstruct text in full screen
             window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
         }
         // Let the layout cover the full screen (except cutout) this way the card is always centered
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        currentPageLabel = findViewById(R.id.reader_current_page)
-        currentChapterLabel = findViewById(R.id.reader_current_chapter)
 
         // Bottom sheet
-        bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
-        bottomText = findViewById(R.id.page_bottom_text_view)
-        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-        translationProgress = findViewById(R.id.page_translation_progress)
+        bottomSheetBehavior = BottomSheetBehavior.from(binding.visualizerBottomSheet)
 
         val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
         brightnessButton.setOnClickListener { showSettingsPopUp(it) }
 
         if(SHOW_EPUB != intent.action) {
-            currentChapterLabel.visibility = View.GONE
+            binding.readerCurrentChapter.isGone = true
         }
 
-        viewPager = findViewById(R.id.text_reader_viewpager)
+        viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf(""),
@@ -125,7 +113,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             setBottomSheetCallbacks()
         }
 
-        scaleDetector = ScaleGestureDetector(this, PinchListener())
+        scaleDetector = ScaleGestureDetector(this, PinchListener(binding.textReaderCardView))
 
         setUIChangesListener()
         setUpSeekBar()
@@ -140,6 +128,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Remove cutout height because it's not used
         val screenHeight = if(!hasCutOut) screenSizes.height else screenSizes.height - screenSizes.statusHeight
 
+        val textCardView = binding.textReaderCardView
         val cardHeight = textCardView.height
         val cardCenterY = textCardView.y + cardHeight / 2
         cardYOffset = (screenHeight / 2) - cardCenterY
@@ -158,7 +147,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private fun setPageTransformListener() {
         // Before setting the transformer make sure the card has finished updating.
-        textCardView.post {
+        binding.textReaderCardView.post {
             viewPager.setPageTransformer { view, position ->
                 pageItemView = view
 
@@ -240,33 +229,36 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setUIChangesListener() {
 
         ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
-            val systembarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            with(binding) {
 
-            val hasCutOut = insets.isVisible(WindowInsetsCompat.Type.displayCutout())
-            if (!hasCutOut) { // Phones with a normal status bar require extra margin to avoid overlapping with the bar
-                currentChapterLabel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    topMargin = currentChapterLabel.marginTop + systembarInsets.top
+                val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+                val hasCutOut = insets.isVisible(WindowInsetsCompat.Type.displayCutout())
+                if (!hasCutOut) { // Phones with a normal status bar require extra margin to avoid overlapping with the bar
+                    readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                        topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                    }
                 }
-            }
 
-            // Margin for the bottom icons
-            currentPageLabel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                bottomMargin = currentPageLabel.marginBottom + systembarInsets.bottom
-            }
+                // Margin for the bottom icons
+                readerCurrentPage.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = readerCurrentPage.marginBottom + systemBarInsets.bottom
+                }
 
-            textCardView.post {
-                setUpCardViewDimensions(hasCutOut)
-                setPageTransformListener()
-            }
+                textReaderCardView.post {
+                    setUpCardViewDimensions(hasCutOut)
+                    setPageTransformListener()
+                }
 
-            ViewCompat.setOnApplyWindowInsetsListener(window.decorView, null)
-            insets
+                ViewCompat.setOnApplyWindowInsetsListener(window.decorView, null)
+                insets
+            }
         }
     }
 
     private fun setUpSeekBar(){
 
-        pagesSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+        binding.pagesSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if(fromUser) viewPager.currentItem = progress
             }
@@ -290,7 +282,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun createViewModel() {
         viewModel.apply {
             dataLoading.observe(this@VisualizeTextActivity) {
-                progressBar.visibility = if (it) View.VISIBLE else View.INVISIBLE
+                binding.visualizerProgressBar.isVisible = it
             }
 
             pages.observe(this@VisualizeTextActivity, EventObserver {
@@ -299,23 +291,19 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             book.observe(this@VisualizeTextActivity) {
-                if (it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
-                else {
-                    updateCurrentChapterLabel()
-                    currentChapterLabel.visibility = View.VISIBLE
-                }
-
-                val showTOCBtn: ImageButton = findViewById(R.id.show_toc_btn)
-                val navPoints = it.tableOfContents.navPoints
-
-                val tocVisibility = if (navPoints.isEmpty()) {
-                    View.GONE
+                if (it.spine.isEmpty()) {
+                    binding.readerCurrentChapter.visibility = View.GONE
                 } else {
-                    showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
-                    View.VISIBLE
+                    updateCurrentChapterLabel()
+                    binding.readerCurrentChapter.visibility = View.VISIBLE
                 }
-                showTOCBtn.visibility = tocVisibility
+
+                val navPoints = it.tableOfContents.navPoints
+                binding.showTocBtn.setOnClickListener { showTableOfContents(navPoints) }
+                binding.showTocBtn.isGone = navPoints.isEmpty()
             }
+
+            val bottomText = binding.pageBottomTextView
 
             translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
                 val translation = viewModel.translatedPages[it]
@@ -324,7 +312,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             translationLoading.observe(this@VisualizeTextActivity) {
-                translationProgress.visibility = if (it) View.VISIBLE else View.INVISIBLE
+                binding.pageTranslationProgress.isVisible = it
                 if (it) bottomText.text = ""
             }
 
@@ -357,15 +345,15 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.adapter = pagesAdapter
 
         val position = viewModel.getPage()
-        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
+        binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
         viewPager.setCurrentItem(position, false)
 
         // Subtract 1 because seek bar is zero based numbering
-        pagesSeekBar.max = pages.size - 1
-        pagesSeekBar.progress = position
+        binding.pagesSeekBar.max = pages.size - 1
+        binding.pagesSeekBar.progress = position
 
         // Restore UI state in case of config change
-        bottomSheet.visibility = if(viewModel.hasBottomSheet) View.VISIBLE else View.GONE
+        binding.visualizerBottomSheet.isVisible = viewModel.hasBottomSheet
         setFullBottomSheet(viewModel.isSheetExpanded)
     }
 
@@ -416,7 +404,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
 
-        bottomSheet.visibility = if(isEnabled) View.VISIBLE else View.GONE
+        binding.visualizerBottomSheet.isVisible = isEnabled
     }
 
     private fun setBackgroundColor(theme: BrightnessTheme){
@@ -439,12 +427,11 @@ class VisualizeTextActivity: AppCompatActivity() {
                 viewModel.currentPage = position
 
                 val pageNumber = position + 1
-                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
-
-                pagesSeekBar.progress = position
+                binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
+                binding.pagesSeekBar.progress = position
 
                 if(pagesAdapter.hasBottomSheet)
-                    bottomText.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
+                    binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
 
             }
 
@@ -520,7 +507,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun updateCurrentChapterLabel(){
-        currentChapterLabel.text = resources.getString(R.string.reader_current_chapter_label, viewModel.currentChapter + 1, viewModel.spineSize)
+        binding.readerCurrentChapter.text = resources.getString(R.string.reader_current_chapter_label, viewModel.currentChapter + 1, viewModel.spineSize)
     }
 
     private fun showTextDialog(text: CharSequence){
@@ -533,7 +520,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         dialog.show(supportFragmentManager, "Text_info")
     }
 
-    inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
+    inner class PinchListener(private val textCardView: View): ScaleGestureDetector.OnScaleGestureListener{
 
         private var pinchDetected = false
 
@@ -647,22 +634,21 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setBottomSheetCallbacks(){
-        val translateBtn: Button = findViewById(R.id.page_translate_btn)
-        translateBtn.setOnClickListener {
+        binding.pageTranslateBtn.setOnClickListener {
             val position = viewPager.currentItem
             viewModel.translatePage(position)
 
             setFullBottomSheet(true)
         }
 
-        val arrowBtn: Button = findViewById(R.id.arrow_btn)
-        arrowBtn.setOnClickListener {
+        binding.arrowBtn.setOnClickListener {
             val isFull = pagesAdapter.isPageSplit
             setFullBottomSheet(!isFull)
         }
 
         bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onSlide(bottomSheet: View, slideOffset: Float) { arrowBtn.rotation = slideOffset * 180 }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) { binding.arrowBtn.rotation = slideOffset * 180 }
 
             override fun onStateChanged(bottomSheet: View, newState: Int) {
 
@@ -687,7 +673,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         var startY = 0f
         val radius = 40f
         // To detect the click, onTouchListener is used to get the touch coordinates and because onClickListener consumes the touch event
-        bottomText.setOnTouchListener { _, event ->
+        binding.pageBottomTextView.setOnTouchListener { _, event ->
             val duration = event.eventTime - event.downTime
 
             when(event.action){
@@ -698,7 +684,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 MotionEvent.ACTION_UP -> {
                     if(duration < 300
                         && abs(event.x - startX) < radius && abs(event.y - startY) < radius) {
-                        val index = bottomText.getOffsetForPosition(event.x, event.y)
+                        val index = binding.pageBottomTextView.getOffsetForPosition(event.x, event.y)
                         val splitSpans = viewModel.findSelectedSentence(viewPager.currentItem, index) ?: return@setOnTouchListener true
                         highlightSpans(splitSpans)
                     }
@@ -730,13 +716,13 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun highlightSpans(pageSpans: SplitPageSpan) {
-        val text = SpannableString(bottomText.text)
+        val text = SpannableString(binding.pageBottomTextView.text)
 
         //Remove previous
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
         text.setSpan(BackgroundColorSpan(0x6633B5E5), pageSpans.bottomSpan.start, pageSpans.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        bottomText.setText(text, TextView.BufferType.SPANNABLE)
+        binding.pageBottomTextView.setText(text, TextView.BufferType.SPANNABLE)
 
         // Notify the adapter to set the highlight, send span payload
         pagesAdapter.notifyItemChanged(viewPager.currentItem, pageSpans.topSpan)
