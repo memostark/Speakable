@@ -12,6 +12,7 @@ import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.widget.*
 import androidx.activity.viewModels
+import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
@@ -58,6 +59,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
+    @StyleRes private var themeRes = R.style.AppMaterialTheme_Black
 
     private var splitterCreated = true
 
@@ -93,8 +95,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Bottom sheet
         bottomSheetBehavior = BottomSheetBehavior.from(binding.visualizerBottomSheet)
 
-        val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
-        brightnessButton.setOnClickListener { showSettingsPopUp(it) }
+        binding.brightnessSettingsBtn.setOnClickListener { showSettingsPopUp(binding.brightnessSettingsBtn) }
 
         if(SHOW_EPUB != intent.action) {
             binding.readerCurrentChapter.isGone = true
@@ -272,11 +273,12 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
     private fun setPreferenceTheme() {
-        when(brightnessTheme){
-            BrightnessTheme.WHITE -> setTheme(R.style.AppMaterialTheme_White)
-            BrightnessTheme.BEIGE -> setTheme(R.style.AppMaterialTheme_Beige)
-            BrightnessTheme.BLACK -> setTheme(R.style.AppMaterialTheme_Black)
+        themeRes = when(brightnessTheme){
+            BrightnessTheme.WHITE -> R.style.AppMaterialTheme_White
+            BrightnessTheme.BEIGE -> R.style.AppMaterialTheme_Beige
+            BrightnessTheme.BLACK -> R.style.AppMaterialTheme_Black
         }
+        setTheme(themeRes)
     }
 
     private fun createViewModel() {
@@ -382,6 +384,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         VisualizerSettingsWindow(
             view,
+            themeRes,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             viewModel.hasBottomSheet,

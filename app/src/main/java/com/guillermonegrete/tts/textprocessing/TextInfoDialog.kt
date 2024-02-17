@@ -85,6 +85,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setBrightnessTheme()
 
         inputText = arguments?.getString(TEXT_KEY)?.trim()
 
@@ -107,7 +108,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         savedInstanceState: Bundle?
     ): View {
         keepImmersiveMode()
-        setBrightnessTheme()
 
         val text = inputText ?: ""
 

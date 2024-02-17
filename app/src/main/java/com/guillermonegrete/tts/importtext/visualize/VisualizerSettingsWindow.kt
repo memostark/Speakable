@@ -4,12 +4,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.view.ContextThemeWrapper
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.PopUpSettingsBinding
 import com.guillermonegrete.tts.ui.BrightnessTheme
 
 class VisualizerSettingsWindow(
     parent: View,
+    theme: Int,
     width: Int,
     height: Int,
     hasBottomSheet: Boolean,
@@ -21,7 +23,8 @@ class VisualizerSettingsWindow(
 
     init{
         val context = parent.context
-        val binding = PopUpSettingsBinding.inflate(LayoutInflater.from(context), parent.rootView as ViewGroup, false)
+        val themeContext = ContextThemeWrapper(context, theme)
+        val binding = PopUpSettingsBinding.inflate(LayoutInflater.from(themeContext), parent.rootView as ViewGroup, false)
 
         // Brightness settings
         binding.whiteBgBtn.setOnClickListener { callback.onBackgroundColorSet(BrightnessTheme.WHITE) }
