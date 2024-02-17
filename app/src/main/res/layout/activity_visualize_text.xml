@@ -183,6 +183,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="8dp"
+        android:progressBackgroundTint="?iconTintColor"
         app:layout_constraintBottom_toBottomOf="@+id/reader_current_page"
         app:layout_constraintEnd_toStartOf="@+id/reader_current_page"
         app:layout_constraintStart_toEndOf="@+id/brightness_settings_btn"

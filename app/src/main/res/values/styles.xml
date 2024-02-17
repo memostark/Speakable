@@ -56,6 +56,8 @@
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
 
+        <!--This ensures contrast between the white bar icons and the light background,
+        in newer APIs the icon color can be changed-->
         <item name="android:statusBarColor">@color/black30percent</item>
         <item name="android:navigationBarColor">@color/black30percent</item>
 
@@ -77,6 +79,7 @@
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
 
+        <!--Same as the white theme, this ensure contrast with the bar icons-->
         <item name="android:statusBarColor">@color/black30percent</item>
         <item name="android:navigationBarColor">@color/black30percent</item>
 
@@ -93,14 +96,15 @@
     <!--Black theme-->
     <style name="AppMaterialTheme.Black">
         <item name="android:textColor">@color/highEmphasisWhite</item>
-        <item name="android:windowBackground">@color/DarkestGrey</item>
-        <item name="cardBackground">@color/grey</item>
+        <item name="android:windowBackground">@color/DarkerGrey</item>
+        <item name="cardBackground">@color/black</item>
         <item name="borderColor">@color/highEmphasisWhite</item>
         <item name="iconTintColor">@color/highEmphasisWhite</item>
         <item name="popUpBackground">@color/DarkerGrey</item>
 
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
 
         <item name="alertDialogTheme">@style/DialogTheme.Black</item>
     </style>

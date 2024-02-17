@@ -227,4 +227,11 @@
     <string name="more_information_word">More information for word</string>
     <string name="pick_language_web_reader">To see more information about this text, please pick a language using the bottom bar</string>
 
+    <!-- Text/Epub visualizer-->
+    <string name="white_theme">White theme</string>
+    <string name="beige_theme">Beige theme</string>
+    <string name="black_theme">Black theme</string>
+    <string name="single_page">Single page</string>
+    <string name="split_page">Split page</string>
+
 </resources>
