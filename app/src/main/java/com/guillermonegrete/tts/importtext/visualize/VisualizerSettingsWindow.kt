@@ -4,8 +4,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import com.google.android.material.button.MaterialButtonToggleGroup
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.databinding.PopUpSettingsBinding
 import com.guillermonegrete.tts.ui.BrightnessTheme
 
 class VisualizerSettingsWindow(
@@ -21,20 +21,18 @@ class VisualizerSettingsWindow(
 
     init{
         val context = parent.context
-        val layout = LayoutInflater.from(context).inflate(R.layout.pop_up_settings, parent.rootView as ViewGroup, false)
+        val binding = PopUpSettingsBinding.inflate(LayoutInflater.from(context), parent.rootView as ViewGroup, false)
 
         // Brightness settings
-        layout.findViewById<Button>(R.id.white_bg_btn).setOnClickListener{ callback.onBackgroundColorSet(BrightnessTheme.WHITE) }
-        layout.findViewById<Button>(R.id.beige_bg_btn).setOnClickListener{ callback.onBackgroundColorSet(BrightnessTheme.BEIGE) }
-        layout.findViewById<Button>(R.id.black_bg_btn).setOnClickListener{ callback.onBackgroundColorSet(BrightnessTheme.BLACK) }
+        binding.whiteBgBtn.setOnClickListener { callback.onBackgroundColorSet(BrightnessTheme.WHITE) }
+        binding.beigeBgBtn.setOnClickListener { callback.onBackgroundColorSet(BrightnessTheme.BEIGE) }
+        binding.blackBgBtn.setOnClickListener { callback.onBackgroundColorSet(BrightnessTheme.BLACK) }
 
         // Split view
-        val pageModeToggle: MaterialButtonToggleGroup = layout.findViewById(R.id.page_toggle_container)
-
         val checkedItemId = if(hasBottomSheet) R.id.split_page_btn else R.id.single_page_btn
-        pageModeToggle.check(checkedItemId)
+        binding.pageToggleContainer.check(checkedItemId)
 
-        pageModeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
+        binding.pageToggleContainer.addOnButtonCheckedListener { _, checkedId, isChecked ->
             when(checkedId){
                 R.id.single_page_btn -> if(isChecked) callback.onPageMode(false)
                 R.id.split_page_btn -> if(isChecked) callback.onPageMode(true)
@@ -54,20 +52,20 @@ class VisualizerSettingsWindow(
         )
         val spinnerListener = SpinnerListener(callback)
 
-        val fromMenu: Spinner = layout.findViewById(R.id.spinner_language_from)
+        val fromMenu = binding.spinnerLanguageFrom
         fromMenu.adapter = fromAdapter
         var index = languagesISO.indexOf(languageFrom) + 1 // Increment because the list we searched is missing one element "auto"
         fromMenu.setSelection(index, false)
         fromMenu.onItemSelectedListener = spinnerListener
 
-        val toMenu: Spinner = layout.findViewById(R.id.spinner_language_to)
+        val toMenu = binding.spinnerLanguageTo
         toMenu.adapter = toAdapter
         index = languagesISO.indexOf(languageTo)
         if(index == -1) index = 15 // 15 is English, the default.
         toMenu.setSelection(index, false)
         toMenu.onItemSelectedListener = spinnerListener
 
-        contentView = layout
+        contentView = binding.root
     }
 
     class SpinnerListener(private val callback: Callback): AdapterView.OnItemSelectedListener {
