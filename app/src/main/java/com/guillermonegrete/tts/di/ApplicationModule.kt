@@ -26,7 +26,7 @@ import com.guillermonegrete.tts.main.TranslatorEnumKey
 import com.guillermonegrete.tts.main.TranslatorType
 import com.guillermonegrete.tts.threading.MainThreadImpl
 import com.guillermonegrete.tts.ui.BrightnessTheme
-import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.utils.isNightMode
 import dagger.Module
 import dagger.Provides
 import javax.inject.Qualifier
@@ -78,10 +78,14 @@ object ApplicationModule {
     }
 
     @Provides
-    fun provideBrightnessTheme(preferences: SharedPreferences): BrightnessTheme{
-        val defaultType = BrightnessTheme.WHITE.value
-        val recognizerPreference = preferences.getString(BrightnessTheme.PREFERENCE_KEY, defaultType) ?: defaultType
-        return BrightnessTheme.get(recognizerPreference)
+    fun provideBrightnessTheme(preferences: SharedPreferences, @ApplicationContext context: Context): BrightnessTheme{
+        val preference = preferences.getString(BrightnessTheme.PREFERENCE_KEY, null)
+        val theme = if (preference == null) {
+            if (isNightMode(context)) BrightnessTheme.BLACK else BrightnessTheme.WHITE
+        } else {
+            BrightnessTheme.get(preference)
+        }
+        return theme
     }
 
     @Singleton
