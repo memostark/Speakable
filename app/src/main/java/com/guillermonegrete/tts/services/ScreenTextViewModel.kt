@@ -137,7 +137,7 @@ class ScreenTextViewModel @JvmOverloads constructor(
 
         override fun onLanguageUnavailable() {
             isPlayingValue = false
-            setErrorState("TTS error: Language Unknown/Unavailable")
+            setErrorState(LANG_UNAVAILABLE_ERROR)
         }
 
         override fun onSpeakStart() {
@@ -158,8 +158,13 @@ class ScreenTextViewModel @JvmOverloads constructor(
         override fun onError() {
             mainThread.post {
                 isPlayingValue = false
-                setErrorState("TTS error: Failed to play")
+                setErrorState(GENERIC_TTS_ERROR)
             }
         }
+    }
+
+    companion object {
+        const val LANG_UNAVAILABLE_ERROR = "TTS error: Language Unknown/Unavailable"
+        const val GENERIC_TTS_ERROR = "TTS error: Failed to play"
     }
 }

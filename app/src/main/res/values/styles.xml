@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
@@ -48,7 +48,7 @@
     <style name="DialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert"/>
 
     <!--White theme-->
-    <style name="AppMaterialTheme.White">
+    <style name="BaseThemeWhite" parent="AppMaterialTheme">
         <item name="android:textColor">#000</item>
         <item name="android:windowBackground">@color/white</item>
         <item name="cardBackground">@color/white</item>
@@ -56,8 +56,14 @@
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
 
+        <!--This ensures contrast between the white bar icons and the light background,
+        in newer APIs the icon color can be changed-->
+        <item name="android:statusBarColor">@color/black30percent</item>
+        <item name="android:navigationBarColor">@color/black30percent</item>
+
         <item name="alertDialogTheme">@style/DialogTheme.White</item>
     </style>
+    <style name="AppMaterialTheme.White" parent="BaseThemeWhite"/>
 
     <style name="DialogTheme.White">
         <item name="android:background">@color/white</item>
@@ -65,7 +71,7 @@
     </style>
 
     <!--Beige theme-->
-    <style name="AppMaterialTheme.Beige">
+    <style name="BaseThemeBeige" parent="AppMaterialTheme">
         <item name="android:textColor">#000</item>
         <item name="android:windowBackground">@color/beige</item>
         <item name="cardBackground">@color/beige</item>
@@ -73,8 +79,13 @@
         <item name="iconTintColor">@color/grey</item>
         <item name="popUpBackground">?android:windowBackground</item>
 
+        <!--Same as the white theme, this ensure contrast with the bar icons-->
+        <item name="android:statusBarColor">@color/black30percent</item>
+        <item name="android:navigationBarColor">@color/black30percent</item>
+
         <item name="alertDialogTheme">@style/DialogTheme.Beige</item>
     </style>
+    <style name="AppMaterialTheme.Beige" parent="BaseThemeBeige"/>
 
     <style name="DialogTheme.Beige">
         <item name="android:background">@color/beige</item>
@@ -85,11 +96,15 @@
     <!--Black theme-->
     <style name="AppMaterialTheme.Black">
         <item name="android:textColor">@color/highEmphasisWhite</item>
-        <item name="android:windowBackground">@color/DarkestGrey</item>
-        <item name="cardBackground">@color/grey</item>
+        <item name="android:windowBackground">@color/DarkerGrey</item>
+        <item name="cardBackground">@color/black</item>
         <item name="borderColor">@color/highEmphasisWhite</item>
         <item name="iconTintColor">@color/highEmphasisWhite</item>
         <item name="popUpBackground">@color/DarkerGrey</item>
+
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
 
         <item name="alertDialogTheme">@style/DialogTheme.Black</item>
     </style>

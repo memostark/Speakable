@@ -3,14 +3,13 @@ package com.guillermonegrete.tts.utils
 import android.content.Context
 import android.graphics.Point
 import android.os.Build
-import android.util.DisplayMetrics
 import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import timber.log.Timber
 
 fun Context.dpToPixel(dp: Int): Int {
-    return dp * (resources.displayMetrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT)
+    return (dp * this.resources.displayMetrics.density).toInt()
 }
 
 val Context.actionBarSize
@@ -28,7 +27,7 @@ fun Context.getScreenSizes(): ScreenInfo {
         Timber.d("Insets: $insets")
 
         ScreenInfo(b.width(), b.height(), insets.top, insets.bottom)
-    } else @Suppress("DEPRECATION") {
+    } else @Suppress("DEPRECATION", "InternalInsetResource", "DiscouragedApi") {
         val display = wm.defaultDisplay // deprecated in API 30
         val realSize = Point()
         display?.getRealSize(realSize) // deprecated in API 30

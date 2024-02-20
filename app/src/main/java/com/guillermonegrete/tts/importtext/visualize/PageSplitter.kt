@@ -2,25 +2,52 @@ package com.guillermonegrete.tts.importtext.visualize
 
 import android.os.Build
 import android.text.*
+import android.widget.TextView
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- *  Taken from: https://stackoverflow.com/a/30468884/10244759
- *  More precise version although slower, should implement: https://stackoverflow.com/questions/31837840/paginating-text-in-android
- *
- */
 class PageSplitter(
-    private val pageWidth: Int,
-    private val pageHeight: Int,
-    private val lineSpacingMultiplier: Float,
-    private val lineSpacingExtra: Float,
-    private val textPaint: TextPaint,
-    private val includeFontPadding: Boolean,
-    val imageGetter: Html.ImageGetter?
+    textView: TextView,
+    private val imageGetter: Html.ImageGetter?,
 ) {
     private val pages = ArrayList<CharSequence>()
     private val mSpannableStringBuilder = SpannableStringBuilder()
+
+    private val pageWidth = textView.width - textView.paddingStart - textView.paddingEnd
+    private val pageHeight = textView.height - textView.paddingTop - textView.paddingBottom
+
+    private val lineSpacingMultiplier = textView.lineSpacingMultiplier
+    private val lineSpacingExtra = textView.lineSpacingExtra
+    private val textPaint = textView.paint
+    private val includeFontPadding = textView.includeFontPadding
+    private val alignment: Layout.Alignment = textView.layout.alignment
+    private val maxLines = textView.maxLines
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private var breakStrategy = 0
+    @RequiresApi(Build.VERSION_CODES.M)
+    private var hyphenationFrequency = 0
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private var justificationMode = 0
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    private var isFallbackLineSpacing = false
+
+    init {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            breakStrategy = textView.breakStrategy
+            hyphenationFrequency = textView.hyphenationFrequency
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            justificationMode = textView.justificationMode
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            isFallbackLineSpacing = textView.isFallbackLineSpacing
+        }
+    }
 
     fun setText(charSequence: CharSequence){
         pages.clear()
@@ -37,9 +64,14 @@ class PageSplitter(
             val formattedText = formatHtml(mSpannableStringBuilder)
             val staticLayout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 StaticLayout.Builder.obtain(formattedText, 0, formattedText.length, textPaint, pageWidth)
-                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setAlignment(alignment)
                     .setLineSpacing(lineSpacingExtra, lineSpacingMultiplier)
                     .setIncludePad(includeFontPadding)
+                    .setUseLineSpacingFromFallbacks()
+                    .setBreakStrategy(breakStrategy)
+                    .setHyphenationFrequency(hyphenationFrequency)
+                    .setJustificationMode()
+                    .setMaxLines(maxLines)
                     .build()
             } else {
                 @Suppress("DEPRECATION")
@@ -90,6 +122,22 @@ class PageSplitter(
             @Suppress("DEPRECATION")
             Html.fromHtml(text.toString(), imageGetter, null)
         }
+    }
+
+    private fun StaticLayout.Builder.setUseLineSpacingFromFallbacks(): StaticLayout.Builder {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            this.setUseLineSpacingFromFallbacks(isFallbackLineSpacing)
+        }
+
+        return this
+    }
+
+    private fun StaticLayout.Builder.setJustificationMode(): StaticLayout.Builder {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            this.setJustificationMode(justificationMode)
+        }
+
+        return this
     }
 
     fun getPages(): List<CharSequence> {

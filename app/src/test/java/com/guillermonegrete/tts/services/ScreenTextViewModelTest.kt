@@ -130,7 +130,7 @@ class ScreenTextViewModelTest {
         ttsListener.onLanguageUnavailable()
 
         val error = viewModel.playingAudio.getOrAwaitValue() as PlayAudioState.Error
-        assertEquals("TTS error: Language Unavailable", error.exception.message)
+        assertEquals(ScreenTextViewModel.LANG_UNAVAILABLE_ERROR, error.exception.message)
     }
 
     @Test
@@ -143,7 +143,7 @@ class ScreenTextViewModelTest {
         ttsListener.onError()
 
         val error = viewModel.playingAudio.getOrAwaitValue() as PlayAudioState.Error
-        assertEquals("TTS error: Failed to play", error.exception.message)
+        assertEquals(ScreenTextViewModel.GENERIC_TTS_ERROR, error.exception.message)
     }
 
     @Test

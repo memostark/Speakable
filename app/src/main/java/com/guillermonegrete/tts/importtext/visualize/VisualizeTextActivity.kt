@@ -3,8 +3,8 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableString
@@ -12,22 +12,32 @@ import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.widget.*
 import androidx.activity.viewModels
+import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
+import androidx.core.view.marginBottom
+import androidx.core.view.marginTop
+import androidx.core.view.updateLayoutParams
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.dpToPixel
+import com.guillermonegrete.tts.utils.getScreenSizes
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-import java.lang.IllegalArgumentException
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -36,18 +46,12 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private val viewModel: VisualizeTextViewModel by viewModels()
 
+    private lateinit var binding: ActivityVisualizeTextBinding
+
     private lateinit var viewPager: ViewPager2
-    private lateinit var progressBar: ProgressBar
-    private lateinit var pagesSeekBar: SeekBar
-    private lateinit var currentPageLabel: TextView
-    private lateinit var currentChapterLabel: TextView
-    private lateinit var textCardView: CardView
 
     // Bottom sheet layout
-    private lateinit var bottomSheet: ViewGroup
-    private lateinit var bottomText: TextView
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<ViewGroup>
-    private lateinit var translationProgress: ProgressBar
 
     private var pageItemView: View? = null
 
@@ -55,71 +59,54 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
+    @StyleRes private var themeRes = R.style.AppMaterialTheme_Black
 
     private var splitterCreated = true
 
     private lateinit var scaleDetector: ScaleGestureDetector
 
     private var cardWidth = 0
-    private var statusBarHeight = 0
+    /**
+     * The vertical pixel distance between the center of the card and the center of the screen.
+     *
+     * A positive distance means the screen's center is below the card's, negative means the card's center is below.
+     */
+    private var cardYOffset = 0f
 
     /**
      * The ratio between the size of the screen and card view, ratio = cardWith / screenWidth
      * Used to get the desired dimensions of the card.
      */
-    private val ratio = 0.8f
+    private var ratio = 0.8f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
-        setContentView(R.layout.activity_visualize_text)
+        binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        progressBar = findViewById(R.id.visualizer_progress_bar)
-        pagesSeekBar = findViewById(R.id.pages_seekBar)
-
-        textCardView = findViewById(R.id.text_reader_card_view)
-        setUpCardViewDimensions()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // Never draw on the cutout because it may obstruct text in full screen
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+        }
+        // Let the layout cover the full screen (except cutout) this way the card is always centered
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // Bottom sheet
-        bottomSheet = findViewById(R.id.visualizer_bottom_sheet)
-        bottomText = findViewById(R.id.page_bottom_text_view)
-        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-        translationProgress = findViewById(R.id.page_translation_progress)
+        bottomSheetBehavior = BottomSheetBehavior.from(binding.visualizerBottomSheet)
 
-        currentPageLabel = findViewById(R.id.reader_current_page)
-        currentChapterLabel = findViewById(R.id.reader_current_chapter)
-
-        val brightnessButton: ImageButton = findViewById(R.id.brightness_settings_btn)
-        brightnessButton.setOnClickListener { showSettingsPopUp(it) }
+        binding.brightnessSettingsBtn.setOnClickListener { showSettingsPopUp(binding.brightnessSettingsBtn) }
 
         if(SHOW_EPUB != intent.action) {
-            currentChapterLabel.visibility = View.GONE
+            binding.readerCurrentChapter.isGone = true
         }
 
-        viewPager = findViewById(R.id.text_reader_viewpager)
+        viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf(""),
             {}, true) // Empty callback, not necessary at the moment
-        viewPager.setPageTransformer { view, position ->
-            pageItemView = view
 
-            setUpPageParsing(view)
-
-            removeSelection()
-
-            // A new page is shown when position is 0.0f,
-            // so we request focus in order to highlight text correctly.
-            if(position == 0.0f) setPageTextFocus()
-
-            // Remove highlights when page is mostly hidden.
-            if(position > 0.9f || position < -0.9f){
-                val topText: TextView = view.findViewById(R.id.page_text_view) ?: return@setPageTransformer
-                val text = SpannableString(topText.text)
-                val spans = text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-                if(spans.isNotEmpty()) topText.setText(text, TextView.BufferType.SPANNABLE)
-            }
-        }
         viewPager.post{
             addPagerCallback()
 
@@ -127,7 +114,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             setBottomSheetCallbacks()
         }
 
-        scaleDetector = ScaleGestureDetector(this, PinchListener())
+        scaleDetector = ScaleGestureDetector(this, PinchListener(binding.textReaderCardView))
 
         setUIChangesListener()
         setUpSeekBar()
@@ -137,26 +124,51 @@ class VisualizeTextActivity: AppCompatActivity() {
      *  Changes the dimensions of the card to have the same aspect ratio as the screen
      *  and smaller size given by the defined ratio.
      */
-    private fun setUpCardViewDimensions() {
+    private fun setUpCardViewDimensions(hasCutOut: Boolean) {
+        val screenSizes = getScreenSizes()
+        // Remove cutout height because it's not used
+        val screenHeight = if(!hasCutOut) screenSizes.height else screenSizes.height - screenSizes.statusHeight
+
+        val textCardView = binding.textReaderCardView
+        val cardHeight = textCardView.height
+        val cardCenterY = textCardView.y + cardHeight / 2
+        cardYOffset = (screenHeight / 2) - cardCenterY
+        ratio = cardHeight / screenHeight.toFloat()
+        cardWidth = (screenSizes.width * ratio).toInt()
 
         val cardParams = textCardView.layoutParams
-        val metrics = resources.displayMetrics
-
-        cardWidth = (metrics.widthPixels * ratio).toInt()
         cardParams.width = cardWidth
-        cardParams.height = (metrics.heightPixels * ratio).toInt()
         textCardView.layoutParams = cardParams
-
-        // In case a status bar exists, offset the card view in order to keep it centered with the screen
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        statusBarHeight = if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
-
-        textCardView.translationY = - statusBarHeight / 2f
     }
 
     override fun onPause() {
         super.onPause()
         viewModel.saveBookData()
+    }
+
+    private fun setPageTransformListener() {
+        // Before setting the transformer make sure the card has finished updating.
+        binding.textReaderCardView.post {
+            viewPager.setPageTransformer { view, position ->
+                pageItemView = view
+
+                setUpPageParsing(view)
+
+                removeSelection()
+
+                // A new page is shown when position is 0.0f,
+                // so we request focus in order to highlight text correctly.
+                if(position == 0.0f) setPageTextFocus()
+
+                // Remove highlights when page is mostly hidden.
+                if(position > 0.9f || position < -0.9f){
+                    val topText: TextView = view.findViewById(R.id.page_text_view) ?: return@setPageTransformer
+                    val text = SpannableString(topText.text)
+                    val spans = text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+                    if(spans.isNotEmpty()) topText.setText(text, TextView.BufferType.SPANNABLE)
+                }
+            }
+        }
     }
 
     /**
@@ -216,18 +228,38 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUIChangesListener() {
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && viewModel.fullScreen) {
-                // The system bars are visible
-                val handler = Handler()
-                handler.postDelayed({ hideSystemUi() }, 3000)
+
+        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
+            with(binding) {
+
+                val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+                val hasCutOut = insets.isVisible(WindowInsetsCompat.Type.displayCutout())
+                if (!hasCutOut) { // Phones with a normal status bar require extra margin to avoid overlapping with the bar
+                    readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                        topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                    }
+                }
+
+                // Margin for the bottom icons
+                readerCurrentPage.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = readerCurrentPage.marginBottom + systemBarInsets.bottom
+                }
+
+                textReaderCardView.post {
+                    setUpCardViewDimensions(hasCutOut)
+                    setPageTransformListener()
+                }
+
+                ViewCompat.setOnApplyWindowInsetsListener(window.decorView, null)
+                insets
             }
         }
     }
 
     private fun setUpSeekBar(){
 
-        pagesSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+        binding.pagesSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if(fromUser) viewPager.currentItem = progress
             }
@@ -241,17 +273,18 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
     private fun setPreferenceTheme() {
-        when(brightnessTheme){
-            BrightnessTheme.WHITE -> setTheme(R.style.AppMaterialTheme_White)
-            BrightnessTheme.BEIGE -> setTheme(R.style.AppMaterialTheme_Beige)
-            BrightnessTheme.BLACK -> setTheme(R.style.AppMaterialTheme_Black)
+        themeRes = when(brightnessTheme){
+            BrightnessTheme.WHITE -> R.style.AppMaterialTheme_White
+            BrightnessTheme.BEIGE -> R.style.AppMaterialTheme_Beige
+            BrightnessTheme.BLACK -> R.style.AppMaterialTheme_Black
         }
+        setTheme(themeRes)
     }
 
     private fun createViewModel() {
         viewModel.apply {
             dataLoading.observe(this@VisualizeTextActivity) {
-                progressBar.visibility = if (it) View.VISIBLE else View.INVISIBLE
+                binding.visualizerProgressBar.isVisible = it
             }
 
             pages.observe(this@VisualizeTextActivity, EventObserver {
@@ -260,23 +293,19 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             book.observe(this@VisualizeTextActivity) {
-                if (it.spine.isEmpty()) currentChapterLabel.visibility = View.GONE
-                else {
-                    updateCurrentChapterLabel()
-                    currentChapterLabel.visibility = View.VISIBLE
-                }
-
-                val showTOCBtn: ImageButton = findViewById(R.id.show_toc_btn)
-                val navPoints = it.tableOfContents.navPoints
-
-                val tocVisibility = if (navPoints.isEmpty()) {
-                    View.GONE
+                if (it.spine.isEmpty()) {
+                    binding.readerCurrentChapter.visibility = View.GONE
                 } else {
-                    showTOCBtn.setOnClickListener { showTableOfContents(navPoints) }
-                    View.VISIBLE
+                    updateCurrentChapterLabel()
+                    binding.readerCurrentChapter.visibility = View.VISIBLE
                 }
-                showTOCBtn.visibility = tocVisibility
+
+                val navPoints = it.tableOfContents.navPoints
+                binding.showTocBtn.setOnClickListener { showTableOfContents(navPoints) }
+                binding.showTocBtn.isGone = navPoints.isEmpty()
             }
+
+            val bottomText = binding.pageBottomTextView
 
             translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
                 val translation = viewModel.translatedPages[it]
@@ -285,7 +314,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             })
 
             translationLoading.observe(this@VisualizeTextActivity) {
-                translationProgress.visibility = if (it) View.VISIBLE else View.INVISIBLE
+                binding.pageTranslationProgress.isVisible = it
                 if (it) bottomText.text = ""
             }
 
@@ -318,15 +347,15 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.adapter = pagesAdapter
 
         val position = viewModel.getPage()
-        currentPageLabel.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
+        binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
         viewPager.setCurrentItem(position, false)
 
         // Subtract 1 because seek bar is zero based numbering
-        pagesSeekBar.max = pages.size - 1
-        pagesSeekBar.progress = position
+        binding.pagesSeekBar.max = pages.size - 1
+        binding.pagesSeekBar.progress = position
 
         // Restore UI state in case of config change
-        bottomSheet.visibility = if(viewModel.hasBottomSheet) View.VISIBLE else View.GONE
+        binding.visualizerBottomSheet.isVisible = viewModel.hasBottomSheet
         setFullBottomSheet(viewModel.isSheetExpanded)
     }
 
@@ -355,6 +384,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         VisualizerSettingsWindow(
             view,
+            themeRes,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             viewModel.hasBottomSheet,
@@ -377,7 +407,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager.adapter = pagesAdapter
         viewPager.setCurrentItem(position, false)
 
-        bottomSheet.visibility = if(isEnabled) View.VISIBLE else View.GONE
+        binding.visualizerBottomSheet.isVisible = isEnabled
     }
 
     private fun setBackgroundColor(theme: BrightnessTheme){
@@ -400,12 +430,11 @@ class VisualizeTextActivity: AppCompatActivity() {
                 viewModel.currentPage = position
 
                 val pageNumber = position + 1
-                currentPageLabel.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
-
-                pagesSeekBar.progress = position
+                binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
+                binding.pagesSeekBar.progress = position
 
                 if(pagesAdapter.hasBottomSheet)
-                    bottomText.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
+                    binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
 
             }
 
@@ -453,25 +482,13 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun createPageSplitter(textView: TextView): PageSplitter {
-        val lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
-        val lineSpacingMultiplier = 1f
-        val pageItemPadding = this.dpToPixel(80 )
-
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
             val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri), this)
             InputStreamImageGetter( this, zipReader)
         } else null
 
-        return PageSplitter(
-            viewPager.width - pageItemPadding,
-            viewPager.height - pageItemPadding,
-            lineSpacingMultiplier,
-            lineSpacingExtra,
-            textView.paint,
-            textView.includeFontPadding,
-            imageGetter
-        )
+        return PageSplitter(textView, imageGetter)
     }
 
     private fun showTableOfContents(navPoints: List<NavPoint>){
@@ -493,7 +510,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun updateCurrentChapterLabel(){
-        currentChapterLabel.text = resources.getString(R.string.reader_current_chapter_label, viewModel.currentChapter + 1, viewModel.spineSize)
+        binding.readerCurrentChapter.text = resources.getString(R.string.reader_current_chapter_label, viewModel.currentChapter + 1, viewModel.spineSize)
     }
 
     private fun showTextDialog(text: CharSequence){
@@ -506,19 +523,27 @@ class VisualizeTextActivity: AppCompatActivity() {
         dialog.show(supportFragmentManager, "Text_info")
     }
 
-    inner class PinchListener: ScaleGestureDetector.OnScaleGestureListener{
+    inner class PinchListener(private val textCardView: View): ScaleGestureDetector.OnScaleGestureListener{
 
         private var pinchDetected = false
 
         private val screenWidth = this@VisualizeTextActivity.resources.displayMetrics.widthPixels
 
-        private val invRatio
-            get() = 1f / ratio
+        /**
+         * The inverse of the ratio between the widths of the card and the screen.
+         * This is the ratio/scale the card should have when fully expanded (max scale).
+         */
+        private var invRatio = 1f
+        private val minScale = 1f
         private var scale = 1f
+
+        private var constantTerm = 0f
 
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             viewPager.isUserInputEnabled = false
             pinchDetected = false
+            invRatio = 1f / ratio
+            constantTerm = (cardYOffset / (invRatio - minScale))
             return true
         }
 
@@ -534,12 +559,12 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(lastWidth < middleWidth){
                     toggleImmersiveMode()
                     scale = 1f
-                    textCardView.translationY = - statusBarHeight.toFloat() / 2f
                 }
             }
 
             textCardView.scaleX = scale
             textCardView.scaleY = scale
+            if (!viewModel.fullScreen) textCardView.translationY = 0f
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
@@ -550,10 +575,18 @@ class VisualizeTextActivity: AppCompatActivity() {
                 val newScale = scale * factor
 
                 // Avoid making the card smaller
-                if (newScale >= 1f) {
+                if (newScale >= minScale) {
                     textCardView.scaleX = newScale
                     textCardView.scaleY = newScale
-                    textCardView.invalidate()
+                    // To calculate the new Y offset, using cross-multiplication: newScale / invRatio = newYOffset / cardYOffset
+                    // To normalize the scale/ratio to start from 0 , the min ratio is subtracted, therefore solving for newYOffset yields:
+                    // newYOffset = (newScale - minScale) * (cardYOffset / (invRatio - minScale))
+                    val newYOffset = (newScale - minScale) * constantTerm
+                    if (newScale <= invRatio) textCardView.translationY = newYOffset
+                } else {
+                    textCardView.scaleX = minScale
+                    textCardView.scaleY = minScale
+                    textCardView.translationY = 0f
                 }
 
                 val fullScreen = viewModel.fullScreen
@@ -564,8 +597,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                     scale = invRatio
                     textCardView.scaleX = invRatio
                     textCardView.scaleY = invRatio
-                    // Remove the offset for the full screen, only necessary when the status bar is visible
-                    textCardView.translationY = 0f
+                    textCardView.translationY = cardYOffset
                     return true
                 }
             }
@@ -582,7 +614,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         if(viewModel.fullScreen){
             hideSystemUi()
         }else{
-            window.decorView.systemUiVisibility = 0
+            val decorView = window.decorView
+            val controllerCompat = WindowCompat.getInsetsController(window, decorView)
+            controllerCompat.show(WindowInsetsCompat.Type.systemBars())
             actionBar?.show()
         }
 
@@ -594,37 +628,30 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun hideSystemUi(){
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN)
-
+        val decorView = window.decorView
+        val controllerCompat = WindowCompat.getInsetsController(window, decorView)
+        controllerCompat.hide(WindowInsetsCompat.Type.systemBars())
+        controllerCompat.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         actionBar?.hide()
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setBottomSheetCallbacks(){
-        val translateBtn: Button = findViewById(R.id.page_translate_btn)
-        translateBtn.setOnClickListener {
+        binding.pageTranslateBtn.setOnClickListener {
             val position = viewPager.currentItem
             viewModel.translatePage(position)
 
             setFullBottomSheet(true)
         }
 
-        val arrowBtn: Button = findViewById(R.id.arrow_btn)
-        arrowBtn.setOnClickListener {
+        binding.arrowBtn.setOnClickListener {
             val isFull = pagesAdapter.isPageSplit
             setFullBottomSheet(!isFull)
         }
 
         bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onSlide(bottomSheet: View, slideOffset: Float) { arrowBtn.rotation = slideOffset * 180 }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) { binding.arrowBtn.rotation = slideOffset * 180 }
 
             override fun onStateChanged(bottomSheet: View, newState: Int) {
 
@@ -649,7 +676,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         var startY = 0f
         val radius = 40f
         // To detect the click, onTouchListener is used to get the touch coordinates and because onClickListener consumes the touch event
-        bottomText.setOnTouchListener { _, event ->
+        binding.pageBottomTextView.setOnTouchListener { _, event ->
             val duration = event.eventTime - event.downTime
 
             when(event.action){
@@ -660,7 +687,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                 MotionEvent.ACTION_UP -> {
                     if(duration < 300
                         && abs(event.x - startX) < radius && abs(event.y - startY) < radius) {
-                        val index = bottomText.getOffsetForPosition(event.x, event.y)
+                        val index = binding.pageBottomTextView.getOffsetForPosition(event.x, event.y)
                         val splitSpans = viewModel.findSelectedSentence(viewPager.currentItem, index) ?: return@setOnTouchListener true
                         highlightSpans(splitSpans)
                     }
@@ -692,13 +719,13 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun highlightSpans(pageSpans: SplitPageSpan) {
-        val text = SpannableString(bottomText.text)
+        val text = SpannableString(binding.pageBottomTextView.text)
 
         //Remove previous
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
         text.setSpan(BackgroundColorSpan(0x6633B5E5), pageSpans.bottomSpan.start, pageSpans.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        bottomText.setText(text, TextView.BufferType.SPANNABLE)
+        binding.pageBottomTextView.setText(text, TextView.BufferType.SPANNABLE)
 
         // Notify the adapter to set the highlight, send span payload
         pagesAdapter.notifyItemChanged(viewPager.currentItem, pageSpans.topSpan)

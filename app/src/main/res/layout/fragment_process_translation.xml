@@ -9,12 +9,13 @@
 
     <Spinner
         android:id="@+id/translate_to_spinner"
-        style="@style/Base.Widget.AppCompat.Spinner.Underlined"
+        style="@style/Widget.AppCompat.Spinner.Underlined"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:contentDescription="@string/language_to"
         android:minHeight="32dp"
         android:spinnerMode="dialog"
+        android:backgroundTint="?colorOnSurface"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -52,10 +53,10 @@
         android:minWidth="48dp"
         android:minHeight="48dp"
         android:src="@drawable/ic_content_copy_black_24dp"
-        android:tint="?colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@+id/translation_text"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
-        app:layout_constraintTop_toTopOf="@+id/translation_label" />
+        app:layout_constraintTop_toTopOf="@+id/translation_label"
+        app:tint="?colorOnSurface" />
 
     <TextView
         android:id="@+id/saved_definition_label"
@@ -135,10 +136,10 @@
         android:minWidth="48dp"
         android:minHeight="48dp"
         android:src="@drawable/ic_content_copy_black_24dp"
-        android:tint="?colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@+id/saved_definition_text"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
-        app:layout_constraintTop_toTopOf="@+id/saved_definition_label" />
+        app:layout_constraintTop_toTopOf="@+id/saved_definition_label"
+        app:tint="?colorOnSurface" />
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/all_group"

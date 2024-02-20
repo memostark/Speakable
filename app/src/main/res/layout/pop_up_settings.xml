@@ -21,6 +21,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:backgroundTint="#ffff"
+            android:contentDescription="@string/white_theme"
             app:layout_constraintEnd_toStartOf="@+id/beige_bg_btn"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/spinner_language_from"
@@ -33,6 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:backgroundTint="#ffedbf"
+            android:contentDescription="@string/beige_theme"
             app:layout_constraintBaseline_toBaselineOf="@+id/white_bg_btn"
             app:layout_constraintEnd_toStartOf="@+id/black_bg_btn"
             app:layout_constraintStart_toEndOf="@+id/white_bg_btn"
@@ -45,6 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:backgroundTint="#000"
+            android:contentDescription="@string/black_theme"
             app:layout_constraintBaseline_toBaselineOf="@+id/beige_bg_btn"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/beige_bg_btn"
@@ -66,6 +69,7 @@
             android:id="@+id/page_toggle_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginVertical="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/textView"
@@ -77,6 +81,7 @@
                 android:id="@+id/single_page_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/single_page"
                 app:icon="@drawable/ic_rect"
                 app:iconTint="?iconTintColor"
                 style="@style/Widget.App.Button.OutlinedButton.IconOnly" />
@@ -85,39 +90,12 @@
                 android:id="@+id/split_page_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/split_page"
                 app:icon="@drawable/ic_setting_split"
                 app:iconTint="?iconTintColor"
                 style="@style/Widget.App.Button.OutlinedButton.IconOnly"/>
 
         </com.google.android.material.button.MaterialButtonToggleGroup>
-
-        <!--<ImageButton
-            android:id="@+id/split_page_btn"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/split_page_setting"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/single_page_btn"
-            app:layout_constraintTop_toBottomOf="@+id/beige_bg_btn"
-            app:srcCompat="@drawable/ic_setting_split" />
-
-        <ImageButton
-            android:id="@+id/single_page_btn"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/single_page_setting"
-            app:layout_constraintBottom_toBottomOf="@+id/split_page_btn"
-            app:layout_constraintEnd_toStartOf="@+id/split_page_btn"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/textView"
-            app:layout_constraintTop_toTopOf="@+id/split_page_btn"
-            app:srcCompat="@drawable/ic_rect" />-->
 
         <Spinner
             android:id="@+id/spinner_language_from"
@@ -125,6 +103,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:spinnerMode="dialog"
+            android:backgroundTint="?iconTintColor"
             app:layout_constraintEnd_toStartOf="@id/spinner_language_to"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -150,6 +129,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:spinnerMode="dialog"
+            android:backgroundTint="?iconTintColor"
             app:layout_constraintBottom_toBottomOf="@+id/spinner_language_from"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/spinner_language_from"
