@@ -33,6 +33,7 @@ import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
+import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.makeScrollableInsideScrollView
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
@@ -537,7 +538,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             val wlp = it.attributes
             wlp.dimAmount = 0f
             wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-            wlp.y = 50 * resources.displayMetrics.density.toInt() // dp to px
+            wlp.y = requireContext().dpToPixel(40)
             wlp.gravity = Gravity.BOTTOM
             it.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             it.attributes = wlp
@@ -573,7 +574,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private fun createSmallViewPager() {
         pager = bindingWord.processViewPager
         val params = pager?.layoutParams
-        params?.height = 250
+        params?.height = requireContext().dpToPixel(150)
         pager?.layoutParams = params
     }
 
