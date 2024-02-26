@@ -83,7 +83,7 @@ fun WebReaderBottomBar(
         }
 
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Spinner(languages, langSelection, onLangSelected)
+            Spinner(languages.value, langSelection.value, onLangSelected)
         }
 
         Box {
@@ -131,17 +131,16 @@ fun WebReaderBottomBar(
 
 @Composable
 fun Spinner(
-    items: MutableState<List<String>>,
-    preselected: MutableState<Int> = mutableStateOf(-1),
+    items: List<String>,
+    preselected: Int = -1,
     onItemSelected: (Int, String) -> Unit = { _, _ -> }
 ) {
-    val spinnerItems by items
-    var selected by preselected
+    var selected by remember { mutableStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
 
     Box {
         Button(onClick = { expanded = !expanded }) {
-            Text(text = spinnerItems.getOrNull(selected) ?: "")
+            Text(text = items.getOrNull(selected) ?: "")
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null
@@ -153,7 +152,7 @@ fun Spinner(
         ) {
             Text(stringResource(R.string.web_reader_lang_spinner_prompt))
 
-            spinnerItems.forEachIndexed { index, item ->
+            items.forEachIndexed { index, item ->
                 DropdownMenuItem(onClick = {
                     expanded = false
                     selected = index
@@ -370,13 +369,13 @@ fun MultiToggleButton(
     }
 }
 
-private val suggestions = mutableStateOf(listOf("Item1", "Item2", "Item3"))
+private val suggestions = listOf("Item1", "Item2", "Item3")
 
 @Preview
 @Composable
 fun BarPreview() {
     AppTheme {
-        WebReaderBottomBar(remember { suggestions })
+        WebReaderBottomBar(remember { mutableStateOf(suggestions) })
     }
 }
 
@@ -385,8 +384,8 @@ fun BarPreview() {
 fun SpinnerPreview() {
     AppTheme {
         Column {
-            Spinner(remember { suggestions })
-            Spinner(remember { suggestions }, remember { mutableStateOf(0) })
+            Spinner(suggestions)
+            Spinner(suggestions, 0)
         }
     }
 }
