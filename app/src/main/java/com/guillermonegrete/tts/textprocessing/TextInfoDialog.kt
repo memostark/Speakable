@@ -12,6 +12,8 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.cardview.widget.CardView
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.distinctUntilChanged
@@ -33,6 +35,7 @@ import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
+import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.makeScrollableInsideScrollView
 import dagger.hilt.android.AndroidEntryPoint
@@ -113,15 +116,28 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         val text = inputText ?: ""
 
         val splitText = text.split(" ")
-        val layout =
-            if(splitText.size > 1) {
-                _bindingSentence = DialogFragmentSentenceBinding.inflate(inflater, container, false)
-                createSentenceLayout()
-                bindingSentence.root
-            } else {
-                _bindingWord = DialogFragmentWordBinding.inflate(inflater, container, false)
-                bindingWord.root
+
+        if(splitText.size > 1) {
+            _bindingSentence = DialogFragmentSentenceBinding.inflate(inflater, container, false)
+            createSentenceLayout()
+            return ComposeView(requireContext()).apply {
+                setContent {
+                    AppTheme {
+                        val dummyText = LoremIpsum().values.first()
+                        SentenceDialog(
+                            text = dummyText,
+                            translation = "",
+                            languages = emptyList(),
+                            isPlaying = true,
+                            isLoading = false
+                        )
+                    }
+                }
             }
+        }
+
+        _bindingWord = DialogFragmentWordBinding.inflate(inflater, container, false)
+        val layout = bindingWord.root
 
         val mTextTTS = layout.findViewById<TextView>(R.id.text_tts)
         mTextTTS.text = text
@@ -146,7 +162,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setSwipeListener(view)
+        if (_bindingWord != null) setSwipeListener(view)
 
         (presenter as ProcessTextPresenter).layoutResult.observe(viewLifecycleOwner){
             onLayoutResult(it)
@@ -316,7 +332,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                 when(result.type){
                     ProcessTextLayoutType.WORD_TRANSLATION -> setTranslationLayout(result.word)
                     ProcessTextLayoutType.SAVED_WORD -> setSavedWordLayout(result.word)
-                    ProcessTextLayoutType.SENTENCE_TRANSLATION -> setSentenceLayout(result.word)
+                    ProcessTextLayoutType.SENTENCE_TRANSLATION -> {}
                     else -> Timber.e( "Unknown layout type: ${result.type}")
                 }
             }
@@ -385,17 +401,20 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showLoadingTTS() {
+        _bindingWord ?: return
         playProgressBar.visibility = View.VISIBLE
         playButton.visibility = View.INVISIBLE
     }
 
     override fun showPlayIcon() {
+        _bindingWord ?: return
         playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
         playProgressBar.visibility = View.INVISIBLE
         playButton.visibility = View.VISIBLE
     }
 
     override fun showStopIcon() {
+        _bindingWord ?: return
         playButton.setImageResource(R.drawable.ic_stop_black_24dp)
         playProgressBar.visibility = View.INVISIBLE
         playButton.visibility = View.VISIBLE

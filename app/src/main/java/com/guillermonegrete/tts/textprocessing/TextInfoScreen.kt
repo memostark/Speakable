@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -27,12 +29,21 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.webreader.Spinner
 
 @Composable
-fun SentenceDialog(text: String, translation: String, languages: List<String>) {
+fun SentenceDialog(
+    text: String,
+    translation: String,
+    languages: List<String>,
+    isPlaying: Boolean,
+    isLoading: Boolean,
+) {
     Dialog(onDismissRequest = {}) {
         Surface {
             Column {
 
-                Text(text, maxLines = 5, modifier = Modifier.padding(8.dp).verticalScroll(rememberScrollState()))
+                Text(text, modifier = Modifier
+                        .padding(8.dp)
+                        .height(120.dp)
+                        .verticalScroll(rememberScrollState(0)))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -45,16 +56,28 @@ fun SentenceDialog(text: String, translation: String, languages: List<String>) {
 
                     Spinner(items = languages, preselected = 1)
                     Spacer(Modifier.weight(1f))
-                    Icon(
-                        painter = painterResource(R.drawable.ic_volume_up_black_24dp),
-                        contentDescription = stringResource(R.string.play_tts_icon_description),
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .align(alignment = Alignment.CenterVertically)
-                    )
+
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colors.secondary,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .height(24.dp)
+                        )
+                    } else {
+                        val iconRes = if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
+                        Icon(
+                            painter = painterResource(iconRes),
+                            contentDescription = stringResource(R.string.play_tts_icon_description),
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
                 }
 
-                Text(translation, maxLines = 5, modifier = Modifier.padding(8.dp).verticalScroll(rememberScrollState()))
+                Text(translation, modifier = Modifier
+                    .padding(8.dp)
+                    .height(120.dp)
+                    .verticalScroll(rememberScrollState()))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -76,6 +99,6 @@ val languages = listOf("English", "Spanish", "German")
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(text, text, languages)
+        SentenceDialog(text, text, languages, isPlaying = false, isLoading = false)
     }
 }
