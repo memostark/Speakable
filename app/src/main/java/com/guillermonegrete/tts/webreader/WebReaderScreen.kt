@@ -83,7 +83,7 @@ fun WebReaderBottomBar(
         }
 
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Spinner(languages.value, langSelection.value, onLangSelected)
+            Spinner(languages.value, langSelection.value, onItemSelected = onLangSelected)
         }
 
         Box {
@@ -133,14 +133,15 @@ fun WebReaderBottomBar(
 fun Spinner(
     items: List<String>,
     preselected: Int = -1,
+    displayText: String? = null,
     onItemSelected: (Int, String) -> Unit = { _, _ -> }
 ) {
-    var selected by remember { mutableStateOf(preselected) }
+    var selected by remember(preselected) { mutableStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
 
     Box {
         Button(onClick = { expanded = !expanded }) {
-            Text(text = items.getOrNull(selected) ?: "")
+            Text(text = displayText ?: items.getOrNull(selected) ?: "")
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null

@@ -12,8 +12,8 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.cardview.widget.CardView
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.distinctUntilChanged
@@ -37,7 +37,6 @@ import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.dpToPixel
-import com.guillermonegrete.tts.utils.makeScrollableInsideScrollView
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.*
@@ -76,10 +75,16 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private lateinit var spinnerLanguageFrom: Spinner
     private lateinit var textFromLanguage: AppCompatTextView
 
+    private val translatedText = mutableStateOf("")
+    private val isLoadingTTS = mutableStateOf(false)
+    private val isPlaying = mutableStateOf(false)
+    private val detectedLanguage = mutableStateOf<String?>(null)
+
     @Inject
     internal lateinit var preferences: SharedPreferences
 
     private var languagesISO: Array<String> = arrayOf()
+    private var languages: List<String> = listOf()
     private var languageFromIndex: Int = -1
     private var languagePreferenceIndex: Int = 0
     private var languageFrom: String? = null
@@ -120,16 +125,24 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         if(splitText.size > 1) {
             _bindingSentence = DialogFragmentSentenceBinding.inflate(inflater, container, false)
             createSentenceLayout()
+            val languagesFrom = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
+            languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
             return ComposeView(requireContext()).apply {
                 setContent {
+
                     AppTheme {
-                        val dummyText = LoremIpsum().values.first()
                         SentenceDialog(
-                            text = dummyText,
-                            translation = "",
-                            languages = emptyList(),
-                            isPlaying = true,
-                            isLoading = false
+                            isVisible = isVisible,
+                            text = text,
+                            translation = translatedText.value,
+                            languagesFrom = languagesFrom,
+                            languagesTo = languages,
+                            targetLangIndex = languagePreferenceIndex,
+                            isPlaying = isPlaying.value,
+                            isLoading = isLoadingTTS.value,
+                            originLangIndex = languageFromIndex,
+                            detectedLanguage = detectedLanguage.value,
+                            onDismiss = { dismiss() },
                         )
                     }
                 }
@@ -298,10 +311,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun setSentenceLayout(word: Words) {
-        (bindingSentence.textTts as AppCompatTextView).makeScrollableInsideScrollView()
-        bindingSentence.textTranslation.text = word.definition
-        (bindingSentence.textTranslation as AppCompatTextView).makeScrollableInsideScrollView()
-        textFromLanguage.text = word.lang
+        translatedText.value = word.definition
+        if (languageFromIndex == 0) {
+            val index = languagesISO.indexOf(word.lang)
+            if (index != -1) detectedLanguage.value = languages[index]
+        }
     }
 
     override fun setExternalDictionary(links: List<ExternalLink>) {
@@ -332,7 +346,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                 when(result.type){
                     ProcessTextLayoutType.WORD_TRANSLATION -> setTranslationLayout(result.word)
                     ProcessTextLayoutType.SAVED_WORD -> setSavedWordLayout(result.word)
-                    ProcessTextLayoutType.SENTENCE_TRANSLATION -> {}
+                    ProcessTextLayoutType.SENTENCE_TRANSLATION -> setSentenceLayout(result.word)
                     else -> Timber.e( "Unknown layout type: ${result.type}")
                 }
             }
@@ -401,23 +415,34 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showLoadingTTS() {
-        _bindingWord ?: return
-        playProgressBar.visibility = View.VISIBLE
-        playButton.visibility = View.INVISIBLE
+        if (_bindingWord != null) {
+            playProgressBar.visibility = View.VISIBLE
+            playButton.visibility = View.INVISIBLE
+        } else {
+            isLoadingTTS.value = true
+        }
     }
 
     override fun showPlayIcon() {
-        _bindingWord ?: return
-        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar.visibility = View.INVISIBLE
-        playButton.visibility = View.VISIBLE
+        if (_bindingWord != null) {
+            playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
+            playProgressBar.visibility = View.INVISIBLE
+            playButton.visibility = View.VISIBLE
+        } else {
+            isLoadingTTS.value = false
+            isPlaying.value = false
+        }
     }
 
     override fun showStopIcon() {
-        _bindingWord ?: return
-        playButton.setImageResource(R.drawable.ic_stop_black_24dp)
-        playProgressBar.visibility = View.INVISIBLE
-        playButton.visibility = View.VISIBLE
+        if (_bindingWord != null) {
+            playButton.setImageResource(R.drawable.ic_stop_black_24dp)
+            playProgressBar.visibility = View.INVISIBLE
+            playButton.visibility = View.VISIBLE
+        } else {
+            isLoadingTTS.value = false
+            isPlaying.value = true
+        }
     }
 
     override fun updateTranslation(word: Words) {

@@ -30,20 +30,28 @@ import com.guillermonegrete.tts.webreader.Spinner
 
 @Composable
 fun SentenceDialog(
+    isVisible: Boolean,
     text: String,
     translation: String,
-    languages: List<String>,
+    languagesFrom: List<String>,
+    languagesTo: List<String>,
+    targetLangIndex: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
+    originLangIndex: Int = 0,
+    detectedLanguage: String? = null,
+    onDismiss: () -> Unit = {},
 ) {
-    Dialog(onDismissRequest = {}) {
+    if (!isVisible) return
+
+    Dialog(onDismissRequest = { onDismiss() }) {
         Surface {
             Column {
 
                 Text(text, modifier = Modifier
-                        .padding(8.dp)
-                        .height(120.dp)
-                        .verticalScroll(rememberScrollState(0)))
+                    .padding(8.dp)
+                    .height(120.dp)
+                    .verticalScroll(rememberScrollState(0)))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -54,7 +62,8 @@ fun SentenceDialog(
 
                     Text(text = "Original:", Modifier.padding(horizontal = 8.dp))
 
-                    Spinner(items = languages, preselected = 1)
+                    val displayText = if (originLangIndex == 0 && detectedLanguage != null) "Auto detect ($detectedLanguage)" else null
+                    Spinner(languagesFrom, originLangIndex, displayText)
                     Spacer(Modifier.weight(1f))
 
                     if (isLoading) {
@@ -86,19 +95,19 @@ fun SentenceDialog(
                         .fillMaxWidth()
                 ) {
                     Text(text = "Translate to:", Modifier.padding(horizontal = 8.dp))
-                    Spinner(items = languages, preselected = 0)
+                    Spinner(languagesTo, targetLangIndex)
                 }
             }
         }
     }
 }
 
-val languages = listOf("English", "Spanish", "German")
+private val languages = listOf("Auto detect", "English", "Spanish", "German")
 
 @Preview
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(text, text, languages, isPlaying = false, isLoading = false)
+        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, originLangIndex = 0, detectedLanguage = "Latin", isPlaying = false, isLoading = false)
     }
 }
