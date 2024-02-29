@@ -7,14 +7,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -38,8 +44,11 @@ fun SentenceDialog(
     targetLangIndex: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
-    originLangIndex: Int = 0,
+    sourceLangIndex: Int = 0,
     detectedLanguage: String? = null,
+    onPlayButtonClick: () -> Unit = {},
+    onSourceLangChanged: (Int) -> Unit = {},
+    onTargetLangChanged: (Int) -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
     if (!isVisible) return
@@ -62,8 +71,12 @@ fun SentenceDialog(
 
                     Text(text = "Original:", Modifier.padding(horizontal = 8.dp))
 
-                    val displayText = if (originLangIndex == 0 && detectedLanguage != null) "Auto detect ($detectedLanguage)" else null
-                    Spinner(languagesFrom, originLangIndex, displayText)
+                    var sourcePos by remember { mutableStateOf(sourceLangIndex) }
+                    val displayText = if (sourcePos == 0 && detectedLanguage != null) "Auto detect ($detectedLanguage)" else null
+                    Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+                        onSourceLangChanged(index)
+                        sourcePos = index
+                    }
                     Spacer(Modifier.weight(1f))
 
                     if (isLoading) {
@@ -71,15 +84,16 @@ fun SentenceDialog(
                             color = MaterialTheme.colors.secondary,
                             modifier = Modifier
                                 .padding(8.dp)
-                                .height(24.dp)
+                                .size(24.dp)
                         )
                     } else {
                         val iconRes = if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
-                        Icon(
-                            painter = painterResource(iconRes),
-                            contentDescription = stringResource(R.string.play_tts_icon_description),
-                            modifier = Modifier.padding(8.dp)
-                        )
+                        IconButton(onClick = onPlayButtonClick) {
+                            Icon(
+                                painter = painterResource(iconRes),
+                                contentDescription = stringResource(R.string.play_tts_icon_description),
+                            )
+                        }
                     }
                 }
 
@@ -95,7 +109,9 @@ fun SentenceDialog(
                         .fillMaxWidth()
                 ) {
                     Text(text = "Translate to:", Modifier.padding(horizontal = 8.dp))
-                    Spinner(languagesTo, targetLangIndex)
+                    Spinner(languagesTo, targetLangIndex) { index, _ ->
+                        onTargetLangChanged(index)
+                    }
                 }
             }
         }
@@ -108,6 +124,6 @@ private val languages = listOf("Auto detect", "English", "Spanish", "German")
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, originLangIndex = 0, detectedLanguage = "Latin", isPlaying = false, isLoading = false)
+        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin", isPlaying = false, isLoading = false)
     }
 }

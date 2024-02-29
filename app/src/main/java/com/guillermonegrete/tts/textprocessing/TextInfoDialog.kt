@@ -140,8 +140,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             targetLangIndex = languagePreferenceIndex,
                             isPlaying = isPlaying.value,
                             isLoading = isLoadingTTS.value,
-                            originLangIndex = languageFromIndex,
+                            sourceLangIndex = languageFromIndex,
                             detectedLanguage = detectedLanguage.value,
+                            onPlayButtonClick = { presenter.onClickReproduce(text) },
+                            onSourceLangChanged = { updateLanguageFrom(it) },
+                            onTargetLangChanged = { updateLanguageTo(it) },
                             onDismiss = { dismiss() },
                         )
                     }
@@ -312,8 +315,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     private fun setSentenceLayout(word: Words) {
         translatedText.value = word.definition
+        updateDetectedLanguage(word.lang)
+    }
+
+    private fun updateDetectedLanguage(langISO: String) {
         if (languageFromIndex == 0) {
-            val index = languagesISO.indexOf(word.lang)
+            val index = languagesISO.indexOf(langISO)
             if (index != -1) detectedLanguage.value = languages[index]
         }
     }
@@ -406,6 +413,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showLanguageNotAvailable() {
+        _bindingWord ?: return
         playButton.setOnClickListener {
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
         }
@@ -446,7 +454,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun updateTranslation(word: Words) {
-        textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
+        if(_bindingWord != null) textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
 
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
@@ -456,7 +464,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
             if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
-            bindingSentence.textTranslation.text = word.definition
+            translatedText.value = word.definition
+            updateDetectedLanguage(word.lang)
         }
     }
 
@@ -700,6 +709,26 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         }
 
         override fun onNothingSelected(parent: AdapterView<*>) {}
+    }
+
+    private fun updateLanguageFrom(position: Int) {
+        languageFromIndex = position
+        languageFrom = if (position == 0)
+            "auto"
+        else
+            languagesISO[position - 1]
+        val editor = preferences.edit()
+        editor.putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom)
+        editor.apply()
+        presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
+    }
+
+    private fun updateLanguageTo(position: Int) {
+        languageToISO = languagesISO[position]
+        val editor = preferences.edit()
+        editor.putInt(LANGUAGE_PREFERENCE, position)
+        editor.apply()
+        presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
     }
 
 
