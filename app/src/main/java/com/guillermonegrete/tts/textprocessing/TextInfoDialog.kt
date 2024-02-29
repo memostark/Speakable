@@ -32,6 +32,7 @@ import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPD
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult
+import com.guillermonegrete.tts.textprocessing.domain.model.StatusTTS
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
@@ -78,6 +79,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private val translatedText = mutableStateOf("")
     private val isLoadingTTS = mutableStateOf(false)
     private val isPlaying = mutableStateOf(false)
+    private val isTTSAvailable = mutableStateOf(true)
     private val detectedLanguage = mutableStateOf<String?>(null)
 
     @Inject
@@ -140,9 +142,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             targetLangIndex = languagePreferenceIndex,
                             isPlaying = isPlaying.value,
                             isLoading = isLoadingTTS.value,
+                            isTTSAvailable = isTTSAvailable.value,
                             sourceLangIndex = languageFromIndex,
                             detectedLanguage = detectedLanguage.value,
-                            onPlayButtonClick = { presenter.onClickReproduce(text) },
+                            onPlayButtonClick = { onPlayButtonClick(text) },
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
                             onDismiss = { dismiss() },
@@ -180,8 +183,18 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         super.onViewCreated(view, savedInstanceState)
         if (_bindingWord != null) setSwipeListener(view)
 
-        (presenter as ProcessTextPresenter).layoutResult.observe(viewLifecycleOwner){
+        val presenterImp = (presenter as ProcessTextPresenter)
+        presenterImp.layoutResult.observe(viewLifecycleOwner){
             onLayoutResult(it)
+        }
+
+        presenterImp.statusTTS.observe(viewLifecycleOwner){
+            val available = when(it) {
+                StatusTTS.LanguageReady -> true
+                StatusTTS.Unavailable -> false
+            }
+            isLoadingTTS.value = false
+            isTTSAvailable.value = available
         }
 
         val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
@@ -200,6 +213,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         presenter.wordStream(inputText, languageFrom).distinctUntilChanged().observe(this) {
             dbWord = it
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        presenter.start()
     }
 
     override fun onStop() {
@@ -618,6 +636,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         playProgressBar = layout.findViewById(R.id.play_loading_icon)
         playIconsContainer = layout.findViewById(R.id.play_icons_container)
+    }
+
+    private fun onPlayButtonClick(text: String) {
+        if (isTTSAvailable.value) {
+            presenter.onClickReproduce(text)
+        } else {
+            Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun createViewPager() {

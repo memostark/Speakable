@@ -9,3 +9,8 @@ sealed class GetLayoutResult {
     data class DictionarySuccess(val word: Words, val items: List<WikiItem>): GetLayoutResult()
     data class Error(val exception: Exception): GetLayoutResult()
 }
+
+sealed class StatusTTS {
+    object LanguageReady: StatusTTS()
+    object Unavailable: StatusTTS()
+}

@@ -20,6 +20,7 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLin
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayout;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetLayoutInteractor;
 import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult;
+import com.guillermonegrete.tts.textprocessing.domain.model.StatusTTS;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.db.Words;
@@ -52,6 +53,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private boolean viewIsActive = false;
 
     private final MutableLiveData<GetLayoutResult> layoutResult = new MutableLiveData<>();
+    private final MutableLiveData<StatusTTS> ttsStatus = new MutableLiveData<>();
 
     @Inject
     ProcessTextPresenter(
@@ -239,7 +241,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     @Override
     public void start() {
-
+        viewIsActive = true;
     }
 
     @Override
@@ -285,6 +287,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         @Override
         public void onEngineReady() {
+            isAvailable = true;
+            ttsStatus.postValue(StatusTTS.LanguageReady.INSTANCE);
             var autoPlay = getAutoTTSPreference();
 
             if(autoPlay && viewIsActive) {
@@ -300,6 +304,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             isPlaying = false;
             isAvailable = false;
             mMainThread.post(() -> {
+                ttsStatus.setValue(StatusTTS.Unavailable.INSTANCE);
                 mView.showLanguageNotAvailable();
                 EspressoIdlingResource.decrement();
             });
@@ -333,5 +338,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     public LiveData<GetLayoutResult> getLayoutResult() {
         return layoutResult;
+    }
+
+    public LiveData<StatusTTS> getStatusTTS() {
+        return ttsStatus;
     }
 }

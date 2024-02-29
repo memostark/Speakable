@@ -44,6 +44,7 @@ fun SentenceDialog(
     targetLangIndex: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
+    isTTSAvailable: Boolean,
     sourceLangIndex: Int = 0,
     detectedLanguage: String? = null,
     onPlayButtonClick: () -> Unit = {},
@@ -87,7 +88,11 @@ fun SentenceDialog(
                                 .size(24.dp)
                         )
                     } else {
-                        val iconRes = if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
+                        val iconRes = if(isTTSAvailable) {
+                            if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
+                        } else {
+                            R.drawable.baseline_volume_off_24
+                        }
                         IconButton(onClick = onPlayButtonClick) {
                             Icon(
                                 painter = painterResource(iconRes),
@@ -124,6 +129,6 @@ private val languages = listOf("Auto detect", "English", "Spanish", "German")
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin", isPlaying = false, isLoading = false)
+        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin", isPlaying = false, isLoading = false, isTTSAvailable = true)
     }
 }
