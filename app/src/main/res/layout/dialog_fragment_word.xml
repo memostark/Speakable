@@ -24,7 +24,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="8dp"
             android:background="#FFFFBB33"
             android:layout_marginTop="1dp"
             android:layout_marginStart="1dp"
@@ -37,12 +36,15 @@
                 android:layout_weight="1"
                 android:textColor="?attr/colorOnBackground"
                 android:textSize="20sp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp"
                 tools:text="Selected text" />
             <Spinner
                 android:id="@+id/spinner_language_from"
                 style="@android:style/Widget.Material.Spinner"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:layout_gravity="center"
                 android:background="@android:color/transparent"
                 android:spinnerMode="dialog"
@@ -51,59 +53,59 @@
                 android:id="@+id/text_language_code"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="4dp"
+                android:textColor="?attr/colorOnBackground"
                 android:gravity="center"
                 android:visibility="gone"
                 tools:visibility="visible"
                 tools:text="ES" />
             <ImageButton
                 android:id="@+id/save_icon"
-                android:paddingStart="3dp"
-                android:paddingEnd="3dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_bookmark_border_black_24dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="8dp"
                 android:contentDescription="@string/save_icon_description"
                 android:layout_gravity="center_vertical"
-                android:background="?android:selectableItemBackgroundBorderless"/>
+                android:scaleType="fitCenter"
+                android:background="?android:selectableItemBackground"
+                app:srcCompat="@drawable/ic_bookmark_border_black_24dp"/>
             <ImageButton
                 android:id="@+id/edit_icon"
-                android:paddingStart="3dp"
-                android:paddingEnd="3dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_edit_black_24dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="8dp"
                 android:contentDescription="@string/edit_icon_description"
-                android:background="?android:selectableItemBackgroundBorderless"
+                android:background="?android:selectableItemBackground"
                 android:layout_gravity="center_vertical"
+                android:scaleType="fitCenter"
                 android:visibility="gone"
+                app:srcCompat="@drawable/ic_edit_black_24dp"
                 tools:visibility="visible"/>
 
             <FrameLayout
                 android:id="@+id/play_icons_container"
-                android:layout_width="24dp"
-                android:layout_height="match_parent">
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
                 <ImageButton
                     android:id="@+id/play_tts_icon"
-                    android:paddingStart="3dp"
-                    android:paddingEnd="3dp"
                     android:layout_gravity="center"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/ic_volume_up_black_24dp"
-                    android:tint="@android:color/black"
-                    android:contentDescription="@string/save_icon_description"
-                    android:background="?android:selectableItemBackgroundBorderless"
-                    android:visibility="invisible"/>
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="8dp"
+                    android:contentDescription="@string/play_tts_icon_description"
+                    android:background="?android:selectableItemBackground"
+                    android:scaleType="fitCenter"
+                    android:visibility="invisible"
+                    app:srcCompat="@drawable/ic_volume_up_black_24dp"
+                    app:tint="@android:color/black" />
 
                 <ProgressBar
                     android:id="@+id/play_loading_icon"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="8dp"
                     android:layout_gravity="center"
                     style="@android:style/Widget.Holo.ProgressBar"/>
             </FrameLayout>
-
 
         </LinearLayout>
 
@@ -116,17 +118,16 @@
             android:layout_marginEnd="1dp"/>
 
         <com.google.android.material.tabs.TabLayout
+            android:id="@+id/pager_menu_dots"
             android:layout_width="match_parent"
             android:layout_height="4dp"
-            android:id="@+id/pager_menu_dots"
             android:background="@android:color/transparent"
-            app:tabIndicatorColor="?attr/colorPrimary"
+            android:contentDescription="@string/tab_layout_description"
             app:tabBackground="@android:color/transparent"
-            app:tabMode="fixed"
             app:tabGravity="fill"
-            app:tabIndicatorHeight="4dp"/>
-
-
+            app:tabIndicatorColor="?attr/colorPrimary"
+            app:tabIndicatorHeight="4dp"
+            app:tabMode="fixed" />
 
     </LinearLayout>
 

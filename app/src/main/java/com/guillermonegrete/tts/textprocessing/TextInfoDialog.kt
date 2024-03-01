@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.AppCompatTextView
 import androidx.cardview.widget.CardView
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
@@ -22,7 +21,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.customviews.ButtonsPreference
-import com.guillermonegrete.tts.databinding.DialogFragmentSentenceBinding
 import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
@@ -60,9 +58,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     @Inject
     internal lateinit var presenter: ProcessTextContract.Presenter
 
-    private  var _bindingSentence: DialogFragmentSentenceBinding? = null
-    private val bindingSentence get() = _bindingSentence!!
-
     private  var _bindingWord: DialogFragmentWordBinding? = null
     private val bindingWord get() = _bindingWord!!
 
@@ -71,10 +66,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     private lateinit var playButton: ImageButton
     private lateinit var playProgressBar: ProgressBar
-    private lateinit var playIconsContainer: View
-
-    private lateinit var spinnerLanguageFrom: Spinner
-    private lateinit var textFromLanguage: AppCompatTextView
 
     private val translatedText = mutableStateOf("")
     private val isLoadingTTS = mutableStateOf(false)
@@ -119,13 +110,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         savedInstanceState: Bundle?
     ): View {
         keepImmersiveMode()
+        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val text = inputText ?: ""
 
         val splitText = text.split(" ")
 
         if(splitText.size > 1) {
-            _bindingSentence = DialogFragmentSentenceBinding.inflate(inflater, container, false)
             createSentenceLayout()
             val languagesFrom = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
             languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
@@ -156,27 +147,18 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         }
 
         _bindingWord = DialogFragmentWordBinding.inflate(inflater, container, false)
-        val layout = bindingWord.root
 
-        val mTextTTS = layout.findViewById<TextView>(R.id.text_tts)
-        mTextTTS.text = text
+        bindingWord.textTts.text = text
 
-        spinnerLanguageFrom = layout.findViewById(R.id.spinner_language_from)
-        setLanguageFromSpinner(spinnerLanguageFrom)
+        setLanguageFromSpinner(bindingWord.spinnerLanguageFrom)
+        setPlayButton(text)
+        bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
 
-        textFromLanguage = layout.findViewById(R.id.text_language_code)
-        textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
-
-        setPlayButton(layout, text)
-
-        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-
-        return layout
+        return bindingWord.root
     }
 
     private fun createSentenceLayout() {
         setBottomDialog()
-        setSpinner()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -234,7 +216,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _bindingSentence = null
         _bindingWord = null
     }
 
@@ -279,7 +260,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     private fun setWordLayout(word: Words) {
-        textFromLanguage.text = word.lang
+        bindingWord.textLanguageCode.text = word.lang
 
         bindingWord.saveIcon.setOnClickListener { showSaveDialog(mFoundWords) }
     }
@@ -312,12 +293,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         setWiktionaryLayout(word, items)
         setSavedWordToolbar()
         languagePreferenceIndex = -1 // Indicates spinner not visible
-
-        // Hides language from spinner, because language is already predefined.
-        spinnerLanguageFrom.visibility = View.INVISIBLE
-
-        textFromLanguage.visibility = View.VISIBLE
-
     }
 
     override fun showTranslationError(error: String) {
@@ -418,9 +393,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showErrorPlayingAudio() {
-        playButton.setImageResource(R.drawable.ic_volume_up_black_24dp)
-        playProgressBar.visibility = View.INVISIBLE
-        playButton.visibility = View.VISIBLE
+        showPlayIcon()
         Toast.makeText(context, "Could not play audio", Toast.LENGTH_SHORT).show()
     }
 
@@ -472,11 +445,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun updateTranslation(word: Words) {
-        if(_bindingWord != null) textFromLanguage.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
 
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
         if (pager != null) {
+            bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
             val fragIndex = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
 
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
@@ -628,14 +601,17 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             }
         }
 
+        // Hides language from spinner, because language is already predefined.
+        bindingWord.spinnerLanguageFrom.visibility = View.INVISIBLE
+        bindingWord.textLanguageCode.text = mFoundWords.lang
+        bindingWord.textLanguageCode.visibility = View.VISIBLE
     }
 
-    private fun setPlayButton(layout: View, text: String) {
-        playButton = layout.findViewById(R.id.play_tts_icon)
+    private fun setPlayButton(text: String) {
+        playButton = bindingWord.playTtsIcon
         playButton.setOnClickListener { presenter.onClickReproduce(text) }
 
-        playProgressBar = layout.findViewById(R.id.play_loading_icon)
-        playIconsContainer = layout.findViewById(R.id.play_icons_container)
+        playProgressBar = bindingWord.playLoadingIcon
     }
 
     private fun onPlayButtonClick(text: String) {
@@ -669,23 +645,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         spinner.adapter = adapter
 
         spinner.setSelection(languageFromIndex, false)
-        spinner.post { spinner.onItemSelectedListener = SpinnerListener() }
-    }
-
-    private fun setSpinner() {
-
-        val spinner = bindingSentence.translateToSpinner
-        val adapter = DifferentValuesAdapter.createFromResource(
-            requireContext(),
-            R.array.googleTranslateLanguagesValue,
-            R.array.googleTranslateLanguagesArray,
-            android.R.layout.simple_spinner_item
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-
-        spinner.setSelection(languagePreferenceIndex, false)
-        // the post{} avoids the listener being called when setting
         spinner.post { spinner.onItemSelectedListener = SpinnerListener() }
     }
 
