@@ -140,13 +140,17 @@ fun Spinner(
     var expanded by remember { mutableStateOf(false) }
 
     Box {
-        Button(onClick = { expanded = !expanded }) {
+        Button(
+            onClick = { expanded = !expanded },
+            contentPadding = PaddingValues(8.dp, end = 0.dp),
+        ) {
             Text(text = displayText ?: items.getOrNull(selected) ?: "")
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null
             )
         }
+        
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }

@@ -1,11 +1,14 @@
 package com.guillermonegrete.tts.textprocessing
 
+import android.view.Gravity
+import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -23,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +34,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.webreader.Spinner
@@ -55,12 +60,23 @@ fun SentenceDialog(
     if (!isVisible) return
 
     Dialog(onDismissRequest = { onDismiss() }) {
-        Surface {
+
+        val dialogWindowProvider = LocalView.current.parent as DialogWindowProvider
+        val window = dialogWindowProvider.window
+        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        val wlp = window.attributes
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        wlp.gravity = Gravity.BOTTOM
+        window.attributes = wlp
+
+        // set bottom dialog
+        Surface(modifier = Modifier.padding(16.dp)) {
             Column {
 
                 Text(text, modifier = Modifier
                     .padding(8.dp)
-                    .height(120.dp)
+                    .heightIn(0.dp, 120.dp)
                     .verticalScroll(rememberScrollState(0)))
 
                 Row(
@@ -70,7 +86,7 @@ fun SentenceDialog(
                         .fillMaxWidth()
                 ) {
 
-                    Text(text = "Original:", Modifier.padding(horizontal = 8.dp))
+                    Text(text = "From:", Modifier.padding(horizontal = 8.dp))
 
                     var sourcePos by remember { mutableStateOf(sourceLangIndex) }
                     val displayText = if (sourcePos == 0 && detectedLanguage != null) "Auto detect ($detectedLanguage)" else null
@@ -104,7 +120,7 @@ fun SentenceDialog(
 
                 Text(translation, modifier = Modifier
                     .padding(8.dp)
-                    .height(120.dp)
+                    .heightIn(0.dp, 120.dp)
                     .verticalScroll(rememberScrollState()))
 
                 Row(
@@ -113,7 +129,7 @@ fun SentenceDialog(
                         .background(MaterialTheme.colors.primary)
                         .fillMaxWidth()
                 ) {
-                    Text(text = "Translate to:", Modifier.padding(horizontal = 8.dp))
+                    Text(text = "To:", Modifier.padding(horizontal = 8.dp))
                     Spinner(languagesTo, targetLangIndex) { index, _ ->
                         onTargetLangChanged(index)
                     }

@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
-import androidx.cardview.widget.CardView
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.DialogFragment
@@ -110,14 +109,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         savedInstanceState: Bundle?
     ): View {
         keepImmersiveMode()
-        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val text = inputText ?: ""
 
         val splitText = text.split(" ")
 
         if(splitText.size > 1) {
-            createSentenceLayout()
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             val languagesFrom = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
             languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
             return ComposeView(requireContext()).apply {
@@ -154,16 +152,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         setPlayButton(text)
         bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
 
-        return bindingWord.root
-    }
+        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
-    private fun createSentenceLayout() {
-        setBottomDialog()
+        return bindingWord.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (_bindingWord != null) setSwipeListener(view)
+        if (_bindingWord != null) setSwipeListener()
 
         val presenterImp = (presenter as ProcessTextPresenter)
         presenterImp.layoutResult.observe(viewLifecycleOwner){
@@ -475,8 +471,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun setSwipeListener(layout: View) {
-        val card: CardView = layout.findViewById(R.id.text_dialog_card)
+    private fun setSwipeListener() {
+        val card = bindingWord.textDialogCard
 
         val params = dialog?.window?.attributes
 
