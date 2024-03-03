@@ -4,41 +4,54 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.rememberSwipeableState
+import androidx.compose.material.swipeable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.webreader.Spinner
+import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SentenceDialog(
     isVisible: Boolean,
@@ -70,8 +83,29 @@ fun SentenceDialog(
         wlp.gravity = Gravity.BOTTOM
         window.attributes = wlp
 
-        // set bottom dialog
-        Surface(modifier = Modifier.padding(16.dp)) {
+        val swipeableState = rememberSwipeableState(SwipeDirection.Initial)
+        var offsetY by remember { mutableStateOf(0f) }
+        var sizePx by remember { mutableStateOf(1f) }
+        val anchors = mapOf(0f to SwipeDirection.Initial, sizePx to SwipeDirection.Right, -sizePx to SwipeDirection.Left)
+
+        Surface(modifier = Modifier
+            .padding(16.dp)
+            .onGloballyPositioned { sizePx = it.size.width.toFloat() }
+            .swipeable( // Use swipeable API for handling the horizontal dismiss
+                state = swipeableState,
+                anchors = anchors,
+                thresholds = { _, _ -> FractionalThreshold(0.6f) },
+                orientation = Orientation.Horizontal
+            )
+            .pointerInput(Unit) {
+                // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
+                detectVerticalDragGestures(
+                    onVerticalDrag = { _, dragAmount -> offsetY += dragAmount },
+                    onDragEnd = { offsetY = 0f }
+                )
+            }
+            .offset { IntOffset(swipeableState.offset.value.roundToInt(), offsetY.roundToInt()) }
+        ) {
             Column {
 
                 Text(text, modifier = Modifier
@@ -136,7 +170,32 @@ fun SentenceDialog(
                 }
             }
         }
+
+        // Handle swipeable events
+        if (swipeableState.isAnimationRunning) {
+            DisposableEffect(Unit) {
+                onDispose {
+                    when (swipeableState.currentValue) {
+                        SwipeDirection.Right -> {
+                            println("swipe right")
+                            onDismiss()
+                        }
+                        SwipeDirection.Left -> {
+                            println("swipe left")
+                            onDismiss()
+                        }
+                        else -> return@onDispose
+                    }
+                }
+            }
+        }
     }
+}
+
+enum class SwipeDirection(val state: Int) {
+    Initial(0),
+    Right(1),
+    Left(2),
 }
 
 private val languages = listOf("Auto detect", "English", "Spanish", "German")
