@@ -20,6 +20,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.customviews.ButtonsPreference
+import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
@@ -302,9 +303,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         createSmallViewPager()
     }
 
-    private fun setSentenceLayout(word: Words) {
-        translatedText.value = word.definition
-        updateDetectedLanguage(word.lang)
+    private fun setSentenceLayout(translation: Translation) {
+        translatedText.value = translation.translatedText
+        updateDetectedLanguage(translation.src)
     }
 
     private fun updateDetectedLanguage(langISO: String) {
@@ -342,10 +343,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                 when(result.type){
                     ProcessTextLayoutType.WORD_TRANSLATION -> setTranslationLayout(result.word)
                     ProcessTextLayoutType.SAVED_WORD -> setSavedWordLayout(result.word)
-                    ProcessTextLayoutType.SENTENCE_TRANSLATION -> setSentenceLayout(result.word)
                     else -> Timber.e( "Unknown layout type: ${result.type}")
                 }
             }
+            is GetLayoutResult.Sentence -> setSentenceLayout(result.translation)
             is GetLayoutResult.DictionarySuccess ->
                 if(requireArguments().getBoolean(WORD_SAVED_KEY)) setDictWithSaveWordLayout(result.word, result.items) else setWiktionaryLayout(result.word, result.items)
             is GetLayoutResult.Error -> showTranslationError(result.exception.message ?: result.exception.toString())
@@ -440,7 +441,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         }
     }
 
-    override fun updateTranslation(word: Words) {
+    override fun updateTranslation(translation: Translation) {
 
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
@@ -449,10 +450,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             val fragIndex = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
 
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
+            val word = Words(inputText ?: "", translation.src, translation.translatedText)
             if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
-            translatedText.value = word.definition
-            updateDetectedLanguage(word.lang)
+            translatedText.value = translation.translatedText
+            updateDetectedLanguage(translation.src)
         }
     }
 
@@ -676,12 +678,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                     else
                         languagesISO[position - 1]
                     editor.putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom)
-                    editor.apply()
-                    presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
-                }
-                R.id.translate_to_spinner -> {
-                    languageToISO = languagesISO[position]
-                    editor.putInt(LANGUAGE_PREFERENCE, position)
                     editor.apply()
                     presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
                 }

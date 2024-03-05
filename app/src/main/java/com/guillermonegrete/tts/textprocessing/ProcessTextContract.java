@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 
 import com.guillermonegrete.tts.BasePresenter;
 import com.guillermonegrete.tts.BaseView;
+import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.db.Words;
@@ -42,7 +43,7 @@ public interface ProcessTextContract {
 
         void showErrorPlayingAudio();
 
-        void updateTranslation(Words words);
+        void updateTranslation(Translation translation);
 
         void updateExternalLinks(List<ExternalLink> links);
     }

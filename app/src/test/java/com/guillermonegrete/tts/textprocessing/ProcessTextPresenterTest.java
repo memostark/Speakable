@@ -8,6 +8,8 @@ import androidx.lifecycle.MutableLiveData;
 import com.guillermonegrete.tts.LiveDataTestUtilKt;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.TestThreadExecutor;
+import com.guillermonegrete.tts.data.Segment;
+import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.main.SettingsFragment;
@@ -40,6 +42,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
+
 public class ProcessTextPresenterTest {
 
     @Rule
@@ -57,7 +62,10 @@ public class ProcessTextPresenterTest {
     private ArgumentCaptor<WordRepositorySource.GetWordRepositoryCallback> getWordCallbackCaptor;
 
     @Captor
-    private ArgumentCaptor<WordRepositorySource.GetTranslationCallback> getTranslationCallbackCaptor;
+    private ArgumentCaptor<Function1<Translation, Unit>> translationSuccessCaptor;
+
+    @Captor
+    private ArgumentCaptor<Function1<Exception, Unit>> exceptionCaptor;
 
     @Captor
     private ArgumentCaptor<DictionaryDataSource.GetDefinitionCallback> getDefinitionCallbackCaptor;
@@ -155,10 +163,10 @@ public class ProcessTextPresenterTest {
         var test_text = "Prueba oracion";
         presenter.getLayout(test_text, languageFrom, languageTo);
 
-        var return_word = new Words(test_text, languageFrom, "Sentence test");
-        loadTextTranslation(return_word);
+        var translation = new Translation(List.of(new Segment("Sentence test", test_text)), languageFrom);
+        loadTextTranslation(test_text, translation);
 
-        GetLayoutResult expected = new GetLayoutResult.WordSuccess(ProcessTextLayoutType.SENTENCE_TRANSLATION, return_word);
+        GetLayoutResult expected = new GetLayoutResult.Sentence(translation);
         assertEquals(LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult()), expected);
     }
 
@@ -314,11 +322,11 @@ public class ProcessTextPresenterTest {
 
         presenter.onLanguageSpinnerChange("de", languageTo);
 
-        var word = new Words("first", "de", "new");
-        verify(getTranslationInteractor).invoke(eq(textInput), getLangTransCallbackCaptor.capture(), eq("de"), eq(languageTo));
-        getLangTransCallbackCaptor.getValue().onTranslationAndLanguage(word);
+        var translation = new Translation(List.of(new Segment("", "")), "de");
+        verify(getTranslationInteractor).invoke(eq(textInput), eq("de"), eq(languageTo), translationSuccessCaptor.capture(), any());
+        translationSuccessCaptor.getValue().invoke(translation);
 
-        verify(view).updateTranslation(word);
+        verify(view).updateTranslation(translation);
 
         // verify external links
         verify(linksRepository).getLanguageLinks(eq("de"), getLinksCaptor.capture());
@@ -335,8 +343,8 @@ public class ProcessTextPresenterTest {
 
         presenter.onLanguageSpinnerChange("de", languageTo);
 
-        verify(getTranslationInteractor).invoke(eq(textInput), getLangTransCallbackCaptor.capture(), eq("de"), eq(languageTo));
-        getLangTransCallbackCaptor.getValue().onDataNotAvailable();
+        verify(getTranslationInteractor).invoke(eq(textInput), eq("de"), eq(languageTo), any(), exceptionCaptor.capture());
+        exceptionCaptor.getValue().invoke(new Exception());
 
         verify(view).setTranslationErrorMessage();
     }
@@ -390,9 +398,9 @@ public class ProcessTextPresenterTest {
         getWordCallbackCaptor.getValue().onRemoteWordLoaded(word);
     }
 
-    private void loadTextTranslation(Words word) {
-        verify(wordRepository).getLanguageAndTranslation(eq(word.word), eq(word.lang), eq(languageTo), getTranslationCallbackCaptor.capture());
-        getTranslationCallbackCaptor.getValue().onTranslationAndLanguage(word);
+    private void loadTextTranslation(String originalText, Translation translation) {
+        verify(getTranslationInteractor).invoke(eq(originalText), eq(translation.getSrc()), eq(languageTo), translationSuccessCaptor.capture(), any());
+        translationSuccessCaptor.getValue().invoke(translation);
     }
 
     private void loadDictionaryDefinition(String text) {

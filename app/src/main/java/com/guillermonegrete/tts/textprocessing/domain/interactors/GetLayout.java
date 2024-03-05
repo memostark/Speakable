@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.textprocessing.domain.interactors;
 
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.textprocessing.ProcessTextLayoutType;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
@@ -12,12 +13,15 @@ import com.guillermonegrete.tts.db.Words;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import kotlin.Unit;
+
 
 public class GetLayout extends AbstractInteractor implements GetLayoutInteractor {
 
     private final GetLayoutInteractor.Callback mCallback;
     private final WordRepositorySource wordRepository;
     private final DictionaryRepository dictionaryRepository;
+    private final GetLangAndTranslation getTranslationInteractor;
     private final String mText;
     private final String languageFrom;
     private final String preferenceLanguage;
@@ -32,7 +36,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
 
     public GetLayout(ExecutorService threadExecutor, MainThread mainThread,
                      Callback callback, WordRepositorySource repository,
-                     DictionaryRepository dictRepository, String text,
+                     DictionaryRepository dictRepository, GetLangAndTranslation getTranslationInteractor, String text,
                      String languageFrom,
                      String preferenceLanguage){
         super(threadExecutor, mainThread);
@@ -40,6 +44,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         mText = text;
         wordRepository = repository;
         dictionaryRepository = dictRepository;
+        this.getTranslationInteractor = getTranslationInteractor;
 
         insideDictionary = false;
         dictionaryRequestDone = false;
@@ -53,19 +58,20 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
         String[] splittedText = mText.split(" ");
 
         if(splittedText.length > 1){
-            // Get translation, wait for callback
-            System.out.println("Preference language: " + preferenceLanguage);
-            wordRepository.getLanguageAndTranslation(mText, languageFrom, preferenceLanguage, new WordRepositorySource.GetTranslationCallback() {
-                @Override
-                public void onTranslationAndLanguage(Words word) {
-                    mMainThread.post(() -> mCallback.onLayoutDetermined(word, ProcessTextLayoutType.SENTENCE_TRANSLATION));
-                }
 
-                @Override
-                public void onDataNotAvailable() {
-                    mMainThread.post(() -> mCallback.onTranslationError("Error"));
+            getTranslationInteractor.invoke(
+                mText,
+                languageFrom,
+                preferenceLanguage,
+                translation -> {
+                    mMainThread.post(() -> mCallback.onSentenceLayout(translation));
+                    return Unit.INSTANCE;
+                },
+                exception -> {
+                    mMainThread.post(() -> mCallback.onTranslationError(exception.getMessage()));
+                    return Unit.INSTANCE;
                 }
-            });
+            );
         }else{
             // Search in database
             wordRepository.getWordLanguageInfo(mText, languageFrom , preferenceLanguage, new WordRepositorySource.GetWordRepositoryCallback() {

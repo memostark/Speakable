@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.textprocessing.domain.interactors;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.DictionaryRepository;
 import com.guillermonegrete.tts.data.source.WordRepository;
+import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
 import com.guillermonegrete.tts.threading.TestMainThread;
 
 import org.junit.Before;
@@ -19,9 +20,11 @@ public class GetLayoutTest {
     @Mock private WordRepository repository;
     @Mock private DictionaryRepository dictionaryRepository;
 
+    @Mock private GetLangAndTranslation getTranslationInteractor;
+
     @Before
-    public void setUp() throws Exception{
-        MockitoAnnotations.initMocks(this);
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
         mainThread = new TestMainThread();
     }
 
@@ -30,7 +33,7 @@ public class GetLayoutTest {
 
         String word = "Test";
         System.out.print("Running my tests...");
-        GetLayout interactor = new GetLayout(executor, mainThread, callback, repository, dictionaryRepository, word, "", "");
+        GetLayout interactor = new GetLayout(executor, mainThread, callback, repository, dictionaryRepository, getTranslationInteractor, word, "", "");
         interactor.run();
 
         //Assert that onLocalWordLoaded is called.

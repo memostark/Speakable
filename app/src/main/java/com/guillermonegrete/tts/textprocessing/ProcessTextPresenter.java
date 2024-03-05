@@ -10,6 +10,7 @@ import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.main.SettingsFragment;
@@ -33,6 +34,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+
+import kotlin.Unit;
 
 public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
 
@@ -102,12 +105,19 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             public void onLayoutDetermined(Words word, ProcessTextLayoutType layoutType) {
                 foundWord = word;
                 checkTTSInitialization();
-
-                switch (layoutType) {
-                    case WORD_TRANSLATION, SAVED_WORD -> getExternalLinks(word.lang);
-                }
+                getExternalLinks(word.lang);
 
                 layoutResult.setValue(new GetLayoutResult.WordSuccess(layoutType, word));
+
+                EspressoIdlingResource.decrement();
+            }
+
+            @Override
+            public void onSentenceLayout(Translation translation) {
+                foundWord = new Words(text, translation.getSrc(), translation.getTranslatedText());
+                checkTTSInitialization();
+
+                layoutResult.setValue(new GetLayoutResult.Sentence(translation));
 
                 EspressoIdlingResource.decrement();
             }
@@ -129,7 +139,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
                 EspressoIdlingResource.decrement();
             }
-        }, mRepository, dictionaryRepository, text, languageFrom, languageTo);
+        }, mRepository, dictionaryRepository, getTranslationInteractor, text, languageFrom, languageTo);
 
         interactor.execute();
 
@@ -213,21 +223,20 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
         EspressoIdlingResource.increment();
         hasTranslation = true;
-        getTranslationInteractor.invoke(foundWord.word, new GetLangAndTranslation.Callback() {
-            @Override
-            public void onTranslationAndLanguage(@NotNull Words word) {
-                customTTS.initializeTTS(word.lang, ttsListener);
-                mView.updateTranslation(word);
-                EspressoIdlingResource.decrement();
-            }
 
-            @Override
-            public void onDataNotAvailable() {
-                hasTranslation = false;
-                mView.setTranslationErrorMessage();
-                EspressoIdlingResource.decrement();
-            }
-        }, languageFrom, languageTo);
+        getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo,
+                translation -> {
+                    customTTS.initializeTTS(translation.getSrc(), ttsListener);
+                    mView.updateTranslation(translation);
+                    EspressoIdlingResource.decrement();
+                    return Unit.INSTANCE;
+                },
+                exception -> {
+                    hasTranslation = false;
+                    mView.setTranslationErrorMessage();
+                    EspressoIdlingResource.decrement();
+                    return Unit.INSTANCE;
+                });
 
         var linkInteractor = new GetExternalLink(executorService, mMainThread, linksRepository);
 
