@@ -79,12 +79,12 @@ fun SentenceDialog(
         window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val wlp = window.attributes
+        val initialY = wlp.y
         wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         wlp.gravity = Gravity.BOTTOM
         window.attributes = wlp
 
         val swipeableState = rememberSwipeableState(SwipeDirection.Initial)
-        var offsetY by remember { mutableStateOf(0f) }
         var sizePx by remember { mutableStateOf(1f) }
         val anchors = mapOf(0f to SwipeDirection.Initial, sizePx to SwipeDirection.Right, -sizePx to SwipeDirection.Left)
 
@@ -100,11 +100,18 @@ fun SentenceDialog(
             .pointerInput(Unit) {
                 // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
                 detectVerticalDragGestures(
-                    onVerticalDrag = { _, dragAmount -> offsetY += dragAmount },
-                    onDragEnd = { offsetY = 0f }
+                    onVerticalDrag = { _, dragAmount ->
+                        // Because we are using Bottom gravity the axis sign is inverted
+                        wlp.y -= dragAmount.toInt()
+                        window.attributes = wlp
+                     },
+                    onDragEnd = {
+                        wlp.y = initialY
+                        window.attributes = wlp
+                    }
                 )
             }
-            .offset { IntOffset(swipeableState.offset.value.roundToInt(), offsetY.roundToInt()) }
+            .offset { IntOffset(swipeableState.offset.value.roundToInt(), 0) }
         ) {
             Column {
 
@@ -176,14 +183,7 @@ fun SentenceDialog(
             DisposableEffect(Unit) {
                 onDispose {
                     when (swipeableState.currentValue) {
-                        SwipeDirection.Right -> {
-                            println("swipe right")
-                            onDismiss()
-                        }
-                        SwipeDirection.Left -> {
-                            println("swipe left")
-                            onDismiss()
-                        }
+                        SwipeDirection.Right, SwipeDirection.Left -> onDismiss()
                         else -> return@onDispose
                     }
                 }
