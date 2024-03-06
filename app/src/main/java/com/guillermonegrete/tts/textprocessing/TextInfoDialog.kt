@@ -19,11 +19,13 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.customviews.ButtonsPreference
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.SettingsFragment
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD
@@ -72,6 +74,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private val isPlaying = mutableStateOf(false)
     private val isTTSAvailable = mutableStateOf(true)
     private val detectedLanguage = mutableStateOf<String?>(null)
+    private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
 
     @Inject
     internal lateinit var preferences: SharedPreferences
@@ -135,7 +138,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             isTTSAvailable = isTTSAvailable.value,
                             sourceLangIndex = languageFromIndex,
                             detectedLanguage = detectedLanguage.value,
+                            highlightedSpan = selectedSpans.value,
                             onPlayButtonClick = { onPlayButtonClick(text) },
+                            onBottomTextClick = { findSelectedSentence(it) },
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
                             onDismiss = { dismiss() },
@@ -453,6 +458,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             val word = Words(inputText ?: "", translation.src, translation.translatedText)
             if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
+            selectedSpans.value = null
             translatedText.value = translation.translatedText
             updateDetectedLanguage(translation.src)
         }
@@ -706,6 +712,26 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         editor.putInt(LANGUAGE_PREFERENCE, position)
         editor.apply()
         presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
+    }
+
+    private fun findSelectedSentence(charIndex: Int) {
+        val translation = (presenter as ProcessTextPresenter).currentTranslation ?: return
+
+        var start = 0
+        var originStart = 0
+
+        for(sentence in translation.sentences){
+            val end = start + sentence.trans.length
+            val originalEnd = originStart + sentence.orig.length
+            if(charIndex < end) {
+                // indicate UI to highlight this sentence
+                val spans = SplitPageSpan(Span(originStart, originalEnd), Span(start, end))
+                selectedSpans.value = if (selectedSpans.value == spans) null else spans
+                return
+            }
+            start = end
+            originStart = originalEnd
+        }
     }
 
 

@@ -31,6 +31,7 @@ import com.guillermonegrete.tts.utils.EspressoIdlingResource;
 
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +49,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private final GetLangAndTranslation getTranslationInteractor;
 
     private Words foundWord;
+    @Nullable
+    private Translation currentTranslation;
 
     private boolean isPlaying;
     private boolean isAvailable;
@@ -114,6 +117,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
             @Override
             public void onSentenceLayout(Translation translation) {
+                currentTranslation = translation;
                 foundWord = new Words(text, translation.getSrc(), translation.getTranslatedText());
                 checkTTSInitialization();
 
@@ -226,6 +230,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
         getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo,
                 translation -> {
+                    currentTranslation = translation;
                     customTTS.initializeTTS(translation.getSrc(), ttsListener);
                     mView.updateTranslation(translation);
                     EspressoIdlingResource.decrement();
@@ -351,5 +356,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     public LiveData<StatusTTS> getStatusTTS() {
         return ttsStatus;
+    }
+
+    @Nullable
+    public Translation getCurrentTranslation() {
+        return currentTranslation;
     }
 }

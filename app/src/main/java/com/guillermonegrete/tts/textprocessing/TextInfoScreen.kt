@@ -15,12 +15,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.LocalContentAlpha
+import androidx.compose.material.LocalContentColor
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -39,6 +44,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
@@ -47,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.webreader.Spinner
 import kotlin.math.roundToInt
@@ -65,7 +73,9 @@ fun SentenceDialog(
     isTTSAvailable: Boolean,
     sourceLangIndex: Int = 0,
     detectedLanguage: String? = null,
+    highlightedSpan: SplitPageSpan? = null,
     onPlayButtonClick: () -> Unit = {},
+    onBottomTextClick: (Int) -> Unit = {},
     onSourceLangChanged: (Int) -> Unit = {},
     onTargetLangChanged: (Int) -> Unit = {},
     onDismiss: () -> Unit = {},
@@ -104,7 +114,7 @@ fun SentenceDialog(
                         // Because we are using Bottom gravity the axis sign is inverted
                         wlp.y -= dragAmount.toInt()
                         window.attributes = wlp
-                     },
+                    },
                     onDragEnd = {
                         wlp.y = initialY
                         window.attributes = wlp
@@ -115,7 +125,15 @@ fun SentenceDialog(
         ) {
             Column {
 
-                Text(text, modifier = Modifier
+                val selectionColors = LocalTextSelectionColors.current
+                val highlightColor = remember { selectionColors.backgroundColor }
+                val topString = buildAnnotatedString {
+                    append(text)
+                    if (highlightedSpan != null)
+                        addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
+                }
+
+                Text(topString, modifier = Modifier
                     .padding(8.dp)
                     .heightIn(0.dp, 120.dp)
                     .verticalScroll(rememberScrollState(0)))
@@ -159,10 +177,31 @@ fun SentenceDialog(
                     }
                 }
 
-                Text(translation, modifier = Modifier
-                    .padding(8.dp)
-                    .heightIn(0.dp, 120.dp)
-                    .verticalScroll(rememberScrollState()))
+                val annotatedString = buildAnnotatedString {
+                    append(translation)
+                    if (highlightedSpan != null)
+                        this.addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.bottomSpan.start, end = highlightedSpan.bottomSpan.end)
+                }
+
+                // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
+                // This is similar to how Text creates its style
+                val style = LocalTextStyle.current
+                val color = LocalContentColor.current
+                val alpha = LocalContentAlpha.current
+
+                val newStyle = remember {
+                    style.copy(color = color.copy(alpha = alpha))
+                }
+
+                ClickableText(
+                   annotatedString,
+                   style = newStyle,
+                   modifier = Modifier
+                       .padding(8.dp)
+                       .heightIn(0.dp, 120.dp)
+                       .verticalScroll(rememberScrollState()),
+                   onClick = onBottomTextClick
+                )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
