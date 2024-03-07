@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Icon
@@ -68,14 +70,18 @@ fun SentenceDialog(
     languagesFrom: List<String>,
     languagesTo: List<String>,
     targetLangIndex: Int,
-    isPlaying: Boolean,
-    isLoading: Boolean,
-    isTTSAvailable: Boolean,
+    isPlaying: Boolean = false,
+    isLoading: Boolean = false,
+    isTTSAvailable: Boolean = true,
     sourceLangIndex: Int = 0,
     detectedLanguage: String? = null,
     highlightedSpan: SplitPageSpan? = null,
+    wordTranslation: String? = null,
     onPlayButtonClick: () -> Unit = {},
+    onTopTextClick: (Int) -> Unit = {},
     onBottomTextClick: (Int) -> Unit = {},
+    onBookmarkClicked: () -> Unit = {},
+    onMoreInfoClicked: () -> Unit = {},
     onSourceLangChanged: (Int) -> Unit = {},
     onTargetLangChanged: (Int) -> Unit = {},
     onDismiss: () -> Unit = {},
@@ -123,7 +129,43 @@ fun SentenceDialog(
             }
             .offset { IntOffset(swipeableState.offset.value.roundToInt(), 0) }
         ) {
+            // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
+            // This is similar to how Text creates its style
+            val style = LocalTextStyle.current
+            val color = LocalContentColor.current
+            val alpha = LocalContentAlpha.current
+
+            val newStyle = remember {
+                style.copy(color = color.copy(alpha = alpha))
+            }
+
             Column {
+
+                if (wordTranslation != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+
+                            .fillMaxWidth()
+                    ) {
+                        Text(wordTranslation, Modifier.padding(horizontal = 8.dp))
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = onBookmarkClicked) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_bookmark_border_black_24dp),
+                                contentDescription = stringResource(R.string.save_icon_description),
+                            )
+                        }
+                        IconButton(onClick = onMoreInfoClicked) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_outline_info_24),
+                                contentDescription = stringResource(R.string.more_information),
+                            )
+                        }
+                    }
+
+                    Divider(Modifier.height(1.dp).fillMaxWidth())
+                }
+
 
                 val selectionColors = LocalTextSelectionColors.current
                 val highlightColor = remember { selectionColors.backgroundColor }
@@ -133,10 +175,15 @@ fun SentenceDialog(
                         addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
                 }
 
-                Text(topString, modifier = Modifier
-                    .padding(8.dp)
-                    .heightIn(0.dp, 120.dp)
-                    .verticalScroll(rememberScrollState(0)))
+                ClickableText(
+                    topString,
+                    style = newStyle,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .heightIn(0.dp, 120.dp)
+                        .verticalScroll(rememberScrollState(0)),
+                    onClick = onTopTextClick,
+                )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -181,16 +228,6 @@ fun SentenceDialog(
                     append(translation)
                     if (highlightedSpan != null)
                         this.addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.bottomSpan.start, end = highlightedSpan.bottomSpan.end)
-                }
-
-                // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
-                // This is similar to how Text creates its style
-                val style = LocalTextStyle.current
-                val color = LocalContentColor.current
-                val alpha = LocalContentAlpha.current
-
-                val newStyle = remember {
-                    style.copy(color = color.copy(alpha = alpha))
                 }
 
                 ClickableText(
@@ -243,6 +280,14 @@ private val languages = listOf("Auto detect", "English", "Spanish", "German")
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin", isPlaying = false, isLoading = false, isTTSAvailable = true)
+        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin")
+    }
+}
+
+@Preview
+@Composable
+fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text: String) {
+    AppTheme(darkTheme = true) {
+        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin", wordTranslation = "Translation")
     }
 }
