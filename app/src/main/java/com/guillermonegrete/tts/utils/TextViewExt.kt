@@ -12,8 +12,12 @@ import com.guillermonegrete.tts.common.models.Span
 fun TextView.findWordForRightHanded(
     offset: Int
 ): Span { // when you touch ' ', this method returns left word.
-    val str = text.toString()
-    var newOffset = offset
+    return text.findWord(offset)
+}
+
+fun CharSequence.findWord(position: Int): Span {
+    val str = this
+    var newOffset = position
     if (str.length == newOffset) {
         newOffset-- // without this code, you will get exception when touching end of the text
     }

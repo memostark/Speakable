@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.webreader.Spinner
@@ -76,7 +77,7 @@ fun SentenceDialog(
     sourceLangIndex: Int = 0,
     detectedLanguage: String? = null,
     highlightedSpan: SplitPageSpan? = null,
-    wordTranslation: String? = null,
+    wordState: WordState = WordState(),
     onPlayButtonClick: () -> Unit = {},
     onTopTextClick: (Int) -> Unit = {},
     onBottomTextClick: (Int) -> Unit = {},
@@ -141,17 +142,16 @@ fun SentenceDialog(
 
             Column {
 
-                if (wordTranslation != null) {
+                if (wordState.translation != null) {
                     Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(wordTranslation, Modifier.padding(horizontal = 8.dp))
+                        Text(wordState.translation, Modifier.padding(horizontal = 8.dp))
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = onBookmarkClicked) {
+                            val iconRes = if(wordState.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
                             Icon(
-                                painter = painterResource(R.drawable.ic_bookmark_border_black_24dp),
+                                painter = painterResource(iconRes),
                                 contentDescription = stringResource(R.string.save_icon_description),
                             )
                         }
@@ -173,6 +173,9 @@ fun SentenceDialog(
                     append(text)
                     if (highlightedSpan != null)
                         addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
+
+                    if (wordState.translation != null)
+                        addStyle(style = SpanStyle(background = highlightColor), start = wordState.span.start, end = wordState.span.end)
                 }
 
                 ClickableText(
@@ -268,6 +271,12 @@ fun SentenceDialog(
     }
 }
 
+data class WordState(
+    val translation: String? = null,
+    val isSaved: Boolean = false,
+    val span: Span = Span(0, 0)
+)
+
 enum class SwipeDirection(val state: Int) {
     Initial(0),
     Right(1),
@@ -288,6 +297,16 @@ fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
 @Composable
 fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme(darkTheme = true) {
-        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin", wordTranslation = "Translation")
+        SentenceDialog(
+            true,
+            text,
+            text,
+            languages,
+            languages,
+            targetLangIndex = 1,
+            sourceLangIndex = 0,
+            detectedLanguage = "Latin",
+            wordState = WordState("Translation", true, Span(6, 11))
+        )
     }
 }

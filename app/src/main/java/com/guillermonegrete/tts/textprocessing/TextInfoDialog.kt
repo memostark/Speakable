@@ -22,6 +22,7 @@ import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.customviews.ButtonsPreference
 import com.guillermonegrete.tts.data.Translation
+import com.guillermonegrete.tts.data.WordResult
 import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
@@ -38,6 +39,7 @@ import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.dpToPixel
+import com.guillermonegrete.tts.utils.findWord
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.*
@@ -75,6 +77,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private val isTTSAvailable = mutableStateOf(true)
     private val detectedLanguage = mutableStateOf<String?>(null)
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
+    private val wordState = mutableStateOf(WordState())
+
+    private var selectedWordSpan = Span(0, 0)
 
     @Inject
     internal lateinit var preferences: SharedPreferences
@@ -139,7 +144,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             sourceLangIndex = languageFromIndex,
                             detectedLanguage = detectedLanguage.value,
                             highlightedSpan = selectedSpans.value,
+                            wordState = wordState.value,
                             onPlayButtonClick = { onPlayButtonClick(text) },
+                            onTopTextClick = { findWord(it) },
                             onBottomTextClick = { findSelectedSentence(it) },
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
@@ -161,6 +168,22 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         return bindingWord.root
+    }
+
+    private fun findWord(offset: Int) {
+        // If true the selected word was tapped, unselect
+        if (selectedWordSpan.inside(offset)) {
+            selectedWordSpan = Span(0, 0)
+            wordState.value = WordState()
+            return
+        }
+
+        val text = inputText ?: return
+
+        val span = text.findWord(offset)
+        selectedWordSpan = span
+        val word = text.substring(span.start, span.end)
+        (presenter as ProcessTextPresenter).setSelectedWord(word, languageFrom, languageToISO)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -196,6 +219,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         presenter.wordStream(inputText, languageFrom).distinctUntilChanged().observe(this) {
             dbWord = it
+        }
+
+        presenterImp.wordInfo().observe(this) {result ->
+            when(result) {
+                is WordResult.Local -> wordState.value = WordState(result.word.definition, true, selectedWordSpan)
+                is WordResult.Remote -> wordState.value = WordState(result.translation.translatedText, false, selectedWordSpan)
+                is WordResult.Error -> { Toast.makeText(context, "Error: ${result.exception}", Toast.LENGTH_SHORT).show() }
+            }
         }
     }
 
@@ -371,7 +402,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showSaveDialog(word: Words) {
-        val dialogFragment: DialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
+        val dialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
         dialogFragment.show(childFragmentManager, "New word process")
     }
 

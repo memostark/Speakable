@@ -10,7 +10,9 @@ import com.guillermonegrete.tts.AbstractPresenter;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.data.Segment;
 import com.guillermonegrete.tts.data.Translation;
+import com.guillermonegrete.tts.data.WordResult;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.main.SettingsFragment;
@@ -47,6 +49,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private final SharedPreferences sharedPreferences;
     private final CustomTTS customTTS;
     private final GetLangAndTranslation getTranslationInteractor;
+
+    private MutableLiveData<String> selectedWord = new MutableLiveData<>();
+
+    private MutableLiveData<WordResult> selectedWordResult = new MutableLiveData<>();
 
     private Words foundWord;
     @Nullable
@@ -152,6 +158,37 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public LiveData<Words> wordStream(String text, String languageFrom) {
         return mRepository.getLocalWord(text, languageFrom);
+    }
+
+    public LiveData<WordResult> wordInfo() {
+        return selectedWordResult;
+    }
+
+    public void setSelectedWord(String word, String languageFrom, String languageTo) {
+        selectedWord.setValue(word);
+
+        executorService.execute(() ->
+            mRepository.getWordLanguageInfo(word, languageFrom, languageTo, new WordRepositorySource.GetWordRepositoryCallback() {
+                @Override
+                public void onLocalWordLoaded(Words word) {
+                    selectedWordResult.postValue(new WordResult.Local(word));
+                }
+
+                @Override
+                public void onLocalWordNotAvailable() {}
+
+                @Override
+                public void onRemoteWordLoaded(Words word) {
+                    var translation = new Translation(List.of(new Segment(word.definition, word.word)), word.getLang());
+                    selectedWordResult.postValue(new WordResult.Remote(translation));
+                }
+
+                @Override
+                public void onDataNotAvailable(Words emptyWord) {
+                    selectedWordResult.postValue(new WordResult.Error(new Exception()));
+                }
+            })
+        );
     }
 
     /**
