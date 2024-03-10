@@ -6,6 +6,7 @@ import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,9 +20,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ExposedDropdownMenuBox
+import androidx.compose.material.ExposedDropdownMenuDefaults
 import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -31,6 +36,7 @@ import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.material.rememberSwipeableState
 import androidx.compose.material.swipeable
 import androidx.compose.runtime.Composable
@@ -57,6 +63,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.webreader.Spinner
@@ -271,6 +278,111 @@ fun SentenceDialog(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun EditWordDialog(
+    word: String,
+    language: String,
+    translation: String,
+    notes: String,
+    languages: List<String>,
+    isSaved: Boolean = false,
+    onSave: (Words) -> Unit = {},
+    onDelete: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+    var wordText by remember { mutableStateOf(word) }
+    var langText by remember { mutableStateOf(language) }
+    var translationText by remember { mutableStateOf(translation) }
+    var notesText by remember { mutableStateOf(notes) }
+
+    var expanded by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface {
+            Column(Modifier.padding(16.dp)) {
+                TextField(
+                    value = wordText,
+                    onValueChange = { wordText = it },
+                    label = { Text(stringResource(R.string.word_edit_text)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                )
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = {
+                        expanded = !expanded
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextField(
+                        readOnly = true,
+                        value = langText,
+                        onValueChange = { },
+                        label = { Text(stringResource(R.string.language_edit_text)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = {
+                            expanded = false
+                        }
+                    ) {
+                        languages.forEach { lang ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    langText = lang
+                                    expanded = false
+                                }
+                            ){
+                                Text(text = lang)
+                            }
+                        }
+                    }
+                }
+
+                TextField(
+                    value = translationText,
+                    onValueChange = { translationText = it },
+                    label = { Text(stringResource(R.string.translation_edit_text)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                TextField(
+                    value = notesText,
+                    onValueChange = { notesText = it },
+                    label = { Text(stringResource(id = R.string.notes_edit_text)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row (horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
+
+                    if(isSaved) {
+                        IconButton(onClick = onDelete) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_delete_black_24dp),
+                                contentDescription = stringResource(R.string.play_tts_icon_description),
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.weight(1f))
+                    Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
+                    Button(onClick = {
+                        onSave(Words(wordText, langText, translationText).apply { this.notes = notesText })
+                    }) {
+                        Text(text = stringResource(android.R.string.ok))
+                    }
+                }
+            }
+        }
+    }
+
+}
+
 data class WordState(
     val translation: String? = null,
     val isSaved: Boolean = false,
@@ -308,5 +420,13 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
             detectedLanguage = "Latin",
             wordState = WordState("Translation", true, Span(6, 11))
         )
+    }
+}
+
+@Preview
+@Composable
+fun EditWordDialogPreview() {
+    AppTheme {
+        EditWordDialog("Hola", "es", "Hello", "Spanish greeting", listOf("en", "es", "de"), true)
     }
 }
