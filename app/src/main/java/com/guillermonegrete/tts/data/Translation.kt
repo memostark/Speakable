@@ -8,6 +8,8 @@ data class Translation(
     val src: String
 ){
 
+    val originalText: String = sentences.joinToString("") { it.orig }
+
     val translatedText = sentences.joinToString(""){ it.trans }
 }
 

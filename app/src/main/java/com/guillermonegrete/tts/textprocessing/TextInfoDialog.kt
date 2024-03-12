@@ -14,11 +14,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.distinctUntilChanged
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.customviews.ButtonsPreference
 import com.guillermonegrete.tts.data.Translation
@@ -28,8 +30,10 @@ import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.SettingsFragment
+import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment
 import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD
+import com.guillermonegrete.tts.savedwords.SaveWordDialogViewModel
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult
@@ -61,6 +65,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     @Inject
     internal lateinit var presenter: ProcessTextContract.Presenter
+    private val saveWordViewModel: SaveWordDialogViewModel by viewModels()
 
     private  var _bindingWord: DialogFragmentWordBinding? = null
     private val bindingWord get() = _bindingWord!!
@@ -78,6 +83,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private val detectedLanguage = mutableStateOf<String?>(null)
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
     private val wordState = mutableStateOf(WordState())
+
+    private val editDialogShown = mutableStateOf(false)
+    private val deleteDialogShown = mutableStateOf(false)
 
     private var selectedWordSpan = Span(0, 0)
 
@@ -148,10 +156,45 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             onPlayButtonClick = { onPlayButtonClick(text) },
                             onTopTextClick = { findWord(it) },
                             onBottomTextClick = { findSelectedSentence(it) },
+                            onBookmarkClicked = { editDialogShown.value = true },
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
                             onDismiss = { dismiss() },
                         )
+
+                        if (editDialogShown.value) {
+
+                            val state = wordState.value
+                            val word = state.word
+                            if (word != null) {
+                                EditWordDialog(
+                                    word = word.word,
+                                    language = word.lang,
+                                    translation = word.definition,
+                                    notes = word.notes,
+                                    languages = languages,
+                                    isSaved = state.isSaved,
+                                    onSave = {
+                                        if(state.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
+                                    },
+                                    onDelete = { deleteDialogShown.value = true },
+                                    onDismiss = { editDialogShown.value = false }
+                                )
+                            }
+                        }
+
+                        val state = wordState.value
+                        val word = state.word
+
+                        if (deleteDialogShown.value && word != null) {
+
+                            YesNoDialog(
+                                onDismissRequest = { deleteDialogShown.value = false },
+                                onConfirmation = { presenter.onClickDeleteWord(word.word) },
+                                dialogTitle = getString(R.string.delete_word_message),
+                                dialogText = getString(R.string.delete_word_message),
+                            )
+                        }
                     }
                 }
             }
@@ -223,9 +266,19 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         presenterImp.wordInfo().observe(this) {result ->
             when(result) {
-                is WordResult.Local -> wordState.value = WordState(result.word.definition, true, selectedWordSpan)
-                is WordResult.Remote -> wordState.value = WordState(result.translation.translatedText, false, selectedWordSpan)
+                is WordResult.Local -> wordState.value = WordState(result.word,true, selectedWordSpan)
+                is WordResult.Remote -> wordState.value = WordState(Words(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
                 is WordResult.Error -> { Toast.makeText(context, "Error: ${result.exception}", Toast.LENGTH_SHORT).show() }
+            }
+        }
+
+        saveWordViewModel.update.observe(this) {result ->
+            when(result) {
+                is ResultType.Insert -> {
+                    editDialogShown.value = false
+                    wordState.value = wordState.value.copy(word = result.word, isSaved = true)
+                }
+                ResultType.Update -> editDialogShown.value = false
             }
         }
     }
@@ -420,9 +473,17 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     }
 
     override fun showWordDeleted() {
-        bindingWord.editIcon.visibility = View.GONE
-        bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
-        bindingWord.saveIcon.setOnClickListener { showSaveDialog(mFoundWords) }
+        if (_bindingWord != null) {
+            bindingWord.editIcon.visibility = View.GONE
+            bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
+            bindingWord.saveIcon.setOnClickListener { showSaveDialog(mFoundWords) }
+        } else {
+            val oldWord = wordState.value.word ?: return
+            val word = Words(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
+            deleteDialogShown.value = false
+            editDialogShown.value = false
+            wordState.value = wordState.value.copy(word = word, isSaved = false)
+        }
     }
 
     override fun showErrorPlayingAudio() {

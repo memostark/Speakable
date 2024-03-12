@@ -20,16 +20,12 @@ fun YesNoDialog(
         text = { Text(text = dialogText) },
         onDismissRequest = onDismissRequest,
         confirmButton = {
-            TextButton(onClick = { onConfirmation() }) {
+            TextButton(onClick = onConfirmation) {
                 Text(stringResource(android.R.string.ok))
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
-            ) {
+            TextButton(onClick = onDismissRequest) {
                 Text(stringResource(android.R.string.cancel))
             }
         }

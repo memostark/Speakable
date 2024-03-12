@@ -149,11 +149,12 @@ fun SentenceDialog(
 
             Column {
 
-                if (wordState.translation != null) {
+                val word = wordState.word
+                if (word != null) {
                     Row(verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(wordState.translation, Modifier.padding(horizontal = 8.dp))
+                        Text(word.definition, Modifier.padding(horizontal = 8.dp))
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = onBookmarkClicked) {
                             val iconRes = if(wordState.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
@@ -181,7 +182,7 @@ fun SentenceDialog(
                     if (highlightedSpan != null)
                         addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
 
-                    if (wordState.translation != null)
+                    if (wordState.span != null)
                         addStyle(style = SpanStyle(background = highlightColor), start = wordState.span.start, end = wordState.span.end)
                 }
 
@@ -284,7 +285,7 @@ fun EditWordDialog(
     word: String,
     language: String,
     translation: String,
-    notes: String,
+    notes: String?,
     languages: List<String>,
     isSaved: Boolean = false,
     onSave: (Words) -> Unit = {},
@@ -352,7 +353,7 @@ fun EditWordDialog(
                 )
 
                 TextField(
-                    value = notesText,
+                    value = notesText ?: "",
                     onValueChange = { notesText = it },
                     label = { Text(stringResource(id = R.string.notes_edit_text)) },
                     modifier = Modifier.fillMaxWidth()
@@ -384,9 +385,9 @@ fun EditWordDialog(
 }
 
 data class WordState(
-    val translation: String? = null,
+    val word: Words? = null,
     val isSaved: Boolean = false,
-    val span: Span = Span(0, 0)
+    val span: Span? = null,
 )
 
 enum class SwipeDirection(val state: Int) {
@@ -418,7 +419,7 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
             targetLangIndex = 1,
             sourceLangIndex = 0,
             detectedLanguage = "Latin",
-            wordState = WordState("Translation", true, Span(6, 11))
+            wordState = WordState(Words("Original", "en",  "Translation"), true, Span(6, 11))
         )
     }
 }

@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -35,6 +36,7 @@ public class Words implements Parcelable {
     @Expose
     public String definition;
 
+    @Nullable
     @ColumnInfo(name = "notes")
     public String notes;
 
@@ -46,9 +48,21 @@ public class Words implements Parcelable {
     }
 
 
-    public void setWord(@NonNull String word){this.word = word;}
-    public void setLang(@NonNull String lang){this.lang = lang;}
-    public void setDefinition(@NonNull String definition){this.definition = definition;}
+    public void setWord(@NonNull String word) {
+        this.word = word;
+    }
+
+    public void setLang(@NonNull String lang) {
+        this.lang = lang;
+    }
+
+    public void setDefinition(@NonNull String definition) {
+        this.definition = definition;
+    }
+
+    public void setNotes(@Nullable String notes) {
+        this.notes = notes;
+    }
 
     @NonNull
     public String getWord() {return word;}
@@ -94,6 +108,6 @@ public class Words implements Parcelable {
     @NonNull
     @Override
     public String toString() {
-        return String.format("Words(word=%s,lang=%s,definition=%s)", word, lang, definition);
+        return String.format("Words(word=%s,lang=%s,definition=%s, notes=%s, id=%s)", word, lang, definition, notes, id);
     }
 }
