@@ -82,7 +82,7 @@ fun SentenceDialog(
     isLoading: Boolean = false,
     isTTSAvailable: Boolean = true,
     sourceLangIndex: Int = 0,
-    detectedLanguage: String? = null,
+    detectedLanguageIndex: Int? = null,
     highlightedSpan: SplitPageSpan? = null,
     wordState: WordState = WordState(),
     onPlayButtonClick: () -> Unit = {},
@@ -206,7 +206,8 @@ fun SentenceDialog(
                     Text(text = "From:", Modifier.padding(horizontal = 8.dp))
 
                     var sourcePos by remember { mutableStateOf(sourceLangIndex) }
-                    val displayText = if (sourcePos == 0 && detectedLanguage != null) "Auto detect ($detectedLanguage)" else null
+                    val displayText = if (sourcePos == 0 && detectedLanguageIndex != null)
+                        "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
                     Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
                         onSourceLangChanged(index)
                         sourcePos = index
@@ -282,18 +283,23 @@ fun SentenceDialog(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun EditWordDialog(
+    isShown: Boolean,
     word: String,
     language: String,
     translation: String,
     notes: String?,
     languages: List<String>,
+    languagesISO: List<String>,
     isSaved: Boolean = false,
     onSave: (Words) -> Unit = {},
     onDelete: () -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
+    if (!isShown) return
+
     var wordText by remember { mutableStateOf(word) }
-    var langText by remember { mutableStateOf(language) }
+    val isoIndex = languagesISO.indexOf(language)
+    var indexLang by remember { mutableStateOf(isoIndex) }
     var translationText by remember { mutableStateOf(translation) }
     var notesText by remember { mutableStateOf(notes) }
 
@@ -319,7 +325,7 @@ fun EditWordDialog(
                 ) {
                     TextField(
                         readOnly = true,
-                        value = langText,
+                        value = languages.getOrNull(indexLang) ?: "",
                         onValueChange = { },
                         label = { Text(stringResource(R.string.language_edit_text)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -332,14 +338,14 @@ fun EditWordDialog(
                             expanded = false
                         }
                     ) {
-                        languages.forEach { lang ->
+                        languages.forEachIndexed { i, lang ->
                             DropdownMenuItem(
                                 onClick = {
-                                    langText = lang
+                                    indexLang = i
                                     expanded = false
                                 }
                             ){
-                                Text(text = lang)
+                                Text(text = "$lang (${languagesISO[i]})")
                             }
                         }
                     }
@@ -373,7 +379,7 @@ fun EditWordDialog(
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
                     Button(onClick = {
-                        onSave(Words(wordText, langText, translationText).apply { this.notes = notesText })
+                        onSave(Words(wordText, languagesISO[indexLang], translationText).apply { this.notes = notesText })
                     }) {
                         Text(text = stringResource(android.R.string.ok))
                     }
@@ -402,7 +408,7 @@ private val languages = listOf("Auto detect", "English", "Spanish", "German")
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguage = "Latin")
+        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguageIndex = 3)
     }
 }
 
@@ -418,7 +424,7 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
             languages,
             targetLangIndex = 1,
             sourceLangIndex = 0,
-            detectedLanguage = "Latin",
+            detectedLanguageIndex = 3,
             wordState = WordState(Words("Original", "en",  "Translation"), true, Span(6, 11))
         )
     }
@@ -428,6 +434,6 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
 @Composable
 fun EditWordDialogPreview() {
     AppTheme {
-        EditWordDialog("Hola", "es", "Hello", "Spanish greeting", listOf("en", "es", "de"), true)
+        EditWordDialog(true, "Hola", "es", "Hello", "Spanish greeting", listOf("English", "Spanish", "German"), listOf("en", "es", "de"), true)
     }
 }

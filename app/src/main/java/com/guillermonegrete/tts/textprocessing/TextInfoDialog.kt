@@ -80,7 +80,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private val isLoadingTTS = mutableStateOf(false)
     private val isPlaying = mutableStateOf(false)
     private val isTTSAvailable = mutableStateOf(true)
-    private val detectedLanguage = mutableStateOf<String?>(null)
+    private val detectedLanguage = mutableStateOf<Int?>(null)
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
     private val wordState = mutableStateOf(WordState())
 
@@ -92,8 +92,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     @Inject
     internal lateinit var preferences: SharedPreferences
 
-    private var languagesISO: Array<String> = arrayOf()
+    /**
+     * List of languages without auto-detect entry.
+     */
     private var languages: List<String> = listOf()
+    private var languagesISO: List<String> = listOf()
+
     private var languageFromIndex: Int = -1
     private var languagePreferenceIndex: Int = 0
     private var languageFrom: String? = null
@@ -150,7 +154,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             isLoading = isLoadingTTS.value,
                             isTTSAvailable = isTTSAvailable.value,
                             sourceLangIndex = languageFromIndex,
-                            detectedLanguage = detectedLanguage.value,
+                            detectedLanguageIndex = detectedLanguage.value,
                             highlightedSpan = selectedSpans.value,
                             wordState = wordState.value,
                             onPlayButtonClick = { onPlayButtonClick(text) },
@@ -162,29 +166,27 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             onDismiss = { dismiss() },
                         )
 
-                        if (editDialogShown.value) {
-
-                            val state = wordState.value
-                            val word = state.word
-                            if (word != null) {
-                                EditWordDialog(
-                                    word = word.word,
-                                    language = word.lang,
-                                    translation = word.definition,
-                                    notes = word.notes,
-                                    languages = languages,
-                                    isSaved = state.isSaved,
-                                    onSave = {
-                                        if(state.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
-                                    },
-                                    onDelete = { deleteDialogShown.value = true },
-                                    onDismiss = { editDialogShown.value = false }
-                                )
-                            }
-                        }
 
                         val state = wordState.value
                         val word = state.word
+
+                        if (word != null) {
+                            EditWordDialog(
+                                isShown = editDialogShown.value,
+                                word = word.word,
+                                language = word.lang,
+                                translation = word.definition,
+                                notes = word.notes,
+                                languages = languages,
+                                languagesISO = languagesISO,
+                                isSaved = state.isSaved,
+                                onSave = {
+                                    if(state.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
+                                },
+                                onDelete = { deleteDialogShown.value = true },
+                                onDismiss = { editDialogShown.value = false }
+                            )
+                        }
 
                         if (deleteDialogShown.value && word != null) {
 
@@ -226,7 +228,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         val span = text.findWord(offset)
         selectedWordSpan = span
         val word = text.substring(span.start, span.end)
-        (presenter as ProcessTextPresenter).setSelectedWord(word, languageFrom, languageToISO)
+        val detectedIndex = detectedLanguage.value
+        val language = if (languageFromIndex == 0 && detectedIndex != null) {
+            languagesISO.getOrNull(detectedIndex) ?: languageFrom
+        } else languageFrom
+        (presenter as ProcessTextPresenter).setSelectedWord(word, language, languageToISO)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -308,7 +314,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private fun getPreferenceISO(): String {
         val englishIndex = 15
         languagePreferenceIndex = preferences.getInt(LANGUAGE_PREFERENCE, englishIndex)
-        languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
+        languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue).toList()
         return languagesISO[languagePreferenceIndex]
     }
 
@@ -400,7 +406,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private fun updateDetectedLanguage(langISO: String) {
         if (languageFromIndex == 0) {
             val index = languagesISO.indexOf(langISO)
-            if (index != -1) detectedLanguage.value = languages[index]
+            if (index != -1) detectedLanguage.value = index
         }
     }
 
