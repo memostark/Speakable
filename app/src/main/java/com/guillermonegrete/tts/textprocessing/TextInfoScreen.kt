@@ -66,6 +66,7 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import com.guillermonegrete.tts.webreader.Spinner
 import kotlin.math.roundToInt
 
@@ -182,8 +183,11 @@ fun SentenceDialog(
                     if (highlightedSpan != null)
                         addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
 
-                    if (wordState.span != null)
-                        addStyle(style = SpanStyle(background = highlightColor), start = wordState.span.start, end = wordState.span.end)
+                    val wordSpan = wordState.span
+                    if (wordSpan != null) {
+                        val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
+                        addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
+                    }
                 }
 
                 ClickableText(
