@@ -3,11 +3,15 @@ package com.guillermonegrete.tts.textprocessing
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +20,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
@@ -36,6 +44,7 @@ import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.material.rememberSwipeableState
 import androidx.compose.material.swipeable
@@ -47,6 +56,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
@@ -59,10 +69,12 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
@@ -172,7 +184,10 @@ fun SentenceDialog(
                         }
                     }
 
-                    Divider(Modifier.height(1.dp).fillMaxWidth())
+                    Divider(
+                        Modifier
+                            .height(1.dp)
+                            .fillMaxWidth())
                 }
 
 
@@ -394,6 +409,58 @@ fun EditWordDialog(
 
 }
 
+@Composable
+fun ExternalLinksDialog(
+    isShown: Boolean,
+    links: List<ExternalLink>,
+    selection: Int,
+    onItemClick: (Int) -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+    if(!isShown) return
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(modifier = Modifier.clip(RoundedCornerShape(12.dp))) {
+            Column {
+                AndroidView(
+                    factory = { context ->
+                        WebView(context).apply {
+                            webViewClient = WebViewClient()
+                        }
+                    },
+                    update = { webView ->
+                        webView.loadUrl(links[selection].link)
+                    },
+                    modifier = Modifier
+                        .height(350.dp)
+                        .fillMaxWidth()
+                )
+
+                LazyRow {
+                    itemsIndexed(links) {index, link ->
+                        if (index == selection) {
+                            Box(modifier = Modifier.width(IntrinsicSize.Max)) {
+                                TextButton(onClick = { onItemClick(index) }) {
+                                    Text(text = link.siteName)
+                                }
+                                Divider(
+                                    thickness = 4.dp,
+                                    color = MaterialTheme.colors.primary
+                                )
+                            }
+                        } else {
+                            TextButton(onClick = { onItemClick(index) }) {
+                                Text(text = link.siteName)
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+}
+
 data class WordState(
     val word: Words? = null,
     val isSaved: Boolean = false,
@@ -439,5 +506,13 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
 fun EditWordDialogPreview() {
     AppTheme {
         EditWordDialog(true, "Hola", "es", "Hello", "Spanish greeting", listOf("English", "Spanish", "German"), listOf("en", "es", "de"), true)
+    }
+}
+
+@Preview
+@Composable
+fun ExternalLinksDialogPreview() {
+    AppTheme {
+        ExternalLinksDialog(true, List(4) { ExternalLink("External site", "", "") }, 1)
     }
 }
