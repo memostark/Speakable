@@ -76,9 +76,6 @@ public class ProcessTextPresenterTest {
     @Captor
     private ArgumentCaptor<CustomTTS.Listener> ttsListenerCaptor;
 
-    @Captor
-    private ArgumentCaptor<GetLangAndTranslation.Callback> getLangTransCallbackCaptor;
-
     private ProcessTextPresenter presenter;
 
     private final List<WikiItem> defaultDictionaryItems = Arrays.asList(
@@ -220,7 +217,7 @@ public class ProcessTextPresenterTest {
         // Because LiveData is a data holder, not a stream, only the last value is available
         GetLayoutResult result = LiveDataTestUtilKt.getOrAwaitValue(presenter.getLayoutResult());
         assertTrue(result instanceof GetLayoutResult.Error);
-        assertEquals("Error", ((GetLayoutResult.Error) result).getException().getMessage());
+        assertEquals("Error determining language for " + inputText, ((GetLayoutResult.Error) result).getException().getMessage());
 
         // Return external links
         verify(linksRepository).getLanguageLinks(eq("un"), getLinksCaptor.capture());
@@ -313,7 +310,6 @@ public class ProcessTextPresenterTest {
 
     // endregion
 
-    @SuppressWarnings("deprecation")
     @Test
     public void when_language_change_then_translation_updated() {
         var textInput = "first";
@@ -334,7 +330,6 @@ public class ProcessTextPresenterTest {
         verify(view).updateExternalLinks(defaultLinksItems);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void given_no_lang_data_when_language_change_then_error() {
         var textInput = "first";

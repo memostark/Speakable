@@ -68,7 +68,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
                     return Unit.INSTANCE;
                 },
                 exception -> {
-                    mMainThread.post(() -> mCallback.onTranslationError(exception.getMessage()));
+                    mMainThread.post(() -> mCallback.onTranslationError(exception));
                     return Unit.INSTANCE;
                 }
             );
@@ -133,7 +133,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
             }
 
             if(mWord.lang.equals("un")){
-                mMainThread.post(() -> mCallback.onTranslationError("Error"));
+                mMainThread.post(() -> mCallback.onTranslationError(new Exception("Error determining language for " + mWord.word)));
             }
         }
     }

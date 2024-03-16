@@ -15,6 +15,6 @@ public interface GetLayoutInteractor {
 
         void onDictionaryLayoutDetermined(Words word, List<WikiItem> items);
 
-        void onTranslationError(String message);
+        void onTranslationError(Exception error);
     }
 }

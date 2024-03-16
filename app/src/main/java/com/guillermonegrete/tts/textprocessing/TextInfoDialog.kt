@@ -469,7 +469,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             is GetLayoutResult.Sentence -> setSentenceLayout(result.translation)
             is GetLayoutResult.DictionarySuccess ->
                 if(requireArguments().getBoolean(WORD_SAVED_KEY)) setDictWithSaveWordLayout(result.word, result.items) else setWiktionaryLayout(result.word, result.items)
-            is GetLayoutResult.Error -> showTranslationError(result.exception.message ?: result.exception.toString())
+            is GetLayoutResult.Error -> {
+                Timber.e(result.exception, "Error getting the layout")
+                showTranslationError(result.exception.message ?: result.exception.toString())
+            }
         }
     }
 

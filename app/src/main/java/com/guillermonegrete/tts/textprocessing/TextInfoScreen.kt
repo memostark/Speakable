@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.textprocessing
 
+import android.annotation.SuppressLint
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -60,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -149,6 +151,7 @@ fun SentenceDialog(
                 )
             }
             .offset { IntOffset(swipeableState.offset.value.roundToInt(), 0) }
+            .testTag("sentence_dialog")
         ) {
             // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
             // This is similar to how Text creates its style
@@ -406,6 +409,7 @@ fun EditWordDialog(
 
 }
 
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun ExternalLinksDialog(
     isShown: Boolean,

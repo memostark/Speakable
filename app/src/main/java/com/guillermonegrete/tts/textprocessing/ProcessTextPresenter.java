@@ -146,9 +146,9 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             }
 
             @Override
-            public void onTranslationError(String message) {
+            public void onTranslationError(Exception error) {
                 hasTranslation = false;
-                layoutResult.setValue(new GetLayoutResult.Error(new Exception(message)));
+                layoutResult.setValue(new GetLayoutResult.Error(error));
 
                 EspressoIdlingResource.decrement();
             }
