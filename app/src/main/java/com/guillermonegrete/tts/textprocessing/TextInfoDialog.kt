@@ -84,8 +84,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
     private val wordState = mutableStateOf(WordState())
 
+    private val wordLinks = mutableStateOf(emptyList<ExternalLink>())
+    private val selectedLink = mutableStateOf(0)
+
     private val editDialogShown = mutableStateOf(false)
     private val deleteDialogShown = mutableStateOf(false)
+    private var linksDialogShown = mutableStateOf(false)
 
     private var selectedWordSpan = Span(0, 0)
 
@@ -161,6 +165,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             onTopTextClick = { findWord(it) },
                             onBottomTextClick = { findSelectedSentence(it) },
                             onBookmarkClicked = { editDialogShown.value = true },
+                            onMoreInfoClicked = { onMoreInfoClicked() },
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
                             onDismiss = { dismiss() },
@@ -197,6 +202,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                                 dialogText = getString(R.string.delete_word_message),
                             )
                         }
+
+                        ExternalLinksDialog(
+                            isShown = linksDialogShown.value,
+                            links = wordLinks.value,
+                            selection = selectedLink.value,
+                            onItemClick = { selectedLink.value = it },
+                            onDismiss = { linksDialogShown.value = false },
+                        )
                     }
                 }
             }
@@ -213,6 +226,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         return bindingWord.root
+    }
+
+    private fun onMoreInfoClicked() {
+        val word = wordState.value.word ?: return
+        (presenter as ProcessTextPresenter).getExternalLinks(word)
     }
 
     private fun findWord(offset: Int) {
@@ -276,6 +294,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                 is WordResult.Remote -> wordState.value = WordState(Words(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
                 is WordResult.Error -> { Toast.makeText(context, "Error: ${result.exception}", Toast.LENGTH_SHORT).show() }
             }
+        }
+
+        presenterImp.wordLinks.observe(this) { links ->
+            wordLinks.value = links
+            // If out of index, default to the first item
+            if(selectedLink.value >= links.size) selectedLink.value = 0
+            linksDialogShown.value = true
         }
 
         saveWordViewModel.update.observe(this) {result ->

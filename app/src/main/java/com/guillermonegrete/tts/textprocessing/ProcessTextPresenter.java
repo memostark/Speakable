@@ -15,6 +15,7 @@ import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.data.WordResult;
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
+import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntry;
@@ -50,9 +51,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private final CustomTTS customTTS;
     private final GetLangAndTranslation getTranslationInteractor;
 
-    private MutableLiveData<String> selectedWord = new MutableLiveData<>();
+    private final MutableLiveData<String> selectedWord = new MutableLiveData<>();
 
-    private MutableLiveData<WordResult> selectedWordResult = new MutableLiveData<>();
+    private final MutableLiveData<WordResult> selectedWordResult = new MutableLiveData<>();
+
+    private final MutableLiveData<List<ExternalLink>> wordLinks = new MutableLiveData<>();
 
     private Words foundWord;
     @Nullable
@@ -240,6 +243,17 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         });
     }
 
+    public void getExternalLinks(Words word) {
+        var linkInteractor = new GetExternalLink(executorService, mMainThread, linksRepository);
+        executorService.execute(() -> {
+            var links = linkInteractor.invoke(word.lang);
+            for(var link: links) {
+                link.link = link.link.replace("{q}", word.word);
+            }
+            wordLinks.postValue(links);
+        });
+    }
+
     @Override
     public void onClickDeleteWord(String word) {
         var interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
@@ -393,6 +407,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     public LiveData<StatusTTS> getStatusTTS() {
         return ttsStatus;
+    }
+
+    public LiveData<List<ExternalLink>> getWordLinks() {
+        return wordLinks;
     }
 
     @Nullable

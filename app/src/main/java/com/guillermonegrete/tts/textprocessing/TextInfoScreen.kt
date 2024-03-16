@@ -184,10 +184,7 @@ fun SentenceDialog(
                         }
                     }
 
-                    Divider(
-                        Modifier
-                            .height(1.dp)
-                            .fillMaxWidth())
+                    Divider()
                 }
 
 
@@ -420,12 +417,18 @@ fun ExternalLinksDialog(
     if(!isShown) return
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(modifier = Modifier.clip(RoundedCornerShape(12.dp))) {
+        Surface(modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(12.dp))
+        ) {
             Column {
                 AndroidView(
                     factory = { context ->
                         WebView(context).apply {
                             webViewClient = WebViewClient()
+
+                            settings.javaScriptEnabled = true
+                            settings.loadWithOverviewMode = true
                         }
                     },
                     update = { webView ->
@@ -441,7 +444,7 @@ fun ExternalLinksDialog(
                         if (index == selection) {
                             Box(modifier = Modifier.width(IntrinsicSize.Max)) {
                                 TextButton(onClick = { onItemClick(index) }) {
-                                    Text(text = link.siteName)
+                                    Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                                 }
                                 Divider(
                                     thickness = 4.dp,
@@ -450,13 +453,12 @@ fun ExternalLinksDialog(
                             }
                         } else {
                             TextButton(onClick = { onItemClick(index) }) {
-                                Text(text = link.siteName)
+                                Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                             }
                         }
                     }
                 }
             }
-
         }
     }
 }
