@@ -4,6 +4,13 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.core.content.edit
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onData
@@ -48,6 +55,9 @@ class TextInfoDialogTest {
 
     @get:Rule
     var hiltRule = HiltAndroidRule(this)
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
 
     @Inject
     lateinit var repository: FakeWordRepository
@@ -99,9 +109,10 @@ class TextInfoDialogTest {
         onView(withId(R.id.save_icon)).check(matches(isDisplayed()))
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun sentenceInput_showSentenceDialogLayout(){
-        repository.addTranslation(Words("oración de prueba", "en", "test sentence"))
+        repository.addTranslation(Translation(listOf(Segment("test sentence", "oración de prueba")), "en"))
 
         val inputText = "oración de prueba"
         val bundle = Bundle().apply {
@@ -110,24 +121,17 @@ class TextInfoDialogTest {
         }
         launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
 
-        // Specific container of word layout
-        onView(withId(R.id.sentence_root)).check(matches(isDisplayed()))
+        // Specific surface of sentence layout
+        composeTestRule.onNodeWithTag("sentence_dialog").assertIsDisplayed()
 
         // Check view with input text
-        onView(withId(R.id.text_tts)).check(matches(isDisplayed()))
-        onView(withId(R.id.text_tts)).check(matches(withText(inputText)))
+        composeTestRule.onNodeWithText(inputText).assertIsDisplayed()
 
-        // Default language preference is "Auto detect"
-        onView(withId(R.id.spinner_language_from))
-            .check(matches(withSpinnerText(containsString("Auto detect"))))
-
-        // Because is in "Auto detect" this view shows the detected language
-        onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
-        onView(withId(R.id.text_language_code)).check(matches(withText("en")))
+        // Default language preference is "Auto detect", wait until the language is detected
+        composeTestRule.waitUntilExactlyOneExists(hasText("Auto detect (English)"))
 
         // Play button is visible
-        onView(withId(R.id.play_icons_container)).check(matches(isDisplayed()))
-        onView(withId(R.id.play_tts_icon)).check(matches(isDisplayed()))
+        composeTestRule.onNodeWithContentDescription("Play TTS").assertIsDisplayed()
     }
 
     @Test
@@ -142,6 +146,8 @@ class TextInfoDialogTest {
             putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
         }
 
+        unregisterComposeEspressoLink()
+
         launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
 
         // Check pre-set language
@@ -151,6 +157,20 @@ class TextInfoDialogTest {
         // Save and edit icon should be visible
         onView(withId(R.id.save_icon)).check(matches(isDisplayed()))
         onView(withId(R.id.edit_icon)).check(matches(isDisplayed()))
+    }
+
+    /**
+     * Sometimes the Compose-Espresso link prevents the non-Compose tests from being idle.
+     * Use this method in tests where this happens.
+     *
+     * Remove this method once the issue is fixed.
+     */
+    private fun unregisterComposeEspressoLink() {
+        IdlingRegistry.getInstance().resources.forEach {
+            if (it.name == "Compose-Espresso link") {
+                IdlingRegistry.getInstance().unregister(it)
+            }
+        }
     }
 
     @Test

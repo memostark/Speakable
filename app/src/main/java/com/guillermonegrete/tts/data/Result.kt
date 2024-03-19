@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data
 
+import com.guillermonegrete.tts.db.Words
 import java.lang.Exception
 
 sealed class Result<out T> {
@@ -34,4 +35,13 @@ sealed class PlayAudioState {
      * It can be ignored.
      */
     object Loading : PlayAudioState()
+}
+
+/**
+ * Represents the result when trying to get information a word from either local (e.g. database) or remote (e.g. web) sources
+ */
+sealed class WordResult {
+    data class Local(val word: Words): WordResult()
+    data class Remote(val translation: Translation): WordResult()
+    data class Error(val exception: Exception): WordResult()
 }

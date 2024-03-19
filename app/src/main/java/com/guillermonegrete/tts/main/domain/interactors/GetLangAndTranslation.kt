@@ -8,6 +8,7 @@ import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.db.Words
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
+import kotlin.Exception
 
 class GetLangAndTranslation @Inject constructor(
     executor: ExecutorService,
@@ -37,6 +38,25 @@ class GetLangAndTranslation @Inject constructor(
         this.languageTo = languageTo
         this.callback = callback
         execute()
+    }
+
+    @JvmOverloads
+    operator fun invoke(
+        text: String,
+        languageFrom: String = "auto",
+        languageTo: String = "en",
+        onSuccess: (Translation) -> Unit,
+        onError: (Exception) -> Unit,
+    ){
+        executorService.execute {
+            val result = wordRepository.getTranslation(text, languageFrom, languageTo)
+            mMainThread.post {
+                when(result) {
+                    is Result.Success -> onSuccess(result.data)
+                    is Result.Error -> onError(result.exception)
+                }
+            }
+        }
     }
 
     operator fun invoke(

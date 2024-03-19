@@ -15,13 +15,13 @@ import javax.inject.Singleton
 @Singleton
 class FakeWordRepository @Inject constructor(): WordRepositorySource {
 
-    var wordsServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
-    var remoteWordServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
+    private var wordsServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
+    private var remoteWordServiceData: LinkedHashMap<String, Words> = LinkedHashMap()
 
-    var translationsWordData: LinkedHashMap<String, Words> = LinkedHashMap()
-    var translationsData: LinkedHashMap<String, Translation> = LinkedHashMap()
+    private var translationsWordData: LinkedHashMap<String, Words> = LinkedHashMap()
+    private var translationsData: LinkedHashMap<String, Translation> = LinkedHashMap()
 
-    var languagesData: MutableSet<String> = mutableSetOf()
+    private var languagesData: MutableSet<String> = mutableSetOf()
 
     override fun getWords(): MutableList<Words> {
         return wordsServiceData.values.toMutableList()
@@ -78,7 +78,7 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         languageFrom: String,
         languageTo: String
     ): Result<Translation> {
-        val translation = translationsData[text] ?: return Result.Error(Exception("Translation not found"))
+        val translation = translationsData[text] ?: return Result.Error(Exception("Translation not found for: $text"))
         return Result.Success(translation)
     }
 
