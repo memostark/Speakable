@@ -6,12 +6,12 @@ apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs"
 
 android {
-    compileSdkVersion 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.guillermonegrete.tts"
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode 6
         versionName "1.15.2"
         testInstrumentationRunner "com.guillermonegrete.tts.CustomTestRunner"
