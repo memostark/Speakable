@@ -173,14 +173,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
 
             val spinnerItems = mutableStateOf(emptyList<String>())
-            val langSelection = mutableStateOf(-1)
+            val langSelection = mutableIntStateOf(-1)
 
             val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
             viewModel.webLink.observe(viewLifecycleOwner) {
                 spinnerItems.value = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
 
                 languageFrom = it.language ?: langShortNames.first() // First is always "auto"
-                langSelection.value = langShortNames.indexOf(languageFrom)
+                langSelection.intValue = langShortNames.indexOf(languageFrom)
                 isPageSaved.value = it.uuid != null
             }
 

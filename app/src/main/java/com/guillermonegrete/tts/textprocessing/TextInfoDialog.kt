@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.DialogFragment
@@ -85,7 +86,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private val wordState = mutableStateOf(WordState())
 
     private val wordLinks = mutableStateOf(emptyList<ExternalLink>())
-    private val selectedLink = mutableStateOf(0)
+    private val selectedLink = mutableIntStateOf(0)
 
     private val editDialogShown = mutableStateOf(false)
     private val deleteDialogShown = mutableStateOf(false)
@@ -206,8 +207,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                         ExternalLinksDialog(
                             isShown = linksDialogShown.value,
                             links = wordLinks.value,
-                            selection = selectedLink.value,
-                            onItemClick = { selectedLink.value = it },
+                            selection = selectedLink.intValue,
+                            onItemClick = { selectedLink.intValue = it },
                             onDismiss = { linksDialogShown.value = false },
                         )
                     }
@@ -299,7 +300,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         presenterImp.wordLinks.observe(this) { links ->
             wordLinks.value = links
             // If out of index, default to the first item
-            if(selectedLink.value >= links.size) selectedLink.value = 0
+            if(selectedLink.intValue >= links.size) selectedLink.intValue = 0
             linksDialogShown.value = true
         }
 
