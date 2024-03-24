@@ -232,11 +232,12 @@ class ParagraphAdapter(
             }
 
             override fun onFling(
-                e1: MotionEvent,
+                e1: MotionEvent?,
                 e2: MotionEvent,
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
+                e1 ?: return false
                 val diffY = e2.y - e1.y
                 val diffX = e2.x - e1.x
                 // Detects horizontal swipes in any direction

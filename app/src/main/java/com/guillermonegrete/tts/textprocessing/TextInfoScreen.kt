@@ -6,8 +6,13 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +41,6 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.ExposedDropdownMenuDefaults
-import androidx.compose.material.FractionalThreshold
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.LocalContentAlpha
@@ -47,11 +51,10 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
-import androidx.compose.material.rememberSwipeableState
-import androidx.compose.material.swipeable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,7 +62,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -84,7 +88,7 @@ import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import com.guillermonegrete.tts.webreader.Spinner
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SentenceDialog(
     isVisible: Boolean,
@@ -123,19 +127,25 @@ fun SentenceDialog(
         wlp.gravity = Gravity.BOTTOM
         window.attributes = wlp
 
-        val swipeableState = rememberSwipeableState(SwipeDirection.Initial)
-        var sizePx by remember { mutableStateOf(1f) }
-        val anchors = mapOf(0f to SwipeDirection.Initial, sizePx to SwipeDirection.Right, -sizePx to SwipeDirection.Left)
+        val density = LocalDensity.current
+        val swipeableState = remember {
+            AnchoredDraggableState(
+                SwipeDirection.Initial,
+                { distance -> distance * 0.6f },
+                { with(density) { 125.dp.toPx() }},
+                tween()
+            )
+        }
 
         Surface(modifier = Modifier
             .padding(16.dp)
-            .onGloballyPositioned { sizePx = it.size.width.toFloat() }
-            .swipeable( // Use swipeable API for handling the horizontal dismiss
-                state = swipeableState,
-                anchors = anchors,
-                thresholds = { _, _ -> FractionalThreshold(0.6f) },
-                orientation = Orientation.Horizontal
-            )
+            .onSizeChanged {
+                val sizePx = it.width.toFloat()
+                swipeableState.updateAnchors(
+                    DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
+                )
+            }
+            .anchoredDraggable(swipeableState, Orientation.Horizontal)
             .pointerInput(Unit) {
                 // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
                 detectVerticalDragGestures(
@@ -150,7 +160,7 @@ fun SentenceDialog(
                     }
                 )
             }
-            .offset { IntOffset(swipeableState.offset.value.roundToInt(), 0) }
+            .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
             .testTag("sentence_dialog")
         ) {
             // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
@@ -224,7 +234,7 @@ fun SentenceDialog(
 
                     Text(text = "From:", Modifier.padding(horizontal = 8.dp))
 
-                    var sourcePos by remember { mutableStateOf(sourceLangIndex) }
+                    var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
                     val displayText = if (sourcePos == 0 && detectedLanguageIndex != null)
                         "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
                     Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
@@ -318,7 +328,7 @@ fun EditWordDialog(
 
     var wordText by remember { mutableStateOf(word) }
     val isoIndex = languagesISO.indexOf(language)
-    var indexLang by remember { mutableStateOf(isoIndex) }
+    var indexLang by remember { mutableIntStateOf(isoIndex) }
     var translationText by remember { mutableStateOf(translation) }
     var notesText by remember { mutableStateOf(notes) }
 

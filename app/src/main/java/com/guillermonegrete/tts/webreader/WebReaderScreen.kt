@@ -39,7 +39,7 @@ import okhttp3.internal.toHexString
 @Composable
 fun WebReaderBottomBar(
     languages: MutableState<List<String>>,
-    langSelection: MutableState<Int> = mutableStateOf(-1),
+    langSelection: MutableState<Int> = mutableIntStateOf(-1),
     iconsEnabled: MutableState<Boolean> = mutableStateOf(true),
     isPageSaved: MutableState<Boolean> = mutableStateOf(false),
     onTranslateClicked: () -> Unit = {},
@@ -136,7 +136,7 @@ fun Spinner(
     displayText: String? = null,
     onItemSelected: (Int, String) -> Unit = { _, _ -> }
 ) {
-    var selected by remember(preselected) { mutableStateOf(preselected) }
+    var selected by remember(preselected) { mutableIntStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
 
     Box {
@@ -268,7 +268,7 @@ fun AddNoteDialog(
                 val index = COLORS.indexOfFirst { noteColor == it.toArgb() }
                 val indexColor = if (index == -1) 0 else index
 
-                var colorSel by remember { mutableStateOf(indexColor) }
+                var colorSel by remember { mutableIntStateOf(indexColor) }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
