@@ -1,7 +1,7 @@
 <resources>
 
-    <string name="app_name">Speakable (Text to Speech)</string>
-    <string name="process_text_action_name">TTS</string>
+    <string name="app_name">Speakable</string>
+    <string name="process_text_action_name">Speakable</string>
 
     <string name="tts_text">This is a demo of Microsoft Cognitive Services Text to Speech API.</string>
 
