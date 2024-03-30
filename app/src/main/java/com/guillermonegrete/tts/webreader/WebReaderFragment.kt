@@ -329,12 +329,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val newAdapter = ParagraphAdapter(paragraphItems, page.isLocalPage, viewModel,
                 onSentenceSelected = { hideBottomSheets() },
                 onTextHighlighted = {
-                val highlightSpan = adapter?.getHighlightedTextSpan()
-                val sheetSpan = noteInfo?.span
-                if(highlightSpan != sheetSpan) {
-                    hideBottomSheets()
+                    val highlightSpan = adapter?.getHighlightedTextSpan()
+                    val sheetSpan = noteInfo?.span
+                    if(highlightSpan != sheetSpan) {
+                        hideBottomSheets()
+                    }
+                },
+                onTranslateHighlightedText = {
+                    viewModel.translateText(it)
+                    adapter?.selectHighlightedText()
                 }
-            })
+            )
             adapter = newAdapter
             paragraphsList.adapter = adapter
 
@@ -603,6 +608,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val text = adapter.getHighlightedText()
         if (text != null) {
             viewModel.translateText(text.toString())
+            adapter.selectHighlightedText()
         }
     }
 
