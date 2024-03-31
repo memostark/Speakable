@@ -65,17 +65,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     /**
      * Contains information used to update/create/delete a note.
-     *
-     * This information is the one displayed in the bottom sheet
      */
     private var noteInfo: ParagraphAdapter.EditNote? = null
-
-    /**
-     * The data for creating a note using the text highlight method.
-     *
-     * This data is independent from the one displayed in the bottom sheet
-     */
-    private var highlightNote: ParagraphAdapter.EditNote? = null
 
     private var appBarSize = 0
 
@@ -137,7 +128,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         val paragraphAdapter = adapter ?: return@observe
                         paragraphAdapter.updateNote(span, note.id, dialogResult)
 
-                        if(span != highlightNote?.span) {
+                        if(isSheetVisible()) {
                             if (paragraphAdapter.selectedSentence.wordSelected ||
                                 paragraphAdapter.isInsideSelectedSentence(span)) { // if not word selected but still inside the sentence then it must be a note
                                 sheet.wordTranslation.text = note.text
@@ -148,7 +139,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             }
                             noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
                         } else {
-                            highlightNote = null
+                            // If sheet not visible note was added using the selected text menu, no UI to update
+                            noteInfo = null
                         }
                     }
                     is ModifiedNote.Delete -> {
@@ -223,21 +215,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                         AddNoteDialog(
                             addNoteVisible,
-                            highlightNote?.noteText ?: noteInfo?.noteText ?: "",
-                            highlightNote?.color ?: noteInfo?.color ?: 0,
-                            highlightNote?.noteSaved ?: noteInfo?.noteSaved ?: false,
-                            onDismiss = {
-                                addNoteVisible = false
-                                highlightNote = null
-                            },
+                            noteInfo?.noteText ?: "",
+                            noteInfo?.color ?: 0,
+                            noteInfo?.noteSaved ?: false,
+                            onDismiss = { addNoteVisible = false },
                             onDelete = {
-                                if (highlightNote != null) highlightNote = null
                                 val noteItem = noteInfo ?: return@AddNoteDialog
                                 viewModel.deleteNote(noteItem.id)
+                                noteInfo = null
                                 addNoteVisible = false
                             },
                             onSaveClicked = { newNote ->
-                                val noteItem = highlightNote ?: noteInfo ?: return@AddNoteDialog
+                                val noteItem = noteInfo ?: return@AddNoteDialog
                                 viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
                                 addNoteVisible = false
                             },
@@ -368,12 +357,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 launch {
                     paragraphAdapter.addNoteClicked.collect { note ->
+                        noteInfo = note
                         if (note.id == 0L) {
                             // zero means new note, show dialog to add note
-                            highlightNote = note
                             addNoteDialogVisible.value = true
                         } else {
-                            noteInfo = note
                             showSheetWithNote(paragraphAdapter, note)
                         }
                     }
@@ -398,7 +386,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
-    @SuppressLint("ClickableViewAccessibility")
+    @SuppressLint("ClickableViewAccessibility", "SetJavaScriptEnabled")
     private fun setBottomPanel(){
         with(binding) {
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
@@ -429,7 +417,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             linksList.addItemDecoration(decor)
 
             var selectedPos = 0
-            viewModel.clickedWord.observe(viewLifecycleOwner) {
+            viewModel.linksForWord.observe(viewLifecycleOwner) {
                 val links = it.links
                 links.forEach { link -> link.link = link.link.replace("{q}", it.word) }
 

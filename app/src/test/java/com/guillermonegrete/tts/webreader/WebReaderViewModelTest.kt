@@ -373,7 +373,7 @@ class WebReaderViewModelTest {
         viewModel.onWordClicked("hola", 0)
         advanceUntilIdle()
 
-        assertEquals(WordAndLinks("hola", links), viewModel.clickedWord.getOrAwaitValue())
+        assertEquals(WordAndLinks("hola", links), viewModel.linksForWord.getOrAwaitValue())
     }
 
 

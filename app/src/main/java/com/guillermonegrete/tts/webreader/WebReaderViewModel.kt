@@ -61,8 +61,8 @@ class WebReaderViewModel @Inject constructor(
     private val _wordInfo = MutableLiveData<LoadResult<WordResult>>()
     val wordInfo: LiveData<LoadResult<WordResult>> = _wordInfo
 
-    private val _clickedWord = MutableLiveData<WordAndLinks>()
-    val clickedWord: LiveData<WordAndLinks> = _clickedWord
+    private val _linksForWord = MutableLiveData<WordAndLinks>()
+    val linksForWord: LiveData<WordAndLinks> = _linksForWord
 
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
@@ -160,7 +160,7 @@ class WebReaderViewModel @Inject constructor(
      */
     private fun readContentFile(uuid: UUID): String {
         val rootFolder = File(folderPath, uuid.toString())
-        val file = File(rootFolder, page_filename)
+        val file = File(rootFolder, PAGE_FILENAME)
         val doc = Jsoup.parse(file, null)
         return doc.outerHtml()
     }
@@ -307,7 +307,7 @@ class WebReaderViewModel @Inject constructor(
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
             val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-            _clickedWord.value = WordAndLinks(word, links)
+            _linksForWord.value = WordAndLinks(word, links)
         }
     }
 
@@ -381,7 +381,7 @@ class WebReaderViewModel @Inject constructor(
 
         if (!makeDir(folder)) return
 
-        val contentFile = File(folder, page_filename)
+        val contentFile = File(folder, PAGE_FILENAME)
         writeToFile(contentFile, content)
 
         link.uuid = uuid
@@ -440,7 +440,7 @@ class WebReaderViewModel @Inject constructor(
     data class Page(val title: String, val content: String)
 
     companion object {
-        private const val page_filename = "content.xml"
+        private const val PAGE_FILENAME = "content.xml"
     }
 }
 
