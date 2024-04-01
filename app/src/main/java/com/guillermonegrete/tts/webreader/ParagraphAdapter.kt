@@ -37,6 +37,7 @@ class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: () -> Unit,
     val onTextHighlighted: () -> Unit = {},
+    val onTranslateHighlightedText: (String) -> Unit = {},
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var expandedItemPos = -1
@@ -347,6 +348,7 @@ class ParagraphAdapter(
 
                 menu.clear()
                 menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
+                menu.add(Menu.NONE, TRANSLATE_MENU_ITEM_ID, Menu.NONE, R.string.translate_description)
 
                 val selStart = binding.paragraph.selectionStart
                 val selEnd = binding.paragraph.selectionEnd
@@ -379,6 +381,12 @@ class ParagraphAdapter(
                         mode?.finish()
                         true
                     }
+                    TRANSLATE_MENU_ITEM_ID -> {
+                        val text = getHighlightedText() ?: return false
+                        onTranslateHighlightedText(text.toString())
+                        mode?.finish()
+                        true
+                    }
                     else -> false
                 }
             }
@@ -386,7 +394,8 @@ class ParagraphAdapter(
             override fun onDestroyActionMode(mode: ActionMode?) {
                 highlightedTextView = null
                 highlightedTextPos = -1
-                isOverlappingNotes = false
+                // Only reset this flag if no text was selected using the mode (if text was selected it may overlap notes)
+                if (selectedWordPos == -1) isOverlappingNotes = false
             }
 
         }
@@ -444,6 +453,7 @@ class ParagraphAdapter(
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, -1)
             selectedWordPos = -1
+            isOverlappingNotes = false
         }
 
         // unselect word that is within a sentence
@@ -728,7 +738,20 @@ class ParagraphAdapter(
         return Span(start - paragraphItem.firstCharIndex, end - paragraphItem.firstCharIndex)
     }
 
+    fun selectHighlightedText() {
+        val pos = highlightedTextPos
+        val textView = highlightedTextView ?: return
+        val item = items[pos]
+        val span = Span(textView.selectionStart, textView.selectionEnd)
+        item.selectedWord = span
+        selectedWordPos = pos
+        textView.clearFocus()
+        notifyItemChanged(pos, PAYLOAD_WORD)
+    }
+
     companion object {
+        private const val TRANSLATE_MENU_ITEM_ID = 3
+
         private const val SWIPE_THRESHOLD = 0.8
         private const val SWIPE_VELOCITY_THRESHOLD = 0.8
 
