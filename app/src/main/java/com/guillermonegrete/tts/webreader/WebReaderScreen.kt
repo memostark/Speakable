@@ -5,6 +5,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -155,15 +157,22 @@ fun Spinner(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            Text(stringResource(R.string.web_reader_lang_spinner_prompt))
+            Text(stringResource(R.string.web_reader_lang_spinner_prompt), Modifier.padding(8.dp))
 
-            items.forEachIndexed { index, item ->
-                DropdownMenuItem(onClick = {
-                    expanded = false
-                    selected = index
-                    onItemSelected(index, item)
-                }) {
-                    Text(text = item)
+            // In order to use LazyColumn we have to put it inside a Box
+            // The Box's size has to be explicitly defined otherwise it will crash (fillMaxWidth() crashes)
+            // See related issue: https://issuetracker.google.com/issues/242398344
+            Box(modifier = Modifier.size(width = 200.dp, height = 500.dp)) {
+                LazyColumn {
+                    itemsIndexed(items) { index, item ->
+                        DropdownMenuItem(onClick = {
+                            expanded = false
+                            selected = index
+                            onItemSelected(index, item)
+                        }) {
+                            Text(text = item)
+                        }
+                    }
                 }
             }
         }
