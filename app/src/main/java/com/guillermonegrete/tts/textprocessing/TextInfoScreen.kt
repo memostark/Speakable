@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -367,14 +368,17 @@ fun EditWordDialog(
                             expanded = false
                         }
                     ) {
-                        languages.forEachIndexed { i, lang ->
-                            DropdownMenuItem(
-                                onClick = {
-                                    indexLang = i
-                                    expanded = false
+
+                        Box(modifier = Modifier.size(width = 300.dp, height = 600.dp)) {
+                            LazyColumn {
+                                itemsIndexed(languages) { i, lang ->
+                                    DropdownMenuItem(onClick = {
+                                        indexLang = i
+                                        expanded = false
+                                    }){
+                                        Text(text = "$lang (${languagesISO[i]})")
+                                    }
                                 }
-                            ){
-                                Text(text = "$lang (${languagesISO[i]})")
                             }
                         }
                     }
