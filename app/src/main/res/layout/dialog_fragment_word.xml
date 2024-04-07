@@ -56,6 +56,7 @@
                 android:textColor="?attr/colorOnBackground"
                 android:gravity="center"
                 android:visibility="gone"
+                android:layout_marginEnd="8dp"
                 tools:visibility="visible"
                 tools:text="ES" />
             <ImageButton
@@ -68,18 +69,6 @@
                 android:scaleType="fitCenter"
                 android:background="?android:selectableItemBackground"
                 app:srcCompat="@drawable/ic_bookmark_border_black_24dp"/>
-            <ImageButton
-                android:id="@+id/edit_icon"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:padding="8dp"
-                android:contentDescription="@string/edit_icon_description"
-                android:background="?android:selectableItemBackground"
-                android:layout_gravity="center_vertical"
-                android:scaleType="fitCenter"
-                android:visibility="gone"
-                app:srcCompat="@drawable/ic_edit_black_24dp"
-                tools:visibility="visible"/>
 
             <FrameLayout
                 android:id="@+id/play_icons_container"
@@ -128,6 +117,11 @@
             app:tabIndicatorColor="?attr/colorPrimary"
             app:tabIndicatorHeight="4dp"
             app:tabMode="fixed" />
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/compose_root"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
 
     </LinearLayout>
 
