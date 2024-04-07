@@ -9,7 +9,6 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.*
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +32,6 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.SettingsFragment
 import com.guillermonegrete.tts.savedwords.ResultType
-import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment
 import com.guillermonegrete.tts.savedwords.SaveWordDialogViewModel
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
@@ -53,7 +51,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 @AndroidEntryPoint
-class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
+class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     private var window: Window? = null
 
@@ -470,24 +468,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         }
     }
 
-    override fun showSaveDialog(word: Words) {
-        val dialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
-        dialogFragment.show(childFragmentManager, "New word process")
-    }
-
-    override fun showDeleteDialog(word: String) {
-
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setMessage(getString(R.string.delete_word_message))
-            .setPositiveButton(R.string.yes) { dialog, _ ->
-                presenter.onClickDeleteWord(word)
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
-
-        builder.create().show()
-    }
-
     override fun showWordDeleted() {
         if (_bindingWord != null) {
             bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
@@ -758,10 +738,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         spinner.setSelection(languageFromIndex, false)
         spinner.post { spinner.onItemSelectedListener = SpinnerListener() }
-    }
-
-    override fun onWordSaved(word: Words) {
-        setSavedWordToolbar()
     }
 
     /**

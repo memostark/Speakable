@@ -1,9 +1,13 @@
 package com.guillermonegrete.tts.savedwords;
 
 
+import static androidx.compose.runtime.SnapshotStateKt.structuralEqualityPolicy;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+import androidx.compose.runtime.MutableState;
+import androidx.compose.runtime.SnapshotStateKt;
 import androidx.core.view.MenuProvider;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
@@ -40,6 +44,7 @@ import com.guillermonegrete.tts.textprocessing.TextInfoDialog;
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import kotlin.Unit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +55,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private SavedWordListAdapter wordListAdapter;
     private SavedWordsViewModel wordsViewModel;
+    private SaveWordDialogViewModel saveWordViewModel;
 
     private FragmentSavedWordsBinding binding;
 
@@ -61,6 +67,8 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
     private List<String> languageFullName;
 
     private List<String> allLangs;
+
+    private final MutableState<Boolean> editDialogShown = SnapshotStateKt.mutableStateOf(false, structuralEqualityPolicy());
 
     private static final String ALL_OPTION = "All";
 
@@ -82,7 +90,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         super.onViewCreated(view, savedInstanceState);
         binding = FragmentSavedWordsBinding.bind(view);
 
-        RecyclerView wordsList = binding.recyclerviewSavedWords;
+        var wordsList = binding.recyclerviewSavedWords;
         wordsList.setAdapter(wordListAdapter);
         wordsList.addItemDecoration(new DividerItemDecoration(requireActivity(), DividerItemDecoration.VERTICAL));
         wordsList.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -91,7 +99,19 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
         initData();
         setupSearch(binding.searchWords);
+        setEditDialog();
         createMenu();
+    }
+
+    private void setEditDialog() {
+        saveWordViewModel.getUpdate().observe(getViewLifecycleOwner(), resultType -> editDialogShown.setValue(false));
+
+        var deleteDialogVisible = SnapshotStateKt.mutableStateOf(false, structuralEqualityPolicy());
+        var newWord = new Words("", "", "");
+        SaveWordDialogViewModelKt.setContent(binding.composeRoot, newWord, false, editDialogShown, deleteDialogVisible, word ->  {
+            saveWordViewModel.save(word);
+            return Unit.INSTANCE;
+        });
     }
 
     private void setupSearch(SearchView searchWords) {
@@ -123,6 +143,7 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
 
     private void initData(){
         wordsViewModel = new ViewModelProvider(this).get(SavedWordsViewModel.class);
+        saveWordViewModel = new ViewModelProvider(this).get(SaveWordDialogViewModel.class);
 
         wordsViewModel.getLanguagesList().observe(getViewLifecycleOwner(), languages -> {
 
@@ -163,17 +184,12 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             @Override
             public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
                 if(menuItem.getItemId() == R.id.add_word_menu_item){
-                    showSaveDialog();
+                    editDialogShown.setValue(true);
                     return true;
                 }
                 return false;
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
-    }
-
-    private void showSaveDialog() {
-        var dialogFragment = SaveWordDialogFragment.newInstance(null);
-        dialogFragment.show(requireActivity().getSupportFragmentManager(), "New word");
     }
 
     private void setUpItemTouchHelper(RecyclerView recyclerView){

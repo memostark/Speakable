@@ -59,4 +59,9 @@
         app:layout_constraintTop_toTopOf="@id/search_barrier"
         tools:visibility="visible" />
 
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

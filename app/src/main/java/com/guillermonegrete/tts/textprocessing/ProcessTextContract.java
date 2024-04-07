@@ -23,10 +23,6 @@ public interface ProcessTextContract {
 
         void setTranslationErrorMessage();
 
-        void showSaveDialog(Words word);
-
-        void showDeleteDialog(String word);
-
         void showWordDeleted();
 
         void startService();
