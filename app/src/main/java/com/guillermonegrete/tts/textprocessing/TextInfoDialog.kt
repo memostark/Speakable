@@ -9,7 +9,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.*
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
@@ -32,8 +32,6 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.SettingsFragment
 import com.guillermonegrete.tts.savedwords.ResultType
-import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment
-import com.guillermonegrete.tts.savedwords.SaveWordDialogFragment.TAG_DIALOG_UPDATE_WORD
 import com.guillermonegrete.tts.savedwords.SaveWordDialogViewModel
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
@@ -53,7 +51,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 @AndroidEntryPoint
-class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialogFragment.Callback {
+class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     private var window: Window? = null
 
@@ -172,37 +170,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
                             onDismiss = { dismiss() },
                         )
 
-
-                        val state = wordState.value
-                        val word = state.word
-
-                        if (word != null) {
-                            EditWordDialog(
-                                isShown = editDialogShown.value,
-                                word = word.word,
-                                language = word.lang,
-                                translation = word.definition,
-                                notes = word.notes,
-                                languages = languages,
-                                languagesISO = languagesISO,
-                                isSaved = state.isSaved,
-                                onSave = {
-                                    if(state.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
-                                },
-                                onDelete = { deleteDialogShown.value = true },
-                                onDismiss = { editDialogShown.value = false }
-                            )
-                        }
-
-                        if (deleteDialogShown.value && word != null) {
-
-                            YesNoDialog(
-                                onDismissRequest = { deleteDialogShown.value = false },
-                                onConfirmation = { presenter.onClickDeleteWord(word.word) },
-                                dialogTitle = getString(R.string.delete_word_message),
-                                dialogText = getString(R.string.delete_word_message),
-                            )
-                        }
+                        val word = wordState.value.word
+                        if (word != null) EditDeleteWordDialogs(word)
 
                         ExternalLinksDialog(
                             isShown = linksDialogShown.value,
@@ -308,7 +277,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             when(result) {
                 is ResultType.Insert -> {
                     editDialogShown.value = false
-                    wordState.value = wordState.value.copy(word = result.word, isSaved = true)
+                    if (_bindingWord != null) {
+                        setSavedWordToolbar()
+                    } else {
+                        wordState.value = wordState.value.copy(word = result.word, isSaved = true)
+                    }
                 }
                 ResultType.Update -> editDialogShown.value = false
             }
@@ -380,7 +353,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
     private fun setWordLayout(word: Words) {
         bindingWord.textLanguageCode.text = word.lang
 
-        bindingWord.saveIcon.setOnClickListener { showSaveDialog(mFoundWords) }
+        bindingWord.saveIcon.setOnClickListener { editDialogShown.value = true }
+        bindingWord.composeRoot.setContent {
+            AppTheme {
+                languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
+                EditDeleteWordDialogs(word)
+            }
+        }
     }
 
     private fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
@@ -489,36 +468,17 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
         }
     }
 
-    override fun showSaveDialog(word: Words) {
-        val dialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
-        dialogFragment.show(childFragmentManager, "New word process")
-    }
-
-    override fun showDeleteDialog(word: String) {
-
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setMessage(getString(R.string.delete_word_message))
-            .setPositiveButton(R.string.yes) { dialog, _ ->
-                presenter.onClickDeleteWord(word)
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
-
-        builder.create().show()
-    }
-
     override fun showWordDeleted() {
         if (_bindingWord != null) {
-            bindingWord.editIcon.visibility = View.GONE
             bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
-            bindingWord.saveIcon.setOnClickListener { showSaveDialog(mFoundWords) }
+            wordState.value = wordState.value.copy(isSaved = false)
         } else {
             val oldWord = wordState.value.word ?: return
             val word = Words(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
-            deleteDialogShown.value = false
-            editDialogShown.value = false
             wordState.value = wordState.value.copy(word = word, isSaved = false)
         }
+        deleteDialogShown.value = false
+        editDialogShown.value = false
     }
 
     override fun showErrorPlayingAudio() {
@@ -722,20 +682,21 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
     private fun setSavedWordToolbar() {
         bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
-        bindingWord.saveIcon.setOnClickListener { showDeleteDialog(mFoundWords.word) }
-
-        with(bindingWord.editIcon) {
-            visibility = View.VISIBLE
-            setOnClickListener {
-                val dialogFragment = SaveWordDialogFragment.newInstance(dbWord ?: mFoundWords)
-                dialogFragment.show(childFragmentManager, TAG_DIALOG_UPDATE_WORD)
-            }
-        }
+        bindingWord.saveIcon.setOnClickListener { editDialogShown.value = true }
 
         // Hides language from spinner, because language is already predefined.
         bindingWord.spinnerLanguageFrom.visibility = View.INVISIBLE
         bindingWord.textLanguageCode.text = mFoundWords.lang
         bindingWord.textLanguageCode.visibility = View.VISIBLE
+
+        wordState.value = wordState.value.copy(isSaved = true)
+        val word = mFoundWords
+        bindingWord.composeRoot.setContent {
+            AppTheme {
+                languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
+                EditDeleteWordDialogs(word)
+            }
+        }
     }
 
     private fun setPlayButton(text: String) {
@@ -777,10 +738,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
 
         spinner.setSelection(languageFromIndex, false)
         spinner.post { spinner.onItemSelectedListener = SpinnerListener() }
-    }
-
-    override fun onWordSaved(word: Words) {
-        setSavedWordToolbar()
     }
 
     /**
@@ -916,5 +873,33 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View, SaveWordDialog
             word: Words?,
             isSaved: Boolean
         ) = newInstance(text, action, word, wordIsSaved = isSaved)
+    }
+
+    @Composable
+    fun EditDeleteWordDialogs(word: Words) {
+        EditWordDialog(
+            isShown = editDialogShown.value,
+            word = word.word,
+            language = word.lang,
+            translation = word.definition,
+            notes = word.notes,
+            languages = languages,
+            languagesISO = languagesISO,
+            isSaved = wordState.value.isSaved,
+            onSave = {
+                if(wordState.value.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
+            },
+            onDelete = { deleteDialogShown.value = true },
+            onDismiss = { editDialogShown.value = false }
+        )
+
+        if (deleteDialogShown.value) {
+            YesNoDialog(
+                onDismissRequest = { deleteDialogShown.value = false },
+                onConfirmation = { presenter.onClickDeleteWord(word.word) },
+                dialogTitle = getString(R.string.delete_word_message),
+                dialogText = getString(R.string.delete_word_message),
+            )
+        }
     }
 }

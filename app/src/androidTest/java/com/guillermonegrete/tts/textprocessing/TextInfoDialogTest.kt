@@ -153,10 +153,10 @@ class TextInfoDialogTest {
         // Check pre-set language
         onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
         onView(withId(R.id.text_language_code)).check(matches(withText("ES")))
+        onView(withId(R.id.spinner_language_from)).check(matches(not(isDisplayed())))
 
         // Save and edit icon should be visible
         onView(withId(R.id.save_icon)).check(matches(isDisplayed()))
-        onView(withId(R.id.edit_icon)).check(matches(isDisplayed()))
     }
 
     /**
