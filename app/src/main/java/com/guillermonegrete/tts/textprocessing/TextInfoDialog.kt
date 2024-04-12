@@ -158,7 +158,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             isTTSAvailable = isTTSAvailable.value,
                             sourceLangIndex = languageFromIndex,
                             detectedLanguageIndex = detectedLanguage.value,
-                            highlightedSpan = selectedSpans.value,
+                            highlightedSpanState = selectedSpans,
                             wordState = wordState.value,
                             onPlayButtonClick = { onPlayButtonClick(text) },
                             onTopTextClick = { findWord(it) },

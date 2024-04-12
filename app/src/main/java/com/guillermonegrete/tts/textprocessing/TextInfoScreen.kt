@@ -54,6 +54,7 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -103,7 +104,7 @@ fun SentenceDialog(
     isTTSAvailable: Boolean = true,
     sourceLangIndex: Int = 0,
     detectedLanguageIndex: Int? = null,
-    highlightedSpan: SplitPageSpan? = null,
+    highlightedSpanState: MutableState<SplitPageSpan?> = mutableStateOf(null),
     wordState: WordState = WordState(),
     onPlayButtonClick: () -> Unit = {},
     onTopTextClick: (Int) -> Unit = {},
@@ -204,83 +205,91 @@ fun SentenceDialog(
 
                 val selectionColors = LocalTextSelectionColors.current
                 val highlightColor = remember { selectionColors.backgroundColor }
-                val topString = buildAnnotatedString {
-                    append(text)
-                    if (highlightedSpan != null)
-                        addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
+                Scoped {
+                    val topString = buildAnnotatedString {
+                        append(text)
+                        val highlightedSpan = highlightedSpanState.value
+                        if (highlightedSpan != null)
+                            addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
 
-                    val wordSpan = wordState.span
-                    if (wordSpan != null) {
-                        val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
-                        addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
+                        val wordSpan = wordState.span
+                        if (wordSpan != null) {
+                            val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
+                            addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
+                        }
                     }
+
+                    ClickableText(
+                        topString,
+                        style = newStyle,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .heightIn(0.dp, 120.dp)
+                            .verticalScroll(rememberScrollState(0)),
+                        onClick = onTopTextClick,
+                    )
                 }
 
-                ClickableText(
-                    topString,
-                    style = newStyle,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .heightIn(0.dp, 120.dp)
-                        .verticalScroll(rememberScrollState(0)),
-                    onClick = onTopTextClick,
-                )
+                Scoped {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .background(MaterialTheme.colors.primary)
+                            .fillMaxWidth()
+                    ) {
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(MaterialTheme.colors.primary)
-                        .fillMaxWidth()
-                ) {
+                        Text(text = "From:", Modifier.padding(horizontal = 8.dp))
 
-                    Text(text = "From:", Modifier.padding(horizontal = 8.dp))
-
-                    var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
-                    val displayText = if (sourcePos == 0 && detectedLanguageIndex != null)
-                        "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
-                    Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
-                        onSourceLangChanged(index)
-                        sourcePos = index
-                    }
-                    Spacer(Modifier.weight(1f))
-
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colors.secondary,
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .size(24.dp)
-                        )
-                    } else {
-                        val iconRes = if(isTTSAvailable) {
-                            if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
-                        } else {
-                            R.drawable.baseline_volume_off_24
+                        var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
+                        val displayText = if (sourcePos == 0 && detectedLanguageIndex != null)
+                            "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
+                        Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+                            onSourceLangChanged(index)
+                            sourcePos = index
                         }
-                        IconButton(onClick = onPlayButtonClick) {
-                            Icon(
-                                painter = painterResource(iconRes),
-                                contentDescription = stringResource(R.string.play_tts_icon_description),
+                        Spacer(Modifier.weight(1f))
+
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colors.secondary,
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(24.dp)
                             )
+                        } else {
+                            val iconRes = if(isTTSAvailable) {
+                                if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
+                            } else {
+                                R.drawable.baseline_volume_off_24
+                            }
+                            IconButton(onClick = onPlayButtonClick) {
+                                Icon(
+                                    painter = painterResource(iconRes),
+                                    contentDescription = stringResource(R.string.play_tts_icon_description),
+                                )
+                            }
                         }
                     }
                 }
 
-                val annotatedString = buildAnnotatedString {
-                    append(translation)
-                    if (highlightedSpan != null)
-                        this.addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.bottomSpan.start, end = highlightedSpan.bottomSpan.end)
-                }
+                Scoped {
+                    val annotatedString = buildAnnotatedString {
+                        append(translation)
+                        val highlightedSpan = highlightedSpanState.value
+                        if (highlightedSpan != null)
+                            this.addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.bottomSpan.start, end = highlightedSpan.bottomSpan.end)
+                    }
 
-                ClickableText(
-                   annotatedString,
-                   style = newStyle,
-                   modifier = Modifier
-                       .padding(8.dp)
-                       .heightIn(0.dp, 120.dp)
-                       .verticalScroll(rememberScrollState()),
-                   onClick = onBottomTextClick
-                )
+                    ClickableText(
+                        annotatedString,
+                        style = newStyle,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .heightIn(0.dp, 120.dp)
+                            .verticalScroll(rememberScrollState()),
+                        onClick = onBottomTextClick
+                    )
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -309,6 +318,9 @@ fun SentenceDialog(
         }
     }
 }
+
+@Composable
+fun Scoped(content: @Composable () -> Unit) = content()
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
