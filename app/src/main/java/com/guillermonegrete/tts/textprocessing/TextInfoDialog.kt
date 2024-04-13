@@ -76,9 +76,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private lateinit var playProgressBar: ProgressBar
 
     private val translatedText = mutableStateOf("")
-    private val isLoadingTTS = mutableStateOf(false)
-    private val isPlaying = mutableStateOf(false)
-    private val isTTSAvailable = mutableStateOf(true)
+    private val playIconState = mutableStateOf(PlayIconState())
     private val detectedLanguage = mutableStateOf<Int?>(null)
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
     private val wordState = mutableStateOf(WordState())
@@ -153,9 +151,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             languagesFrom = languagesFrom,
                             languagesTo = languages,
                             targetLangIndex = languagePreferenceIndex,
-                            isPlaying = isPlaying.value,
-                            isLoading = isLoadingTTS.value,
-                            isTTSAvailable = isTTSAvailable.value,
+                            playIconState = playIconState,
                             sourceLangIndex = languageFromIndex,
                             detectedLanguageIndex = detectedLanguage.value,
                             highlightedSpanState = selectedSpans,
@@ -237,8 +233,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                 StatusTTS.LanguageReady -> true
                 StatusTTS.Unavailable -> false
             }
-            isLoadingTTS.value = false
-            isTTSAvailable.value = available
+            playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = available)
         }
 
         val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
@@ -507,7 +502,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             playProgressBar.visibility = View.VISIBLE
             playButton.visibility = View.INVISIBLE
         } else {
-            isLoadingTTS.value = true
+            playIconState.value = playIconState.value.copy(isLoading = true)
         }
     }
 
@@ -517,8 +512,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             playProgressBar.visibility = View.INVISIBLE
             playButton.visibility = View.VISIBLE
         } else {
-            isLoadingTTS.value = false
-            isPlaying.value = false
+            playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = false)
         }
     }
 
@@ -528,8 +522,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             playProgressBar.visibility = View.INVISIBLE
             playButton.visibility = View.VISIBLE
         } else {
-            isLoadingTTS.value = false
-            isPlaying.value = true
+            playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = true)
         }
     }
 
@@ -707,7 +700,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun onPlayButtonClick(text: String) {
-        if (isTTSAvailable.value) {
+        if (playIconState.value.isTTSAvailable) {
             presenter.onClickReproduce(text)
         } else {
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()

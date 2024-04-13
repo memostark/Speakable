@@ -99,9 +99,7 @@ fun SentenceDialog(
     languagesFrom: List<String>,
     languagesTo: List<String>,
     targetLangIndex: Int,
-    isPlaying: Boolean = false,
-    isLoading: Boolean = false,
-    isTTSAvailable: Boolean = true,
+    playIconState: MutableState<PlayIconState> = mutableStateOf(PlayIconState()),
     sourceLangIndex: Int = 0,
     detectedLanguageIndex: Int? = null,
     highlightedSpanState: MutableState<SplitPageSpan?> = mutableStateOf(null),
@@ -249,26 +247,7 @@ fun SentenceDialog(
                         }
                         Spacer(Modifier.weight(1f))
 
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                color = MaterialTheme.colors.secondary,
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .size(24.dp)
-                            )
-                        } else {
-                            val iconRes = if(isTTSAvailable) {
-                                if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
-                            } else {
-                                R.drawable.baseline_volume_off_24
-                            }
-                            IconButton(onClick = onPlayButtonClick) {
-                                Icon(
-                                    painter = painterResource(iconRes),
-                                    contentDescription = stringResource(R.string.play_tts_icon_description),
-                                )
-                            }
-                        }
+                        PlayButton(playIconState, onPlayButtonClick)
                     }
                 }
 
@@ -315,6 +294,32 @@ fun SentenceDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: () -> Unit) {
+    val playIcon = playIconState.value
+
+    if (playIcon.isLoading) {
+        CircularProgressIndicator(
+            color = MaterialTheme.colors.secondary,
+            modifier = Modifier
+                .padding(8.dp)
+                .size(24.dp)
+        )
+    } else {
+        val iconRes = if(playIcon.isTTSAvailable) {
+            if (playIcon.isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
+        } else {
+            R.drawable.baseline_volume_off_24
+        }
+        IconButton(onClick = onPlayButtonClick) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = stringResource(R.string.play_tts_icon_description),
+            )
         }
     }
 }
@@ -499,6 +504,12 @@ data class WordState(
     val span: Span? = null,
 )
 
+data class PlayIconState(
+    val isPlaying: Boolean = false,
+    val isLoading: Boolean = false,
+    val isTTSAvailable: Boolean = true,
+)
+
 enum class SwipeDirection(val state: Int) {
     Initial(0),
     Right(1),
@@ -511,7 +522,16 @@ private val languages = listOf("Auto detect", "English", "Spanish", "German")
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguageIndex = 3)
+        SentenceDialog(
+            true,
+            text,
+            text,
+            languages,
+            languages,
+            targetLangIndex = 1,
+            sourceLangIndex = 0,
+            detectedLanguageIndex = 3
+        )
     }
 }
 
