@@ -54,6 +54,7 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -71,6 +72,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -95,15 +97,15 @@ import kotlin.math.roundToInt
 fun SentenceDialog(
     isVisible: Boolean,
     text: String,
-    translation: String,
+    translation: MutableState<String>,
     languagesFrom: List<String>,
     languagesTo: List<String>,
     targetLangIndex: Int,
     playIconState: MutableState<PlayIconState> = mutableStateOf(PlayIconState()),
     sourceLangIndex: Int = 0,
-    detectedLanguageIndex: Int? = null,
+    detectedLanguageState: MutableIntState = mutableIntStateOf(-1),
     highlightedSpanState: MutableState<SplitPageSpan?> = mutableStateOf(null),
-    wordState: WordState = WordState(),
+    wordState: MutableState<WordState> = mutableStateOf(WordState()),
     onPlayButtonClick: () -> Unit = {},
     onTopTextClick: (Int) -> Unit = {},
     onBottomTextClick: (Int) -> Unit = {},
@@ -175,112 +177,23 @@ fun SentenceDialog(
 
             Column {
 
-                val word = wordState.word
-                if (word != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(word.definition, Modifier.padding(horizontal = 8.dp))
-                        Spacer(Modifier.weight(1f))
-                        IconButton(onClick = onBookmarkClicked) {
-                            val iconRes = if(wordState.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
-                            Icon(
-                                painter = painterResource(iconRes),
-                                contentDescription = stringResource(R.string.save_icon_description),
-                            )
-                        }
-                        IconButton(onClick = onMoreInfoClicked) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_outline_info_24),
-                                contentDescription = stringResource(R.string.more_information),
-                            )
-                        }
-                    }
+                WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
 
-                    Divider()
-                }
+                TopText(text, wordState, highlightedSpanState, newStyle, onTopTextClick)
 
+                TopTextBar(
+                    languagesFrom,
+                    languagesTo,
+                    sourceLangIndex,
+                    detectedLanguageState,
+                    playIconState,
+                    onSourceLangChanged,
+                    onPlayButtonClick
+                )
 
-                val selectionColors = LocalTextSelectionColors.current
-                val highlightColor = remember { selectionColors.backgroundColor }
-                Scoped {
-                    val topString = buildAnnotatedString {
-                        append(text)
-                        val highlightedSpan = highlightedSpanState.value
-                        if (highlightedSpan != null)
-                            addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
+                BottomText(translation, highlightedSpanState, newStyle, onBottomTextClick)
 
-                        val wordSpan = wordState.span
-                        if (wordSpan != null) {
-                            val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
-                            addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
-                        }
-                    }
-
-                    ClickableText(
-                        topString,
-                        style = newStyle,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .heightIn(0.dp, 120.dp)
-                            .verticalScroll(rememberScrollState(0)),
-                        onClick = onTopTextClick,
-                    )
-                }
-
-                Scoped {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .background(MaterialTheme.colors.primary)
-                            .fillMaxWidth()
-                    ) {
-
-                        Text(text = "From:", Modifier.padding(horizontal = 8.dp))
-
-                        var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
-                        val displayText = if (sourcePos == 0 && detectedLanguageIndex != null)
-                            "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
-                        Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
-                            onSourceLangChanged(index)
-                            sourcePos = index
-                        }
-                        Spacer(Modifier.weight(1f))
-
-                        PlayButton(playIconState, onPlayButtonClick)
-                    }
-                }
-
-                Scoped {
-                    val annotatedString = buildAnnotatedString {
-                        append(translation)
-                        val highlightedSpan = highlightedSpanState.value
-                        if (highlightedSpan != null)
-                            this.addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.bottomSpan.start, end = highlightedSpan.bottomSpan.end)
-                    }
-
-                    ClickableText(
-                        annotatedString,
-                        style = newStyle,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .heightIn(0.dp, 120.dp)
-                            .verticalScroll(rememberScrollState()),
-                        onClick = onBottomTextClick
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(MaterialTheme.colors.primary)
-                        .fillMaxWidth()
-                ) {
-                    Text(text = "To:", Modifier.padding(horizontal = 8.dp))
-                    Spinner(languagesTo, targetLangIndex) { index, _ ->
-                        onTargetLangChanged(index)
-                    }
-                }
+                BottomTextBar(languagesTo, targetLangIndex, onTargetLangChanged)
             }
         }
 
@@ -294,6 +207,145 @@ fun SentenceDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun WordRow(
+    wordState: MutableState<WordState>,
+    onBookmarkClicked: () -> Unit,
+    onMoreInfoClicked: () -> Unit
+) {
+    val word = wordState.value.word
+    if (word != null) {
+        Row(verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(word.definition, Modifier.padding(horizontal = 8.dp))
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onBookmarkClicked) {
+                val iconRes = if(wordState.value.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = stringResource(R.string.save_icon_description),
+                )
+            }
+            IconButton(onClick = onMoreInfoClicked) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_outline_info_24),
+                    contentDescription = stringResource(R.string.more_information),
+                )
+            }
+        }
+
+        Divider()
+    }
+}
+
+@Composable
+fun TopText(
+    text: String,
+    wordState: MutableState<WordState>,
+    highlightedSpanState: MutableState<SplitPageSpan?>,
+    textStyle: TextStyle,
+    onTopTextClick: (Int) -> Unit
+) {
+
+    val topString = buildAnnotatedString {
+        append(text)
+
+        val selectionColors = LocalTextSelectionColors.current
+        val highlightColor = remember { selectionColors.backgroundColor }
+        val highlightedSpan = highlightedSpanState.value
+        if (highlightedSpan != null)
+            addStyle(style = SpanStyle(background = highlightColor), highlightedSpan.topSpan.start, highlightedSpan.topSpan.end)
+
+        val wordSpan = wordState.value.span
+        if (wordSpan != null) {
+            val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
+            addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
+        }
+    }
+
+    ClickableText(
+        topString,
+        style = textStyle,
+        modifier = Modifier
+            .padding(8.dp)
+            .heightIn(0.dp, 120.dp)
+            .verticalScroll(rememberScrollState(0)),
+        onClick = onTopTextClick,
+    )
+}
+
+@Composable
+fun TopTextBar(languagesFrom: List<String>,
+               languagesTo: List<String>,
+               sourceLangIndex: Int,
+               detectedLanguageState: MutableIntState,
+               playIconState: MutableState<PlayIconState>,
+               onSourceLangChanged: (Int) -> Unit,
+               onPlayButtonClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(MaterialTheme.colors.primary)
+            .fillMaxWidth()
+    ) {
+
+        Text(text = "From:", Modifier.padding(horizontal = 8.dp))
+
+        var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
+        val detectedLanguageIndex = detectedLanguageState.intValue
+        val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
+            "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
+        Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+            onSourceLangChanged(index)
+            sourcePos = index
+        }
+        Spacer(Modifier.weight(1f))
+
+        PlayButton(playIconState, onPlayButtonClick)
+    }
+}
+
+@Composable
+fun BottomText(
+    translation: MutableState<String>,
+    highlightedSpanState: MutableState<SplitPageSpan?>,
+    textStyle: TextStyle,
+    onBottomTextClick: (Int) -> Unit
+) {
+    val annotatedString = buildAnnotatedString {
+        append(translation.value)
+        val highlightedSpan = highlightedSpanState.value
+        if (highlightedSpan != null)
+            this.addStyle(SpanStyle(background = LocalTextSelectionColors.current.backgroundColor), highlightedSpan.bottomSpan.start, highlightedSpan.bottomSpan.end)
+    }
+
+    ClickableText(
+        annotatedString,
+        style = textStyle,
+        modifier = Modifier
+            .padding(8.dp)
+            .heightIn(0.dp, 120.dp)
+            .verticalScroll(rememberScrollState()),
+        onClick = onBottomTextClick
+    )
+}
+
+@Composable
+fun BottomTextBar(languagesTo: List<String>, langIndex: Int, onTargetLangChanged: (Int) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(MaterialTheme.colors.primary)
+            .fillMaxWidth()
+    ) {
+        Text(text = "To:", Modifier.padding(horizontal = 8.dp))
+        Spinner(languagesTo, langIndex) { index, _ ->
+            onTargetLangChanged(index)
         }
     }
 }
@@ -525,12 +577,12 @@ fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
         SentenceDialog(
             true,
             text,
-            text,
+            remember { mutableStateOf(text) },
             languages,
             languages,
             targetLangIndex = 1,
             sourceLangIndex = 0,
-            detectedLanguageIndex = 3
+            detectedLanguageState = remember { mutableIntStateOf(3) }
         )
     }
 }
@@ -542,13 +594,13 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
         SentenceDialog(
             true,
             text,
-            text,
+            remember { mutableStateOf(text) },
             languages,
             languages,
             targetLangIndex = 1,
             sourceLangIndex = 0,
-            detectedLanguageIndex = 3,
-            wordState = WordState(Words("Original", "en",  "Translation"), true, Span(6, 11))
+            detectedLanguageState = remember { mutableIntStateOf(3) },
+            wordState = remember { mutableStateOf(WordState(Words("Original", "en",  "Translation"), true, Span(6, 11))) }
         )
     }
 }
