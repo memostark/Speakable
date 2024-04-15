@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
@@ -164,17 +165,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             }
 
-            val spinnerItems = mutableStateOf(emptyList<String>())
             val langSelection = mutableIntStateOf(-1)
-
             val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
-            viewModel.webLink.observe(viewLifecycleOwner) {
-                spinnerItems.value = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
 
+            viewModel.webLink.observe(viewLifecycleOwner) {
                 languageFrom = it.language ?: langShortNames.first() // First is always "auto"
                 langSelection.intValue = langShortNames.indexOf(languageFrom)
                 isPageSaved.value = it.uuid != null
             }
+
+            val spinnerItems = StringList(resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList())
 
             composeBar.apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)

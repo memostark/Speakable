@@ -83,13 +83,16 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.ExternalLinkList
+import com.guillermonegrete.tts.common.compose.Spinner
+import com.guillermonegrete.tts.common.compose.StringList
+import com.guillermonegrete.tts.common.models.ExternalLinkUI
 import com.guillermonegrete.tts.common.models.Span
-import com.guillermonegrete.tts.db.ExternalLink
+import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
-import com.guillermonegrete.tts.webreader.Spinner
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -98,8 +101,8 @@ fun SentenceDialog(
     isVisible: Boolean,
     text: String,
     translation: MutableState<String>,
-    languagesFrom: List<String>,
-    languagesTo: List<String>,
+    languagesFrom: StringList,
+    languagesTo: StringList,
     targetLangIndex: Int,
     playIconState: MutableState<PlayIconState> = mutableStateOf(PlayIconState()),
     sourceLangIndex: Int = 0,
@@ -280,13 +283,15 @@ fun TopText(
 }
 
 @Composable
-fun TopTextBar(languagesFrom: List<String>,
-               languagesTo: List<String>,
-               sourceLangIndex: Int,
-               detectedLanguageState: MutableIntState,
-               playIconState: MutableState<PlayIconState>,
-               onSourceLangChanged: (Int) -> Unit,
-               onPlayButtonClick: () -> Unit) {
+fun TopTextBar(
+    languagesFrom: StringList,
+    languagesTo: StringList,
+    sourceLangIndex: Int,
+    detectedLanguageState: MutableIntState,
+    playIconState: MutableState<PlayIconState>,
+    onSourceLangChanged: (Int) -> Unit,
+    onPlayButtonClick: () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -299,7 +304,7 @@ fun TopTextBar(languagesFrom: List<String>,
         var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
         val detectedLanguageIndex = detectedLanguageState.intValue
         val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
-            "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
+            "Auto detect (${languagesTo.items.getOrNull(detectedLanguageIndex)})" else null
         Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
             onSourceLangChanged(index)
             sourcePos = index
@@ -336,7 +341,7 @@ fun BottomText(
 }
 
 @Composable
-fun BottomTextBar(languagesTo: List<String>, langIndex: Int, onTargetLangChanged: (Int) -> Unit) {
+fun BottomTextBar(languagesTo: StringList, langIndex: Int, onTargetLangChanged: (Int) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -376,9 +381,6 @@ fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: ()
     }
 }
 
-@Composable
-fun Scoped(content: @Composable () -> Unit) = content()
-
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun EditWordDialog(
@@ -387,8 +389,8 @@ fun EditWordDialog(
     language: String,
     translation: String,
     notes: String?,
-    languages: List<String>,
-    languagesISO: List<String>,
+    languages: StringList,
+    languagesISO: StringList,
     isSaved: Boolean = false,
     onSave: (Words) -> Unit = {},
     onDelete: () -> Unit = {},
@@ -397,7 +399,7 @@ fun EditWordDialog(
     if (!isShown) return
 
     var wordText by remember { mutableStateOf(word) }
-    val isoIndex = languagesISO.indexOf(language)
+    val isoIndex = languagesISO.items.indexOf(language)
     var indexLang by remember { mutableIntStateOf(isoIndex) }
     var translationText by remember { mutableStateOf(translation) }
     var notesText by remember { mutableStateOf(notes) }
@@ -424,7 +426,7 @@ fun EditWordDialog(
                 ) {
                     TextField(
                         readOnly = true,
-                        value = languages.getOrNull(indexLang) ?: "",
+                        value = languages.items.getOrNull(indexLang) ?: "",
                         onValueChange = { },
                         label = { Text(stringResource(R.string.language_edit_text)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -433,19 +435,17 @@ fun EditWordDialog(
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = {
-                            expanded = false
-                        }
+                        onDismissRequest = { expanded = false }
                     ) {
 
                         Box(modifier = Modifier.size(width = 300.dp, height = 600.dp)) {
                             LazyColumn {
-                                itemsIndexed(languages) { i, lang ->
+                                itemsIndexed(languages.items) { i, lang ->
                                     DropdownMenuItem(onClick = {
                                         indexLang = i
                                         expanded = false
                                     }){
-                                        Text(text = "$lang (${languagesISO[i]})")
+                                        Text(text = "$lang (${languagesISO.items[i]})")
                                     }
                                 }
                             }
@@ -481,7 +481,7 @@ fun EditWordDialog(
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
                     Button(onClick = {
-                        onSave(Words(wordText, languagesISO[indexLang], translationText).apply { this.notes = notesText })
+                        onSave(Words(wordText, languagesISO.items[indexLang], translationText).apply { this.notes = notesText })
                     }) {
                         Text(text = stringResource(android.R.string.ok))
                     }
@@ -496,7 +496,7 @@ fun EditWordDialog(
 @Composable
 fun ExternalLinksDialog(
     isShown: Boolean,
-    links: List<ExternalLink>,
+    links: ExternalLinkList,
     selection: Int,
     onItemClick: (Int) -> Unit = {},
     onDismiss: () -> Unit = {},
@@ -519,7 +519,8 @@ fun ExternalLinksDialog(
                         }
                     },
                     update = { webView ->
-                        webView.loadUrl(links[selection].link)
+                        val externalLink = links.items.getOrNull(selection)
+                        if (externalLink != null) webView.loadUrl(externalLink.link)
                     },
                     modifier = Modifier
                         .height(350.dp)
@@ -527,7 +528,7 @@ fun ExternalLinksDialog(
                 )
 
                 LazyRow {
-                    itemsIndexed(links) {index, link ->
+                    itemsIndexed(links.items) {index, link ->
                         if (index == selection) {
                             Box(modifier = Modifier.width(IntrinsicSize.Max)) {
                                 TextButton(onClick = { onItemClick(index) }) {
@@ -551,7 +552,7 @@ fun ExternalLinksDialog(
 }
 
 data class WordState(
-    val word: Words? = null,
+    val word: WordUI? = null,
     val isSaved: Boolean = false,
     val span: Span? = null,
 )
@@ -568,7 +569,7 @@ enum class SwipeDirection(val state: Int) {
     Left(2),
 }
 
-private val languages = listOf("Auto detect", "English", "Spanish", "German")
+private val languages = StringList(listOf("Auto detect", "English", "Spanish", "German"))
 
 @Preview
 @Composable
@@ -600,7 +601,7 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
             targetLangIndex = 1,
             sourceLangIndex = 0,
             detectedLanguageState = remember { mutableIntStateOf(3) },
-            wordState = remember { mutableStateOf(WordState(Words("Original", "en",  "Translation"), true, Span(6, 11))) }
+            wordState = remember { mutableStateOf(WordState(WordUI("Original", "en",  "Translation"), true, Span(6, 11))) }
         )
     }
 }
@@ -609,7 +610,16 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
 @Composable
 fun EditWordDialogPreview() {
     AppTheme {
-        EditWordDialog(true, "Hola", "es", "Hello", "Spanish greeting", listOf("English", "Spanish", "German"), listOf("en", "es", "de"), true)
+        EditWordDialog(
+            true,
+            "Hola",
+            "es",
+            "Hello",
+            "Spanish greeting",
+            StringList(listOf("English", "Spanish", "German")),
+            StringList(listOf("en", "es", "de")),
+            true
+        )
     }
 }
 
@@ -617,6 +627,7 @@ fun EditWordDialogPreview() {
 @Composable
 fun ExternalLinksDialogPreview() {
     AppTheme {
-        ExternalLinksDialog(true, List(4) { ExternalLink("External site", "", "") }, 1)
+        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site", "", "") })
+        ExternalLinksDialog(true, links, 1)
     }
 }

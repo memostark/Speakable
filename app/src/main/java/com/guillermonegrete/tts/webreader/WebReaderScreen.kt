@@ -5,8 +5,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -30,6 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.Spinner
+import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
 import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
@@ -40,7 +40,7 @@ import okhttp3.internal.toHexString
 
 @Composable
 fun WebReaderBottomBar(
-    languages: MutableState<List<String>>,
+    languages: StringList,
     langSelection: MutableState<Int> = mutableIntStateOf(-1),
     iconsEnabled: MutableState<Boolean> = mutableStateOf(true),
     isPageSaved: MutableState<Boolean> = mutableStateOf(false),
@@ -85,7 +85,7 @@ fun WebReaderBottomBar(
         }
 
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Spinner(languages.value, langSelection.value, onItemSelected = onLangSelected)
+            Spinner(languages, langSelection.value, onItemSelected = onLangSelected)
         }
 
         Box {
@@ -119,58 +119,10 @@ fun WebReaderBottomBar(
 
                 if (isSaved) {
                     DropdownMenuItem(onClick = {}) {
-                        MultiToggleButton(pageVersionSelection, pageVersionStates) {
+                        MultiToggleButton(pageVersionSelection, StringList(pageVersionStates)) {
                             pageVersionSelection = it
                             menuExpanded = false
                             onPageVersionChanged(pageVersionSelection)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun Spinner(
-    items: List<String>,
-    preselected: Int = -1,
-    displayText: String? = null,
-    onItemSelected: (Int, String) -> Unit = { _, _ -> }
-) {
-    var selected by remember(preselected) { mutableIntStateOf(preselected) }
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Button(
-            onClick = { expanded = !expanded },
-            contentPadding = PaddingValues(8.dp, end = 0.dp),
-        ) {
-            Text(text = displayText ?: items.getOrNull(selected) ?: "")
-            Icon(
-                imageVector = Icons.Filled.ArrowDropDown,
-                contentDescription = null
-            )
-        }
-        
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            Text(stringResource(R.string.web_reader_lang_spinner_prompt), Modifier.padding(8.dp))
-
-            // In order to use LazyColumn we have to put it inside a Box
-            // The Box's size has to be explicitly defined otherwise it will crash (fillMaxWidth() crashes)
-            // See related issue: https://issuetracker.google.com/issues/242398344
-            Box(modifier = Modifier.size(width = 200.dp, height = 500.dp)) {
-                LazyColumn {
-                    itemsIndexed(items) { index, item ->
-                        DropdownMenuItem(onClick = {
-                            expanded = false
-                            selected = index
-                            onItemSelected(index, item)
-                        }) {
-                            Text(text = item)
                         }
                     }
                 }
@@ -338,7 +290,7 @@ fun Color.toHex() = "#${this.toArgb().toHexString()}"
 @Composable
 fun MultiToggleButton(
     currentSelection: String,
-    toggleStates: List<String>,
+    toggleStates: StringList,
     onToggleChange: (String) -> Unit
 ) {
     val selectedTint = MaterialTheme.colors.primary
@@ -349,7 +301,7 @@ fun MultiToggleButton(
             .height(IntrinsicSize.Min)
             .border(BorderStroke(1.dp, Color.LightGray))
     ) {
-        toggleStates.forEachIndexed { index, toggleState ->
+        toggleStates.items.forEachIndexed { index, toggleState ->
             val isSelected = currentSelection.lowercase() == toggleState.lowercase()
             val backgroundTint = if (isSelected) selectedTint else unselectedTint
             val textColor = if (isSelected) Color.White else Color.Unspecified
@@ -383,13 +335,13 @@ fun MultiToggleButton(
     }
 }
 
-private val suggestions = listOf("Item1", "Item2", "Item3")
+private val suggestions = StringList(listOf("Item1", "Item2", "Item3"))
 
 @Preview
 @Composable
 fun BarPreview() {
     AppTheme {
-        WebReaderBottomBar(remember { mutableStateOf(suggestions) })
+        WebReaderBottomBar(suggestions)
     }
 }
 
@@ -433,6 +385,6 @@ fun AddNoteDialogPreview() {
 fun MultiToggleButtonPreview() {
     var selection by remember { mutableStateOf("Local") }
     AppTheme {
-        MultiToggleButton(selection, listOf("Local", "Web")) { selection = it }
+        MultiToggleButton(selection, StringList(listOf("Local", "Web"))) { selection = it }
     }
 }

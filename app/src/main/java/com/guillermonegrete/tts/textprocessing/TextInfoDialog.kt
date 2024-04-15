@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -22,8 +23,12 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.ExternalLinkList
+import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.WordUI
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.customviews.ButtonsPreference
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.WordResult
@@ -82,7 +87,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
     private val wordState = mutableStateOf(WordState())
 
-    private val wordLinks = mutableStateOf(emptyList<ExternalLink>())
+    private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
     private val selectedLink = mutableIntStateOf(0)
 
     private val editDialogShown = mutableStateOf(false)
@@ -139,8 +144,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         if(splitText.size > 1) {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            val languagesFrom = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
+            val languagesFrom = StringList(resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList())
             languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
+            val languagesToStable = StringList(languages)
             return ComposeView(requireContext()).apply {
                 setContent {
 
@@ -150,7 +156,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             text = text,
                             translation = translatedText,
                             languagesFrom = languagesFrom,
-                            languagesTo = languages,
+                            languagesTo = languagesToStable,
                             targetLangIndex = languagePreferenceIndex,
                             playIconState = playIconState,
                             sourceLangIndex = languageFromIndex,
@@ -169,13 +175,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
                         EditDeleteWordDialogs(wordState)
 
-                        ExternalLinksDialog(
-                            isShown = linksDialogShown.value,
-                            links = wordLinks.value,
-                            selection = selectedLink.intValue,
-                            onItemClick = { selectedLink.intValue = it },
-                            onDismiss = { linksDialogShown.value = false },
-                        )
+                        ExternalLinksDialog(selectedLink)
                     }
                 }
             }
@@ -195,8 +195,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun onMoreInfoClicked() {
-        val word = wordState.value.word ?: return
-        (presenter as ProcessTextPresenter).getExternalLinks(word)
+        val wordUI = wordState.value.word ?: return
+        (presenter as ProcessTextPresenter).getExternalLinks(wordUI.toWord())
     }
 
     private fun findWord(offset: Int) {
@@ -255,14 +255,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         presenterImp.wordInfo().observe(this) {result ->
             when(result) {
-                is WordResult.Local -> wordState.value = WordState(result.word,true, selectedWordSpan)
-                is WordResult.Remote -> wordState.value = WordState(Words(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
+                is WordResult.Local -> wordState.value = WordState(result.word.toUI(),true, selectedWordSpan)
+                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
                 is WordResult.Error -> { Toast.makeText(context, "Error: ${result.exception}", Toast.LENGTH_SHORT).show() }
             }
         }
 
         presenterImp.wordLinks.observe(this) { links ->
-            wordLinks.value = links
+            wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
             // If out of index, default to the first item
             if(selectedLink.intValue >= links.size) selectedLink.intValue = 0
             linksDialogShown.value = true
@@ -275,7 +275,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                     if (_bindingWord != null) {
                         setSavedWordToolbar()
                     } else {
-                        wordState.value = wordState.value.copy(word = result.word, isSaved = true)
+                        wordState.value = wordState.value.copy(word = result.word.toUI(), isSaved = true)
                     }
                 }
                 ResultType.Update -> editDialogShown.value = false
@@ -352,7 +352,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
-                wordState.value = WordState(word)
+                wordState.value = WordState(word.toUI())
                 EditDeleteWordDialogs(wordState)
             }
         }
@@ -471,7 +471,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         } else {
             val oldWord = wordState.value.word ?: return
             val word = Words(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
-            wordState.value = wordState.value.copy(word = word, isSaved = false)
+            wordState.value = wordState.value.copy(word = word.toUI(), isSaved = false)
         }
         deleteDialogShown.value = false
         editDialogShown.value = false
@@ -683,7 +683,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.textLanguageCode.text = mFoundWords.lang
         bindingWord.textLanguageCode.visibility = View.VISIBLE
 
-        wordState.value = wordState.value.copy(isSaved = true, word = mFoundWords)
+        wordState.value = wordState.value.copy(isSaved = true, word = mFoundWords.toUI())
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
@@ -878,8 +878,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             language = word.lang,
             translation = word.definition,
             notes = word.notes,
-            languages = languages,
-            languagesISO = languagesISO,
+            languages = StringList(languages),
+            languagesISO = StringList(languagesISO),
             isSaved = wordState.value.isSaved,
             onSave = {
                 if(wordState.value.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
@@ -896,5 +896,17 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                 dialogText = getString(R.string.delete_word_message),
             )
         }
+    }
+
+    @Composable
+    fun ExternalLinksDialog(selectedLink: MutableIntState) {
+
+        ExternalLinksDialog(
+            isShown = linksDialogShown.value,
+            links = wordLinks.value,
+            selection = selectedLink.intValue,
+            onItemClick = { selectedLink.intValue = it },
+            onDismiss = { linksDialogShown.value = false },
+        )
     }
 }
