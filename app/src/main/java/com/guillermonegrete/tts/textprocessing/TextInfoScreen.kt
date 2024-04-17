@@ -503,6 +503,8 @@ fun ExternalLinksDialog(
 ) {
     if(!isShown) return
 
+    var selected by remember { mutableIntStateOf(selection) }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -519,7 +521,7 @@ fun ExternalLinksDialog(
                         }
                     },
                     update = { webView ->
-                        val externalLink = links.items.getOrNull(selection)
+                        val externalLink = links.items.getOrNull(selected)
                         if (externalLink != null) webView.loadUrl(externalLink.link)
                     },
                     modifier = Modifier
@@ -529,9 +531,12 @@ fun ExternalLinksDialog(
 
                 LazyRow {
                     itemsIndexed(links.items) {index, link ->
-                        if (index == selection) {
+                        if (index == selected) {
                             Box(modifier = Modifier.width(IntrinsicSize.Max)) {
-                                TextButton(onClick = { onItemClick(index) }) {
+                                TextButton(onClick = {
+                                    selected = index
+                                    onItemClick(index)
+                                }) {
                                     Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                                 }
                                 Divider(
@@ -540,7 +545,10 @@ fun ExternalLinksDialog(
                                 )
                             }
                         } else {
-                            TextButton(onClick = { onItemClick(index) }) {
+                            TextButton(onClick = {
+                                selected = index
+                                onItemClick(index)
+                            }) {
                                 Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                             }
                         }

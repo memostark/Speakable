@@ -905,7 +905,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             isShown = linksDialogShown.value,
             links = wordLinks.value,
             selection = selectedLink.intValue,
-            onItemClick = { selectedLink.intValue = it },
             onDismiss = { linksDialogShown.value = false },
         )
     }

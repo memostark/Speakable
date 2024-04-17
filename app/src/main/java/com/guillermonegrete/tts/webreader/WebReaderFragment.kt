@@ -195,43 +195,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.setLanguage(langShort)
                         }
 
-                        val loadingVisible by remember { loadingDialogVisible }
-                        LoadingDialog(loadingVisible)
-
-                        var deleteVisible by remember { deleteDialogVisible }
-                        DeletePageDialog(
-                            deleteVisible,
-                            onDismiss = { deleteVisible = false },
-                            okClicked = {
-                                deleteVisible = false
-                                isPageSaved.value = false
-                                val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
-                                viewModel.deleteLinkFolder(externalDir)
-                                adapter?.isPageSaved = false
-                            }
-                        )
-
-                        var addNoteVisible by remember { addNoteDialogVisible }
-
-                        AddNoteDialog(
-                            addNoteVisible,
-                            noteInfo?.noteText ?: "",
-                            noteInfo?.color ?: 0,
-                            noteInfo?.noteSaved ?: false,
-                            onDismiss = { addNoteVisible = false },
-                            onDelete = {
-                                val noteItem = noteInfo ?: return@AddNoteDialog
-                                viewModel.deleteNote(noteItem.id)
-                                noteInfo = null
-                                addNoteVisible = false
-                            },
-                            onSaveClicked = { newNote ->
-                                val noteItem = noteInfo ?: return@AddNoteDialog
-                                viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
-                                addNoteVisible = false
-                            },
-                        )
-
+                        WebReaderDialogs()
                     }
                 }
             }
@@ -697,5 +661,45 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun isSheetVisible(): Boolean {
         val behavior = BottomSheetBehavior.from(binding.transSheet.root)
         return behavior.state == BottomSheetBehavior.STATE_EXPANDED
+    }
+
+    @Composable
+    fun WebReaderDialogs() {
+        val loadingVisible by remember { loadingDialogVisible }
+        LoadingDialog(loadingVisible)
+
+        var deleteVisible by remember { deleteDialogVisible }
+        DeletePageDialog(
+            deleteVisible,
+            onDismiss = { deleteVisible = false },
+            okClicked = {
+                deleteVisible = false
+                isPageSaved.value = false
+                val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
+                viewModel.deleteLinkFolder(externalDir)
+                adapter?.isPageSaved = false
+            }
+        )
+
+        var addNoteVisible by remember { addNoteDialogVisible }
+
+        AddNoteDialog(
+            addNoteVisible,
+            noteInfo?.noteText ?: "",
+            noteInfo?.color ?: 0,
+            noteInfo?.noteSaved ?: false,
+            onDismiss = { addNoteVisible = false },
+            onDelete = {
+                val noteItem = noteInfo ?: return@AddNoteDialog
+                viewModel.deleteNote(noteItem.id)
+                noteInfo = null
+                addNoteVisible = false
+            },
+            onSaveClicked = { newNote ->
+                val noteItem = noteInfo ?: return@AddNoteDialog
+                viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
+                addNoteVisible = false
+            },
+        )
     }
 }
