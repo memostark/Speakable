@@ -51,8 +51,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private final CustomTTS customTTS;
     private final GetLangAndTranslation getTranslationInteractor;
 
-    private final MutableLiveData<String> selectedWord = new MutableLiveData<>();
-
     private final MutableLiveData<WordResult> selectedWordResult = new MutableLiveData<>();
 
     private final MutableLiveData<List<ExternalLink>> wordLinks = new MutableLiveData<>();
@@ -168,7 +166,6 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     public void setSelectedWord(String word, String languageFrom, String languageTo) {
-        selectedWord.setValue(word);
 
         executorService.execute(() ->
             mRepository.getWordLanguageInfo(word, languageFrom, languageTo, new WordRepositorySource.GetWordRepositoryCallback() {

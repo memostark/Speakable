@@ -5,8 +5,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -30,6 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.Spinner
+import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
 import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
@@ -40,7 +40,7 @@ import okhttp3.internal.toHexString
 
 @Composable
 fun WebReaderBottomBar(
-    languages: MutableState<List<String>>,
+    languages: StringList,
     langSelection: MutableState<Int> = mutableIntStateOf(-1),
     iconsEnabled: MutableState<Boolean> = mutableStateOf(true),
     isPageSaved: MutableState<Boolean> = mutableStateOf(false),
@@ -50,7 +50,7 @@ fun WebReaderBottomBar(
     onPageVersionChanged: (String) -> Unit = {},
     onLangSelected: (Int, String) -> Unit = { _, _ -> },
 ) {
-    val iconsState by iconsEnabled
+    val iconsState by remember { iconsEnabled }
 
     BottomAppBar(modifier = Modifier.testTag("web_reader_bar")) {
         IconButton(
@@ -84,94 +84,55 @@ fun WebReaderBottomBar(
             )
         }
 
-        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Spinner(languages.value, langSelection.value, onItemSelected = onLangSelected)
-        }
+        Spacer(Modifier.weight(1f))
 
-        Box {
-            var menuExpanded by remember { mutableStateOf(false) }
-            val pageVersionStates = listOf("Local", "Web")
-            var pageVersionSelection by remember { mutableStateOf(pageVersionStates.first()) }
+        Spinner(languages, langSelection.value, onItemSelected = onLangSelected)
 
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Filled.MoreVert, contentDescription = "Desc")
-            }
-
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
-            ) {
-
-                val isSaved by isPageSaved
-                DropdownMenuItem(onClick = {
-                    onMenuItemClick(0)
-                    menuExpanded = false
-                }) {
-                    val icon =
-                        if (isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
-                    Icon(painter = painterResource(icon), contentDescription = "Desc")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    val text = stringResource(id = if (isSaved) R.string.delete else R.string.save)
-                    Text(text)
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                if (isSaved) {
-                    DropdownMenuItem(onClick = {}) {
-                        MultiToggleButton(pageVersionSelection, pageVersionStates) {
-                            pageVersionSelection = it
-                            menuExpanded = false
-                            onPageVersionChanged(pageVersionSelection)
-                        }
-                    }
-                }
-            }
-        }
+        WebReaderBarMenu(isPageSaved, onMenuItemClick, onPageVersionChanged)
     }
 }
 
 @Composable
-fun Spinner(
-    items: List<String>,
-    preselected: Int = -1,
-    displayText: String? = null,
-    onItemSelected: (Int, String) -> Unit = { _, _ -> }
+fun WebReaderBarMenu(
+    isPageSaved: MutableState<Boolean>,
+    onMenuItemClick: (index: Int) -> Unit,
+    onPageVersionChanged: (String) -> Unit,
 ) {
-    var selected by remember(preselected) { mutableIntStateOf(preselected) }
-    var expanded by remember { mutableStateOf(false) }
-
     Box {
-        Button(
-            onClick = { expanded = !expanded },
-            contentPadding = PaddingValues(8.dp, end = 0.dp),
-        ) {
-            Text(text = displayText ?: items.getOrNull(selected) ?: "")
-            Icon(
-                imageVector = Icons.Filled.ArrowDropDown,
-                contentDescription = null
-            )
-        }
-        
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            Text(stringResource(R.string.web_reader_lang_spinner_prompt), Modifier.padding(8.dp))
+        var menuExpanded by remember { mutableStateOf(false) }
+        val pageVersionStates = listOf("Local", "Web")
+        var pageVersionSelection by remember { mutableStateOf(pageVersionStates.first()) }
 
-            // In order to use LazyColumn we have to put it inside a Box
-            // The Box's size has to be explicitly defined otherwise it will crash (fillMaxWidth() crashes)
-            // See related issue: https://issuetracker.google.com/issues/242398344
-            Box(modifier = Modifier.size(width = 200.dp, height = 500.dp)) {
-                LazyColumn {
-                    itemsIndexed(items) { index, item ->
-                        DropdownMenuItem(onClick = {
-                            expanded = false
-                            selected = index
-                            onItemSelected(index, item)
-                        }) {
-                            Text(text = item)
-                        }
+        IconButton(onClick = { menuExpanded = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = "Desc")
+        }
+
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
+        ) {
+
+            val isSaved by isPageSaved
+            DropdownMenuItem(onClick = {
+                onMenuItemClick(0)
+                menuExpanded = false
+            }) {
+                val icon =
+                    if (isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
+                Icon(painter = painterResource(icon), contentDescription = "Desc")
+                Spacer(modifier = Modifier.width(8.dp))
+                val text = stringResource(id = if (isSaved) R.string.delete else R.string.save)
+                Text(text)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (isSaved) {
+                DropdownMenuItem(onClick = {}) {
+                    MultiToggleButton(pageVersionSelection, StringList(pageVersionStates)) {
+                        pageVersionSelection = it
+                        menuExpanded = false
+                        onPageVersionChanged(pageVersionSelection)
                     }
                 }
             }
@@ -181,16 +142,16 @@ fun Spinner(
 
 @Composable
 fun LoadingDialog(isVisible: Boolean) {
-    if (isVisible) {
-        Dialog(onDismissRequest = {}) {
-            Card {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
-                    Text(
-                        stringResource(R.string.saving_page_dialog),
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
+    if (!isVisible) return
+
+    Dialog(onDismissRequest = {}) {
+        Card {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+                Text(
+                    stringResource(R.string.saving_page_dialog),
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }
@@ -245,8 +206,6 @@ fun AddNoteDialog(
 ) {
 
     if (!isVisible) return
-    val focusRequester = remember { FocusRequester() }
-    var textFieldLoaded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = { onDismiss() }) {
         Surface {
@@ -255,56 +214,14 @@ fun AddNoteDialog(
                 modifier = Modifier.padding(24.dp)
             ) {
 
-                var textFieldValue by remember { mutableStateOf(TextFieldValue(noteText, TextRange(noteText.length))) }
-                OutlinedTextField(
-                    value = textFieldValue,
-                    onValueChange = { textFieldValue = it },
-                    placeholder = { Text(stringResource(R.string.add_note_placeholder)) },
-                    minLines = 4,
-                    maxLines = 4,
-                    modifier = Modifier
-                        .focusRequester(focusRequester)
-                        .onGloballyPositioned {
-                            if (!textFieldLoaded) {
-                                focusRequester.requestFocus()
-                                textFieldLoaded = true // stop cyclic recompositions
-                            }
-                        }
-                        .fillMaxWidth()
-                        .testTag(NOTE_TEXT_TAG)
-                )
+                val text = remember { mutableStateOf(noteText) }
+                NoteText(noteText) { text.value = it }
 
                 val index = COLORS.indexOfFirst { noteColor == it.toArgb() }
                 val indexColor = if (index == -1) 0 else index
+                val colorSel = remember { mutableIntStateOf(indexColor) }
 
-                var colorSel by remember { mutableIntStateOf(indexColor) }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                ) {
-                    COLORS.forEachIndexed { index, color ->
-                        val isSelected = index == colorSel
-                        val modifier = if (isSelected) Modifier
-                            .padding(3.dp) // margin
-                            .border(3.dp, color, shape = CircleShape)
-                            .padding(6.dp) // space between circle and ring, real size is this value minus the border size. 6dp - 3dp = 3dp
-                            .size(36.dp) else Modifier.padding(12.dp).size(36.dp)
-
-                        // use a box with constant size, otherwise the items move when changing selections
-                        Box(Modifier.size(48.dp)) {
-                            OutlinedButton(
-                                onClick = { colorSel = index },
-                                modifier = modifier.testTag(index.toString()),
-                                shape = CircleShape,
-                                colors = ButtonDefaults.buttonColors(backgroundColor = color)
-                            ) {}
-                        }
-
-                    }
-                }
+                ColorsRow(colorSel)
 
                 Row {
                     if(noteSaved) {
@@ -317,7 +234,7 @@ fun AddNoteDialog(
                         Spacer(modifier = Modifier.width(16.dp))
                     }
                     Button(onClick = {
-                        onSaveClicked(AddNoteResult(textFieldValue.text, COLORS[colorSel].toHex()))
+                        onSaveClicked(AddNoteResult(text.value, COLORS[colorSel.intValue].toHex()))
                     },
                         Modifier
                             .weight(1f)
@@ -331,6 +248,65 @@ fun AddNoteDialog(
     }
 }
 
+@Composable
+fun NoteText(noteText: String, onValueChange: (String) -> Unit) {
+    val focusRequester = remember { FocusRequester() }
+    var textFieldLoaded by remember { mutableStateOf(false) }
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(noteText, TextRange(noteText.length))) }
+
+    OutlinedTextField(
+        value = textFieldValue,
+        onValueChange = {
+            textFieldValue = it
+            onValueChange(it.text)
+        },
+        placeholder = { Text(stringResource(R.string.add_note_placeholder)) },
+        minLines = 4,
+        maxLines = 4,
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .onGloballyPositioned {
+                if (!textFieldLoaded) {
+                    focusRequester.requestFocus()
+                    textFieldLoaded = true // stop cyclic recompositions
+                }
+            }
+            .fillMaxWidth()
+            .testTag(NOTE_TEXT_TAG)
+    )
+}
+
+@Composable
+fun ColorsRow(colorSel: MutableIntState) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        COLORS.forEachIndexed { index, color ->
+            val isSelected = index == colorSel.intValue
+            val modifier = if (isSelected) Modifier
+                .padding(3.dp) // margin
+                .border(3.dp, color, shape = CircleShape)
+                .padding(6.dp) // space between circle and ring, real size is this value minus the border size. 6dp - 3dp = 3dp
+                .size(36.dp) else Modifier
+                .padding(12.dp)
+                .size(36.dp)
+
+            // use a box with constant size, otherwise the items move when changing selections
+            Box(Modifier.size(48.dp)) {
+                OutlinedButton(
+                    onClick = { colorSel.intValue = index },
+                    modifier = modifier.testTag(index.toString()),
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(backgroundColor = color)
+                ) {}
+            }
+        }
+    }
+}
+
 data class AddNoteResult(val text: String, val colorHex: String)
 
 fun Color.toHex() = "#${this.toArgb().toHexString()}"
@@ -338,7 +314,7 @@ fun Color.toHex() = "#${this.toArgb().toHexString()}"
 @Composable
 fun MultiToggleButton(
     currentSelection: String,
-    toggleStates: List<String>,
+    toggleStates: StringList,
     onToggleChange: (String) -> Unit
 ) {
     val selectedTint = MaterialTheme.colors.primary
@@ -349,7 +325,7 @@ fun MultiToggleButton(
             .height(IntrinsicSize.Min)
             .border(BorderStroke(1.dp, Color.LightGray))
     ) {
-        toggleStates.forEachIndexed { index, toggleState ->
+        toggleStates.items.forEachIndexed { index, toggleState ->
             val isSelected = currentSelection.lowercase() == toggleState.lowercase()
             val backgroundTint = if (isSelected) selectedTint else unselectedTint
             val textColor = if (isSelected) Color.White else Color.Unspecified
@@ -383,13 +359,13 @@ fun MultiToggleButton(
     }
 }
 
-private val suggestions = listOf("Item1", "Item2", "Item3")
+private val suggestions = StringList(listOf("Item1", "Item2", "Item3"))
 
 @Preview
 @Composable
 fun BarPreview() {
     AppTheme {
-        WebReaderBottomBar(remember { mutableStateOf(suggestions) })
+        WebReaderBottomBar(suggestions)
     }
 }
 
@@ -433,6 +409,6 @@ fun AddNoteDialogPreview() {
 fun MultiToggleButtonPreview() {
     var selection by remember { mutableStateOf("Local") }
     AppTheme {
-        MultiToggleButton(selection, listOf("Local", "Web")) { selection = it }
+        MultiToggleButton(selection, StringList(listOf("Local", "Web"))) { selection = it }
     }
 }

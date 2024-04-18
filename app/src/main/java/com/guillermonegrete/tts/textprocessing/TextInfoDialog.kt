@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
@@ -21,8 +23,12 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.ExternalLinkList
+import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.WordUI
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.customviews.ButtonsPreference
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.WordResult
@@ -76,14 +82,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private lateinit var playProgressBar: ProgressBar
 
     private val translatedText = mutableStateOf("")
-    private val isLoadingTTS = mutableStateOf(false)
-    private val isPlaying = mutableStateOf(false)
-    private val isTTSAvailable = mutableStateOf(true)
-    private val detectedLanguage = mutableStateOf<Int?>(null)
+    private val playIconState = mutableStateOf(PlayIconState())
+    private val detectedLanguage = mutableIntStateOf(-1)
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
     private val wordState = mutableStateOf(WordState())
 
-    private val wordLinks = mutableStateOf(emptyList<ExternalLink>())
+    private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
     private val selectedLink = mutableIntStateOf(0)
 
     private val editDialogShown = mutableStateOf(false)
@@ -140,8 +144,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         if(splitText.size > 1) {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            val languagesFrom = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
+            val languagesFrom = StringList(resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList())
             languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
+            val languagesToStable = StringList(languages)
             return ComposeView(requireContext()).apply {
                 setContent {
 
@@ -149,17 +154,15 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                         SentenceDialog(
                             isVisible = isVisible,
                             text = text,
-                            translation = translatedText.value,
+                            translation = translatedText,
                             languagesFrom = languagesFrom,
-                            languagesTo = languages,
+                            languagesTo = languagesToStable,
                             targetLangIndex = languagePreferenceIndex,
-                            isPlaying = isPlaying.value,
-                            isLoading = isLoadingTTS.value,
-                            isTTSAvailable = isTTSAvailable.value,
+                            playIconState = playIconState,
                             sourceLangIndex = languageFromIndex,
-                            detectedLanguageIndex = detectedLanguage.value,
-                            highlightedSpan = selectedSpans.value,
-                            wordState = wordState.value,
+                            detectedLanguageState = detectedLanguage,
+                            highlightedSpanState = selectedSpans,
+                            wordState = wordState,
                             onPlayButtonClick = { onPlayButtonClick(text) },
                             onTopTextClick = { findWord(it) },
                             onBottomTextClick = { findSelectedSentence(it) },
@@ -170,16 +173,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             onDismiss = { dismiss() },
                         )
 
-                        val word = wordState.value.word
-                        if (word != null) EditDeleteWordDialogs(word)
+                        EditDeleteWordDialogs(wordState)
 
-                        ExternalLinksDialog(
-                            isShown = linksDialogShown.value,
-                            links = wordLinks.value,
-                            selection = selectedLink.intValue,
-                            onItemClick = { selectedLink.intValue = it },
-                            onDismiss = { linksDialogShown.value = false },
-                        )
+                        ExternalLinksDialog(selectedLink)
                     }
                 }
             }
@@ -199,8 +195,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun onMoreInfoClicked() {
-        val word = wordState.value.word ?: return
-        (presenter as ProcessTextPresenter).getExternalLinks(word)
+        val wordUI = wordState.value.word ?: return
+        (presenter as ProcessTextPresenter).getExternalLinks(wordUI.toWord())
     }
 
     private fun findWord(offset: Int) {
@@ -216,8 +212,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val span = text.findWord(offset)
         selectedWordSpan = span
         val word = text.substring(span.start, span.end)
-        val detectedIndex = detectedLanguage.value
-        val language = if (languageFromIndex == 0 && detectedIndex != null) {
+        val detectedIndex = detectedLanguage.intValue
+        val language = if (languageFromIndex == 0 && detectedIndex != -1) {
             languagesISO.getOrNull(detectedIndex) ?: languageFrom
         } else languageFrom
         (presenter as ProcessTextPresenter).setSelectedWord(word, language, languageToISO)
@@ -237,8 +233,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                 StatusTTS.LanguageReady -> true
                 StatusTTS.Unavailable -> false
             }
-            isLoadingTTS.value = false
-            isTTSAvailable.value = available
+            playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = available)
         }
 
         val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
@@ -260,14 +255,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         presenterImp.wordInfo().observe(this) {result ->
             when(result) {
-                is WordResult.Local -> wordState.value = WordState(result.word,true, selectedWordSpan)
-                is WordResult.Remote -> wordState.value = WordState(Words(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
+                is WordResult.Local -> wordState.value = WordState(result.word.toUI(),true, selectedWordSpan)
+                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
                 is WordResult.Error -> { Toast.makeText(context, "Error: ${result.exception}", Toast.LENGTH_SHORT).show() }
             }
         }
 
         presenterImp.wordLinks.observe(this) { links ->
-            wordLinks.value = links
+            wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
             // If out of index, default to the first item
             if(selectedLink.intValue >= links.size) selectedLink.intValue = 0
             linksDialogShown.value = true
@@ -280,7 +275,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                     if (_bindingWord != null) {
                         setSavedWordToolbar()
                     } else {
-                        wordState.value = wordState.value.copy(word = result.word, isSaved = true)
+                        wordState.value = wordState.value.copy(word = result.word.toUI(), isSaved = true)
                     }
                 }
                 ResultType.Update -> editDialogShown.value = false
@@ -357,7 +352,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
-                EditDeleteWordDialogs(word)
+                wordState.value = WordState(word.toUI())
+                EditDeleteWordDialogs(wordState)
             }
         }
     }
@@ -411,7 +407,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private fun updateDetectedLanguage(langISO: String) {
         if (languageFromIndex == 0) {
             val index = languagesISO.indexOf(langISO)
-            if (index != -1) detectedLanguage.value = index
+            if (index != -1) detectedLanguage.intValue = index
         }
     }
 
@@ -475,7 +471,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         } else {
             val oldWord = wordState.value.word ?: return
             val word = Words(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
-            wordState.value = wordState.value.copy(word = word, isSaved = false)
+            wordState.value = wordState.value.copy(word = word.toUI(), isSaved = false)
         }
         deleteDialogShown.value = false
         editDialogShown.value = false
@@ -507,7 +503,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             playProgressBar.visibility = View.VISIBLE
             playButton.visibility = View.INVISIBLE
         } else {
-            isLoadingTTS.value = true
+            playIconState.value = playIconState.value.copy(isLoading = true)
         }
     }
 
@@ -517,8 +513,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             playProgressBar.visibility = View.INVISIBLE
             playButton.visibility = View.VISIBLE
         } else {
-            isLoadingTTS.value = false
-            isPlaying.value = false
+            playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = false)
         }
     }
 
@@ -528,8 +523,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             playProgressBar.visibility = View.INVISIBLE
             playButton.visibility = View.VISIBLE
         } else {
-            isLoadingTTS.value = false
-            isPlaying.value = true
+            playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = true)
         }
     }
 
@@ -545,7 +539,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             val word = Words(inputText ?: "", translation.src, translation.translatedText)
             if (fragment is TranslationFragment) fragment.updateTranslation(word)
         } else {
-            selectedSpans.value = null
+            if(selectedSpans.value != null) selectedSpans.value = null
             translatedText.value = translation.translatedText
             updateDetectedLanguage(translation.src)
         }
@@ -689,12 +683,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.textLanguageCode.text = mFoundWords.lang
         bindingWord.textLanguageCode.visibility = View.VISIBLE
 
-        wordState.value = wordState.value.copy(isSaved = true)
-        val word = mFoundWords
+        wordState.value = wordState.value.copy(isSaved = true, word = mFoundWords.toUI())
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
-                EditDeleteWordDialogs(word)
+                EditDeleteWordDialogs(wordState)
             }
         }
     }
@@ -707,7 +700,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun onPlayButtonClick(text: String) {
-        if (isTTSAvailable.value) {
+        if (playIconState.value.isTTSAvailable) {
             presenter.onClickReproduce(text)
         } else {
             Toast.makeText(context, "Language not available for TTS", Toast.LENGTH_SHORT).show()
@@ -876,15 +869,17 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     @Composable
-    fun EditDeleteWordDialogs(word: Words) {
+    fun EditDeleteWordDialogs(wordState: MutableState<WordState>) {
+        val word = wordState.value.word ?: return
+
         EditWordDialog(
             isShown = editDialogShown.value,
             word = word.word,
             language = word.lang,
             translation = word.definition,
             notes = word.notes,
-            languages = languages,
-            languagesISO = languagesISO,
+            languages = StringList(languages),
+            languagesISO = StringList(languagesISO),
             isSaved = wordState.value.isSaved,
             onSave = {
                 if(wordState.value.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
@@ -901,5 +896,16 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                 dialogText = getString(R.string.delete_word_message),
             )
         }
+    }
+
+    @Composable
+    fun ExternalLinksDialog(selectedLink: MutableIntState) {
+
+        ExternalLinksDialog(
+            isShown = linksDialogShown.value,
+            links = wordLinks.value,
+            selection = selectedLink.intValue,
+            onDismiss = { linksDialogShown.value = false },
+        )
     }
 }

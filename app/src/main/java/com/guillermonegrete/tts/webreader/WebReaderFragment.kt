@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
@@ -164,17 +165,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             }
 
-            val spinnerItems = mutableStateOf(emptyList<String>())
             val langSelection = mutableIntStateOf(-1)
-
             val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
-            viewModel.webLink.observe(viewLifecycleOwner) {
-                spinnerItems.value = resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList()
 
+            viewModel.webLink.observe(viewLifecycleOwner) {
                 languageFrom = it.language ?: langShortNames.first() // First is always "auto"
                 langSelection.intValue = langShortNames.indexOf(languageFrom)
                 isPageSaved.value = it.uuid != null
             }
+
+            val spinnerItems = StringList(resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList())
 
             composeBar.apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -195,43 +195,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.setLanguage(langShort)
                         }
 
-                        val loadingVisible by remember { loadingDialogVisible }
-                        LoadingDialog(loadingVisible)
-
-                        var deleteVisible by remember { deleteDialogVisible }
-                        DeletePageDialog(
-                            deleteVisible,
-                            onDismiss = { deleteVisible = false },
-                            okClicked = {
-                                deleteVisible = false
-                                isPageSaved.value = false
-                                val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
-                                viewModel.deleteLinkFolder(externalDir)
-                                adapter?.isPageSaved = false
-                            }
-                        )
-
-                        var addNoteVisible by remember { addNoteDialogVisible }
-
-                        AddNoteDialog(
-                            addNoteVisible,
-                            noteInfo?.noteText ?: "",
-                            noteInfo?.color ?: 0,
-                            noteInfo?.noteSaved ?: false,
-                            onDismiss = { addNoteVisible = false },
-                            onDelete = {
-                                val noteItem = noteInfo ?: return@AddNoteDialog
-                                viewModel.deleteNote(noteItem.id)
-                                noteInfo = null
-                                addNoteVisible = false
-                            },
-                            onSaveClicked = { newNote ->
-                                val noteItem = noteInfo ?: return@AddNoteDialog
-                                viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
-                                addNoteVisible = false
-                            },
-                        )
-
+                        WebReaderDialogs()
                     }
                 }
             }
@@ -697,5 +661,45 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun isSheetVisible(): Boolean {
         val behavior = BottomSheetBehavior.from(binding.transSheet.root)
         return behavior.state == BottomSheetBehavior.STATE_EXPANDED
+    }
+
+    @Composable
+    fun WebReaderDialogs() {
+        val loadingVisible by remember { loadingDialogVisible }
+        LoadingDialog(loadingVisible)
+
+        var deleteVisible by remember { deleteDialogVisible }
+        DeletePageDialog(
+            deleteVisible,
+            onDismiss = { deleteVisible = false },
+            okClicked = {
+                deleteVisible = false
+                isPageSaved.value = false
+                val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
+                viewModel.deleteLinkFolder(externalDir)
+                adapter?.isPageSaved = false
+            }
+        )
+
+        var addNoteVisible by remember { addNoteDialogVisible }
+
+        AddNoteDialog(
+            addNoteVisible,
+            noteInfo?.noteText ?: "",
+            noteInfo?.color ?: 0,
+            noteInfo?.noteSaved ?: false,
+            onDismiss = { addNoteVisible = false },
+            onDelete = {
+                val noteItem = noteInfo ?: return@AddNoteDialog
+                viewModel.deleteNote(noteItem.id)
+                noteInfo = null
+                addNoteVisible = false
+            },
+            onSaveClicked = { newNote ->
+                val noteItem = noteInfo ?: return@AddNoteDialog
+                viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
+                addNoteVisible = false
+            },
+        )
     }
 }

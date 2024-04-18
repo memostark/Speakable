@@ -54,6 +54,8 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +72,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -80,13 +83,16 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.ExternalLinkList
+import com.guillermonegrete.tts.common.compose.Spinner
+import com.guillermonegrete.tts.common.compose.StringList
+import com.guillermonegrete.tts.common.models.ExternalLinkUI
 import com.guillermonegrete.tts.common.models.Span
-import com.guillermonegrete.tts.db.ExternalLink
+import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
-import com.guillermonegrete.tts.webreader.Spinner
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -94,17 +100,15 @@ import kotlin.math.roundToInt
 fun SentenceDialog(
     isVisible: Boolean,
     text: String,
-    translation: String,
-    languagesFrom: List<String>,
-    languagesTo: List<String>,
+    translation: MutableState<String>,
+    languagesFrom: StringList,
+    languagesTo: StringList,
     targetLangIndex: Int,
-    isPlaying: Boolean = false,
-    isLoading: Boolean = false,
-    isTTSAvailable: Boolean = true,
+    playIconState: MutableState<PlayIconState> = mutableStateOf(PlayIconState()),
     sourceLangIndex: Int = 0,
-    detectedLanguageIndex: Int? = null,
-    highlightedSpan: SplitPageSpan? = null,
-    wordState: WordState = WordState(),
+    detectedLanguageState: MutableIntState = mutableIntStateOf(-1),
+    highlightedSpanState: MutableState<SplitPageSpan?> = mutableStateOf(null),
+    wordState: MutableState<WordState> = mutableStateOf(WordState()),
     onPlayButtonClick: () -> Unit = {},
     onTopTextClick: (Int) -> Unit = {},
     onBottomTextClick: (Int) -> Unit = {},
@@ -176,123 +180,23 @@ fun SentenceDialog(
 
             Column {
 
-                val word = wordState.word
-                if (word != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(word.definition, Modifier.padding(horizontal = 8.dp))
-                        Spacer(Modifier.weight(1f))
-                        IconButton(onClick = onBookmarkClicked) {
-                            val iconRes = if(wordState.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
-                            Icon(
-                                painter = painterResource(iconRes),
-                                contentDescription = stringResource(R.string.save_icon_description),
-                            )
-                        }
-                        IconButton(onClick = onMoreInfoClicked) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_outline_info_24),
-                                contentDescription = stringResource(R.string.more_information),
-                            )
-                        }
-                    }
+                WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
 
-                    Divider()
-                }
+                TopText(text, wordState, highlightedSpanState, newStyle, onTopTextClick)
 
-
-                val selectionColors = LocalTextSelectionColors.current
-                val highlightColor = remember { selectionColors.backgroundColor }
-                val topString = buildAnnotatedString {
-                    append(text)
-                    if (highlightedSpan != null)
-                        addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.topSpan.start, end = highlightedSpan.topSpan.end)
-
-                    val wordSpan = wordState.span
-                    if (wordSpan != null) {
-                        val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
-                        addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
-                    }
-                }
-
-                ClickableText(
-                    topString,
-                    style = newStyle,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .heightIn(0.dp, 120.dp)
-                        .verticalScroll(rememberScrollState(0)),
-                    onClick = onTopTextClick,
+                TopTextBar(
+                    languagesFrom,
+                    languagesTo,
+                    sourceLangIndex,
+                    detectedLanguageState,
+                    playIconState,
+                    onSourceLangChanged,
+                    onPlayButtonClick
                 )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(MaterialTheme.colors.primary)
-                        .fillMaxWidth()
-                ) {
+                BottomText(translation, highlightedSpanState, newStyle, onBottomTextClick)
 
-                    Text(text = "From:", Modifier.padding(horizontal = 8.dp))
-
-                    var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
-                    val displayText = if (sourcePos == 0 && detectedLanguageIndex != null)
-                        "Auto detect (${languagesTo.getOrNull(detectedLanguageIndex)})" else null
-                    Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
-                        onSourceLangChanged(index)
-                        sourcePos = index
-                    }
-                    Spacer(Modifier.weight(1f))
-
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colors.secondary,
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .size(24.dp)
-                        )
-                    } else {
-                        val iconRes = if(isTTSAvailable) {
-                            if (isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
-                        } else {
-                            R.drawable.baseline_volume_off_24
-                        }
-                        IconButton(onClick = onPlayButtonClick) {
-                            Icon(
-                                painter = painterResource(iconRes),
-                                contentDescription = stringResource(R.string.play_tts_icon_description),
-                            )
-                        }
-                    }
-                }
-
-                val annotatedString = buildAnnotatedString {
-                    append(translation)
-                    if (highlightedSpan != null)
-                        this.addStyle(style = SpanStyle(background = highlightColor), start = highlightedSpan.bottomSpan.start, end = highlightedSpan.bottomSpan.end)
-                }
-
-                ClickableText(
-                   annotatedString,
-                   style = newStyle,
-                   modifier = Modifier
-                       .padding(8.dp)
-                       .heightIn(0.dp, 120.dp)
-                       .verticalScroll(rememberScrollState()),
-                   onClick = onBottomTextClick
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(MaterialTheme.colors.primary)
-                        .fillMaxWidth()
-                ) {
-                    Text(text = "To:", Modifier.padding(horizontal = 8.dp))
-                    Spinner(languagesTo, targetLangIndex) { index, _ ->
-                        onTargetLangChanged(index)
-                    }
-                }
+                BottomTextBar(languagesTo, targetLangIndex, onTargetLangChanged)
             }
         }
 
@@ -310,6 +214,173 @@ fun SentenceDialog(
     }
 }
 
+@Composable
+fun WordRow(
+    wordState: MutableState<WordState>,
+    onBookmarkClicked: () -> Unit,
+    onMoreInfoClicked: () -> Unit
+) {
+    val word = wordState.value.word
+    if (word != null) {
+        Row(verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(word.definition, Modifier.padding(horizontal = 8.dp))
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onBookmarkClicked) {
+                val iconRes = if(wordState.value.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = stringResource(R.string.save_icon_description),
+                )
+            }
+            IconButton(onClick = onMoreInfoClicked) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_outline_info_24),
+                    contentDescription = stringResource(R.string.more_information),
+                )
+            }
+        }
+
+        Divider()
+    }
+}
+
+@Composable
+fun TopText(
+    text: String,
+    wordState: MutableState<WordState>,
+    highlightedSpanState: MutableState<SplitPageSpan?>,
+    textStyle: TextStyle,
+    onTopTextClick: (Int) -> Unit
+) {
+
+    val topString = buildAnnotatedString {
+        append(text)
+
+        val selectionColors = LocalTextSelectionColors.current
+        val highlightColor = remember { selectionColors.backgroundColor }
+        val highlightedSpan = highlightedSpanState.value
+        if (highlightedSpan != null)
+            addStyle(style = SpanStyle(background = highlightColor), highlightedSpan.topSpan.start, highlightedSpan.topSpan.end)
+
+        val wordSpan = wordState.value.span
+        if (wordSpan != null) {
+            val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
+            addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
+        }
+    }
+
+    ClickableText(
+        topString,
+        style = textStyle,
+        modifier = Modifier
+            .padding(8.dp)
+            .heightIn(0.dp, 120.dp)
+            .verticalScroll(rememberScrollState(0)),
+        onClick = onTopTextClick,
+    )
+}
+
+@Composable
+fun TopTextBar(
+    languagesFrom: StringList,
+    languagesTo: StringList,
+    sourceLangIndex: Int,
+    detectedLanguageState: MutableIntState,
+    playIconState: MutableState<PlayIconState>,
+    onSourceLangChanged: (Int) -> Unit,
+    onPlayButtonClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(MaterialTheme.colors.primary)
+            .fillMaxWidth()
+    ) {
+
+        Text(text = "From:", Modifier.padding(horizontal = 8.dp))
+
+        var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
+        val detectedLanguageIndex = detectedLanguageState.intValue
+        val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
+            "Auto detect (${languagesTo.items.getOrNull(detectedLanguageIndex)})" else null
+        Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+            onSourceLangChanged(index)
+            sourcePos = index
+        }
+        Spacer(Modifier.weight(1f))
+
+        PlayButton(playIconState, onPlayButtonClick)
+    }
+}
+
+@Composable
+fun BottomText(
+    translation: MutableState<String>,
+    highlightedSpanState: MutableState<SplitPageSpan?>,
+    textStyle: TextStyle,
+    onBottomTextClick: (Int) -> Unit
+) {
+    val annotatedString = buildAnnotatedString {
+        append(translation.value)
+        val highlightedSpan = highlightedSpanState.value
+        if (highlightedSpan != null)
+            this.addStyle(SpanStyle(background = LocalTextSelectionColors.current.backgroundColor), highlightedSpan.bottomSpan.start, highlightedSpan.bottomSpan.end)
+    }
+
+    ClickableText(
+        annotatedString,
+        style = textStyle,
+        modifier = Modifier
+            .padding(8.dp)
+            .heightIn(0.dp, 120.dp)
+            .verticalScroll(rememberScrollState()),
+        onClick = onBottomTextClick
+    )
+}
+
+@Composable
+fun BottomTextBar(languagesTo: StringList, langIndex: Int, onTargetLangChanged: (Int) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(MaterialTheme.colors.primary)
+            .fillMaxWidth()
+    ) {
+        Text(text = "To:", Modifier.padding(horizontal = 8.dp))
+        Spinner(languagesTo, langIndex) { index, _ ->
+            onTargetLangChanged(index)
+        }
+    }
+}
+
+@Composable
+fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: () -> Unit) {
+    val playIcon = playIconState.value
+
+    if (playIcon.isLoading) {
+        CircularProgressIndicator(
+            color = MaterialTheme.colors.secondary,
+            modifier = Modifier
+                .padding(8.dp)
+                .size(24.dp)
+        )
+    } else {
+        val iconRes = if(playIcon.isTTSAvailable) {
+            if (playIcon.isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
+        } else {
+            R.drawable.baseline_volume_off_24
+        }
+        IconButton(onClick = onPlayButtonClick) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = stringResource(R.string.play_tts_icon_description),
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun EditWordDialog(
@@ -318,8 +389,8 @@ fun EditWordDialog(
     language: String,
     translation: String,
     notes: String?,
-    languages: List<String>,
-    languagesISO: List<String>,
+    languages: StringList,
+    languagesISO: StringList,
     isSaved: Boolean = false,
     onSave: (Words) -> Unit = {},
     onDelete: () -> Unit = {},
@@ -328,7 +399,7 @@ fun EditWordDialog(
     if (!isShown) return
 
     var wordText by remember { mutableStateOf(word) }
-    val isoIndex = languagesISO.indexOf(language)
+    val isoIndex = languagesISO.items.indexOf(language)
     var indexLang by remember { mutableIntStateOf(isoIndex) }
     var translationText by remember { mutableStateOf(translation) }
     var notesText by remember { mutableStateOf(notes) }
@@ -355,7 +426,7 @@ fun EditWordDialog(
                 ) {
                     TextField(
                         readOnly = true,
-                        value = languages.getOrNull(indexLang) ?: "",
+                        value = languages.items.getOrNull(indexLang) ?: "",
                         onValueChange = { },
                         label = { Text(stringResource(R.string.language_edit_text)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -364,19 +435,17 @@ fun EditWordDialog(
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = {
-                            expanded = false
-                        }
+                        onDismissRequest = { expanded = false }
                     ) {
 
                         Box(modifier = Modifier.size(width = 300.dp, height = 600.dp)) {
                             LazyColumn {
-                                itemsIndexed(languages) { i, lang ->
+                                itemsIndexed(languages.items) { i, lang ->
                                     DropdownMenuItem(onClick = {
                                         indexLang = i
                                         expanded = false
                                     }){
-                                        Text(text = "$lang (${languagesISO[i]})")
+                                        Text(text = "$lang (${languagesISO.items[i]})")
                                     }
                                 }
                             }
@@ -412,7 +481,7 @@ fun EditWordDialog(
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
                     Button(onClick = {
-                        onSave(Words(wordText, languagesISO[indexLang], translationText).apply { this.notes = notesText })
+                        onSave(Words(wordText, languagesISO.items[indexLang], translationText).apply { this.notes = notesText })
                     }) {
                         Text(text = stringResource(android.R.string.ok))
                     }
@@ -427,12 +496,14 @@ fun EditWordDialog(
 @Composable
 fun ExternalLinksDialog(
     isShown: Boolean,
-    links: List<ExternalLink>,
+    links: ExternalLinkList,
     selection: Int,
     onItemClick: (Int) -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
     if(!isShown) return
+
+    var selected by remember { mutableIntStateOf(selection) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(modifier = Modifier
@@ -450,7 +521,8 @@ fun ExternalLinksDialog(
                         }
                     },
                     update = { webView ->
-                        webView.loadUrl(links[selection].link)
+                        val externalLink = links.items.getOrNull(selected)
+                        if (externalLink != null) webView.loadUrl(externalLink.link)
                     },
                     modifier = Modifier
                         .height(350.dp)
@@ -458,10 +530,13 @@ fun ExternalLinksDialog(
                 )
 
                 LazyRow {
-                    itemsIndexed(links) {index, link ->
-                        if (index == selection) {
+                    itemsIndexed(links.items) {index, link ->
+                        if (index == selected) {
                             Box(modifier = Modifier.width(IntrinsicSize.Max)) {
-                                TextButton(onClick = { onItemClick(index) }) {
+                                TextButton(onClick = {
+                                    selected = index
+                                    onItemClick(index)
+                                }) {
                                     Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                                 }
                                 Divider(
@@ -470,7 +545,10 @@ fun ExternalLinksDialog(
                                 )
                             }
                         } else {
-                            TextButton(onClick = { onItemClick(index) }) {
+                            TextButton(onClick = {
+                                selected = index
+                                onItemClick(index)
+                            }) {
                                 Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                             }
                         }
@@ -482,9 +560,15 @@ fun ExternalLinksDialog(
 }
 
 data class WordState(
-    val word: Words? = null,
+    val word: WordUI? = null,
     val isSaved: Boolean = false,
     val span: Span? = null,
+)
+
+data class PlayIconState(
+    val isPlaying: Boolean = false,
+    val isLoading: Boolean = false,
+    val isTTSAvailable: Boolean = true,
 )
 
 enum class SwipeDirection(val state: Int) {
@@ -493,13 +577,22 @@ enum class SwipeDirection(val state: Int) {
     Left(2),
 }
 
-private val languages = listOf("Auto detect", "English", "Spanish", "German")
+private val languages = StringList(listOf("Auto detect", "English", "Spanish", "German"))
 
 @Preview
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
-        SentenceDialog(true, text, text, languages, languages, targetLangIndex = 1, sourceLangIndex = 0, detectedLanguageIndex = 3)
+        SentenceDialog(
+            true,
+            text,
+            remember { mutableStateOf(text) },
+            languages,
+            languages,
+            targetLangIndex = 1,
+            sourceLangIndex = 0,
+            detectedLanguageState = remember { mutableIntStateOf(3) }
+        )
     }
 }
 
@@ -510,13 +603,13 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
         SentenceDialog(
             true,
             text,
-            text,
+            remember { mutableStateOf(text) },
             languages,
             languages,
             targetLangIndex = 1,
             sourceLangIndex = 0,
-            detectedLanguageIndex = 3,
-            wordState = WordState(Words("Original", "en",  "Translation"), true, Span(6, 11))
+            detectedLanguageState = remember { mutableIntStateOf(3) },
+            wordState = remember { mutableStateOf(WordState(WordUI("Original", "en",  "Translation"), true, Span(6, 11))) }
         )
     }
 }
@@ -525,7 +618,16 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
 @Composable
 fun EditWordDialogPreview() {
     AppTheme {
-        EditWordDialog(true, "Hola", "es", "Hello", "Spanish greeting", listOf("English", "Spanish", "German"), listOf("en", "es", "de"), true)
+        EditWordDialog(
+            true,
+            "Hola",
+            "es",
+            "Hello",
+            "Spanish greeting",
+            StringList(listOf("English", "Spanish", "German")),
+            StringList(listOf("en", "es", "de")),
+            true
+        )
     }
 }
 
@@ -533,6 +635,7 @@ fun EditWordDialogPreview() {
 @Composable
 fun ExternalLinksDialogPreview() {
     AppTheme {
-        ExternalLinksDialog(true, List(4) { ExternalLink("External site", "", "") }, 1)
+        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site", "", "") })
+        ExternalLinksDialog(true, links, 1)
     }
 }
