@@ -1,3 +1,7 @@
+plugins {
+    id 'com.google.devtools.ksp'
+}
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
@@ -53,7 +57,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion '1.4.1'
+        kotlinCompilerExtensionVersion '1.5.12'
     }
 
     namespace 'com.guillermonegrete.tts'
@@ -76,6 +80,10 @@ kapt {
     generateStubs = true
     // Required by hilt: https://dagger.dev/hilt/gradle-setup
     correctErrorTypes = true
+}
+
+ksp {
+    arg('room.schemaLocation', "$projectDir/schemas")
 }
 
 dependencies {
@@ -136,11 +144,11 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics:17.2.2'
 
     // Room
-    def room_version = "2.5.1"
+    def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
-    kapt "androidx.room:room-compiler:$room_version"
+    ksp "androidx.room:room-compiler:$room_version"
     androidTestImplementation "androidx.room:room-testing:$room_version"
 
     // Retrofit
@@ -170,7 +178,7 @@ dependencies {
     androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
 
     // Navigation component
-    def nav_version = "2.5.3"
+    def nav_version = "2.7.7"
     // Java language implementation
     implementation "androidx.navigation:navigation-fragment:$nav_version"
     implementation "androidx.navigation:navigation-ui:$nav_version"
@@ -185,7 +193,7 @@ dependencies {
     debugImplementation 'com.github.amitshekhariitbhu.Android-Debug-Database:debug-db:v1.0.6'
 
     // Dagger 2
-    def dagger_version = "2.44.2"
+    def dagger_version = "2.50"
     implementation "com.google.dagger:dagger:$dagger_version"
     kapt "com.google.dagger:dagger-compiler:$dagger_version"
 
