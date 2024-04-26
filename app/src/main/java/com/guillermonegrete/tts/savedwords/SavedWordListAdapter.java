@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.savedwords;
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.appcompat.view.ActionMode;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -17,9 +18,9 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.TextView;
 
+import com.google.android.material.color.MaterialColors;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.db.Words;
-import com.guillermonegrete.tts.utils.ColorUtilsKt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,9 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
 
     private final Listener listener;
 
+    @ColorInt private int defaultBGColor = 0;
+    @ColorInt private int activeItemColor = 0;
+
     SavedWordListAdapter(Listener listener){
         this.listener = listener;
     }
@@ -41,6 +45,13 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     void setWordsList(@NonNull List<Words> wordsList){
         this.wordsList = wordsList;
         filteredWords = wordsList;
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        defaultBGColor = MaterialColors.getColor(recyclerView.getContext(), com.google.android.material.R.attr.colorSurface, Color.TRANSPARENT);
+        activeItemColor = MaterialColors.getColor(recyclerView.getContext(), com.google.android.material.R.attr.colorControlActivated, Color.LTGRAY);
     }
 
     @NonNull
@@ -138,14 +149,14 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     }
 
     // TODO Implement View Binding
-    class WordsViewHolder extends RecyclerView.ViewHolder{
+    public class WordsViewHolder extends RecyclerView.ViewHolder{
         private final TextView wordText;
         private final TextView languageText;
         private final TextView translationText;
         private final TextView notesText;
         private final ConstraintLayout container;
         private Words word;
-        private final int color;
+        private final int variantBGColor;
 
         WordsViewHolder(View itemView){
             super(itemView);
@@ -163,15 +174,14 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             });
 
             itemView.setOnClickListener(view -> selectItem(word));
-            color = itemView.getResources().getColor(R.color.list_bg_variant);
+            variantBGColor = itemView.getResources().getColor(R.color.list_bg_variant);
         }
 
         void update(){
             if (selectedItems.contains(word)) {
-                container.setBackgroundColor(Color.LTGRAY);
+                container.setBackgroundColor(activeItemColor);
             } else {
-                int defaultBGColor = ColorUtilsKt.getThemeColor(itemView.getContext(), R.attr.colorSurface);
-                container.setBackgroundColor(getAdapterPosition() % 2 == 1 ? defaultBGColor : color);
+                container.setBackgroundColor(getAdapterPosition() % 2 == 1 ? defaultBGColor : variantBGColor);
             }
         }
 
@@ -192,11 +202,10 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             if (multiSelect) {
                 if (selectedItems.contains(item)) {
                     selectedItems.remove(item);
-                    int defaultBGColor = ColorUtilsKt.getThemeColor(itemView.getContext(), R.attr.colorSurface);
-                    container.setBackgroundColor(defaultBGColor);
+                    container.setBackgroundColor(getAdapterPosition() % 2 == 1 ? defaultBGColor : variantBGColor);
                 } else {
                     selectedItems.add(item);
-                    container.setBackgroundColor(Color.LTGRAY);
+                    container.setBackgroundColor(activeItemColor);
                 }
             } else {
                 listener.showTextInfoDialog(wordText.getText().toString(), word);
