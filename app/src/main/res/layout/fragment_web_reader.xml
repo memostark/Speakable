@@ -29,21 +29,17 @@
         <LinearLayout
             android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
-            android:layout_height="350dp"
+            android:layout_height="360dp"
             android:orientation="vertical"
             android:elevation="2dp"
-            android:background="?colorSurface"
+            android:background="@drawable/browser_tab_background"
             app:behavior_hideable="true"
             app:behavior_skipCollapsed="true"
             app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="?colorOnSurface"/>
-
             <com.google.android.material.bottomsheet.BottomSheetDragHandleView
-                android:id="@+id/handlebar"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="40dp"/>
 
             <WebView
                 android:id="@+id/info_webview"
