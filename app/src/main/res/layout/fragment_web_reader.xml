@@ -29,35 +29,29 @@
         <LinearLayout
             android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
-            android:layout_height="350dp"
+            android:layout_height="360dp"
             android:orientation="vertical"
             android:elevation="2dp"
+            android:background="@drawable/browser_tab_background"
             app:behavior_hideable="true"
             app:behavior_skipCollapsed="true"
             app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
-            <TextView
+            <com.google.android.material.bottomsheet.BottomSheetDragHandleView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/browser_tab_background"
-                android:paddingVertical="4dp"
-                android:gravity="center"
-                android:text="@string/swipe_to_hide"
-                android:textColor="#212121" />
+                android:layout_height="40dp"/>
 
             <WebView
                 android:id="@+id/info_webview"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@android:color/darker_gray"/>
+                android:layout_weight="1" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/links_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:background="?colorSurface"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/external_link_flat_item"/>
 
