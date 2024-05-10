@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.WebLink
 
 /**
@@ -14,12 +15,20 @@ import com.guillermonegrete.tts.db.WebLink
  */
 @Entity(
     tableName = "notes",
-    foreignKeys = [ForeignKey(
-        onDelete = CASCADE,
-        entity = WebLink::class,
-        parentColumns = ["id"],
-        childColumns = ["file_id"]
-    )]
+    foreignKeys = [
+        ForeignKey(
+            onDelete = CASCADE,
+            entity = WebLink::class,
+            parentColumns = ["id"],
+            childColumns = ["file_id"]
+        ),
+        ForeignKey(
+            onDelete = CASCADE,
+            entity = BookFile::class,
+            parentColumns = ["bookFileId"],
+            childColumns = ["book_id"]
+        )
+    ]
 )
 data class Note(
     val text: String,
@@ -35,7 +44,9 @@ data class Note(
     val length: Int,
     var color: String,
     @ColumnInfo(name = "file_id")
-    val fileId: Int,
+    val linkId: Int? = null,
+    @ColumnInfo(name = "book_id")
+    val bookId: Int? = null,
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0
 )
