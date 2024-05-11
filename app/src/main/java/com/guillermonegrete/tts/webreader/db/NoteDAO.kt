@@ -14,10 +14,10 @@ interface NoteDAO {
     @Delete
     suspend fun delete(note: Note)
 
-    @Query("DELETE FROM notes WHERE file_id = :id")
-    suspend fun deleteByFileId(id: Int)
+    @Query("DELETE FROM notes WHERE link_id = :id")
+    suspend fun deleteByLinkId(id: Int)
 
-    @Query("SELECT * FROM notes WHERE file_id = :fileId")
+    @Query("SELECT * FROM notes WHERE link_id = :fileId")
     suspend fun getNotes(fileId: Int): List<Note>
 
 }

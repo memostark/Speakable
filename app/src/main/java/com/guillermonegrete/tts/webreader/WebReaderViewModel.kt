@@ -403,7 +403,7 @@ class WebReaderViewModel @Inject constructor(
 
         viewModelScope.launch {
             webLinkDAO.update(link)
-            noteDAO.deleteByFileId(link.id)
+            noteDAO.deleteByLinkId(link.id)
             loadPageFromWeb()
         }
     }

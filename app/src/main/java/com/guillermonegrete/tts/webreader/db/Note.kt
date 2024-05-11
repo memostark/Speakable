@@ -20,7 +20,7 @@ import com.guillermonegrete.tts.db.WebLink
             onDelete = CASCADE,
             entity = WebLink::class,
             parentColumns = ["id"],
-            childColumns = ["file_id"]
+            childColumns = ["link_id"]
         ),
         ForeignKey(
             onDelete = CASCADE,
@@ -43,7 +43,7 @@ data class Note(
      */
     val length: Int,
     var color: String,
-    @ColumnInfo(name = "file_id")
+    @ColumnInfo(name = "link_id")
     val linkId: Int? = null,
     @ColumnInfo(name = "book_id")
     val bookId: Int? = null,
@@ -55,7 +55,7 @@ data class LinkWithNotes(
     @Embedded val webLink: WebLink,
     @Relation(
         parentColumn = "id",
-        entityColumn = "file_id"
+        entityColumn = "link_id"
     )
     val notes: List<Note>
 )

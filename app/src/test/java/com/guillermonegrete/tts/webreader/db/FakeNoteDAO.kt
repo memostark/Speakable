@@ -19,7 +19,7 @@ class FakeNoteDAO: NoteDAO {
         notes.removeIf { it.id == note.id }
     }
 
-    override suspend fun deleteByFileId(id: Int) {
+    override suspend fun deleteByLinkId(id: Int) {
         notes.removeIf { it.linkId == id }
     }
 
