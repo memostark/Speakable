@@ -401,7 +401,7 @@ class VisualizeTextViewModel @Inject constructor(
      * Returns the character position of the first element of the current page.
      * For example, the third page ranges from 20 to 35, it returns 20.
      */
-    private fun getCharPos(): Int {
+    fun getCharPos(): Int {
         var sum = 0
         for (i in 0 until currentPage){
             sum += currentPages[i].length

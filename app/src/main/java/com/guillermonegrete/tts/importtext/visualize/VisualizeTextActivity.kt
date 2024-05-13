@@ -15,6 +15,10 @@ import androidx.activity.viewModels
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -34,8 +38,10 @@ import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
+import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.getScreenSizes
+import com.guillermonegrete.tts.webreader.AddNoteDialog
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
@@ -60,6 +66,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     @Inject lateinit var preferences: SharedPreferences
     @Inject lateinit var brightnessTheme: BrightnessTheme
     @StyleRes private var themeRes = R.style.AppMaterialTheme_Black
+
+    private val addNoteDialogVisible = mutableStateOf(false)
 
     private var splitterCreated = true
 
@@ -105,7 +113,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf(""),
-            {}, true) // Empty callback, not necessary at the moment
+            {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
 
         viewPager.post{
             addPagerCallback()
@@ -116,8 +124,29 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         scaleDetector = ScaleGestureDetector(this, PinchListener(binding.textReaderCardView))
 
+        setupCompose()
         setUIChangesListener()
         setUpSeekBar()
+    }
+
+    private fun setupCompose() {
+        binding.composeRoot.apply {
+            setContent {
+                AppTheme {
+
+                    var addNoteVisible by remember { addNoteDialogVisible }
+                    AddNoteDialog(
+                        addNoteVisible,
+                        "",
+                        0,
+                        false,
+                        onDismiss = { addNoteVisible = false },
+                        onDelete = { addNoteVisible = false },
+                        onSaveClicked = { addNoteVisible = false },
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -341,7 +370,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
-        pagesAdapter = VisualizerAdapter(pages, { showTextDialog(it) })
+        pagesAdapter = VisualizerAdapter(
+            pages,
+            { showTextDialog(it) },
+            { addNoteDialogVisible.value = true },
+            { viewModel.getCharPos() }
+        )
         pagesAdapter.hasBottomSheet = viewModel.hasBottomSheet
         pagesAdapter.isPageSplit = viewModel.isSheetExpanded
         viewPager.adapter = pagesAdapter

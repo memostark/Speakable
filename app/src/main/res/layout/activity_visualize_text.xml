@@ -189,4 +189,9 @@
         app:layout_constraintStart_toEndOf="@+id/brightness_settings_btn"
         app:layout_constraintTop_toTopOf="@+id/reader_current_page" />
 
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

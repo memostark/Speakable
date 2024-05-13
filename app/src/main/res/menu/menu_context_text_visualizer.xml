@@ -5,6 +5,11 @@
     <item
         android:id="@+id/show_process_text_activity"
         android:title="@string/translate_description"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/add_new_note_action"
+        android:title="@string/new_note"
+        app:showAsAction="ifRoom" />
 
 </menu>

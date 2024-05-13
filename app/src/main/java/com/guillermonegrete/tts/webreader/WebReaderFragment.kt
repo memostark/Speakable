@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.StringList
+import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
@@ -67,7 +68,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     /**
      * Contains information used to update/create/delete a note.
      */
-    private var noteInfo: ParagraphAdapter.EditNote? = null
+    private var noteInfo: EditNote? = null
 
     private var appBarSize = 0
 
@@ -138,7 +139,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 sheet.translatedText.text = note.text
                                 sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
                             }
-                            noteInfo = ParagraphAdapter.EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
+                            noteInfo = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
                         } else {
                             // If sheet not visible note was added using the selected text menu, no UI to update
                             noteInfo = null
@@ -452,7 +453,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                             val span = paragraphAdapter.getSelectedWordSpan() ?: paragraphAdapter.getHighlightedTextSpan()
                             if(span != null) {
-                                noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, false, 0)
+                                noteInfo = EditNote(word.word, word.definition, span, 0, false, 0)
                             }
                         }
 
@@ -504,7 +505,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         if (paragraphAdapter != null) {
                             addWordNoteBtn.isGone = !paragraphAdapter.isPageSaved
                             val span = paragraphAdapter.getSelectedWordSpan()
-                            if(span != null) noteInfo = ParagraphAdapter.EditNote(word.word, word.definition, span, 0, false, 0)
+                            if(span != null) noteInfo = EditNote(word.word, word.definition, span, 0, false, 0)
                         }
 
                         addWordNoteBtn.setOnClickListener {
@@ -564,7 +565,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun showSheetWithNote(paragraphAdapter: ParagraphAdapter, note: ParagraphAdapter.EditNote) {
+    private fun showSheetWithNote(paragraphAdapter: ParagraphAdapter, note: EditNote) {
         with(binding.transSheet) {
             val text = note.text
             val isWord = text.split(" ").size == 1

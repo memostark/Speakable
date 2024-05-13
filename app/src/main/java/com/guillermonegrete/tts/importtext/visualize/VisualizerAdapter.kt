@@ -9,14 +9,18 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.utils.dpToPixel
+import com.guillermonegrete.tts.utils.getSelectedText
 import java.text.BreakIterator
 import java.util.*
 
 class VisualizerAdapter(
     private val pages: List<CharSequence>,
     private val showTextDialog: (CharSequence) -> Unit,
+    private val onCreateNote: (EditNote) -> Unit,
+    private val getPageCharPos: () -> Int = {0},
     private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -167,13 +171,13 @@ class VisualizerAdapter(
 
     }
 
-    class PageActionModeCallback(
+    inner class PageActionModeCallback(
         private val pageTextView: TextView,
         private val showTextDialog: (CharSequence) -> Unit
     ): ActionMode.Callback{
 
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-            when(item.itemId){
+            return when(item.itemId){
                 R.id.show_process_text_activity -> {
                     if (pageTextView.isFocused) {
                         val selStart = pageTextView.selectionStart
@@ -188,9 +192,17 @@ class VisualizerAdapter(
                     }
 
                     mode.finish()
-                    return true
+                    true
                 }
-                else -> return false
+                R.id.add_new_note_action -> {
+                    val firstCharIndex = getPageCharPos()
+                    val span = Span(firstCharIndex + pageTextView.selectionStart, firstCharIndex + pageTextView.selectionEnd)
+                    val text = pageTextView.getSelectedText().toString()
+                    onCreateNote(EditNote(text, "", span, 0, false, 0))
+                    mode.finish()
+                    true
+                }
+                else -> false
             }
         }
 
