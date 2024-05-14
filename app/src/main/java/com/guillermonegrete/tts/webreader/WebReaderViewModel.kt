@@ -416,7 +416,7 @@ class WebReaderViewModel @Inject constructor(
                 val resultId = noteDAO.upsert(newNote)
                 // Upsert returns -1 when the operation was an update, use the parameter ID.
                 val finalId = if(resultId == -1L) id else resultId
-                val result = ModifiedNote.Update(Note(noteText, text, newNote.position, newNote.length, color, webLink.id, null, finalId))
+                val result = ModifiedNote.Update(newNote.copy(id = finalId))
                 _updatedNote.value = result
             }
         }

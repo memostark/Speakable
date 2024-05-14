@@ -15,6 +15,10 @@ import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
+import com.guillermonegrete.tts.webreader.AddNoteResult
+import com.guillermonegrete.tts.webreader.db.Note
+import com.guillermonegrete.tts.webreader.db.NoteDAO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import timber.log.Timber
@@ -27,6 +31,7 @@ class VisualizeTextViewModel @Inject constructor(
     private val epubParser: EpubParser,
     private val settings: SettingsRepository,
     private val fileRepository: FileRepository,
+    private val noteDAO: NoteDAO,
     private val getTranslationInteractor: GetLangAndTranslation,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
@@ -427,6 +432,20 @@ class VisualizeTextViewModel @Inject constructor(
         }
 
         return null
+    }
+
+    fun saveNote(newNote: AddNoteResult, originalText: String, position: Int, length: Int) {
+        val bookId = databaseBookFile?.id ?: return
+
+        viewModelScope.launch {
+            wrapEspressoIdlingResource {
+                val chapter = currentChapter
+                // java int is 32 bits
+                val chapterAndPage = (chapter shl 24) or (position and 0x00ffffff)
+                val newDbNote = Note(newNote.text, originalText, chapterAndPage, length, newNote.colorHex, null, bookId, 0)
+                noteDAO.upsert(newDbNote)
+            }
+        }
     }
 
 }

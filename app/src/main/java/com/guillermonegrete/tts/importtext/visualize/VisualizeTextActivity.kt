@@ -33,6 +33,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
@@ -68,6 +69,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     @StyleRes private var themeRes = R.style.AppMaterialTheme_Black
 
     private val addNoteDialogVisible = mutableStateOf(false)
+
+    private var noteInfo: EditNote? = null
 
     private var splitterCreated = true
 
@@ -140,9 +143,16 @@ class VisualizeTextActivity: AppCompatActivity() {
                         "",
                         0,
                         false,
-                        onDismiss = { addNoteVisible = false },
+                        onDismiss = {
+                            noteInfo = null
+                            addNoteVisible = false
+                        },
                         onDelete = { addNoteVisible = false },
-                        onSaveClicked = { addNoteVisible = false },
+                        onSaveClicked = {
+                            val noteItem = noteInfo ?: return@AddNoteDialog
+                            viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start)
+                            addNoteVisible = false
+                        },
                     )
                 }
             }
@@ -373,7 +383,10 @@ class VisualizeTextActivity: AppCompatActivity() {
         pagesAdapter = VisualizerAdapter(
             pages,
             { showTextDialog(it) },
-            { addNoteDialogVisible.value = true },
+            {
+                noteInfo = it
+                addNoteDialogVisible.value = true
+            },
             { viewModel.getCharPos() }
         )
         pagesAdapter.hasBottomSheet = viewModel.hasBottomSheet
