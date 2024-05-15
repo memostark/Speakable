@@ -17,6 +17,7 @@ import com.guillermonegrete.tts.importtext.epub.*
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.threading.TestMainThread
+import com.guillermonegrete.tts.webreader.db.FakeNoteDAO
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -50,6 +51,7 @@ class VisualizeTextViewModelTest {
     @Mock private lateinit var fileReader: DefaultZipFileReader
     private lateinit var fileRepository: FakeFileRepository
     private lateinit var wordRepository: FakeWordRepository
+    private lateinit var notesDAO: FakeNoteDAO
     private lateinit var settingsRepository: FakeSettingsRepository
 
     @Mock private lateinit var pageSplitter: PageSplitter
@@ -68,11 +70,12 @@ class VisualizeTextViewModelTest {
 
         fileRepository = FakeFileRepository()
         wordRepository = FakeWordRepository()
+        notesDAO = FakeNoteDAO()
         settingsRepository = FakeSettingsRepository()
 
         val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
 
-        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, getTranslationInteractor, mainCoroutineRule.dispatcher)
+        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, notesDAO, getTranslationInteractor, mainCoroutineRule.dispatcher)
         viewModel.pageSplitter = pageSplitter
         viewModel.fileReader = fileReader
 
@@ -109,8 +112,8 @@ class VisualizeTextViewModelTest {
 
         parse_book(DEFAULT_BOOK)
 
-        val resultPages = getUnitLiveDataValue(viewModel.pages).getContentIfNotHandled()
-        assertEquals(pages, resultPages)
+        val chapter = getUnitLiveDataValue(viewModel.bookChapter).getContentIfNotHandled()
+        assertEquals(pages, chapter?.pages)
         assertEquals(2, viewModel.pagesSize)
         assertEquals(5, viewModel.spineSize)
     }
@@ -124,10 +127,10 @@ class VisualizeTextViewModelTest {
 
         verify(pageSplitter).setText(DEFAULT_CHAPTER)
 
-        val resultPages = getUnitLiveDataValue(viewModel.pages).getContentIfNotHandled()
+        val resultChapter = getUnitLiveDataValue(viewModel.bookChapter).getContentIfNotHandled()
         // If it has only one page, then returns two pages (swipe doesn't work with 1 page)
         val expectedPages = listOf("This shouldn't be here", "")
-        assertEquals(expectedPages, resultPages)
+        assertEquals(expectedPages, resultChapter?.pages)
     }
 
     @Test(expected = TimeoutException::class)
@@ -136,7 +139,7 @@ class VisualizeTextViewModelTest {
 
         viewModel.parseEpub()
 
-        viewModel.pages.getOrAwaitValue() // error because value is not set
+        viewModel.bookChapter.getOrAwaitValue() // error because value is not set
     }
 
     @Test
@@ -509,8 +512,8 @@ class VisualizeTextViewModelTest {
         viewModel.parseSimpleText(twelveChars)
         advanceUntilIdle()
 
-        val resultPages = viewModel.pages.getOrAwaitValue().getContentIfNotHandled()
-        assertEquals(chunked, resultPages)
+        val resultChapter = viewModel.bookChapter.getOrAwaitValue().getContentIfNotHandled()
+        assertEquals(chunked, resultChapter?.pages)
     }
 
     @Test

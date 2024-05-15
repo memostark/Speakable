@@ -326,9 +326,9 @@ class VisualizeTextActivity: AppCompatActivity() {
                 binding.visualizerProgressBar.isVisible = it
             }
 
-            pages.observe(this@VisualizeTextActivity, EventObserver {
+            bookChapter.observe(this@VisualizeTextActivity, EventObserver { chapterInfo ->
                 updateCurrentChapterLabel()
-                setUpPagerAndIndexLabel(it)
+                setUpPagerAndIndexLabel(chapterInfo.pages)
             })
 
             book.observe(this@VisualizeTextActivity) {

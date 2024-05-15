@@ -13,6 +13,7 @@ import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
@@ -66,13 +67,13 @@ class VisualizeTextViewModel @Inject constructor(
         get() = _book
 
     private var currentPages = listOf<CharSequence>()
-    private val _pages = MutableLiveData<Event<List<CharSequence>>>()
+    private val _bookChapter = MutableLiveData<Event<BookChapter>>()
     /**
      * Called every time pages have been processed, called when visualizer starts and
      * when switching between chapters.
      */
-    val pages: LiveData<Event<List<CharSequence>>>
-        get() = _pages
+    val bookChapter: LiveData<Event<BookChapter>>
+        get() = _bookChapter
 
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
@@ -304,7 +305,14 @@ class VisualizeTextViewModel @Inject constructor(
         currentPages = mutablePages
         _translatedPages = arrayOfNulls<Translation>(pagesSize).toMutableList()
 
-        _pages.value = Event(mutablePages)
+        var notes = emptyList<Note>()
+        databaseBookFile?.let { book ->
+
+            // Shift left 24 because the chapter is encoded in the last 8 bits of a 32 bit int.
+            val start = currentChapter shl 24
+            notes = noteDAO.getFileNotes(book.id, start)
+        }
+        _bookChapter.value = Event(BookChapter(mutablePages, notes))
     }
 
     /**

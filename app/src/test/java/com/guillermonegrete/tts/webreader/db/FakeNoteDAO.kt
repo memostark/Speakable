@@ -23,7 +23,11 @@ class FakeNoteDAO: NoteDAO {
         notes.removeIf { it.linkId == id }
     }
 
-    override suspend fun getNotes(fileId: Int): List<Note> {
+    override suspend fun getNotes(linkId: Int): List<Note> {
+        return emptyList()
+    }
+
+    override suspend fun getFileNotes(bookId: Int, chapterIndex: Int): List<Note> {
         return emptyList()
     }
 }
