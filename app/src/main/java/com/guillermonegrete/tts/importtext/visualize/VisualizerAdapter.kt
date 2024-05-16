@@ -10,14 +10,18 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
+import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
+import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
+import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.getSelectedText
 import java.text.BreakIterator
 import java.util.*
 
 class VisualizerAdapter(
-    private val pages: List<CharSequence>,
+    private val pages: List<PageItem>,
     private val showTextDialog: (CharSequence) -> Unit,
     private val onCreateNote: (EditNote) -> Unit,
     private val getPageCharPos: () -> Int = {0},
@@ -40,10 +44,13 @@ class VisualizerAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val layout = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
+        val inflater = LayoutInflater.from(parent.context)
         return when(viewType){
-            R.layout.visualizer_split_page_item -> SplitPageViewHolder(layout)
-            else -> if(measuringPage) ViewHolder(layout) else PageViewHolder(layout)
+            R.layout.visualizer_split_page_item -> SplitPageViewHolder(VisualizerSplitPageItemBinding.inflate(inflater, parent, false))
+            else -> {
+                if (measuringPage) ViewHolder(inflater.inflate(viewType, parent, false))
+                else PageViewHolder(VisualizerPageItemBinding.inflate(inflater, parent, false))
+            }
         }
     }
 
@@ -52,7 +59,7 @@ class VisualizerAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when(holder){
             is PageViewHolder -> holder.bind(pages[position])
-            is SplitPageViewHolder -> holder.bind(pages[position])
+            is SplitPageViewHolder -> holder.bind(pages[position].text)
         }
     }
 
@@ -133,15 +140,19 @@ class VisualizerAdapter(
 
     }
 
-    inner class PageViewHolder(view: View): ViewHolder(view){
+    inner class PageViewHolder(private val binding: VisualizerPageItemBinding): ViewHolder(binding.root){
 
-        fun bind(text: CharSequence){
-            setPageText(text)
+        fun bind(pageItem: PageItem){
+            setPageText(pageItem.text)
+
+            pageItem.notes.forEach {
+                val span = it.span
+                binding.pageTextView.addHighlightedText(span.start, span.end, it.color)
+            }
         }
     }
 
-    inner class SplitPageViewHolder(view: View): ViewHolder(view){
-        private val bottomText: View = view.findViewById(R.id.page_bottom_text_view)
+    inner class SplitPageViewHolder(private val binding: VisualizerSplitPageItemBinding): ViewHolder(binding.root){
 
         private val hiddenParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, pageMarginsSize, 0f)
         private val halfShownParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 0.5f).apply {
@@ -155,7 +166,7 @@ class VisualizerAdapter(
         }
 
         fun updateLayoutParams(splitPage: Boolean){
-            bottomText.layoutParams = if(splitPage) halfShownParams else hiddenParams
+            binding.pageBottomTextView.layoutParams = if(splitPage) halfShownParams else hiddenParams
             pageTextView.setLineSpacing(if(splitPage) 0f else lineSpacingExtra, 1f)
         }
 
@@ -218,4 +229,9 @@ class VisualizerAdapter(
 
         override fun onDestroyActionMode(mode: ActionMode?) {}
     }
+
+    data class PageItem(
+        val text: CharSequence,
+        val notes: List<NoteItem>,
+    )
 }

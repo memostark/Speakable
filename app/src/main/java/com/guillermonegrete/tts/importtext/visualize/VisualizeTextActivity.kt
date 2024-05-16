@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.importtext.visualize
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -34,8 +35,11 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
+import com.guillermonegrete.tts.common.models.NoteItem
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
@@ -115,7 +119,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
-        viewPager.adapter = VisualizerAdapter(listOf(""),
+        viewPager.adapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem("", emptyList())),
             {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
 
         viewPager.post{
@@ -328,7 +332,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             bookChapter.observe(this@VisualizeTextActivity, EventObserver { chapterInfo ->
                 updateCurrentChapterLabel()
-                setUpPagerAndIndexLabel(chapterInfo.pages)
+                setUpPagerAndIndexLabel(chapterInfo)
             })
 
             book.observe(this@VisualizeTextActivity) {
@@ -379,9 +383,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
     }
 
-    private fun setUpPagerAndIndexLabel(pages: List<CharSequence>){
+    private fun setUpPagerAndIndexLabel(chapter: BookChapter){
         pagesAdapter = VisualizerAdapter(
-            pages,
+            createPageItems(chapter),
             { showTextDialog(it) },
             {
                 noteInfo = it
@@ -393,6 +397,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         pagesAdapter.isPageSplit = viewModel.isSheetExpanded
         viewPager.adapter = pagesAdapter
 
+        val pages = chapter.pages
         val position = viewModel.getPage()
         binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
         viewPager.setCurrentItem(position, false)
@@ -404,6 +409,32 @@ class VisualizeTextActivity: AppCompatActivity() {
         // Restore UI state in case of config change
         binding.visualizerBottomSheet.isVisible = viewModel.hasBottomSheet
         setFullBottomSheet(viewModel.isSheetExpanded)
+    }
+
+    private fun createPageItems(chapter: BookChapter): List<VisualizerAdapter.PageItem> {
+        var index = 0
+        val paragraphItems = mutableListOf<VisualizerAdapter.PageItem>()
+        val dbNotes = chapter.notes.toMutableList()
+
+        chapter.pages.forEach { page ->
+            val nextIndex = index + page.length
+            // Search the notes applied to this paragraph
+            val paragraphNotes = dbNotes.filter { dbNote ->
+                // The actual position is in the first 24 bits of a 32 bit int
+                (dbNote.position and 0xFFFFFF) in index until nextIndex
+            }.map { it.copy(position = it.position and 0xFFFFFF) }
+
+            val noteItems = paragraphNotes.map { note ->
+                val itemStart = note.position - index
+                NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
+            }
+
+            paragraphItems.add(VisualizerAdapter.PageItem(page, noteItems))
+            index = nextIndex
+            dbNotes.removeAll(paragraphNotes)
+        }
+
+        return paragraphItems
     }
 
     private fun showSettingsPopUp(view: View) {

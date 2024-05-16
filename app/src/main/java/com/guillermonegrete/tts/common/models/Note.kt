@@ -10,3 +10,10 @@ data class EditNote(
     val noteSaved: Boolean,
     val id: Long
 )
+
+data class NoteItem(
+    val text: String,
+    val span: Span,
+    @ColorInt val color: Int,
+    val id: Long
+)

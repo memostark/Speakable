@@ -27,6 +27,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.EditNote
+import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
@@ -272,7 +273,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 val noteItems = paragraphNotes.map { note ->
                     val itemStart = note.position - index
-                    ParagraphAdapter.NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
+                    NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
                 }
 
                 paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
