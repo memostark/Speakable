@@ -26,6 +26,8 @@ import android.os.Build;
 import android.os.IBinder;
 import android.text.method.ScrollingMovementMethod;
 import android.widget.*;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.view.ContextThemeWrapper;
@@ -118,6 +120,8 @@ public class ScreenTextService extends Service {
      * This type of service listens to clipboard events, no layout added.
      */
     public static final String NO_FLOATING_ICON_SERVICE = "startNoFloatingIcon";
+    public static final String PLAY_TTS_ACTION = "ss_permission_for_play_tts";
+    public static final String TRANSLATE_ACTION = "ss_permission_for_translation";
 
     private Point screenSize;
     private ScreenInfo screenSizes;
@@ -443,8 +447,22 @@ public class ScreenTextService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if(intent!=null) {
+        if (intent != null) {
             String action = intent.getAction();
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // For API 34+, handle the action after receiving the permission intent for recording
+                if(PLAY_TTS_ACTION.equals(action)) {
+                    var screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, intent);
+                    viewModel.onPlayClick(screenImageCaptor, binding.snipView.getSnipRectangle());
+                    return super.onStartCommand(intent, flags, startId);
+                } else if(TRANSLATE_ACTION.equals(action)) {
+                    var screenImageCaptor = new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, intent);
+                    viewModel.onTranslateClick(screenImageCaptor, binding.snipView.getSnipRectangle());
+                    return super.onStartCommand(intent, flags, startId);
+                }
+            }
+
             int pendingFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
             var notificationIntent = new Intent(this, ScreenTextService.class);
             notificationIntent.setAction(action);
@@ -625,19 +643,28 @@ public class ScreenTextService extends Service {
             });
 
             var snipView = binding.snipView;
-            binding.playIconButton.setOnClickListener(view ->
+            // Since Android 14 (API 34) we need to ask for permission every time we record the screen
+            binding.playIconButton.setOnClickListener(view -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    getScreenCaptureIntent(PLAY_TTS_ACTION);
+                } else {
                     viewModel.onPlayClick(
                             new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
                             snipView.getSnipRectangle()
-                    )
-            );
+                    );
+                }
+            });
 
-            binding.translateIconButton.setOnClickListener(v ->
+            binding.translateIconButton.setOnClickListener(v -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    getScreenCaptureIntent(TRANSLATE_ACTION);
+                } else {
                     viewModel.onTranslateClick(
                             new ScreenImageCaptor(mMediaProjectionManager, mMetrics, screenSize, resultCode, permissionIntent),
                             snipView.getSnipRectangle()
-                    )
-            );
+                    );
+                }
+            });
 
             windowManager.addView(binding.getRoot(), windowParams);
             // Runs after the view has been drawn
@@ -646,13 +673,20 @@ public class ScreenTextService extends Service {
         }
     }
 
+    private void getScreenCaptureIntent(String action){
+        var screenshotIntent = new Intent(this, AcquireScreenshotPermission.class);
+        screenshotIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        screenshotIntent.setAction(action);
+        startActivity(screenshotIntent);
+    }
+
     //-----------https://stackoverflow.com/questions/18503050/how-to-create-draggabble-system-alert-in-android
     private void animateToEdge() {
         int currentX = windowParams.x;
         int currentY = windowParams.y;
 
         boolean statusBarVisible;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             statusBarVisible = ContextExtKt.statusBarVisible(this);
         } else {
             // For older APIs there is no way to tell if the bar is visible for an overlay service
@@ -720,7 +754,7 @@ public class ScreenTextService extends Service {
     private static class SingleTapConfirm extends GestureDetector.SimpleOnGestureListener {
 
         @Override
-        public boolean onSingleTapUp(MotionEvent event) {
+        public boolean onSingleTapUp(@NonNull MotionEvent event) {
             return true;
         }
     }
