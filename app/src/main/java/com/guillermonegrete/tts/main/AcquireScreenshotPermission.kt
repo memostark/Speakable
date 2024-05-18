@@ -36,7 +36,9 @@ class AcquireScreenshotPermission : Activity() {
             when(requestCode) {
                 REQUEST_CODE_SCREEN_CAPTURE -> {
                     val intent = Intent(this, ScreenTextService::class.java)
-                    intent.action = NORMAL_SERVICE
+                    // If an action is set, return it to the service so it performs the action otherwise return a normal service action
+                    val action = getIntent().action ?: NORMAL_SERVICE
+                    intent.action = action
                     intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode)
                     intent.putExtras(data)
                     startService(intent)

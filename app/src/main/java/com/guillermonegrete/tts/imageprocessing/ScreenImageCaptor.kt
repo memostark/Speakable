@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.imageprocessing
 import android.content.Intent
 import android.graphics.*
 import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
@@ -30,17 +31,20 @@ class ScreenImageCaptor(
     private val width = screenSize.x
     private val height = screenSize.y
     private val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
-    private val virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCap", width, height, density,
-        VIRTUAL_DISPLAY_FLAGS, imageReader.surface, null, handler)
+    private val virtualDisplay: VirtualDisplay
 
     private var imagesCaptured = false
+
+    init {
+        mediaProjection.registerCallback(MediaProjectionStopCallback(), handler)
+        virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCap", width, height, density,
+            VIRTUAL_DISPLAY_FLAGS, imageReader.surface, null, handler)
+    }
 
 
     fun getImage(rect: Rect, callback: Callback){
 
         imageReader.setOnImageAvailableListener(ImageAvailableListener(rect, callback), handler)
-        mediaProjection.registerCallback(MediaProjectionStopCallback(), handler)
-
     }
 
     private inner class ImageAvailableListener(
@@ -88,7 +92,7 @@ class ScreenImageCaptor(
             handler.post {
                 virtualDisplay.release()
                 imageReader.setOnImageAvailableListener(null, null)
-                mediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
+//                mediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
             }
         }
     }
