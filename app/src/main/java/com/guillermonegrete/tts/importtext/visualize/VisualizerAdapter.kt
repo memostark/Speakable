@@ -59,7 +59,7 @@ class VisualizerAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when(holder){
             is PageViewHolder -> holder.bind(pages[position])
-            is SplitPageViewHolder -> holder.bind(pages[position].text)
+            is SplitPageViewHolder -> holder.bind(pages[position])
         }
     }
 
@@ -75,11 +75,12 @@ class VisualizerAdapter(
             onBindViewHolder(holder, position)
         }else{
             if(holder is SplitPageViewHolder) {
-                val payload = payloads.first()
-                if(payload is Span) {
-                    holder.setHighlightedText(payload.start, payload.end)
-                } else {
-                    holder.updateLayoutParams(payloads.first() as Boolean)
+                when (val payload = payloads.first()) {
+                    is Span -> holder.setHighlightedText(pages[position], payload.start, payload.end)
+                    is Int -> {
+                        if (payload == UNSELECT_SENTENCE) holder.removeHighlight()
+                    }
+                    else -> holder.updateLayoutParams(payload as Boolean)
                 }
             }
         }
@@ -154,15 +155,22 @@ class VisualizerAdapter(
 
     inner class SplitPageViewHolder(private val binding: VisualizerSplitPageItemBinding): ViewHolder(binding.root){
 
+        private var highlightSpan: BackgroundColorSpan? = null
+
         private val hiddenParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, pageMarginsSize, 0f)
         private val halfShownParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 0.5f).apply {
             setMargins(0, 0, 0, pageMarginsSize)
         }
 
-        fun bind(text: CharSequence){
-            setPageText(text)
-
+        fun bind(pageItem: PageItem){
             updateLayoutParams(isPageSplit)
+
+            setPageText(pageItem.text)
+
+            pageItem.notes.forEach {
+                val span = it.span
+                binding.pageTextView.addHighlightedText(span.start, span.end, it.color)
+            }
         }
 
         fun updateLayoutParams(splitPage: Boolean){
@@ -170,14 +178,31 @@ class VisualizerAdapter(
             pageTextView.setLineSpacing(if(splitPage) 0f else lineSpacingExtra, 1f)
         }
 
-        fun setHighlightedText(start: Int, end: Int){
+        fun setHighlightedText(item: PageItem, start: Int, end: Int){
             val text = SpannableString(pageTextView.text)
+            // remove overlapping notes
+            text.getSpans(start, end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
 
-            //Remove previous
-            text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+            //Remove previous selection
+            highlightSpan?.let { span -> text.removeSpan(span) }
 
-            text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            highlightSpan = BackgroundColorSpan(0x6633B5E5)
+            text.setSpan(highlightSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
+
+            // reapply notes so they are still in front of the selection
+            item.notes.forEach {
+                val noteSpan = it.span
+                if (start < noteSpan.end && end > noteSpan.start)
+                    pageTextView.addHighlightedText(noteSpan.start, noteSpan.end, it.color)
+            }
+        }
+
+        fun removeHighlight() {
+            val span = highlightSpan ?: return
+            val text = pageTextView.text as? Spannable ?: return
+            text.removeSpan(span)
+            highlightSpan = null
         }
 
     }
@@ -228,6 +253,10 @@ class VisualizerAdapter(
         }
 
         override fun onDestroyActionMode(mode: ActionMode?) {}
+    }
+
+    companion object {
+        const val UNSELECT_SENTENCE = 10
     }
 
     data class PageItem(

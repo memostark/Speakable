@@ -202,14 +202,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                 // A new page is shown when position is 0.0f,
                 // so we request focus in order to highlight text correctly.
                 if(position == 0.0f) setPageTextFocus()
-
-                // Remove highlights when page is mostly hidden.
-                if(position > 0.9f || position < -0.9f){
-                    val topText: TextView = view.findViewById(R.id.page_text_view) ?: return@setPageTransformer
-                    val text = SpannableString(topText.text)
-                    val spans = text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-                    if(spans.isNotEmpty()) topText.setText(text, TextView.BufferType.SPANNABLE)
-                }
             }
         }
     }
@@ -504,6 +496,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         var swipeFirst = false
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
 
+            var previousPage = -1
+
             override fun onPageSelected(position: Int) {
                 viewModel.currentPage = position
 
@@ -514,6 +508,9 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(pagesAdapter.hasBottomSheet)
                     binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
 
+                if (previousPage != -1) pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+
+                previousPage = position
             }
 
             override fun onPageScrollStateChanged(state: Int) {
