@@ -255,12 +255,28 @@ class VisualizerAdapter(
         override fun onDestroyActionMode(mode: ActionMode?) {}
     }
 
+    fun updateNote(span: Span, position: Int, note: NoteItem) {
+        val page = pages[position]
+        page.notes.removeAll { note.id == it.id }
+        val localSpan = Span(span.start - page.firstCharIndex, span.end - page.firstCharIndex)
+        page.notes.add(note.copy(span = localSpan))
+        notifyItemChanged(position)
+    }
+
     companion object {
         const val UNSELECT_SENTENCE = 10
     }
 
     data class PageItem(
         val text: CharSequence,
-        val notes: List<NoteItem>,
-    )
+        val notes: MutableList<NoteItem>,
+        /**
+         * The index of the paragraph's first char with respect to the whole text.
+         */
+        val firstCharIndex: Int,
+    ) {
+        companion object {
+            val EMPTY = PageItem("", mutableListOf(), 0)
+        }
+    }
 }

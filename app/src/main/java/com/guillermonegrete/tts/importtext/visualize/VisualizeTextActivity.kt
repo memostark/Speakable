@@ -47,6 +47,7 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.getScreenSizes
 import com.guillermonegrete.tts.webreader.AddNoteDialog
+import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
@@ -119,7 +120,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
-        viewPager.adapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem("", emptyList())),
+        viewPager.adapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
             {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
 
         viewPager.post{
@@ -354,9 +355,23 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
 
             translationError.observe(this@VisualizeTextActivity, EventObserver {
+                Timber.e("Error translating page: $it")
                 Toast.makeText(this@VisualizeTextActivity, getString(R.string.error_translation), Toast.LENGTH_SHORT).show()
                 bottomText.text = getString(R.string.click_to_translate_msg)
             })
+
+            updatedNote.observe(this@VisualizeTextActivity) {result ->
+                when(result) {
+                    is ModifiedNote.Update -> {
+                        val note = result.note
+                        val position = note.getPosInChapter()
+                        val span = Span(position, position + note.length)
+                        val noteItem = NoteItem(note.text, span, Color.parseColor(note.color), note.id)
+                        pagesAdapter.updateNote(span, viewPager.currentItem, noteItem)
+                    }
+                    else -> {}
+                }
+            }
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
@@ -413,15 +428,15 @@ class VisualizeTextActivity: AppCompatActivity() {
             // Search the notes applied to this paragraph
             val paragraphNotes = dbNotes.filter { dbNote ->
                 // The actual position is in the first 24 bits of a 32 bit int
-                (dbNote.position and 0xFFFFFF) in index until nextIndex
-            }.map { it.copy(position = it.position and 0xFFFFFF) }
+                dbNote.getPosInChapter() in index until nextIndex
+            }.map { it.copy(position = it.getPosInChapter()) }
 
             val noteItems = paragraphNotes.map { note ->
                 val itemStart = note.position - index
                 NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
-            }
+            }.toMutableList()
 
-            paragraphItems.add(VisualizerAdapter.PageItem(page, noteItems))
+            paragraphItems.add(VisualizerAdapter.PageItem(page, noteItems, index))
             index = nextIndex
             dbNotes.removeAll(paragraphNotes)
         }

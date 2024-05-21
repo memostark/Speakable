@@ -49,7 +49,13 @@ data class Note(
     val bookId: Int? = null,
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0
-)
+) {
+
+    /**
+     * For a book note, gets the position in the chapter.
+     */
+    fun getPosInChapter() = position and 0xFFFFFF
+}
 
 data class LinkWithNotes(
     @Embedded val webLink: WebLink,

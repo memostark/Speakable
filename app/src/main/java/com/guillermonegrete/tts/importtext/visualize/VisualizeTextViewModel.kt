@@ -20,6 +20,7 @@ import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.AddNoteResult
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import timber.log.Timber
@@ -90,6 +91,9 @@ class VisualizeTextViewModel @Inject constructor(
 
     private val _translationError = MutableLiveData<Event<String>>()
     val translationError: LiveData<Event<String>> = _translationError
+
+    private val _updatedNote = MutableLiveData<ModifiedNote>()
+    val updatedNote: LiveData<ModifiedNote> = _updatedNote
 
     // Settings
     var hasBottomSheet = false
@@ -451,7 +455,9 @@ class VisualizeTextViewModel @Inject constructor(
                 // java int is 32 bits
                 val chapterAndPage = (chapter shl 24) or (position and 0x00ffffff)
                 val newDbNote = Note(newNote.text, originalText, chapterAndPage, length, newNote.colorHex, null, bookId, 0)
-                noteDAO.upsert(newDbNote)
+                val resultId = noteDAO.upsert(newDbNote)
+                val result = ModifiedNote.Update(newDbNote.copy(id = resultId))
+                _updatedNote.value = result
             }
         }
     }
