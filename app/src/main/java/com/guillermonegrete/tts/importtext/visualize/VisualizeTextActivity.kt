@@ -74,6 +74,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     @StyleRes private var themeRes = R.style.AppMaterialTheme_Black
 
     private val addNoteDialogVisible = mutableStateOf(false)
+    private val noteSheetVisible = mutableStateOf(false)
 
     private var noteInfo: EditNote? = null
 
@@ -158,6 +159,13 @@ class VisualizeTextActivity: AppCompatActivity() {
                             viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start)
                             addNoteVisible = false
                         },
+                    )
+
+                    var noteSheetVisible by remember { noteSheetVisible }
+                    NoteSheet(
+                        noteSheetVisible,
+                        noteInfo?.noteText ?: "",
+                        onDismiss = { noteSheetVisible = false }
                     )
                 }
             }
@@ -393,12 +401,16 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setUpPagerAndIndexLabel(chapter: BookChapter){
         pagesAdapter = VisualizerAdapter(
             createPageItems(chapter),
-            { showTextDialog(it) },
-            {
+            showTextDialog = ::showTextDialog,
+            onCreateNote = {
                 noteInfo = it
                 addNoteDialogVisible.value = true
             },
-            { viewModel.getCharPos() }
+            onNoteClicked = {
+                noteInfo = it
+                noteSheetVisible.value = true
+            },
+            getPageCharPos = viewModel::getCharPos
         )
         pagesAdapter.hasBottomSheet = viewModel.hasBottomSheet
         pagesAdapter.isPageSplit = viewModel.isSheetExpanded

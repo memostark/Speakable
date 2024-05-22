@@ -1,0 +1,67 @@
+package com.guillermonegrete.tts.importtext.visualize
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Card
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.ui.theme.AppTheme
+
+@Composable
+fun NoteSheet(
+    isShown: Boolean,
+    text: String,
+    onEditClicked: () -> Unit = {},
+    onInfoClicked: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+
+    if(!isShown) return
+
+
+    Dialog(onDismissRequest = onDismiss) {
+
+        Card(
+            border = BorderStroke(1.dp, MaterialTheme.colors.onSurface),
+            modifier = Modifier.padding(horizontal = 8.dp)
+        ) {
+            Row (Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
+
+                Text(text = text, maxLines = 4, modifier = Modifier.weight(1f))
+                IconButton(onClick = onEditClicked) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit_icon_description),
+                    )
+                }
+                IconButton(onClick = onInfoClicked) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = stringResource(R.string.more_information),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun NoteSheetPreview() {
+    AppTheme {
+        NoteSheet(true, "My note text")
+    }
+}

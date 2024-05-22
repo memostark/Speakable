@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.annotation.SuppressLint
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.method.LinkMovementMethod
@@ -7,6 +8,7 @@ import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.GestureDetectorCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
@@ -24,6 +26,7 @@ class VisualizerAdapter(
     private val pages: List<PageItem>,
     private val showTextDialog: (CharSequence) -> Unit,
     private val onCreateNote: (EditNote) -> Unit,
+    private val onNoteClicked: (EditNote) -> Unit = {},
     private val getPageCharPos: () -> Int = {0},
     private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -91,6 +94,7 @@ class VisualizerAdapter(
         return R.layout.visualizer_page_item
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
         protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
@@ -101,6 +105,11 @@ class VisualizerAdapter(
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
             pageTextView.movementMethod = LinkMovementMethod.getInstance()
+            val detector = GestureDetectorCompat(itemView.context, PageGestureListener())
+            pageTextView.setOnTouchListener { _, event ->
+                detector.onTouchEvent(event)
+            }
+            pageTextView.customSelectionActionModeCallback = actionModeCallback
         }
 
         // Based on: https://stackoverflow.com/questions/8612652/select-a-word-on-a-tap-in-textview-edittext
@@ -137,6 +146,25 @@ class VisualizerAdapter(
 
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
             setSpannables(pageTextView)
+        }
+
+        private inner class PageGestureListener : GestureDetector.SimpleOnGestureListener() {
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                val offset = pageTextView.getOffsetForPosition(e.x, e.y)
+
+                val item = pages[adapterPosition]
+                val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
+                if (clickedNote != null) {
+                    val span = clickedNote.span
+                    val text = item.text.substring(span.start, span.end)
+                    val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
+                    onNoteClicked(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id))
+                }
+
+                return super.onSingleTapConfirmed(e)
+            }
+
         }
 
     }
