@@ -76,7 +76,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private val addNoteDialogVisible = mutableStateOf(false)
     private val noteSheetVisible = mutableStateOf(false)
 
-    private var noteInfo: EditNote? = null
+    private var noteInfo = mutableStateOf<EditNote?>(null)
 
     private var splitterCreated = true
 
@@ -150,12 +150,12 @@ class VisualizeTextActivity: AppCompatActivity() {
                         0,
                         false,
                         onDismiss = {
-                            noteInfo = null
                             addNoteVisible = false
+                            noteInfo.value = null
                         },
                         onDelete = { addNoteVisible = false },
                         onSaveClicked = {
-                            val noteItem = noteInfo ?: return@AddNoteDialog
+                            val noteItem = noteInfo.value ?: return@AddNoteDialog
                             viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start)
                             addNoteVisible = false
                         },
@@ -164,7 +164,7 @@ class VisualizeTextActivity: AppCompatActivity() {
                     var noteSheetVisible by remember { noteSheetVisible }
                     NoteSheet(
                         noteSheetVisible,
-                        noteInfo?.noteText ?: "",
+                        noteInfo.value?.noteText ?: "",
                         onDismiss = { noteSheetVisible = false }
                     )
                 }
@@ -196,6 +196,15 @@ class VisualizeTextActivity: AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         viewModel.saveBookData()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (noteSheetVisible.value) {
+            noteSheetVisible.value = false
+        } else {
+            super.onBackPressed()
+        }
     }
 
     private fun setPageTransformListener() {
@@ -403,11 +412,11 @@ class VisualizeTextActivity: AppCompatActivity() {
             createPageItems(chapter),
             showTextDialog = ::showTextDialog,
             onCreateNote = {
-                noteInfo = it
+                noteInfo.value = it
                 addNoteDialogVisible.value = true
             },
             onNoteClicked = {
-                noteInfo = it
+                noteInfo.value = it
                 noteSheetVisible.value = true
             },
             getPageCharPos = viewModel::getCharPos
