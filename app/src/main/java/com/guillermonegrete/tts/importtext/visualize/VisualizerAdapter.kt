@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.importtext.visualize
 import android.annotation.SuppressLint
 import android.text.Spannable
 import android.text.SpannableString
-import android.text.method.LinkMovementMethod
 import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.widget.LinearLayout
@@ -18,9 +17,8 @@ import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
 import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.dpToPixel
+import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
-import java.text.BreakIterator
-import java.util.*
 
 class VisualizerAdapter(
     private val pages: List<PageItem>,
@@ -101,51 +99,13 @@ class VisualizerAdapter(
         private val actionModeCallback = PageActionModeCallback(pageTextView, showTextDialog)
 
         init {
-            pageTextView.customSelectionActionModeCallback = actionModeCallback
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
-            pageTextView.movementMethod = LinkMovementMethod.getInstance()
             val detector = GestureDetectorCompat(itemView.context, PageGestureListener())
             pageTextView.setOnTouchListener { _, event ->
                 detector.onTouchEvent(event)
             }
             pageTextView.customSelectionActionModeCallback = actionModeCallback
-        }
-
-        // Based on: https://stackoverflow.com/questions/8612652/select-a-word-on-a-tap-in-textview-edittext
-        private fun setSpannables(view: TextView){
-            val spans = view.text as SpannableString
-//            BreakIterator.
-            val iterator = BreakIterator.getWordInstance(Locale.US)
-            iterator.setText(spans.toString())
-            var start = iterator.first()
-            var end = iterator.next()
-            while (end != BreakIterator.DONE) {
-                val possibleWord = spans.substring(start, end)
-                if (Character.isLetterOrDigit(possibleWord.first())) {
-
-                    val clickSpan = object: ImportedClickableSpan() {
-                        override fun onClick(widget: View) {
-                            super.onClick(widget)
-                            showTextDialog(possibleWord)
-                        }
-                    }
-
-                    spans.setSpan(
-                        clickSpan, start, end,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                }
-                start = end
-                end = iterator.next()
-            }
-        }
-
-        protected fun setPageText(text: CharSequence){
-            pageTextView.movementMethod = LinkMovementMethod.getInstance()
-
-            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
-            setSpannables(pageTextView)
         }
 
         private inner class PageGestureListener : GestureDetector.SimpleOnGestureListener() {
@@ -160,6 +120,15 @@ class VisualizerAdapter(
                     val text = item.text.substring(span.start, span.end)
                     val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
                     onNoteClicked(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id))
+                    return true
+                }
+
+                val wordSpan = pageTextView.findWordForRightHanded(offset)
+                val clickedWord = pageTextView.text.substring(wordSpan.start, wordSpan.end)
+
+                if (clickedWord.isNotEmpty()) {
+                    showTextDialog(clickedWord)
+                    return true
                 }
 
                 return super.onSingleTapConfirmed(e)
@@ -172,7 +141,7 @@ class VisualizerAdapter(
     inner class PageViewHolder(private val binding: VisualizerPageItemBinding): ViewHolder(binding.root){
 
         fun bind(pageItem: PageItem){
-            setPageText(pageItem.text)
+            pageTextView.text = pageItem.text
 
             pageItem.notes.forEach {
                 val span = it.span
@@ -193,7 +162,7 @@ class VisualizerAdapter(
         fun bind(pageItem: PageItem){
             updateLayoutParams(isPageSplit)
 
-            setPageText(pageItem.text)
+            pageTextView.text = pageItem.text
 
             pageItem.notes.forEach {
                 val span = it.span
