@@ -446,7 +446,7 @@ class VisualizeTextViewModel @Inject constructor(
         return null
     }
 
-    fun saveNote(newNote: AddNoteResult, originalText: String, position: Int, length: Int) {
+    fun saveNote(newNote: AddNoteResult, originalText: String, position: Int, length: Int, id: Long) {
         val bookId = databaseBookFile?.id ?: return
 
         viewModelScope.launch {
@@ -454,10 +454,21 @@ class VisualizeTextViewModel @Inject constructor(
                 val chapter = currentChapter
                 // java int is 32 bits
                 val chapterAndPage = (chapter shl 24) or (position and 0x00ffffff)
-                val newDbNote = Note(newNote.text, originalText, chapterAndPage, length, newNote.colorHex, null, bookId, 0)
+                val newDbNote = Note(newNote.text, originalText, chapterAndPage, length, newNote.colorHex, null, bookId, id)
                 val resultId = noteDAO.upsert(newDbNote)
-                val result = ModifiedNote.Update(newDbNote.copy(id = resultId))
+                // Upsert returns -1 when the operation was an update, use the parameter ID.
+                val finalId = if(resultId == -1L) id else resultId
+                val result = ModifiedNote.Update(newDbNote.copy(id = finalId))
                 _updatedNote.value = result
+            }
+        }
+    }
+
+    fun deleteNote(id: Long) {
+        viewModelScope.launch {
+            wrapEspressoIdlingResource {
+                noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
+                _updatedNote.value = ModifiedNote.Delete(id)
             }
         }
     }

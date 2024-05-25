@@ -144,19 +144,24 @@ class VisualizeTextActivity: AppCompatActivity() {
                 AppTheme {
 
                     var addNoteVisible by remember { addNoteDialogVisible }
+
+                    var noteInfo by remember { noteInfo }
+
                     AddNoteDialog(
                         addNoteVisible,
-                        "",
-                        0,
-                        false,
-                        onDismiss = {
+                        noteInfo?.noteText ?: "",
+                        noteInfo?.color ?: 0,
+                        noteInfo?.noteSaved ?: false,
+                        onDismiss = { addNoteVisible = false },
+                        onDelete = {
+                            val noteItem = noteInfo ?: return@AddNoteDialog
+                            viewModel.deleteNote(noteItem.id)
+                            noteInfo = null
                             addNoteVisible = false
-                            noteInfo.value = null
                         },
-                        onDelete = { addNoteVisible = false },
                         onSaveClicked = {
-                            val noteItem = noteInfo.value ?: return@AddNoteDialog
-                            viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start)
+                            val noteItem = noteInfo ?: return@AddNoteDialog
+                            viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start, noteItem.id)
                             addNoteVisible = false
                         },
                     )
@@ -164,7 +169,8 @@ class VisualizeTextActivity: AppCompatActivity() {
                     var noteSheetVisible by remember { noteSheetVisible }
                     NoteSheet(
                         noteSheetVisible,
-                        noteInfo.value?.noteText ?: "",
+                        noteInfo?.noteText ?: "",
+                        onEditClicked = { addNoteVisible = true },
                         onDismiss = { noteSheetVisible = false }
                     )
                 }
@@ -384,9 +390,14 @@ class VisualizeTextActivity: AppCompatActivity() {
                         val position = note.getPosInChapter()
                         val span = Span(position, position + note.length)
                         val noteItem = NoteItem(note.text, span, Color.parseColor(note.color), note.id)
-                        pagesAdapter.updateNote(span, viewPager.currentItem, noteItem)
+                        pagesAdapter.updateNote(viewPager.currentItem, noteItem)
+                        noteInfo.value = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
                     }
-                    else -> {}
+
+                    is ModifiedNote.Delete -> {
+                        pagesAdapter.deleteNote(result.noteId)
+                        noteSheetVisible.value = false
+                    }
                 }
             }
 

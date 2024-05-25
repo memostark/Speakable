@@ -252,12 +252,23 @@ class VisualizerAdapter(
         override fun onDestroyActionMode(mode: ActionMode?) {}
     }
 
-    fun updateNote(span: Span, position: Int, note: NoteItem) {
+    fun updateNote(position: Int, note: NoteItem) {
         val page = pages[position]
         page.notes.removeAll { note.id == it.id }
-        val localSpan = Span(span.start - page.firstCharIndex, span.end - page.firstCharIndex)
+        val localSpan = Span(note.span.start - page.firstCharIndex, note.span.end - page.firstCharIndex)
         page.notes.add(note.copy(span = localSpan))
         notifyItemChanged(position)
+    }
+
+    fun deleteNote(noteId: Long) {
+        val pos = pages.indexOfFirst {
+            val note = it.notes.firstOrNull { note -> note.id == noteId }
+            note != null
+        }
+        if (pos == -1) return
+        val paragraphItem = pages[pos]
+        paragraphItem.notes.removeAll { noteId == it.id }
+        notifyItemChanged(pos)
     }
 
     companion object {
