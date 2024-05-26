@@ -29,6 +29,7 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 fun NoteSheet(
     isShown: Boolean,
     text: String,
+    isInfoButtonVisible: Boolean = true,
     onEditClicked: () -> Unit = {},
     onInfoClicked: () -> Unit = {},
     onDismiss: () -> Unit = {},
@@ -62,11 +63,13 @@ fun NoteSheet(
                         contentDescription = stringResource(R.string.edit_icon_description),
                     )
                 }
-                IconButton(onClick = onInfoClicked) {
-                    Icon(
-                        Icons.Outlined.Info,
-                        contentDescription = stringResource(R.string.more_information),
-                    )
+                if (isInfoButtonVisible) {
+                    IconButton(onClick = onInfoClicked) {
+                        Icon(
+                            Icons.Outlined.Info,
+                            contentDescription = stringResource(R.string.more_information),
+                        )
+                    }
                 }
             }
         }

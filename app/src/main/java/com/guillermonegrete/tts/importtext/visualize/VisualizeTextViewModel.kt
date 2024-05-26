@@ -11,11 +11,13 @@ import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.AddNoteResult
 import com.guillermonegrete.tts.webreader.db.Note
@@ -35,6 +37,7 @@ class VisualizeTextViewModel @Inject constructor(
     private val fileRepository: FileRepository,
     private val noteDAO: NoteDAO,
     private val getTranslationInteractor: GetLangAndTranslation,
+    private val getExternalLinksInteractor: GetExternalLink,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
@@ -94,6 +97,9 @@ class VisualizeTextViewModel @Inject constructor(
 
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
+
+    private val _linksForWord = MutableLiveData<List<ExternalLink>>()
+    val linksForWord: LiveData<List<ExternalLink>> = _linksForWord
 
     // Settings
     var hasBottomSheet = false
@@ -470,6 +476,13 @@ class VisualizeTextViewModel @Inject constructor(
                 noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
                 _updatedNote.value = ModifiedNote.Delete(id)
             }
+        }
+    }
+
+    fun getExternalLinks(word: String) {
+        viewModelScope.launch {
+            val links = getExternalLinksInteractor(languageFrom, word)
+            _linksForWord.value = links
         }
     }
 

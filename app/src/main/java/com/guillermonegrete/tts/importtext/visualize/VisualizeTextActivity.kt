@@ -16,7 +16,10 @@ import androidx.activity.viewModels
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,10 +37,13 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.ExternalLinkList
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
+import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
@@ -75,6 +81,9 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private val addNoteDialogVisible = mutableStateOf(false)
     private val noteSheetVisible = mutableStateOf(false)
+    private var linksDialogShown = mutableStateOf(false)
+    private val selectedLink = mutableIntStateOf(0)
+    private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
 
@@ -166,13 +175,23 @@ class VisualizeTextActivity: AppCompatActivity() {
                         },
                     )
 
+                    val noteSpanText = noteInfo?.text
+                    val isWord = noteSpanText != null && noteSpanText.split(" ").size == 1
+                    val isInfoBtnVisible = viewModel.languageFrom != "auto" && isWord
                     var noteSheetVisible by remember { noteSheetVisible }
                     NoteSheet(
                         noteSheetVisible,
                         noteInfo?.noteText ?: "",
+                        isInfoBtnVisible,
                         onEditClicked = { addNoteVisible = true },
+                        onInfoClicked = {
+                            val word = noteInfo?.text ?: return@NoteSheet
+                            viewModel.getExternalLinks(word)
+                        },
                         onDismiss = { noteSheetVisible = false }
                     )
+                    
+                    ExternalLinksDialog(selectedLink)
                 }
             }
         }
@@ -399,6 +418,13 @@ class VisualizeTextActivity: AppCompatActivity() {
                         noteSheetVisible.value = false
                     }
                 }
+            }
+
+            linksForWord.observe(this@VisualizeTextActivity) { links ->
+                wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
+                // If out of index, default to the first item
+                if(selectedLink.intValue >= links.size) selectedLink.intValue = 0
+                linksDialogShown.value = true
             }
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
@@ -851,6 +877,17 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         // Notify the adapter to set the highlight, send span payload
         pagesAdapter.notifyItemChanged(viewPager.currentItem, pageSpans.topSpan)
+    }
+
+    @Composable
+    fun ExternalLinksDialog(selectedLink: MutableIntState) {
+
+        com.guillermonegrete.tts.textprocessing.ExternalLinksDialog(
+            isShown = linksDialogShown.value,
+            links = wordLinks.value,
+            selection = selectedLink.intValue,
+            onDismiss = { linksDialogShown.value = false },
+        )
     }
 
     companion object{

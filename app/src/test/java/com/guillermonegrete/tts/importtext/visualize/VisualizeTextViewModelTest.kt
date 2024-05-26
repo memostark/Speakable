@@ -16,8 +16,10 @@ import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.*
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.threading.TestMainThread
 import com.guillermonegrete.tts.webreader.db.FakeNoteDAO
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -74,8 +76,9 @@ class VisualizeTextViewModelTest {
         settingsRepository = FakeSettingsRepository()
 
         val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
+        val getExternalLinks = GetExternalLink(TestThreadExecutor(), TestMainThread(), mockk(), mainCoroutineRule.dispatcher)
 
-        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, notesDAO, getTranslationInteractor, mainCoroutineRule.dispatcher)
+        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, notesDAO, getTranslationInteractor, getExternalLinks, mainCoroutineRule.dispatcher)
         viewModel.pageSplitter = pageSplitter
         viewModel.fileReader = fileReader
 

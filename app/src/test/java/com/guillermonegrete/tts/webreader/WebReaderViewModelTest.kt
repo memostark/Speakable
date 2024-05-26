@@ -65,7 +65,7 @@ class WebReaderViewModelTest {
 
         externalLinksSource = FakeExternalLinkSource()
         val getExternalLink =
-            GetExternalLink(TestThreadExecutor(), TestMainThread(), externalLinksSource)
+            GetExternalLink(TestThreadExecutor(), TestMainThread(), externalLinksSource, mainCoroutineRule.dispatcher)
 
         webLinkDAO = FakeWebLinkDAO()
         notesDAO = FakeNoteDAO()
