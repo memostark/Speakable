@@ -28,8 +28,8 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 @Composable
 fun NoteSheet(
     isShown: Boolean,
-    text: String,
-    isInfoButtonVisible: Boolean = true,
+    textProvider: () -> String,
+    infoButtonVisibility: () -> Boolean = { true },
     onEditClicked: () -> Unit = {},
     onInfoClicked: () -> Unit = {},
     onDismiss: () -> Unit = {},
@@ -50,7 +50,7 @@ fun NoteSheet(
 
                 val scroll = rememberScrollState(0)
                 Text(
-                    text = text,
+                    textProvider(),
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .heightIn(0.dp, 96.dp)
@@ -63,7 +63,7 @@ fun NoteSheet(
                         contentDescription = stringResource(R.string.edit_icon_description),
                     )
                 }
-                if (isInfoButtonVisible) {
+                if (infoButtonVisibility()) {
                     IconButton(onClick = onInfoClicked) {
                         Icon(
                             Icons.Outlined.Info,
@@ -80,6 +80,6 @@ fun NoteSheet(
 @Composable
 fun NoteSheetPreview() {
     AppTheme {
-        NoteSheet(true, "My note text")
+        NoteSheet(true, {"My note text"})
     }
 }

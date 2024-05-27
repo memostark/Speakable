@@ -47,6 +47,7 @@ import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
+import com.guillermonegrete.tts.textprocessing.ExternalLinksDialog
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.theme.AppTheme
@@ -151,47 +152,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         binding.composeRoot.apply {
             setContent {
                 AppTheme {
-
-                    var addNoteVisible by remember { addNoteDialogVisible }
-
-                    var noteInfo by remember { noteInfo }
-
-                    AddNoteDialog(
-                        addNoteVisible,
-                        noteInfo?.noteText ?: "",
-                        noteInfo?.color ?: 0,
-                        noteInfo?.noteSaved ?: false,
-                        onDismiss = { addNoteVisible = false },
-                        onDelete = {
-                            val noteItem = noteInfo ?: return@AddNoteDialog
-                            viewModel.deleteNote(noteItem.id)
-                            noteInfo = null
-                            addNoteVisible = false
-                        },
-                        onSaveClicked = {
-                            val noteItem = noteInfo ?: return@AddNoteDialog
-                            viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start, noteItem.id)
-                            addNoteVisible = false
-                        },
-                    )
-
-                    val noteSpanText = noteInfo?.text
-                    val isWord = noteSpanText != null && noteSpanText.split(" ").size == 1
-                    val isInfoBtnVisible = viewModel.languageFrom != "auto" && isWord
-                    var noteSheetVisible by remember { noteSheetVisible }
-                    NoteSheet(
-                        noteSheetVisible,
-                        noteInfo?.noteText ?: "",
-                        isInfoBtnVisible,
-                        onEditClicked = { addNoteVisible = true },
-                        onInfoClicked = {
-                            val word = noteInfo?.text ?: return@NoteSheet
-                            viewModel.getExternalLinks(word)
-                        },
-                        onDismiss = { noteSheetVisible = false }
-                    )
+                    Sheet()
                     
-                    ExternalLinksDialog(selectedLink)
+                    Dialogs()
                 }
             }
         }
@@ -574,6 +537,8 @@ class VisualizeTextActivity: AppCompatActivity() {
             override fun onPageSelected(position: Int) {
                 viewModel.currentPage = position
 
+                if (noteSheetVisible.value) noteSheetVisible.value = false
+
                 val pageNumber = position + 1
                 binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
                 binding.pagesSeekBar.progress = position
@@ -880,13 +845,57 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     @Composable
-    fun ExternalLinksDialog(selectedLink: MutableIntState) {
+    fun Dialogs() {
 
-        com.guillermonegrete.tts.textprocessing.ExternalLinksDialog(
+        ExternalLinksDialog(
             isShown = linksDialogShown.value,
             links = wordLinks.value,
             selection = selectedLink.intValue,
             onDismiss = { linksDialogShown.value = false },
+        )
+
+        var addNoteVisible by remember { addNoteDialogVisible }
+        var noteInfo by remember { noteInfo }
+
+        AddNoteDialog(
+            addNoteVisible,
+            noteInfo?.noteText ?: "",
+            noteInfo?.color ?: 0,
+            noteInfo?.noteSaved ?: false,
+            onDismiss = { addNoteVisible = false },
+            onDelete = {
+                val noteItem = noteInfo ?: return@AddNoteDialog
+                viewModel.deleteNote(noteItem.id)
+                noteInfo = null
+                addNoteVisible = false
+            },
+            onSaveClicked = {
+                val noteItem = noteInfo ?: return@AddNoteDialog
+                viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start, noteItem.id)
+                addNoteVisible = false
+            },
+        )
+    }
+
+    @Composable
+    fun Sheet() {
+        val noteInfo by remember { noteInfo }
+        var noteSheetVisible by remember { noteSheetVisible }
+
+        NoteSheet(
+            noteSheetVisible,
+            { noteInfo?.noteText ?: "" },
+            infoButtonVisibility = {
+                val noteSpanText = noteInfo?.text
+                val isWord = noteSpanText != null && noteSpanText.split(" ").size == 1
+                return@NoteSheet viewModel.languageFrom != "auto" && isWord
+            },
+            onEditClicked = { addNoteDialogVisible.value = true },
+            onInfoClicked = {
+                val word = noteInfo?.text ?: return@NoteSheet
+                viewModel.getExternalLinks(word)
+            },
+            onDismiss = { noteSheetVisible = false }
         )
     }
 
