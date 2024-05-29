@@ -546,7 +546,10 @@ class VisualizeTextActivity: AppCompatActivity() {
                 if(pagesAdapter.hasBottomSheet)
                     binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
 
-                if (previousPage != -1) pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+                if (previousPage != -1) {
+                    // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
+                    viewPager.post { pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE) }
+                }
 
                 previousPage = position
             }
