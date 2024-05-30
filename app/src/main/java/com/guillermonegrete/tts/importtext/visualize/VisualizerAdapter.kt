@@ -152,7 +152,7 @@ class VisualizerAdapter(
 
     inner class SplitPageViewHolder(private val binding: VisualizerSplitPageItemBinding): ViewHolder(binding.root){
 
-        private var highlightSpan: BackgroundColorSpan? = null
+        private var sentenceHighlight: SentenceHighlight? = null
 
         private val hiddenParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, pageMarginsSize, 0f)
         private val halfShownParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 0.5f).apply {
@@ -162,12 +162,16 @@ class VisualizerAdapter(
         fun bind(pageItem: PageItem){
             updateLayoutParams(isPageSplit)
 
-            pageTextView.text = pageItem.text
+            val spannable = SpannableString(pageItem.text)
+            sentenceHighlight?.let {
+                spannable.setSpan(it.span, it.pos.start, it.pos.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
 
             pageItem.notes.forEach {
                 val span = it.span
-                binding.pageTextView.addHighlightedText(span.start, span.end, it.color)
+                spannable.addHighlightedText(span.start, span.end, it.color)
             }
+            pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
         }
 
         fun updateLayoutParams(splitPage: Boolean){
@@ -181,25 +185,26 @@ class VisualizerAdapter(
             text.getSpans(start, end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
 
             //Remove previous selection
-            highlightSpan?.let { span -> text.removeSpan(span) }
+            sentenceHighlight?.let { text.removeSpan(it.span) }
 
-            highlightSpan = BackgroundColorSpan(0x6633B5E5)
+            val highlightSpan = BackgroundColorSpan(0x6633B5E5)
+            sentenceHighlight = SentenceHighlight(highlightSpan, Span(start, end))
             text.setSpan(highlightSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
 
             // reapply notes so they are still in front of the selection
             item.notes.forEach {
                 val noteSpan = it.span
                 if (start < noteSpan.end && end > noteSpan.start)
-                    pageTextView.addHighlightedText(noteSpan.start, noteSpan.end, it.color)
+                    text.addHighlightedText(noteSpan.start, noteSpan.end, it.color)
             }
+            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
         }
 
         fun removeHighlight() {
-            val span = highlightSpan ?: return
+            val highlight = sentenceHighlight ?: return
             val text = pageTextView.text as? Spannable ?: return
-            text.removeSpan(span)
-            highlightSpan = null
+            text.removeSpan(highlight.span)
+            sentenceHighlight = null
         }
 
     }
@@ -287,4 +292,6 @@ class VisualizerAdapter(
             val EMPTY = PageItem("", mutableListOf(), 0)
         }
     }
+
+    data class SentenceHighlight(val span: BackgroundColorSpan, val pos: Span)
 }

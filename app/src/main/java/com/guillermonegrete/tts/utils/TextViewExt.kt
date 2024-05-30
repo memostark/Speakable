@@ -90,3 +90,7 @@ fun TextView.addHighlightedText(start: Int, end: Int, color: Int = Color.argb(12
     text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
     this.setText(text, TextView.BufferType.SPANNABLE)
 }
+
+fun Spannable.addHighlightedText(start: Int, end: Int, color: Int = Color.argb(128, 255, 0, 0)){
+    setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+}
