@@ -108,6 +108,10 @@ class VisualizerAdapter(
             pageTextView.customSelectionActionModeCallback = actionModeCallback
         }
 
+        open fun bind(pageItem: PageItem) {
+            actionModeCallback.item = pageItem
+        }
+
         private inner class PageGestureListener : GestureDetector.SimpleOnGestureListener() {
 
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
@@ -138,15 +142,17 @@ class VisualizerAdapter(
 
     }
 
-    inner class PageViewHolder(private val binding: VisualizerPageItemBinding): ViewHolder(binding.root){
+    inner class PageViewHolder(binding: VisualizerPageItemBinding): ViewHolder(binding.root){
 
-        fun bind(pageItem: PageItem){
-            pageTextView.text = pageItem.text
+        override fun bind(pageItem: PageItem){
+            super.bind(pageItem)
+            val spannable = SpannableString(pageItem.text)
 
             pageItem.notes.forEach {
                 val span = it.span
-                binding.pageTextView.addHighlightedText(span.start, span.end, it.color)
+                spannable.addHighlightedText(span.start, span.end, it.color)
             }
+            pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
         }
     }
 
@@ -159,7 +165,8 @@ class VisualizerAdapter(
             setMargins(0, 0, 0, pageMarginsSize)
         }
 
-        fun bind(pageItem: PageItem){
+        override fun bind(pageItem: PageItem){
+            super.bind(pageItem)
             updateLayoutParams(isPageSplit)
 
             val spannable = SpannableString(pageItem.text)
@@ -214,6 +221,8 @@ class VisualizerAdapter(
         private val showTextDialog: (CharSequence) -> Unit
     ): ActionMode.Callback{
 
+        var item: PageItem? = null
+
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
             return when(item.itemId){
                 R.id.show_process_text_activity -> {
@@ -251,10 +260,28 @@ class VisualizerAdapter(
             val inflater: MenuInflater = mode.menuInflater
             menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
             inflater.inflate(R.menu.menu_context_text_visualizer, menu)
+
+            if (notesOverlap()) {
+                val item = menu.findItem(R.id.add_new_note_action)
+                item.isVisible = false
+            }
             return true
         }
 
         override fun onDestroyActionMode(mode: ActionMode?) {}
+
+        private fun notesOverlap(): Boolean {
+            val localItem = item ?: return true
+            val selStart = pageTextView.selectionStart
+            val selEnd = pageTextView.selectionEnd
+            localItem.notes.forEach {
+                val span = it.span
+                val isOverlappingNotes = span.start < selEnd && span.end > selStart
+                if (isOverlappingNotes) return true
+            }
+
+            return false
+        }
     }
 
     fun updateNote(position: Int, note: NoteItem) {

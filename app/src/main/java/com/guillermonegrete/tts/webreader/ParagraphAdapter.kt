@@ -356,7 +356,7 @@ class ParagraphAdapter(
                 val selEnd = binding.paragraph.selectionEnd
 
                 // Check if selected text and note spans overlap
-                localItem.notes.map {
+                localItem.notes.forEach {
                     val span = it.span
                     isOverlappingNotes = span.start < selEnd && span.end > selStart
                     if (isOverlappingNotes) {
