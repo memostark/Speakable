@@ -14,6 +14,7 @@ import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
+import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink;
 import com.guillermonegrete.tts.textprocessing.domain.model.GetLayoutResult;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.*;
 
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
+import kotlinx.coroutines.Dispatchers;
 
 public class ProcessTextPresenterTest {
 
@@ -57,6 +59,7 @@ public class ProcessTextPresenterTest {
     @Mock private SharedPreferences sharedPreferences;
     @Mock private CustomTTS customTTS;
     @Mock private GetLangAndTranslation getTranslationInteractor;
+    private GetExternalLink getExternalLink;
 
     @Captor
     private ArgumentCaptor<WordRepositorySource.GetWordRepositoryCallback> getWordCallbackCaptor;
@@ -99,7 +102,8 @@ public class ProcessTextPresenterTest {
     private ProcessTextPresenter givenPresenter(){
         var mainThread = new TestMainThread();
         var executor = new TestThreadExecutor();
-        var presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, linksRepository, sharedPreferences, customTTS, getTranslationInteractor);
+        getExternalLink = new GetExternalLink(executor, mainThread, linksRepository, Dispatchers.getUnconfined());
+        var presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink);
         presenter.setView(view);
         return presenter;
     }

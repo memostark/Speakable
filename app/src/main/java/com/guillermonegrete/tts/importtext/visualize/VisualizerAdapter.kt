@@ -1,22 +1,31 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.annotation.SuppressLint
 import android.text.Spannable
 import android.text.SpannableString
-import android.text.method.LinkMovementMethod
 import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.GestureDetectorCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.EditNote
+import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
+import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
+import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.dpToPixel
-import java.text.BreakIterator
-import java.util.*
+import com.guillermonegrete.tts.utils.findWordForRightHanded
+import com.guillermonegrete.tts.utils.getSelectedText
 
 class VisualizerAdapter(
-    private val pages: List<CharSequence>,
+    private val pages: List<PageItem>,
     private val showTextDialog: (CharSequence) -> Unit,
+    private val onCreateNote: (EditNote) -> Unit,
+    private val onNoteClicked: (EditNote) -> Unit = {},
+    private val getPageCharPos: () -> Int = {0},
     private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -36,10 +45,13 @@ class VisualizerAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val layout = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
+        val inflater = LayoutInflater.from(parent.context)
         return when(viewType){
-            R.layout.visualizer_split_page_item -> SplitPageViewHolder(layout)
-            else -> if(measuringPage) ViewHolder(layout) else PageViewHolder(layout)
+            R.layout.visualizer_split_page_item -> SplitPageViewHolder(VisualizerSplitPageItemBinding.inflate(inflater, parent, false))
+            else -> {
+                if (measuringPage) ViewHolder(inflater.inflate(viewType, parent, false))
+                else PageViewHolder(VisualizerPageItemBinding.inflate(inflater, parent, false))
+            }
         }
     }
 
@@ -64,11 +76,12 @@ class VisualizerAdapter(
             onBindViewHolder(holder, position)
         }else{
             if(holder is SplitPageViewHolder) {
-                val payload = payloads.first()
-                if(payload is Span) {
-                    holder.setHighlightedText(payload.start, payload.end)
-                } else {
-                    holder.updateLayoutParams(payloads.first() as Boolean)
+                when (val payload = payloads.first()) {
+                    is Span -> holder.setHighlightedText(pages[position], payload.start, payload.end)
+                    is Int -> {
+                        if (payload == UNSELECT_SENTENCE) holder.removeHighlight()
+                    }
+                    else -> holder.updateLayoutParams(payload as Boolean)
                 }
             }
         }
@@ -79,101 +92,139 @@ class VisualizerAdapter(
         return R.layout.visualizer_page_item
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
         protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
         private val actionModeCallback = PageActionModeCallback(pageTextView, showTextDialog)
 
         init {
-            pageTextView.customSelectionActionModeCallback = actionModeCallback
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
-            pageTextView.movementMethod = LinkMovementMethod.getInstance()
-        }
-
-        // Based on: https://stackoverflow.com/questions/8612652/select-a-word-on-a-tap-in-textview-edittext
-        private fun setSpannables(view: TextView){
-            val spans = view.text as SpannableString
-//            BreakIterator.
-            val iterator = BreakIterator.getWordInstance(Locale.US)
-            iterator.setText(spans.toString())
-            var start = iterator.first()
-            var end = iterator.next()
-            while (end != BreakIterator.DONE) {
-                val possibleWord = spans.substring(start, end)
-                if (Character.isLetterOrDigit(possibleWord.first())) {
-
-                    val clickSpan = object: ImportedClickableSpan() {
-                        override fun onClick(widget: View) {
-                            super.onClick(widget)
-                            showTextDialog(possibleWord)
-                        }
-                    }
-
-                    spans.setSpan(
-                        clickSpan, start, end,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                }
-                start = end
-                end = iterator.next()
+            val detector = GestureDetectorCompat(itemView.context, PageGestureListener())
+            pageTextView.setOnTouchListener { _, event ->
+                detector.onTouchEvent(event)
             }
+            pageTextView.customSelectionActionModeCallback = actionModeCallback
         }
 
-        protected fun setPageText(text: CharSequence){
-            pageTextView.movementMethod = LinkMovementMethod.getInstance()
+        open fun bind(pageItem: PageItem) {
+            actionModeCallback.item = pageItem
+        }
 
-            pageTextView.setText(text, TextView.BufferType.SPANNABLE)
-            setSpannables(pageTextView)
+        private inner class PageGestureListener : GestureDetector.SimpleOnGestureListener() {
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                val offset = pageTextView.getOffsetForPosition(e.x, e.y)
+
+                val item = pages[adapterPosition]
+                val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
+                if (clickedNote != null) {
+                    val span = clickedNote.span
+                    val text = item.text.substring(span.start, span.end)
+                    val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
+                    onNoteClicked(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id))
+                    return true
+                }
+
+                val wordSpan = pageTextView.findWordForRightHanded(offset)
+                val clickedWord = pageTextView.text.substring(wordSpan.start, wordSpan.end)
+
+                if (clickedWord.isNotEmpty()) {
+                    showTextDialog(clickedWord)
+                    return true
+                }
+
+                return super.onSingleTapConfirmed(e)
+            }
+
         }
 
     }
 
-    inner class PageViewHolder(view: View): ViewHolder(view){
+    inner class PageViewHolder(binding: VisualizerPageItemBinding): ViewHolder(binding.root){
 
-        fun bind(text: CharSequence){
-            setPageText(text)
+        override fun bind(pageItem: PageItem){
+            super.bind(pageItem)
+            val spannable = SpannableString(pageItem.text)
+
+            pageItem.notes.forEach {
+                val span = it.span
+                spannable.addHighlightedText(span.start, span.end, it.color)
+            }
+            pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
         }
     }
 
-    inner class SplitPageViewHolder(view: View): ViewHolder(view){
-        private val bottomText: View = view.findViewById(R.id.page_bottom_text_view)
+    inner class SplitPageViewHolder(private val binding: VisualizerSplitPageItemBinding): ViewHolder(binding.root){
+
+        private var sentenceHighlight: SentenceHighlight? = null
 
         private val hiddenParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, pageMarginsSize, 0f)
         private val halfShownParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 0.5f).apply {
             setMargins(0, 0, 0, pageMarginsSize)
         }
 
-        fun bind(text: CharSequence){
-            setPageText(text)
-
+        override fun bind(pageItem: PageItem){
+            super.bind(pageItem)
             updateLayoutParams(isPageSplit)
+
+            val spannable = SpannableString(pageItem.text)
+            sentenceHighlight?.let {
+                spannable.setSpan(it.span, it.pos.start, it.pos.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+
+            pageItem.notes.forEach {
+                val span = it.span
+                spannable.addHighlightedText(span.start, span.end, it.color)
+            }
+            pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
         }
 
         fun updateLayoutParams(splitPage: Boolean){
-            bottomText.layoutParams = if(splitPage) halfShownParams else hiddenParams
+            binding.pageBottomTextView.layoutParams = if(splitPage) halfShownParams else hiddenParams
             pageTextView.setLineSpacing(if(splitPage) 0f else lineSpacingExtra, 1f)
         }
 
-        fun setHighlightedText(start: Int, end: Int){
+        fun setHighlightedText(item: PageItem, start: Int, end: Int){
             val text = SpannableString(pageTextView.text)
+            // remove overlapping notes
+            text.getSpans(start, end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
 
-            //Remove previous
-            text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+            //Remove previous selection
+            sentenceHighlight?.let { text.removeSpan(it.span) }
 
-            text.setSpan(BackgroundColorSpan(0x6633B5E5), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            val highlightSpan = BackgroundColorSpan(0x6633B5E5)
+            sentenceHighlight = SentenceHighlight(highlightSpan, Span(start, end))
+            text.setSpan(highlightSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+            // reapply notes so they are still in front of the selection
+            item.notes.forEach {
+                val noteSpan = it.span
+                if (start < noteSpan.end && end > noteSpan.start)
+                    text.addHighlightedText(noteSpan.start, noteSpan.end, it.color)
+            }
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
+        }
+
+        fun removeHighlight() {
+            val highlight = sentenceHighlight ?: return
+            val text = pageTextView.text as? Spannable ?: return
+            text.removeSpan(highlight.span)
+            sentenceHighlight = null
         }
 
     }
 
-    class PageActionModeCallback(
+    inner class PageActionModeCallback(
         private val pageTextView: TextView,
         private val showTextDialog: (CharSequence) -> Unit
     ): ActionMode.Callback{
 
+        var item: PageItem? = null
+
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-            when(item.itemId){
+            return when(item.itemId){
                 R.id.show_process_text_activity -> {
                     if (pageTextView.isFocused) {
                         val selStart = pageTextView.selectionStart
@@ -188,9 +239,17 @@ class VisualizerAdapter(
                     }
 
                     mode.finish()
-                    return true
+                    true
                 }
-                else -> return false
+                R.id.add_new_note_action -> {
+                    val firstCharIndex = getPageCharPos()
+                    val span = Span(firstCharIndex + pageTextView.selectionStart, firstCharIndex + pageTextView.selectionEnd)
+                    val text = pageTextView.getSelectedText().toString()
+                    onCreateNote(EditNote(text, "", span, 0, false, 0))
+                    mode.finish()
+                    true
+                }
+                else -> false
             }
         }
 
@@ -201,9 +260,65 @@ class VisualizerAdapter(
             val inflater: MenuInflater = mode.menuInflater
             menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
             inflater.inflate(R.menu.menu_context_text_visualizer, menu)
+
+            if (notesOverlap()) {
+                val item = menu.findItem(R.id.add_new_note_action)
+                item.isVisible = false
+            }
             return true
         }
 
         override fun onDestroyActionMode(mode: ActionMode?) {}
+
+        private fun notesOverlap(): Boolean {
+            val localItem = item ?: return true
+            val selStart = pageTextView.selectionStart
+            val selEnd = pageTextView.selectionEnd
+            localItem.notes.forEach {
+                val span = it.span
+                val isOverlappingNotes = span.start < selEnd && span.end > selStart
+                if (isOverlappingNotes) return true
+            }
+
+            return false
+        }
     }
+
+    fun updateNote(position: Int, note: NoteItem) {
+        val page = pages[position]
+        page.notes.removeAll { note.id == it.id }
+        val localSpan = Span(note.span.start - page.firstCharIndex, note.span.end - page.firstCharIndex)
+        page.notes.add(note.copy(span = localSpan))
+        notifyItemChanged(position)
+    }
+
+    fun deleteNote(noteId: Long) {
+        val pos = pages.indexOfFirst {
+            val note = it.notes.firstOrNull { note -> note.id == noteId }
+            note != null
+        }
+        if (pos == -1) return
+        val paragraphItem = pages[pos]
+        paragraphItem.notes.removeAll { noteId == it.id }
+        notifyItemChanged(pos)
+    }
+
+    companion object {
+        const val UNSELECT_SENTENCE = 10
+    }
+
+    data class PageItem(
+        val text: CharSequence,
+        val notes: MutableList<NoteItem>,
+        /**
+         * The index of the paragraph's first char with respect to the whole text.
+         */
+        val firstCharIndex: Int,
+    ) {
+        companion object {
+            val EMPTY = PageItem("", mutableListOf(), 0)
+        }
+    }
+
+    data class SentenceHighlight(val span: BackgroundColorSpan, val pos: Span)
 }

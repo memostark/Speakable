@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.di
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.room.Room
 import com.guillermonegrete.tts.customtts.FakeTTS
 import com.guillermonegrete.tts.customtts.TTS
@@ -34,15 +35,19 @@ abstract class TestApplicationModuleBinds {
 @Module
 @TestInstallIn(
     components = [SingletonComponent::class],
-    replaces = [FilesDatabaseModule::class]
+    replaces = [StorageModule::class]
 )
-object FileMemoryDatabaseModule {
+object TestStorageModule {
 
     @Singleton
     @Provides
     fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase {
         return Room.inMemoryDatabaseBuilder(context, FilesDatabase::class.java).build()
     }
+
+    @Singleton
+    @Provides
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences = context.getSharedPreferences("ui-test-preferences", Context.MODE_PRIVATE)
 }
 
 /**

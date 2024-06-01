@@ -32,6 +32,7 @@ import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.di.WordRepositorySourceModule
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
+import com.guillermonegrete.tts.main.SettingsFragment
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import com.guillermonegrete.tts.utils.selectTabAtPosition
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -69,6 +70,9 @@ class TextInfoDialogTest {
     fun init() {
         // Populate @Inject fields in test class
         hiltRule.inject()
+        preferences.edit(commit = true) {
+            putString(SettingsFragment.PREF_LANGUAGE_FROM, "auto") // 15 is the english position
+        }
     }
 
 

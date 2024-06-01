@@ -403,7 +403,7 @@ class WebReaderViewModel @Inject constructor(
 
         viewModelScope.launch {
             webLinkDAO.update(link)
-            noteDAO.deleteByFileId(link.id)
+            noteDAO.deleteByLinkId(link.id)
             loadPageFromWeb()
         }
     }
@@ -412,11 +412,11 @@ class WebReaderViewModel @Inject constructor(
         val webLink = cacheWebLink ?: return
         viewModelScope.launch {
             wrapEspressoIdlingResource {
-                val newNote = Note(noteText, text, selection.start, selection.end - selection.start, color, webLink.id, id)
+                val newNote = Note(noteText, text, selection.start, selection.end - selection.start, color, webLink.id, null, id)
                 val resultId = noteDAO.upsert(newNote)
                 // Upsert returns -1 when the operation was an update, use the parameter ID.
                 val finalId = if(resultId == -1L) id else resultId
-                val result = ModifiedNote.Update(Note(noteText, text, newNote.position, newNote.length, color, webLink.id, finalId))
+                val result = ModifiedNote.Update(newNote.copy(id = finalId))
                 _updatedNote.value = result
             }
         }
@@ -425,7 +425,7 @@ class WebReaderViewModel @Inject constructor(
     fun deleteNote(id: Long) {
         viewModelScope.launch {
             wrapEspressoIdlingResource {
-                noteDAO.delete(Note("", "", 0, 0, "", 0, id)) // only the id is necessary
+                noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
                 _updatedNote.value = ModifiedNote.Delete(id)
             }
         }

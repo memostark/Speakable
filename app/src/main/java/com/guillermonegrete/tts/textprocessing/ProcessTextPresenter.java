@@ -13,7 +13,6 @@ import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.Segment;
 import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.data.WordResult;
-import com.guillermonegrete.tts.data.source.ExternalLinksDataSource;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.main.SettingsFragment;
@@ -46,10 +45,10 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private ProcessTextContract.View mView;
     private final WordRepositorySource mRepository;
     private final DictionaryRepository dictionaryRepository;
-    private final ExternalLinksDataSource linksRepository;
     private final SharedPreferences sharedPreferences;
     private final CustomTTS customTTS;
     private final GetLangAndTranslation getTranslationInteractor;
+    private final GetExternalLink getExternalLink;
 
     private final MutableLiveData<WordResult> selectedWordResult = new MutableLiveData<>();
 
@@ -74,17 +73,17 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             MainThread mainThread,
             WordRepositorySource repository,
             DictionaryRepository dictRepository,
-            ExternalLinksDataSource linksRepository,
             SharedPreferences sharedPreferences,
             CustomTTS customTTS,
-            GetLangAndTranslation getTranslationInteractor){
+            GetLangAndTranslation getTranslationInteractor,
+            GetExternalLink getExternalLink){
         super(executor, mainThread);
         mRepository = repository;
         dictionaryRepository = dictRepository;
-        this.linksRepository = linksRepository;
         this.sharedPreferences = sharedPreferences;
         this.customTTS = customTTS;
         this.getTranslationInteractor = getTranslationInteractor;
+        this.getExternalLink = getExternalLink;
 
         isPlaying = false;
         isAvailable = true;
@@ -233,17 +232,15 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     }
 
     private void getExternalLinks(String language) {
-        var link_interactor = new GetExternalLink(executorService, mMainThread, linksRepository);
-        link_interactor.invoke(language, links -> {
+        getExternalLink.invoke(language, links -> {
                     mView.setExternalDictionary(links);
                     if(!hasTranslation) mView.setTranslationErrorMessage();
         });
     }
 
     public void getExternalLinks(Words word) {
-        var linkInteractor = new GetExternalLink(executorService, mMainThread, linksRepository);
         executorService.execute(() -> {
-            var links = linkInteractor.invoke(word.lang);
+            var links = getExternalLink.invoke(word.lang);
             for(var link: links) {
                 link.link = link.link.replace("{q}", word.word);
             }
@@ -291,9 +288,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                     return Unit.INSTANCE;
                 });
 
-        var linkInteractor = new GetExternalLink(executorService, mMainThread, linksRepository);
-
-        linkInteractor.invoke(languageFrom, links -> mView.updateExternalLinks(links));
+        getExternalLink.invoke(languageFrom, links -> mView.updateExternalLinks(links));
     }
 
     @Override

@@ -11,10 +11,18 @@ import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
+import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
+import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
+import com.guillermonegrete.tts.webreader.AddNoteResult
+import com.guillermonegrete.tts.webreader.db.Note
+import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import timber.log.Timber
@@ -27,7 +35,9 @@ class VisualizeTextViewModel @Inject constructor(
     private val epubParser: EpubParser,
     private val settings: SettingsRepository,
     private val fileRepository: FileRepository,
+    private val noteDAO: NoteDAO,
     private val getTranslationInteractor: GetLangAndTranslation,
+    private val getExternalLinksInteractor: GetExternalLink,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
@@ -61,13 +71,13 @@ class VisualizeTextViewModel @Inject constructor(
         get() = _book
 
     private var currentPages = listOf<CharSequence>()
-    private val _pages = MutableLiveData<Event<List<CharSequence>>>()
+    private val _bookChapter = MutableLiveData<Event<BookChapter>>()
     /**
      * Called every time pages have been processed, called when visualizer starts and
      * when switching between chapters.
      */
-    val pages: LiveData<Event<List<CharSequence>>>
-        get() = _pages
+    val bookChapter: LiveData<Event<BookChapter>>
+        get() = _bookChapter
 
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean> = _dataLoading
@@ -84,6 +94,12 @@ class VisualizeTextViewModel @Inject constructor(
 
     private val _translationError = MutableLiveData<Event<String>>()
     val translationError: LiveData<Event<String>> = _translationError
+
+    private val _updatedNote = MutableLiveData<ModifiedNote>()
+    val updatedNote: LiveData<ModifiedNote> = _updatedNote
+
+    private val _linksForWord = MutableLiveData<List<ExternalLink>>()
+    val linksForWord: LiveData<List<ExternalLink>> = _linksForWord
 
     // Settings
     var hasBottomSheet = false
@@ -299,7 +315,14 @@ class VisualizeTextViewModel @Inject constructor(
         currentPages = mutablePages
         _translatedPages = arrayOfNulls<Translation>(pagesSize).toMutableList()
 
-        _pages.value = Event(mutablePages)
+        var notes = emptyList<Note>()
+        databaseBookFile?.let { book ->
+
+            // Shift left 24 because the chapter is encoded in the last 8 bits of a 32 bit int.
+            val start = currentChapter shl 24
+            notes = noteDAO.getFileNotes(book.id, start)
+        }
+        _bookChapter.value = Event(BookChapter(mutablePages, notes))
     }
 
     /**
@@ -401,7 +424,7 @@ class VisualizeTextViewModel @Inject constructor(
      * Returns the character position of the first element of the current page.
      * For example, the third page ranges from 20 to 35, it returns 20.
      */
-    private fun getCharPos(): Int {
+    fun getCharPos(): Int {
         var sum = 0
         for (i in 0 until currentPage){
             sum += currentPages[i].length
@@ -427,6 +450,40 @@ class VisualizeTextViewModel @Inject constructor(
         }
 
         return null
+    }
+
+    fun saveNote(newNote: AddNoteResult, originalText: String, position: Int, length: Int, id: Long) {
+        val bookId = databaseBookFile?.id ?: return
+
+        viewModelScope.launch {
+            wrapEspressoIdlingResource {
+                val chapter = currentChapter
+                // java int is 32 bits
+                val chapterAndPage = (chapter shl 24) or (position and 0x00ffffff)
+                val newDbNote = Note(newNote.text, originalText, chapterAndPage, length, newNote.colorHex, null, bookId, id)
+                val resultId = noteDAO.upsert(newDbNote)
+                // Upsert returns -1 when the operation was an update, use the parameter ID.
+                val finalId = if(resultId == -1L) id else resultId
+                val result = ModifiedNote.Update(newDbNote.copy(id = finalId))
+                _updatedNote.value = result
+            }
+        }
+    }
+
+    fun deleteNote(id: Long) {
+        viewModelScope.launch {
+            wrapEspressoIdlingResource {
+                noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
+                _updatedNote.value = ModifiedNote.Delete(id)
+            }
+        }
+    }
+
+    fun getExternalLinks(word: String) {
+        viewModelScope.launch {
+            val links = getExternalLinksInteractor(languageFrom, word)
+            _linksForWord.value = links
+        }
     }
 
 }

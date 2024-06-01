@@ -13,14 +13,16 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.annotation.ColorInt
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.EditNote
+import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
+import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
 import kotlinx.coroutines.channels.BufferOverflow
@@ -354,7 +356,7 @@ class ParagraphAdapter(
                 val selEnd = binding.paragraph.selectionEnd
 
                 // Check if selected text and note spans overlap
-                localItem.notes.map {
+                localItem.notes.forEach {
                     val span = it.span
                     isOverlappingNotes = span.start < selEnd && span.end > selStart
                     if (isOverlappingNotes) {
@@ -649,13 +651,6 @@ class ParagraphAdapter(
         return selectionSpan
     }
 
-    private fun TextView.addHighlightedText(start: Int, end: Int, color: Int = Color.argb(128, 255, 0, 0)){
-        val text = SpannableString(this.text)
-
-        text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        this.setText(text, TextView.BufferType.SPANNABLE)
-    }
-
     fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {
         val pos = items.indexOfFirst { it.firstCharIndex + it.original.length > selection.start }
         if (pos == -1) return
@@ -708,22 +703,6 @@ class ParagraphAdapter(
             return Span(firstCharIndex + span.start, firstCharIndex + span.end)
         }
     }
-
-    data class NoteItem(
-        val text: String,
-        val span: Span,
-        @ColorInt val color: Int,
-        val id: Long
-    )
-
-    data class EditNote(
-        val text: String,
-        val noteText: String,
-        val span: Span,
-        @ColorInt val color: Int,
-        val noteSaved: Boolean,
-        val id: Long
-    )
 
     data class SelectedSentence(
         var paragraphIndex: Int = -1,

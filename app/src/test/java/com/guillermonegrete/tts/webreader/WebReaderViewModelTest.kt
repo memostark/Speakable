@@ -65,7 +65,7 @@ class WebReaderViewModelTest {
 
         externalLinksSource = FakeExternalLinkSource()
         val getExternalLink =
-            GetExternalLink(TestThreadExecutor(), TestMainThread(), externalLinksSource)
+            GetExternalLink(TestThreadExecutor(), TestMainThread(), externalLinksSource, mainCoroutineRule.dispatcher)
 
         webLinkDAO = FakeWebLinkDAO()
         notesDAO = FakeNoteDAO()
@@ -447,7 +447,7 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
 
         // Verify uuid was deleted
-        val newNote = Note("new note text", "original text", 4, 5, "", 10, 9)
+        val newNote = Note("new note text", "original text", 4, 5, "", 10, null, 9)
         val expected = ModifiedNote.Update(newNote)
         assertEquals(expected, viewModel.updatedNote.getOrAwaitValue())
         val note = notesDAO.notes.first()
@@ -459,7 +459,7 @@ class WebReaderViewModelTest {
         // Notes only available when local page exists
         loadLocalPage()
         val noteId = 9L
-        notesDAO.notes.add(Note( "saved text", "original text", 0, 4, "", 10, noteId))
+        notesDAO.notes.add(Note("saved text", "original text", 0, 4, "", 10, null, noteId))
 
         viewModel.deleteNote(noteId)
         advanceUntilIdle()

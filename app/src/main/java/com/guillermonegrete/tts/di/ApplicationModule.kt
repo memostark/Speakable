@@ -49,10 +49,6 @@ import java.util.concurrent.Executors
 @Module
 object ApplicationModule {
 
-    @Singleton
-    @Provides
-    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-
     @Qualifier
     @Retention(AnnotationRetention.RUNTIME)
     annotation class RemoteTranslationSource
@@ -182,17 +178,21 @@ object ApplicationModule {
 }
 
 /**
- * Putting FileDatabase in its module so it can be replaced in tests.
+ * Putting these storage components in a module so they can be replaced in tests.
  */
 @InstallIn(SingletonComponent::class)
 @Module
-object FilesDatabaseModule {
+object StorageModule {
 
     @Singleton
     @Provides
     fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase{
         return FilesDatabase.getDatabase(context)
     }
+
+    @Singleton
+    @Provides
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 }
 
 @InstallIn(SingletonComponent::class)

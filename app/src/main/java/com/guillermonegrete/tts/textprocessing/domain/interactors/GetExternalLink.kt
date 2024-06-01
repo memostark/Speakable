@@ -4,13 +4,16 @@ import com.guillermonegrete.tts.AbstractInteractor
 import com.guillermonegrete.tts.MainThread
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.db.ExternalLink
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 
 class GetExternalLink @Inject constructor (
     executor: ExecutorService,
     mainThread: MainThread,
-    private val dataSource: ExternalLinksDataSource
+    private val dataSource: ExternalLinksDataSource,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : AbstractInteractor(executor, mainThread), GetExternalLinksInteractor {
 
     private var language = ""
@@ -32,5 +35,13 @@ class GetExternalLink @Inject constructor (
 
     operator fun invoke(language: String): List<ExternalLink> {
         return dataSource.getLanguageLinks(language)
+    }
+
+    suspend operator fun invoke(language: String, word: String): List<ExternalLink> {
+        return withContext(ioDispatcher) {
+            val links = dataSource.getLanguageLinks(language)
+            links.forEach { link -> link.link = link.link.replace("{q}", word) }
+            links
+        }
     }
 }
