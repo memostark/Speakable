@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<com.guillermonegrete.tts.customviews.NonScrollingTextView
-    android:id="@+id/page_text_view"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="40dp"
-    android:textIsSelectable="true"
-    android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
-    android:textAppearance="?android:attr/textAppearanceLarge"
-    xmlns:android="http://schemas.android.com/apk/res/android">
-    <requestFocus />
-</com.guillermonegrete.tts.customviews.NonScrollingTextView>
+    xmlns:tools="http://schemas.android.com/tools">
+    <com.guillermonegrete.tts.customviews.NonScrollingTextView
+        android:id="@+id/page_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:padding="40dp"
+        android:textIsSelectable="true"
+        android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        tools:text="@string/large_text">
+        <requestFocus />
+    </com.guillermonegrete.tts.customviews.NonScrollingTextView>
+</FrameLayout>
 

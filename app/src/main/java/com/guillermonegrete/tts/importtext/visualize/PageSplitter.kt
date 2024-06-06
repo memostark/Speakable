@@ -9,12 +9,13 @@ import kotlinx.coroutines.withContext
 
 class PageSplitter(
     textView: TextView,
+    width: Int,
     private val imageGetter: Html.ImageGetter?,
 ) {
     private val pages = ArrayList<CharSequence>()
     private val mSpannableStringBuilder = SpannableStringBuilder()
 
-    private val pageWidth = textView.width - textView.paddingStart - textView.paddingEnd
+    private val pageWidth = width - textView.paddingStart - textView.paddingEnd
     private val pageHeight = textView.height - textView.paddingTop - textView.paddingBottom
 
     private val lineSpacingMultiplier = textView.lineSpacingMultiplier
