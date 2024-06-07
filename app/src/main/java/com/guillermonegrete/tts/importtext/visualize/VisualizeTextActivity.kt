@@ -197,16 +197,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setPageTransformListener() {
         // Before setting the transformer make sure the card has finished updating.
         binding.textReaderCardView.post {
-            viewPager.setPageTransformer { view, position ->
+            viewPager.setPageTransformer { view, _ ->
                 pageItemView = view
 
                 setUpPageParsing(view)
 
                 removeSelection()
-
-                // A new page is shown when position is 0.0f,
-                // so we request focus in order to highlight text correctly.
-                if(position == 0.0f) setPageTextFocus()
             }
         }
     }
