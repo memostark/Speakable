@@ -197,16 +197,12 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setPageTransformListener() {
         // Before setting the transformer make sure the card has finished updating.
         binding.textReaderCardView.post {
-            viewPager.setPageTransformer { view, position ->
+            viewPager.setPageTransformer { view, _ ->
                 pageItemView = view
 
                 setUpPageParsing(view)
 
                 removeSelection()
-
-                // A new page is shown when position is 0.0f,
-                // so we request focus in order to highlight text correctly.
-                if(position == 0.0f) setPageTextFocus()
             }
         }
     }
@@ -589,21 +585,21 @@ class VisualizeTextActivity: AppCompatActivity() {
 
             createViewModel()
 
-            val pageTextView: TextView = focusedView as TextView
-            viewModel.pageSplitter = createPageSplitter(pageTextView)
+            val pageTextView: TextView = focusedView.findViewById(R.id.page_text_view)
+            viewModel.pageSplitter = createPageSplitter(pageTextView, focusedView.width)
             initParse()
             splitterCreated = false
         }
     }
 
-    private fun createPageSplitter(textView: TextView): PageSplitter {
+    private fun createPageSplitter(textView: TextView, width: Int): PageSplitter {
         val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
             val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri), this)
             InputStreamImageGetter( this, zipReader)
         } else null
 
-        return PageSplitter(textView, imageGetter)
+        return PageSplitter(textView, width, imageGetter)
     }
 
     private fun showTableOfContents(navPoints: List<NavPoint>){

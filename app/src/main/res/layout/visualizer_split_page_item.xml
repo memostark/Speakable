@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_weight="1">
     <TextView
         android:id="@+id/page_text_view"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_marginTop="40dp"
         android:layout_marginEnd="40dp"
@@ -17,8 +18,10 @@
         android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
         android:textAppearance="?android:attr/textAppearanceLarge"
         app:autoSizeTextType="uniform"
-        app:autoSizeMaxTextSize="@dimen/text_size_large">
+        app:autoSizeMaxTextSize="@dimen/text_size_large"
+        tools:text="@string/large_text">
 <!--    Set large size as max, we only want the text to shrink -->
+<!--    The width has to be wrap_content otherwise the text selection is buggy, see this thread for more info: https://stackoverflow.com/a/35013783/10244759 -->
         <requestFocus />
     </TextView>
     <View
