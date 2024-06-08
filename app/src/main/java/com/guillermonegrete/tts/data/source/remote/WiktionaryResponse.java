@@ -13,6 +13,10 @@ public class WiktionaryResponse {
     @Expose
     private Query query;
 
+    @SerializedName("parse")
+    @Expose
+    private Parse parse;
+
 
     public Query getQuery() {
         return query;
@@ -20,6 +24,10 @@ public class WiktionaryResponse {
 
     public void setQuery(Query query) {
         this.query = query;
+    }
+
+    public Parse getParse() {
+        return parse;
     }
 
     public class Query {
@@ -36,6 +44,16 @@ public class WiktionaryResponse {
             this.pageNumber = pageNumber;
         }
 
+    }
+
+    public static class Parse {
+        @SerializedName("wikitext")
+        @Expose
+        private String wikitext;
+
+        public String getWikitext() {
+            return wikitext;
+        }
     }
 
     public class PageInfo {

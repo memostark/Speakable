@@ -47,9 +47,9 @@ public class WiktionarySource implements DictionaryDataSource {
 
                 if(response.isSuccessful() && response.body() != null){
 
-                    WiktionaryResponse.PageInfo info = response.body().getQuery().getPageNumber().firstEntry().getValue();
-                    if(info.getExtract() != null) {
-                        List<WikiItem> items = WiktionaryParser.parse(info.getExtract());
+                    String info = response.body().getParse().getWikitext();
+                    if(info != null) {
+                        List<WikiItem> items = WiktionaryParser.parse(info);
                         callback.onDefinitionLoaded(items);
                     }else {
                         callback.onDataNotAvailable();
@@ -74,8 +74,8 @@ public class WiktionarySource implements DictionaryDataSource {
             List<WikiItem> items = new ArrayList<>();
 
             for (String languageSection: languageSections){
-                String[] separated = languageSection.split("\n=== ");
-                String lang = separated[0].split(" ")[0];
+                String[] separated = languageSection.split("\n===");
+                String lang = separated[0].split("==")[1];
 
                 items.add(new WiktionaryLangHeader(lang));
 
@@ -83,7 +83,7 @@ public class WiktionarySource implements DictionaryDataSource {
                 langSubHeaders.remove(0);
 
                 for (String langSubHeader: langSubHeaders){
-                    String[] subHeaders = langSubHeader.split(" ===\n");
+                    String[] subHeaders = langSubHeader.split("===\n");
                     String subHeader = subHeaders[0];
 
                     if(subHeaders.length > 1) {
@@ -104,9 +104,8 @@ public class WiktionarySource implements DictionaryDataSource {
         }
 
         public static List<String> getLanguages(String extract){
-            String[] separated = extract.split("\n== ");
+            String[] separated = extract.split("\\b(=)\\1\\b");
             List<String> langs = new ArrayList<>(Arrays.asList(separated));
-            langs.remove(0);
             return langs;
         }
     }
