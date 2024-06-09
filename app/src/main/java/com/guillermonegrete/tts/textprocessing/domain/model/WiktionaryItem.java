@@ -1,15 +1,15 @@
 package com.guillermonegrete.tts.textprocessing.domain.model;
 
 public class WiktionaryItem implements WikiItem{
-    private String itemText;
-    private String subHeaderText;
+    private final CharSequence itemText;
+    private final String subHeaderText;
 
-    public WiktionaryItem(String bodyText, String subHeaderText ){
+    public WiktionaryItem(CharSequence bodyText, String subHeaderText ){
         this.itemText = bodyText;
         this.subHeaderText = subHeaderText;
     }
 
-    public String getItemText() {
+    public CharSequence getItemText() {
         return itemText;
     }
 
