@@ -163,8 +163,8 @@ fun ExternalLinksDialog(
                         WebView(context).apply {
                             webViewClient = WebViewClient()
 
-//                            settings.javaScriptEnabled = true
-//                            settings.loadWithOverviewMode = true
+                            settings.javaScriptEnabled = true
+                            settings.loadWithOverviewMode = true
                         }
                     },
                     update = { webView ->
