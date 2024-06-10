@@ -371,17 +371,6 @@ fun BarPreview() {
 
 @Preview
 @Composable
-fun SpinnerPreview() {
-    AppTheme {
-        Column {
-            Spinner(suggestions)
-            Spinner(suggestions, 0)
-        }
-    }
-}
-
-@Preview
-@Composable
 fun LoadingDialogPreview() {
     AppTheme {
         LoadingDialog(true)
