@@ -26,11 +26,16 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -62,6 +67,34 @@ fun NoteSheet(
         )
     }
 
+    // Allows nested scrolling of the swipeable note and the scrollable text
+    val connection = remember {
+        object: NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                // Only handle one direction of delta because the sheet can only swipe downwards.
+                return if (delta < 0) {
+                    Offset(0f, swipeableState.dispatchRawDelta(delta))
+                } else Offset.Zero
+            }
+
+            override suspend fun onPreFling(available: Velocity) = available
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                return  Offset(0f, swipeableState.dispatchRawDelta(available.y))
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                swipeableState.settle(available.y)
+                return super.onPostFling(consumed, available)
+            }
+        }
+    }
+
     Popup(
         Alignment.BottomCenter,
         onDismissRequest = onDismiss,
@@ -79,6 +112,7 @@ fun NoteSheet(
                 }
                 .anchoredDraggable(swipeableState, Orientation.Vertical)
                 .offset { IntOffset(0, swipeableState.requireOffset().roundToInt()) }
+                .nestedScroll(connection)
         ) {
             Row(Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
 
