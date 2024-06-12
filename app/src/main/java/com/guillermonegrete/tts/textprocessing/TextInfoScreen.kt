@@ -495,6 +495,8 @@ enum class SwipeDirection(val state: Int) {
     Initial(0),
     Right(1),
     Left(2),
+    Top(3),
+    Bottom(4),
 }
 
 private val languages = StringList(listOf("Auto detect", "English", "Spanish", "German"))

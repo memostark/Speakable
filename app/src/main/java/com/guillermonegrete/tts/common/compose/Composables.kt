@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.ExternalLinkUI
 import com.guillermonegrete.tts.ui.theme.AppTheme
@@ -152,7 +153,10 @@ fun ExternalLinksDialog(
     }
     var selected by remember { mutableIntStateOf(selection) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(modifier = Modifier
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(12.dp))
