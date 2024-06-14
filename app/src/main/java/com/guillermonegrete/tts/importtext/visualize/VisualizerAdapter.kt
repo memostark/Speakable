@@ -16,7 +16,6 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
 import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
 import com.guillermonegrete.tts.utils.addHighlightedText
-import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
 
@@ -40,7 +39,7 @@ class VisualizerAdapter(
         super.onAttachedToRecyclerView(recyclerView)
         with(recyclerView.context){
             lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
-            pageMarginsSize = dpToPixel(40)
+            pageMarginsSize = resources.getDimensionPixelSize(R.dimen.visualize_sheet_bar_height)
         }
     }
 

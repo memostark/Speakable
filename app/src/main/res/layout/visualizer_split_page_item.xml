@@ -11,14 +11,14 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_marginTop="40dp"
-        android:layout_marginEnd="40dp"
-        android:layout_marginStart="40dp"
+        android:layout_marginHorizontal="40dp"
         android:layout_weight="0.5"
         android:textIsSelectable="true"
         android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
         android:textAppearance="?android:attr/textAppearanceLarge"
         app:autoSizeTextType="uniform"
         app:autoSizeMaxTextSize="@dimen/text_size_large"
+        app:autoSizeStepGranularity="1sp"
         tools:text="@string/large_text">
 <!--    Set large size as max, we only want the text to shrink -->
 <!--    The width has to be wrap_content otherwise the text selection is buggy, see this thread for more info: https://stackoverflow.com/a/35013783/10244759 -->
@@ -27,7 +27,7 @@
     <View
         android:id="@+id/page_bottom_text_view"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="@dimen/visualize_sheet_bar_height"
         android:layout_weight="0.0"
         android:layout_marginEnd="40dp"
         android:layout_marginStart="40dp"/>
