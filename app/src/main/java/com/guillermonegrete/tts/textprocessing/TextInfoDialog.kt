@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +23,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
+import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.common.models.Span
@@ -88,7 +88,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private val wordState = mutableStateOf(WordState())
 
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
-    private val selectedLink = mutableIntStateOf(0)
+    private var selectedLink = 0
 
     private val editDialogShown = mutableStateOf(false)
     private val deleteDialogShown = mutableStateOf(false)
@@ -175,7 +175,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
                         EditDeleteWordDialogs(wordState)
 
-                        ExternalLinksDialog(selectedLink)
+                        LocalExternalLinksDialog()
                     }
                 }
             }
@@ -264,7 +264,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         presenterImp.wordLinks.observe(this) { links ->
             wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
             // If out of index, default to the first item
-            if(selectedLink.intValue >= links.size) selectedLink.intValue = 0
+            if(selectedLink >= links.size) selectedLink = 0
             linksDialogShown.value = true
         }
 
@@ -899,12 +899,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     @Composable
-    fun ExternalLinksDialog(selectedLink: MutableIntState) {
+    fun LocalExternalLinksDialog() {
 
         ExternalLinksDialog(
             isShown = linksDialogShown.value,
             links = wordLinks.value,
-            selection = selectedLink.intValue,
+            selection = selectedLink,
+            onItemClick = { selectedLink = it},
             onDismiss = { linksDialogShown.value = false },
         )
     }

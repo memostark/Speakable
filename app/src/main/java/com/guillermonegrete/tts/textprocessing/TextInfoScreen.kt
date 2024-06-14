@@ -1,11 +1,8 @@
 package com.guillermonegrete.tts.textprocessing
 
-import android.annotation.SuppressLint
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -17,21 +14,16 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
@@ -50,7 +42,6 @@ import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -63,7 +54,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -79,14 +69,11 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.common.compose.ExternalLinkList
 import com.guillermonegrete.tts.common.compose.Spinner
 import com.guillermonegrete.tts.common.compose.StringList
-import com.guillermonegrete.tts.common.models.ExternalLinkUI
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.db.Words
@@ -492,73 +479,6 @@ fun EditWordDialog(
 
 }
 
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun ExternalLinksDialog(
-    isShown: Boolean,
-    links: ExternalLinkList,
-    selection: Int,
-    onItemClick: (Int) -> Unit = {},
-    onDismiss: () -> Unit = {},
-) {
-    if(!isShown) return
-
-    var selected by remember { mutableIntStateOf(selection) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(12.dp))
-        ) {
-            Column {
-                AndroidView(
-                    factory = { context ->
-                        WebView(context).apply {
-                            webViewClient = WebViewClient()
-
-                            settings.javaScriptEnabled = true
-                            settings.loadWithOverviewMode = true
-                        }
-                    },
-                    update = { webView ->
-                        val externalLink = links.items.getOrNull(selected)
-                        if (externalLink != null) webView.loadUrl(externalLink.link)
-                    },
-                    modifier = Modifier
-                        .height(350.dp)
-                        .fillMaxWidth()
-                )
-
-                LazyRow {
-                    itemsIndexed(links.items) {index, link ->
-                        if (index == selected) {
-                            Box(modifier = Modifier.width(IntrinsicSize.Max)) {
-                                TextButton(onClick = {
-                                    selected = index
-                                    onItemClick(index)
-                                }) {
-                                    Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
-                                }
-                                Divider(
-                                    thickness = 4.dp,
-                                    color = MaterialTheme.colors.primary
-                                )
-                            }
-                        } else {
-                            TextButton(onClick = {
-                                selected = index
-                                onItemClick(index)
-                            }) {
-                                Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 data class WordState(
     val word: WordUI? = null,
     val isSaved: Boolean = false,
@@ -575,6 +495,8 @@ enum class SwipeDirection(val state: Int) {
     Initial(0),
     Right(1),
     Left(2),
+    Top(3),
+    Bottom(4),
 }
 
 private val languages = StringList(listOf("Auto detect", "English", "Spanish", "German"))
@@ -628,14 +550,5 @@ fun EditWordDialogPreview() {
             StringList(listOf("en", "es", "de")),
             true
         )
-    }
-}
-
-@Preview
-@Composable
-fun ExternalLinksDialogPreview() {
-    AppTheme {
-        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site", "", "") })
-        ExternalLinksDialog(true, links, 1)
     }
 }

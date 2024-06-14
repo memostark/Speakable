@@ -1,32 +1,54 @@
 package com.guillermonegrete.tts.common.compose
 
+import android.annotation.SuppressLint
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
+import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.models.ExternalLinkUI
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun YesNoDialog(
@@ -109,6 +131,105 @@ fun Spinner(
                     }
                 }
             }
+        }
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+fun ExternalLinksDialog(
+    isShown: Boolean,
+    links: ExternalLinkList,
+    selection: Int,
+    onItemClick: (Int) -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+    if(!isShown) return
+
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(selection) {
+        coroutineScope.launch { listState.animateScrollToItem(selection) }
+    }
+    var selected by remember { mutableIntStateOf(selection) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(12.dp))
+        ) {
+            Column {
+                AndroidView(
+                    factory = { context ->
+                        WebView(context).apply {
+                            webViewClient = WebViewClient()
+
+                            settings.javaScriptEnabled = true
+                            settings.loadWithOverviewMode = true
+                        }
+                    },
+                    update = { webView ->
+                        val externalLink = links.items.getOrNull(selected)
+                        if (externalLink != null) webView.loadUrl(externalLink.link)
+                    },
+                    modifier = Modifier
+                        .height(350.dp)
+                        .fillMaxWidth()
+                )
+
+                LazyRow(state = listState) {
+                    itemsIndexed(links.items) {index, link ->
+                        if (index == selected) {
+                            Box(modifier = Modifier.width(IntrinsicSize.Max)) {
+                                TextButton(onClick = {
+                                    selected = index
+                                    coroutineScope.launch { listState.animateScrollToItem(index) }
+                                    onItemClick(index)
+                                }) {
+                                    Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
+                                }
+                                Divider(
+                                    thickness = 4.dp,
+                                    color = MaterialTheme.colors.primary
+                                )
+                            }
+                        } else {
+                            TextButton(onClick = {
+                                selected = index
+                                coroutineScope.launch { listState.animateScrollToItem(index) }
+                                onItemClick(index)
+                            }) {
+                                Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun ExternalLinksDialogPreview() {
+    AppTheme {
+        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site", "", "") })
+        ExternalLinksDialog(true, links, 1)
+    }
+}
+
+private val suggestions = StringList(listOf("Item1", "Item2", "Item3"))
+
+@Preview
+@Composable
+fun SpinnerPreview() {
+    AppTheme {
+        Column {
+            Spinner(suggestions)
+            Spinner(suggestions, 0)
         }
     }
 }

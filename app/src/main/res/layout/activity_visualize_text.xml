@@ -40,6 +40,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
+            <!-- Don't set behavior_peekHeight here, has to be set programmatically using the pager's height-->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/visualizer_bottom_sheet"
                 android:layout_width="match_parent"
@@ -52,14 +53,14 @@
                 <View
                     android:id="@+id/peek_view"
                     android:layout_width="match_parent"
-                    android:layout_height="30dp"
+                    android:layout_height="@dimen/visualize_sheet_bar_height"
                     android:background="?colorPrimary"
                     app:layout_constraintTop_toTopOf="@id/guideline_mid_height" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/page_translate_btn"
                     android:layout_width="30dp"
-                    android:layout_height="30dp"
+                    android:layout_height="0dp"
                     android:contentDescription="@string/translate_description"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
@@ -68,13 +69,14 @@
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
                     app:iconTint="?iconTintColor"
+                    app:layout_constraintBottom_toBottomOf="@+id/peek_view"
                     app:layout_constraintEnd_toStartOf="@id/arrow_btn"
                     app:layout_constraintTop_toTopOf="@id/peek_view" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/arrow_btn"
                     android:layout_width="30dp"
-                    android:layout_height="30dp"
+                    android:layout_height="0dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:stateListAnimator="@null"
@@ -82,6 +84,7 @@
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
                     app:iconTint="?iconTintColor"
+                    app:layout_constraintBottom_toBottomOf="@+id/peek_view"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@id/peek_view"
                     app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Button.Circle" />
@@ -98,7 +101,7 @@
                     app:autoSizeMaxTextSize="30sp"
                     app:autoSizeTextType="uniform"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/page_translate_btn"
+                    app:layout_constraintTop_toBottomOf="@+id/peek_view"
                     tools:text="Real content to display" />
 
                 <androidx.constraintlayout.widget.Guideline

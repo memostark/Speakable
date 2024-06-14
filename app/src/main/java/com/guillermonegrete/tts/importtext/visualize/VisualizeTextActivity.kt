@@ -18,7 +18,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +36,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
+import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
@@ -46,11 +46,9 @@ import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
-import com.guillermonegrete.tts.textprocessing.ExternalLinksDialog
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.theme.AppTheme
-import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.getScreenSizes
 import com.guillermonegrete.tts.webreader.AddNoteDialog
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
@@ -82,8 +80,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     private val addNoteDialogVisible = mutableStateOf(false)
     private val noteSheetVisible = mutableStateOf(false)
     private var linksDialogShown = mutableStateOf(false)
-    private val selectedLink = mutableIntStateOf(0)
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
+    private var selectedLink = 0
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
 
@@ -105,6 +103,8 @@ class VisualizeTextActivity: AppCompatActivity() {
      */
     private var ratio = 0.8f
 
+    private var sheetBarHeight = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
@@ -120,6 +120,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         // Bottom sheet
         bottomSheetBehavior = BottomSheetBehavior.from(binding.visualizerBottomSheet)
+        sheetBarHeight = resources.getDimensionPixelSize(R.dimen.visualize_sheet_bar_height)
 
         binding.brightnessSettingsBtn.setOnClickListener { showSettingsPopUp(binding.brightnessSettingsBtn) }
 
@@ -381,7 +382,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             linksForWord.observe(this@VisualizeTextActivity) { links ->
                 wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
                 // If out of index, default to the first item
-                if(selectedLink.intValue >= links.size) selectedLink.intValue = 0
+                if(selectedLink >= links.size) selectedLink = 0
                 linksDialogShown.value = true
             }
 
@@ -570,13 +571,6 @@ class VisualizeTextActivity: AppCompatActivity() {
                 }
             }
         })
-    }
-
-    private fun setPageTextFocus() {
-        val focusedView = viewPager.focusedChild
-
-        val pageTextView: View? = focusedView?.findViewById(R.id.page_text_view)
-        pageTextView?.requestFocus()
     }
 
     private fun setUpPageParsing(focusedView: View){
@@ -824,8 +818,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     }
 
     private fun setBottomSheetPeekHeight(){
-        val peekHeight = this.dpToPixel(30) + viewPager.height / 2
-
+        val peekHeight = sheetBarHeight + viewPager.height / 2
         bottomSheetBehavior.peekHeight = peekHeight
     }
 
@@ -848,7 +841,8 @@ class VisualizeTextActivity: AppCompatActivity() {
         ExternalLinksDialog(
             isShown = linksDialogShown.value,
             links = wordLinks.value,
-            selection = selectedLink.intValue,
+            selection = selectedLink,
+            onItemClick = { selectedLink = it },
             onDismiss = { linksDialogShown.value = false },
         )
 
