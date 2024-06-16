@@ -15,7 +15,7 @@ data class BookFile(
     val uri: String,
     val title: String,
     val fileType: ImportedFileType,
-    val language: String = "und",
+    val language: String? = null,
     var folderPath: String =  UUID.randomUUID().toString(),
     /**
      *  TODO page is not a good indicator of the current position because page size varies, replace with last character.
