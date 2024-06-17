@@ -108,13 +108,13 @@ class VisualizeTextViewModel @Inject constructor(
 
     var languagesISO  = arrayOf<String>()
 
-    var languageFrom = databaseBookFile?.language ?: "auto"
+    var languageFrom: String = ""
+        get() = databaseBookFile?.language ?: "auto"
         set(value) {
             field = value
             val bookFile = databaseBookFile ?: return
             val lang = if (value == "auto") null else value
             databaseBookFile = bookFile.copy(language = lang)
-
         }
     var languageTo = settings.getLanguageTo()
         set(value) {

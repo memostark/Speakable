@@ -51,8 +51,9 @@ class VisualizerSettingsWindow(
         val toAdapter = ArrayAdapter.createFromResource(
             context,
             R.array.googleTranslateLanguagesArray,
-            android.R.layout.simple_spinner_dropdown_item
+            android.R.layout.simple_spinner_item
         )
+        toAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         val spinnerListener = SpinnerListener(callback)
 
         val fromMenu = binding.spinnerLanguageFrom
