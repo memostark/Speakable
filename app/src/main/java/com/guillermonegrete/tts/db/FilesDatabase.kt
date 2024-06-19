@@ -9,7 +9,7 @@ import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
 
 @Database(
-    version = 12,
+    version = 13,
     entities = [BookFile::class, WebLink::class, Note::class],
     autoMigrations = [
         AutoMigration (from = 4, to = 5),
@@ -19,6 +19,7 @@ import com.guillermonegrete.tts.webreader.db.NoteDAO
         AutoMigration (from = 9, to = 10),
         AutoMigration (from = 10, to = 11),
         AutoMigration (from = 11, to = 12, spec = FilesDatabase.RenameFileIdColumnMigration::class),
+        AutoMigration (12, 13)
     ]
 
 )

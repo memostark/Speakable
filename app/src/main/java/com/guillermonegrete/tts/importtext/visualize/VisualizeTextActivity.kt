@@ -484,6 +484,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
         }
 
+        val lang = viewModel.languageFrom
         VisualizerSettingsWindow(
             view,
             themeRes,
@@ -491,7 +492,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             viewModel.hasBottomSheet,
             languagesISO,
-            viewModel.languageFrom,
+            lang,
             viewModel.languageTo,
             popUpCallback,
         ).apply {
