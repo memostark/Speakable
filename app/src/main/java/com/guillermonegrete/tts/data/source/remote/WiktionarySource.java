@@ -52,11 +52,13 @@ public class WiktionarySource implements DictionaryDataSource {
 
                 if (response.isSuccessful() && response.body() != null) {
 
-                    String htmlText = response.body().getParse().getText();
-                    if(htmlText != null) {
+                    var parseAction = response.body().getParse();
+                    if(parseAction != null) {
+                        String htmlText = parseAction.getText();
                         var items = WiktionaryParser.parse(htmlText);
                         callback.onDefinitionLoaded(items);
                     } else {
+                        // If the word doesn't exist then parse is null
                         callback.onDataNotAvailable();
                     }
                 } else {
@@ -77,9 +79,11 @@ public class WiktionarySource implements DictionaryDataSource {
         public static List<WikiItem> parse(String htmlText) {
             Document doc = Jsoup.parse(htmlText);
             // Remove table of contents at the start
-            doc.getElementById("toc").remove();
+            var toc = doc.getElementById("toc");
+            if (toc != null) toc.remove();
             // Remove all the edit buttons/text
-            doc.getElementsByClass("mw-editsection").remove();
+            var editSections = doc.getElementsByClass("mw-editsection");
+            if (editSections != null) editSections.remove();
             CharSequence info = formatHtml(doc.outerHtml());
             return List.of(new WiktionaryItem(info, ""));
         }

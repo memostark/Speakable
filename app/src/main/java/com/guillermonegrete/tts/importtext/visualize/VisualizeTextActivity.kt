@@ -48,7 +48,7 @@ import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
-import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.ui.theme.VisualizerTheme
 import com.guillermonegrete.tts.utils.getScreenSizes
 import com.guillermonegrete.tts.webreader.AddNoteDialog
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
@@ -151,7 +151,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private fun setupCompose() {
         binding.composeRoot.apply {
             setContent {
-                AppTheme {
+                VisualizerTheme(theme = brightnessTheme) {
                     Sheet()
                     
                     Dialogs()

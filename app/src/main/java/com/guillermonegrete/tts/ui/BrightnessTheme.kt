@@ -9,7 +9,7 @@ enum class BrightnessTheme(val value: String) {
         const val PREFERENCE_KEY = "brightness_pref_key"
 
         fun get(value: String): BrightnessTheme {
-            return values().find { it.value == value } ?: WHITE
+            return entries.find { it.value == value } ?: WHITE
         }
     }
 }
