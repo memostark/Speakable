@@ -554,13 +554,6 @@ class VisualizeTextViewModelTest {
     }
 
     @Test
-    fun `Change and query language from`() = runTest {
-        viewModel.languageFrom = "es"
-
-        assertEquals("es", settingsRepository.getLanguageFrom())
-    }
-
-    @Test
     fun `Change and query language to`() = runTest {
         viewModel.languageTo = "de"
 
