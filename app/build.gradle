@@ -1,5 +1,6 @@
 plugins {
     id 'com.google.devtools.ksp'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 apply plugin: 'com.android.application'
@@ -52,12 +53,7 @@ android {
 
     buildFeatures {
         viewBinding true
-        compose true
         buildConfig true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.12'
     }
 
     namespace 'com.guillermonegrete.tts'
