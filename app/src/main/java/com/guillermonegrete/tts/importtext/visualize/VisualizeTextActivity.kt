@@ -57,6 +57,7 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.math.abs
 
+
 @AndroidEntryPoint
 class VisualizeTextActivity: AppCompatActivity() {
 
@@ -399,7 +400,7 @@ class VisualizeTextActivity: AppCompatActivity() {
             viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
             viewModel.parseEpub()
         } else {
-            viewModel.parseSimpleText(intent?.extras?.getString(IMPORTED_TEXT) ?: "No text")
+            viewModel.parseSimpleText(getIntentText())
         }
     }
 
@@ -834,6 +835,30 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         // Notify the adapter to set the highlight, send span payload
         pagesAdapter.notifyItemChanged(viewPager.currentItem, pageSpans.topSpan)
+    }
+
+    /**
+     * First tries to get the text coming from the imported screen.
+     * If null then it tries to get the text from the ClipData of the sharing intent (Intent.ACTION_SEND).
+     */
+    private fun getIntentText(): String {
+        val extras = intent.extras
+        val text = extras?.getString(IMPORTED_TEXT)
+        if (text == null) {
+            val clipData = intent.clipData
+            if (clipData != null && clipData.itemCount > 0) {
+                val size = clipData.itemCount
+                val stringBuilder = StringBuilder()
+                for (i in 0 until size) {
+                    val item = clipData.getItemAt(i)
+                    stringBuilder.append(item.text)
+                }
+                return stringBuilder.toString()
+            } else {
+                return "No text"
+            }
+        }
+        return text
     }
 
     @Composable
