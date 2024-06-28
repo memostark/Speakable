@@ -11,6 +11,7 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
 import android.view.*
+import android.webkit.URLUtil
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.annotation.StyleRes
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -31,6 +33,7 @@ import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
 import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
+import androidx.navigation.fragment.NavHostFragment
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
@@ -88,7 +91,7 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     private var splitterCreated = true
 
-    private lateinit var scaleDetector: ScaleGestureDetector
+    private var scaleDetector: ScaleGestureDetector? = null
 
     private var cardWidth = 0
     /**
@@ -108,9 +111,23 @@ class VisualizeTextActivity: AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val text = getSharedText()
         setPreferenceTheme()
         binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        if (URLUtil.isValidUrl(text)) {
+            binding.mainFragmentContainer.isVisible = true
+            binding.textReaderCardView.isGone = true
+            binding.brightnessSettingsBtn.isGone = true
+            binding.pagesSeekBar.isGone = true
+            val navHostFragment = supportFragmentManager.findFragmentById(R.id.main_fragment_container) as NavHostFragment
+            val navController = navHostFragment.navController
+            val inflater = navHostFragment.navController.navInflater
+            val graph = inflater.inflate(R.navigation.importtext)
+            graph.setStartDestination(R.id.webReaderFragment)
+            navController.setGraph(graph, bundleOf("link" to text))
+            return
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // Never draw on the cutout because it may obstruct text in full screen
@@ -218,6 +235,8 @@ class VisualizeTextActivity: AppCompatActivity() {
     private var scaleInProgress = false
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+
+        val scaleDetector = scaleDetector ?: return super.dispatchTouchEvent(ev)
 
         if(eventInProgress){
             if(pageItemView?.isShown == true) scaleDetector.onTouchEvent(ev)
@@ -859,6 +878,20 @@ class VisualizeTextActivity: AppCompatActivity() {
             }
         }
         return text
+    }
+
+    private fun getSharedText(): String {
+        val clipData = intent.clipData
+        if (clipData != null && clipData.itemCount > 0) {
+            val size = clipData.itemCount
+            val stringBuilder = StringBuilder()
+            for (i in 0 until size) {
+                val item = clipData.getItemAt(i)
+                stringBuilder.append(item.text)
+            }
+            return stringBuilder.toString()
+        }
+        return ""
     }
 
     @Composable
