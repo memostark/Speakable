@@ -1,64 +1,28 @@
 package com.guillermonegrete.tts.importtext.visualize
 
-import android.annotation.SuppressLint
 import android.content.SharedPreferences
-import android.graphics.Color
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.Selection
 import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.BackgroundColorSpan
 import android.view.*
 import android.webkit.URLUtil
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.annotation.StyleRes
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.core.content.edit
 import androidx.core.os.bundleOf
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
-import androidx.core.view.marginBottom
-import androidx.core.view.marginTop
-import androidx.core.view.updateLayoutParams
 import androidx.navigation.fragment.NavHostFragment
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.common.compose.ExternalLinkList
-import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
-import com.guillermonegrete.tts.common.models.EditNote
-import com.guillermonegrete.tts.common.models.NoteItem
-import com.guillermonegrete.tts.common.models.Span
-import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
-import com.guillermonegrete.tts.db.ExternalLink
-import com.guillermonegrete.tts.importtext.epub.NavPoint
-import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
-import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
-import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.ui.BrightnessTheme
-import com.guillermonegrete.tts.ui.theme.VisualizerTheme
-import com.guillermonegrete.tts.utils.getScreenSizes
-import com.guillermonegrete.tts.webreader.AddNoteDialog
-import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
-import timber.log.Timber
 import javax.inject.Inject
-import kotlin.math.abs
 
 
 @AndroidEntryPoint
@@ -81,13 +45,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     @Inject lateinit var brightnessTheme: BrightnessTheme
     @StyleRes private var themeRes = R.style.AppMaterialTheme_Black
 
-    private val addNoteDialogVisible = mutableStateOf(false)
     private val noteSheetVisible = mutableStateOf(false)
-    private var linksDialogShown = mutableStateOf(false)
-    private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
-    private var selectedLink = 0
-
-    private var noteInfo = mutableStateOf<EditNote?>(null)
 
     private var splitterCreated = true
 
@@ -112,91 +70,27 @@ class VisualizeTextActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val text = getSharedText()
-        setPreferenceTheme()
         binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.main_fragment_container) as NavHostFragment
         if (URLUtil.isValidUrl(text)) {
-            binding.mainFragmentContainer.isVisible = true
-            binding.textReaderCardView.isGone = true
-            binding.brightnessSettingsBtn.isGone = true
-            binding.pagesSeekBar.isGone = true
-            val navHostFragment = supportFragmentManager.findFragmentById(R.id.main_fragment_container) as NavHostFragment
             val navController = navHostFragment.navController
-            val inflater = navHostFragment.navController.navInflater
+            val inflater = navController.navInflater
             val graph = inflater.inflate(R.navigation.importtext)
             graph.setStartDestination(R.id.webReaderFragment)
             navController.setGraph(graph, bundleOf("link" to text))
             return
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            // Never draw on the cutout because it may obstruct text in full screen
-            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
-        }
-        // Let the layout cover the full screen (except cutout) this way the card is always centered
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val exampleFragment = VisualizeTextFragment()
+        supportFragmentManager.beginTransaction()
+            .add(R.id.main_fragment_container, exampleFragment).commit()
 
         // Bottom sheet
-        bottomSheetBehavior = BottomSheetBehavior.from(binding.visualizerBottomSheet)
         sheetBarHeight = resources.getDimensionPixelSize(R.dimen.visualize_sheet_bar_height)
 
-        binding.brightnessSettingsBtn.setOnClickListener { showSettingsPopUp(binding.brightnessSettingsBtn) }
+//        scaleDetector = ScaleGestureDetector(this, PinchListener(binding.textReaderCardView))
 
-        if(SHOW_EPUB != intent.action) {
-            binding.readerCurrentChapter.isGone = true
-        }
-
-        viewPager = binding.textReaderViewpager
-        // Creates one item so setPageTransformer is called
-        // Used to get the page text view properties to create page splitter.
-        viewPager.adapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
-            {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
-
-        viewPager.post{
-            addPagerCallback()
-
-            setBottomSheetPeekHeight()
-            setBottomSheetCallbacks()
-        }
-
-        scaleDetector = ScaleGestureDetector(this, PinchListener(binding.textReaderCardView))
-
-        setupCompose()
-        setUIChangesListener()
-        setUpSeekBar()
-    }
-
-    private fun setupCompose() {
-        binding.composeRoot.apply {
-            setContent {
-                VisualizerTheme(theme = brightnessTheme) {
-                    Sheet()
-                    
-                    Dialogs()
-                }
-            }
-        }
-    }
-
-    /**
-     *  Changes the dimensions of the card to have the same aspect ratio as the screen
-     *  and smaller size given by the defined ratio.
-     */
-    private fun setUpCardViewDimensions(hasCutOut: Boolean) {
-        val screenSizes = getScreenSizes()
-        // Remove cutout height because it's not used
-        val screenHeight = if(!hasCutOut) screenSizes.height else screenSizes.height - screenSizes.statusHeight
-
-        val textCardView = binding.textReaderCardView
-        val cardHeight = textCardView.height
-        val cardCenterY = textCardView.y + cardHeight / 2
-        cardYOffset = (screenHeight / 2) - cardCenterY
-        ratio = cardHeight / screenHeight.toFloat()
-        cardWidth = (screenSizes.width * ratio).toInt()
-
-        val cardParams = textCardView.layoutParams
-        cardParams.width = cardWidth
-        textCardView.layoutParams = cardParams
     }
 
     override fun onPause() {
@@ -210,19 +104,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             noteSheetVisible.value = false
         } else {
             super.onBackPressed()
-        }
-    }
-
-    private fun setPageTransformListener() {
-        // Before setting the transformer make sure the card has finished updating.
-        binding.textReaderCardView.post {
-            viewPager.setPageTransformer { view, _ ->
-                pageItemView = view
-
-                setUpPageParsing(view)
-
-                removeSelection()
-            }
         }
     }
 
@@ -275,379 +156,14 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
     }
 
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
+    /*override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if(hasFocus && viewModel.fullScreen) {
 
             // Only hide the UI when page splitter has been created to avoid incorrect size measuring
             if(splitterCreated) hideSystemUi()
         }
-    }
-
-    private fun setUIChangesListener() {
-
-        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
-            with(binding) {
-
-                val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-                val hasCutOut = insets.isVisible(WindowInsetsCompat.Type.displayCutout())
-                if (!hasCutOut) { // Phones with a normal status bar require extra margin to avoid overlapping with the bar
-                    readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                        topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
-                    }
-                }
-
-                // Margin for the bottom icons
-                readerCurrentPage.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    bottomMargin = readerCurrentPage.marginBottom + systemBarInsets.bottom
-                }
-
-                textReaderCardView.post {
-                    setUpCardViewDimensions(hasCutOut)
-                    setPageTransformListener()
-                }
-
-                ViewCompat.setOnApplyWindowInsetsListener(window.decorView, null)
-                insets
-            }
-        }
-    }
-
-    private fun setUpSeekBar(){
-
-        binding.pagesSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if(fromUser) viewPager.currentItem = progress
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-    }
-
-    // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
-    private fun setPreferenceTheme() {
-        themeRes = when(brightnessTheme){
-            BrightnessTheme.WHITE -> R.style.AppMaterialTheme_White
-            BrightnessTheme.BEIGE -> R.style.AppMaterialTheme_Beige
-            BrightnessTheme.BLACK -> R.style.AppMaterialTheme_Black
-        }
-        setTheme(themeRes)
-    }
-
-    private fun createViewModel() {
-        viewModel.apply {
-            dataLoading.observe(this@VisualizeTextActivity) {
-                binding.visualizerProgressBar.isVisible = it
-            }
-
-            bookChapter.observe(this@VisualizeTextActivity, EventObserver { chapterInfo ->
-                updateCurrentChapterLabel()
-                setUpPagerAndIndexLabel(chapterInfo)
-            })
-
-            book.observe(this@VisualizeTextActivity) {
-                if (it.spine.isEmpty()) {
-                    binding.readerCurrentChapter.visibility = View.GONE
-                } else {
-                    updateCurrentChapterLabel()
-                    binding.readerCurrentChapter.visibility = View.VISIBLE
-                }
-
-                val navPoints = it.tableOfContents.navPoints
-                binding.showTocBtn.setOnClickListener { showTableOfContents(navPoints) }
-                binding.showTocBtn.isGone = navPoints.isEmpty()
-            }
-
-            val bottomText = binding.pageBottomTextView
-
-            translatedPageIndex.observe(this@VisualizeTextActivity, EventObserver {
-                val translation = viewModel.translatedPages[it]
-                bottomText.text = translation?.translatedText
-                pagesAdapter.notifyItemChanged(it)
-            })
-
-            translationLoading.observe(this@VisualizeTextActivity) {
-                binding.pageTranslationProgress.isVisible = it
-                if (it) bottomText.text = ""
-            }
-
-            translationError.observe(this@VisualizeTextActivity, EventObserver {
-                Timber.e("Error translating page: $it")
-                Toast.makeText(this@VisualizeTextActivity, getString(R.string.error_translation), Toast.LENGTH_SHORT).show()
-                bottomText.text = getString(R.string.click_to_translate_msg)
-            })
-
-            updatedNote.observe(this@VisualizeTextActivity) {result ->
-                when(result) {
-                    is ModifiedNote.Update -> {
-                        val note = result.note
-                        val position = note.getPosInChapter()
-                        val span = Span(position, position + note.length)
-                        val noteItem = NoteItem(note.text, span, Color.parseColor(note.color), note.id)
-                        pagesAdapter.updateNote(viewPager.currentItem, noteItem)
-                        noteInfo.value = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
-                    }
-
-                    is ModifiedNote.Delete -> {
-                        pagesAdapter.deleteNote(result.noteId)
-                        noteSheetVisible.value = false
-                    }
-                }
-            }
-
-            linksForWord.observe(this@VisualizeTextActivity) { links ->
-                wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
-                // If out of index, default to the first item
-                if(selectedLink >= links.size) selectedLink = 0
-                linksDialogShown.value = true
-            }
-
-            languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
-        }
-    }
-
-    private fun initParse(){
-        if(SHOW_EPUB == intent.action) {
-            val uri: Uri = intent.getParcelableExtra(EPUB_URI) ?: return
-            val rootStream = contentResolver.openInputStream(uri)
-            viewModel.fileReader = DefaultZipFileReader(rootStream, this)
-            viewModel.fileUri = uri.toString()
-            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
-            viewModel.parseEpub()
-        } else {
-            viewModel.parseSimpleText(getIntentText())
-        }
-    }
-
-    private fun setUpPagerAndIndexLabel(chapter: BookChapter){
-        pagesAdapter = VisualizerAdapter(
-            createPageItems(chapter),
-            showTextDialog = ::showTextDialog,
-            onCreateNote = {
-                noteInfo.value = it
-                addNoteDialogVisible.value = true
-            },
-            onNoteClicked = {
-                noteInfo.value = it
-                noteSheetVisible.value = true
-            },
-            getPageCharPos = viewModel::getCharPos
-        )
-        pagesAdapter.hasBottomSheet = viewModel.hasBottomSheet
-        pagesAdapter.isPageSplit = viewModel.isSheetExpanded
-        viewPager.adapter = pagesAdapter
-
-        val pages = chapter.pages
-        val position = viewModel.getPage()
-        binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
-        viewPager.setCurrentItem(position, false)
-
-        // Subtract 1 because seek bar is zero based numbering
-        binding.pagesSeekBar.max = pages.size - 1
-        binding.pagesSeekBar.progress = position
-
-        // Restore UI state in case of config change
-        binding.visualizerBottomSheet.isVisible = viewModel.hasBottomSheet
-        setFullBottomSheet(viewModel.isSheetExpanded)
-    }
-
-    private fun createPageItems(chapter: BookChapter): List<VisualizerAdapter.PageItem> {
-        var index = 0
-        val paragraphItems = mutableListOf<VisualizerAdapter.PageItem>()
-        val dbNotes = chapter.notes.toMutableList()
-
-        chapter.pages.forEach { page ->
-            val nextIndex = index + page.length
-            // Search the notes applied to this paragraph
-            val paragraphNotes = dbNotes.filter { dbNote ->
-                // The actual position is in the first 24 bits of a 32 bit int
-                dbNote.getPosInChapter() in index until nextIndex
-            }.map { it.copy(position = it.getPosInChapter()) }
-
-            val noteItems = paragraphNotes.map { note ->
-                val itemStart = note.position - index
-                NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
-            }.toMutableList()
-
-            paragraphItems.add(VisualizerAdapter.PageItem(page, noteItems, index))
-            index = nextIndex
-            dbNotes.removeAll(paragraphNotes)
-        }
-
-        return paragraphItems
-    }
-
-    private fun showSettingsPopUp(view: View) {
-
-        val languagesISO = viewModel.languagesISO
-
-        val popUpCallback = object: VisualizerSettingsWindow.Callback{
-
-            override fun onBackgroundColorSet(theme: BrightnessTheme) {
-                setBackgroundColor(theme)
-            }
-
-            override fun onPageMode(isSplit: Boolean) {
-                setSplitPageMode(isSplit)
-            }
-
-            override fun onLanguageToChanged(position: Int) {
-                viewModel.languageTo = languagesISO[position]
-            }
-
-            override fun onLanguageFromChanged(position: Int) {
-                viewModel.languageFrom = if (position == 0) "auto" else languagesISO[position - 1]
-            }
-        }
-
-        val lang = viewModel.languageFrom
-        VisualizerSettingsWindow(
-            view,
-            themeRes,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            viewModel.hasBottomSheet,
-            languagesISO,
-            lang,
-            viewModel.languageTo,
-            popUpCallback,
-        ).apply {
-            isFocusable = true
-            elevation = 8f
-            showAtLocation(view, Gravity.START or Gravity.BOTTOM, 24, 24)
-        }
-    }
-
-    private fun setSplitPageMode(isEnabled: Boolean){
-        val position = viewModel.currentPage
-
-        viewModel.hasBottomSheet = isEnabled
-        pagesAdapter.hasBottomSheet = isEnabled
-        viewPager.adapter = pagesAdapter
-        viewPager.setCurrentItem(position, false)
-
-        binding.visualizerBottomSheet.isVisible = isEnabled
-    }
-
-    private fun setBackgroundColor(theme: BrightnessTheme){
-        if(theme != brightnessTheme) {
-            saveBrightnessPreference(theme.value)
-            finish()
-            startActivity(intent)
-        }
-    }
-
-    private fun saveBrightnessPreference(preference: String){
-        preferences.edit{ putString(BrightnessTheme.PREFERENCE_KEY, preference) }
-    }
-
-    private fun addPagerCallback(){
-        var swipeFirst = false
-        viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
-
-            var previousPage = -1
-
-            override fun onPageSelected(position: Int) {
-                viewModel.currentPage = position
-
-                if (noteSheetVisible.value) noteSheetVisible.value = false
-
-                val pageNumber = position + 1
-                binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
-                binding.pagesSeekBar.progress = position
-
-                if(pagesAdapter.hasBottomSheet)
-                    binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
-
-                if (previousPage != -1) {
-                    // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
-                    viewPager.post { pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE) }
-                }
-
-                previousPage = position
-            }
-
-            override fun onPageScrollStateChanged(state: Int) {
-                super.onPageScrollStateChanged(state)
-                if(state == ViewPager2.SCROLL_STATE_DRAGGING) swipeFirst = true
-            }
-
-            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-
-                if(positionOffset > 0){
-                    swipeFirst = false
-                }else{
-                    if(swipeFirst) {
-                        swipeFirst = false
-                        if(position == 0) {
-                            viewModel.swipeChapterLeft()
-                        } else if(position == viewModel.pagesSize - 1) {
-                            viewModel.swipeChapterRight()
-                        }
-                    }
-                }
-            }
-        })
-    }
-
-    private fun setUpPageParsing(focusedView: View){
-        // Execute only one time
-        if(splitterCreated) {
-
-            createViewModel()
-
-            val pageTextView: TextView = focusedView.findViewById(R.id.page_text_view)
-            viewModel.pageSplitter = createPageSplitter(pageTextView, focusedView.width)
-            initParse()
-            splitterCreated = false
-        }
-    }
-
-    private fun createPageSplitter(textView: TextView, width: Int): PageSplitter {
-        val uri: Uri? = intent.getParcelableExtra(EPUB_URI)
-        val imageGetter = if(uri != null) {
-            val zipReader = DefaultZipFileReader(contentResolver.openInputStream(uri), this)
-            InputStreamImageGetter( this, zipReader)
-        } else null
-
-        return PageSplitter(textView, width, imageGetter)
-    }
-
-    private fun showTableOfContents(navPoints: List<NavPoint>){
-
-        val filePaths = navPoints.map { it.getContentWithoutTag() }
-        val titles = navPoints.map { it.navLabel }
-
-        val adapter = ArrayAdapter(this, R.layout.dialog_item, titles)
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(resources.getString(R.string.table_of_contents))
-            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
-            .setAdapter(adapter) { _, i ->
-                val path = filePaths[i]
-                viewModel.jumpToChapter(path)
-            }
-            .create()
-        dialog.show()
-    }
-
-    private fun updateCurrentChapterLabel(){
-        binding.readerCurrentChapter.text = resources.getString(R.string.reader_current_chapter_label, viewModel.currentChapter + 1, viewModel.spineSize)
-    }
-
-    private fun showTextDialog(text: CharSequence){
-        val dialog = TextInfoDialog.newInstance(
-            text.toString(),
-            TextInfoDialog.NO_SERVICE,
-            null,
-            brightnessTheme.value
-        )
-        dialog.show(supportFragmentManager, "Text_info")
-    }
+    }*/
 
     inner class PinchListener(private val textCardView: View): ScaleGestureDetector.OnScaleGestureListener{
 
@@ -761,123 +277,9 @@ class VisualizeTextActivity: AppCompatActivity() {
         actionBar?.hide()
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setBottomSheetCallbacks(){
-        binding.pageTranslateBtn.setOnClickListener {
-            val position = viewPager.currentItem
-            viewModel.translatePage(position)
-
-            setFullBottomSheet(true)
-        }
-
-        binding.arrowBtn.setOnClickListener {
-            val isFull = pagesAdapter.isPageSplit
-            setFullBottomSheet(!isFull)
-        }
-
-        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-
-            override fun onSlide(bottomSheet: View, slideOffset: Float) { binding.arrowBtn.rotation = slideOffset * 180 }
-
-            override fun onStateChanged(bottomSheet: View, newState: Int) {
-
-                when(newState){
-                    BottomSheetBehavior.STATE_EXPANDED -> setSplitMode(true)
-                    BottomSheetBehavior.STATE_COLLAPSED -> setSplitMode(false)
-                    else -> {}
-                }
-            }
-
-            private fun setSplitMode(isSplit: Boolean){
-                pagesAdapter.notifyItemRangeChanged(0, pagesAdapter.itemCount, isSplit)
-                viewModel.isSheetExpanded = isSplit
-                pagesAdapter.isPageSplit = isSplit
-            }
-        })
-
-        val metrics = resources.displayMetrics
-        val cardHalfHeight = (metrics.heightPixels * ratio / 2f).toInt()
-
-        var startX = 0f
-        var startY = 0f
-        val radius = 40f
-        // To detect the click, onTouchListener is used to get the touch coordinates and because onClickListener consumes the touch event
-        binding.pageBottomTextView.setOnTouchListener { _, event ->
-            val duration = event.eventTime - event.downTime
-
-            when(event.action){
-                MotionEvent.ACTION_DOWN -> {
-                    startX = event.x
-                    startY = event.y
-                }
-                MotionEvent.ACTION_UP -> {
-                    if(duration < 300
-                        && abs(event.x - startX) < radius && abs(event.y - startY) < radius) {
-                        val index = binding.pageBottomTextView.getOffsetForPosition(event.x, event.y)
-                        val splitSpans = viewModel.findSelectedSentence(viewPager.currentItem, index) ?: return@setOnTouchListener true
-                        highlightSpans(splitSpans)
-                    }
-                }
-            }
-
-            // Need to dispatch the touch event to the ViewPager otherwise scrolling won't work on the bottom text
-            // The y position of the touch event is in terms of the bottom text origin, add offset to make it in terms of the card view origin
-            val newEvent = MotionEvent.obtain(event.downTime, event.eventTime, event.action, event.x, event.y + cardHalfHeight, event.metaState)
-            try{
-                viewPager.dispatchTouchEvent(newEvent)
-            }catch (exception: IllegalArgumentException){
-                // Sometimes an exception will be thrown "pointerIndex out of range".
-                // Ignoring it seems to not affect the scaling gesture
-                Timber.e("Dispatching touch event to ViewPager error: ${exception.message}")
-            }
-            true
-        }
-    }
-
-    private fun setFullBottomSheet(full: Boolean){
-        bottomSheetBehavior.state = if(full) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
-    }
-
     private fun setBottomSheetPeekHeight(){
         val peekHeight = sheetBarHeight + viewPager.height / 2
         bottomSheetBehavior.peekHeight = peekHeight
-    }
-
-    private fun highlightSpans(pageSpans: SplitPageSpan) {
-        val text = SpannableString(binding.pageBottomTextView.text)
-
-        //Remove previous
-        text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
-
-        text.setSpan(BackgroundColorSpan(0x6633B5E5), pageSpans.bottomSpan.start, pageSpans.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        binding.pageBottomTextView.setText(text, TextView.BufferType.SPANNABLE)
-
-        // Notify the adapter to set the highlight, send span payload
-        pagesAdapter.notifyItemChanged(viewPager.currentItem, pageSpans.topSpan)
-    }
-
-    /**
-     * First tries to get the text coming from the imported screen.
-     * If null then it tries to get the text from the ClipData of the sharing intent (Intent.ACTION_SEND).
-     */
-    private fun getIntentText(): String {
-        val extras = intent.extras
-        val text = extras?.getString(IMPORTED_TEXT)
-        if (text == null) {
-            val clipData = intent.clipData
-            if (clipData != null && clipData.itemCount > 0) {
-                val size = clipData.itemCount
-                val stringBuilder = StringBuilder()
-                for (i in 0 until size) {
-                    val item = clipData.getItemAt(i)
-                    stringBuilder.append(item.text)
-                }
-                return stringBuilder.toString()
-            } else {
-                return "No text"
-            }
-        }
-        return text
     }
 
     private fun getSharedText(): String {
@@ -892,62 +294,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             return stringBuilder.toString()
         }
         return ""
-    }
-
-    @Composable
-    fun Dialogs() {
-
-        ExternalLinksDialog(
-            isShown = linksDialogShown.value,
-            links = wordLinks.value,
-            selection = selectedLink,
-            onItemClick = { selectedLink = it },
-            onDismiss = { linksDialogShown.value = false },
-        )
-
-        var addNoteVisible by remember { addNoteDialogVisible }
-        var noteInfo by remember { noteInfo }
-
-        AddNoteDialog(
-            addNoteVisible,
-            noteInfo?.noteText ?: "",
-            noteInfo?.color ?: 0,
-            noteInfo?.noteSaved ?: false,
-            onDismiss = { addNoteVisible = false },
-            onDelete = {
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.deleteNote(noteItem.id)
-                noteInfo = null
-                addNoteVisible = false
-            },
-            onSaveClicked = {
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start, noteItem.id)
-                addNoteVisible = false
-            },
-        )
-    }
-
-    @Composable
-    fun Sheet() {
-        val noteInfo by remember { noteInfo }
-        var noteSheetVisible by remember { noteSheetVisible }
-
-        NoteSheet(
-            noteSheetVisible,
-            { noteInfo?.noteText ?: "" },
-            infoButtonVisibility = {
-                val noteSpanText = noteInfo?.text
-                val isWord = noteSpanText != null && noteSpanText.split(" ").size == 1
-                return@NoteSheet viewModel.languageFrom != "auto" && isWord
-            },
-            onEditClicked = { addNoteDialogVisible.value = true },
-            onInfoClicked = {
-                val word = noteInfo?.text ?: return@NoteSheet
-                viewModel.getExternalLinks(word)
-            },
-            onDismiss = { noteSheetVisible = false }
-        )
     }
 
     companion object{
