@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.Selection
 import android.text.Spannable
@@ -14,6 +15,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.TextView
@@ -25,12 +27,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isGone
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
 import androidx.core.view.marginTop
@@ -68,7 +72,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
     private val viewModel: VisualizeTextViewModel by viewModels()
 
-    private lateinit var binding: FragmentVisualizeTextBinding
+    private  var _binding: FragmentVisualizeTextBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var viewPager: ViewPager2
 
@@ -96,7 +101,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
     private var splitterCreated = true
 
-    private var scaleDetector: ScaleGestureDetector? = null
+    private lateinit var scaleDetector: ScaleGestureDetector
 
     private var cardWidth = 0
     /**
@@ -117,12 +122,18 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
-//        setUIChangesListener()
+        val window = requireActivity().window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // Never draw on the cutout because it may obstruct text in full screen
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+        }
+        // Let the layout cover the full screen (except cutout) this way the card is always centered
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding = FragmentVisualizeTextBinding.bind(view)
+        _binding = FragmentVisualizeTextBinding.bind(view)
 
         // Bottom sheet
         bottomSheetBehavior = BottomSheetBehavior.from(binding.visualizerBottomSheet)
@@ -130,7 +141,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
         binding.brightnessSettingsBtn.setOnClickListener { showSettingsPopUp(binding.brightnessSettingsBtn) }
 
-        if(VisualizeTextActivity.SHOW_EPUB != requireActivity().intent.action) {
+        if(SHOW_EPUB != requireActivity().intent.action) {
             binding.readerCurrentChapter.isGone = true
         }
 
@@ -193,6 +204,11 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         viewModel.saveBookData()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
     /*@Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (noteSheetVisible.value) {
@@ -223,13 +239,11 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private var eventInProgress = false
     private var scaleInProgress = false
 
-    /*override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+    fun dispatchTouchEvent(ev: MotionEvent): Boolean {
 
-        val scaleDetector = scaleDetector ?: return super.dispatchTouchEvent(ev)
-
-        if(eventInProgress){
-            if(pageItemView?.isShown == true) scaleDetector.onTouchEvent(ev)
-            if(scaleDetector.isInProgress) {
+        if (eventInProgress) {
+            if (pageItemView?.isShown == true) scaleDetector.onTouchEvent(ev)
+            if (scaleDetector.isInProgress) {
                 // Cancel long press to avoid showing contextual action menu
                 pageItemView?.cancelLongPress()
                 scaleInProgress = true
@@ -253,8 +267,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         }
 
         // When scaling don't handle other events, this avoids unexpected clicks and changes of page
-        return if(scaleInProgress) true else super.dispatchTouchEvent(ev)
-    }*/
+        return scaleInProgress
+    }
 
     private fun removeSelection(){
         val item = pageItemView
@@ -277,7 +291,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
         val window = requireActivity().window
         val view = window.decorView
-//        val view = binding.root
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
             with(binding) {
 
@@ -285,8 +298,14 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 val hasCutOut = insets.isVisible(WindowInsetsCompat.Type.displayCutout())
                 if (!hasCutOut) { // Phones with a normal status bar require extra margin to avoid overlapping with the bar
-                    readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                        topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                    if (readerCurrentChapter.isVisible) {
+                        readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                            topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                        }
+                    } else {
+                        textReaderCardView.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                            goneTopMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                        }
                     }
                 }
 
@@ -304,8 +323,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 insets
             }
         }
-        val controllerCompat = WindowCompat.getInsetsController(window, view)
-        controllerCompat.show(WindowInsetsCompat.Type.systemBars())
     }
 
     private fun setUpSeekBar(){
@@ -406,12 +423,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
     private fun initParse() {
         val intent = requireActivity().intent
-        if(VisualizeTextActivity.SHOW_EPUB == intent.action) {
-            val uri: Uri = intent.getParcelableExtra(VisualizeTextActivity.EPUB_URI) ?: return
+        if(SHOW_EPUB == intent.action) {
+            val uri: Uri = intent.getParcelableExtra(EPUB_URI) ?: return
             val rootStream = requireContext().contentResolver.openInputStream(uri)
             viewModel.fileReader = DefaultZipFileReader(rootStream, requireContext())
             viewModel.fileUri = uri.toString()
-            viewModel.fileId = intent.getIntExtra(VisualizeTextActivity.FILE_ID, -1)
+            viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
             viewModel.parseEpub()
         } else {
             viewModel.parseSimpleText(getIntentText())
@@ -604,7 +621,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     }
 
     private fun createPageSplitter(textView: TextView, width: Int): PageSplitter {
-        val uri: Uri? = requireActivity().intent.getParcelableExtra(VisualizeTextActivity.EPUB_URI)
+        val uri: Uri? = requireActivity().intent.getParcelableExtra(EPUB_URI)
         val imageGetter = if(uri != null) {
             val zipReader = DefaultZipFileReader(requireContext().contentResolver.openInputStream(uri), requireContext())
             InputStreamImageGetter(requireContext(), zipReader)
@@ -696,7 +713,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 val factor = detector.scaleFactor
                 val newScale = scale * factor
 
-                // Avoid making the card smaller
+                // Avoid making the card smaller than the original size
                 if (newScale >= minScale) {
                     textCardView.scaleX = newScale
                     textCardView.scaleY = newScale
@@ -713,7 +730,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 val fullScreen = viewModel.fullScreen
 
-                if(detector.scaleFactor > VisualizeTextActivity.PINCH_UPPER_LIMIT && !fullScreen){
+                if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
                     scale = invRatio
@@ -859,7 +876,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private fun getIntentText(): String {
         val intent = requireActivity().intent
         val extras = intent.extras
-        val text = extras?.getString(VisualizeTextActivity.IMPORTED_TEXT)
+        val text = extras?.getString(IMPORTED_TEXT)
         if (text == null) {
             val clipData = intent.clipData
             if (clipData != null && clipData.itemCount > 0) {
@@ -931,6 +948,16 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             },
             onDismiss = { noteSheetVisible = false }
         )
+    }
+
+    companion object{
+        const val IMPORTED_TEXT = "imported_text"
+        const val EPUB_URI = "epub_uri"
+
+        const val SHOW_EPUB = "epub"
+        const val FILE_ID = "fileId"
+
+        const val PINCH_UPPER_LIMIT = 1.15f
     }
 
 }

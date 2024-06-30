@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.EnterTextLayoutBinding
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
+import com.guillermonegrete.tts.importtext.visualize.VisualizeTextFragment
 
 class EnterTextFragment: Fragment(R.layout.enter_text_layout) {
 
@@ -49,7 +50,7 @@ class EnterTextFragment: Fragment(R.layout.enter_text_layout) {
 
     private fun visualizeText(text: String){
         val intent = Intent(context, VisualizeTextActivity::class.java)
-        intent.putExtra(VisualizeTextActivity.IMPORTED_TEXT, text)
+        intent.putExtra(VisualizeTextFragment.IMPORTED_TEXT, text)
         startActivity(intent)
     }
 }
