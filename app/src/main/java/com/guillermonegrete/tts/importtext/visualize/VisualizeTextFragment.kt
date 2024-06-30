@@ -34,7 +34,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isGone
-import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
 import androidx.core.view.marginTop
@@ -209,14 +208,14 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         _binding = null
     }
 
-    /*@Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
+    fun onBackPressed(): Boolean {
         if (noteSheetVisible.value) {
             noteSheetVisible.value = false
+            return true
         } else {
-            super.onBackPressed()
+            return false
         }
-    }*/
+    }
 
     private fun setPageTransformListener() {
         // Before setting the transformer make sure the card has finished updating.
@@ -339,7 +338,11 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
     }
 
-    // Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
+    /**
+     * Change activity value at runtime: https://stackoverflow.com/a/6390025/10244759
+     *
+     * Make sure the fragment is committed before the parent activity calls setContentView() so the theme is applied correctly.
+     */
     private fun setPreferenceTheme() {
         themeRes = when(brightnessTheme){
             BrightnessTheme.WHITE -> R.style.AppMaterialTheme_White

@@ -1,45 +1,25 @@
 package com.guillermonegrete.tts.importtext.visualize
 
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.MotionEvent
 import android.webkit.URLUtil
-import androidx.activity.viewModels
-import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.os.bundleOf
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.fragment.NavHostFragment
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
-import com.guillermonegrete.tts.ui.BrightnessTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class VisualizeTextActivity: AppCompatActivity() {
 
-    private val viewModel: VisualizeTextViewModel by viewModels()
-
     private var visualizerFragment: VisualizeTextFragment? = null
-
-    @Inject lateinit var preferences: SharedPreferences
-    @Inject lateinit var brightnessTheme: BrightnessTheme
-    @StyleRes private var themeRes = R.style.AppMaterialTheme_Black
-
-    private val noteSheetVisible = mutableStateOf(false)
-
-    private var splitterCreated = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val text = getSharedText()
         val binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
-        setContentView(binding.root)
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.main_fragment_container) as NavHostFragment
         if (URLUtil.isValidUrl(text)) {
             val navController = navHostFragment.navController
@@ -52,17 +32,19 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         val fragment = VisualizeTextFragment()
         supportFragmentManager.beginTransaction()
-            .add(R.id.main_fragment_container, fragment).commit()
+            .add(R.id.main_fragment_container, fragment).commitNow()
         visualizerFragment = fragment
+        // Set content view after the fragment was committed to make sure the fragment's theme is applied correctly
+        setContentView(binding.root)
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (noteSheetVisible.value) {
-            noteSheetVisible.value = false
-        } else {
-            super.onBackPressed()
+        val fragment = visualizerFragment
+        if (fragment != null && fragment.onBackPressed()) {
+            return
         }
+        super.onBackPressed()
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -78,14 +60,6 @@ class VisualizeTextActivity: AppCompatActivity() {
             if(splitterCreated) hideSystemUi()
         }
     }*/
-
-    private fun hideSystemUi(){
-        val decorView = window.decorView
-        val controllerCompat = WindowCompat.getInsetsController(window, decorView)
-        controllerCompat.hide(WindowInsetsCompat.Type.systemBars())
-        controllerCompat.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        actionBar?.hide()
-    }
 
     private fun getSharedText(): String {
         val clipData = intent.clipData
