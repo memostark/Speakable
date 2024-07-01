@@ -52,14 +52,14 @@ class VisualizeTextActivity: AppCompatActivity() {
         return fragment.dispatchTouchEvent(ev) || super.dispatchTouchEvent(ev)
     }
 
-    /*override fun onWindowFocusChanged(hasFocus: Boolean) {
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if(hasFocus && viewModel.fullScreen) {
+        val fragment = visualizerFragment
+        if(hasFocus && fragment != null) {
 
-            // Only hide the UI when page splitter has been created to avoid incorrect size measuring
-            if(splitterCreated) hideSystemUi()
+            fragment.onWindowFocusChanged(true)
         }
-    }*/
+    }
 
     private fun getSharedText(): String {
         val clipData = intent.clipData

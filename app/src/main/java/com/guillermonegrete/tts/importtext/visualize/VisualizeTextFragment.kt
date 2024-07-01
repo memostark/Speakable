@@ -98,7 +98,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
 
-    private var splitterCreated = true
+    private var splitterCreated = false
 
     private lateinit var scaleDetector: ScaleGestureDetector
 
@@ -277,14 +277,18 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         }
     }
 
-    /*override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
+    /**
+     * Hide the UI if it gets shown again (e.g. when opening a external link in the browser).
+     *
+     * This is for older devices because newer devices re-hide the UI automatically.
+     */
+    fun onWindowFocusChanged(hasFocus: Boolean) {
         if(hasFocus && viewModel.fullScreen) {
 
             // Only hide the UI when page splitter has been created to avoid incorrect size measuring
             if(splitterCreated) hideSystemUi()
         }
-    }*/
+    }
 
     private fun setUIChangesListener() {
 
@@ -612,14 +616,14 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
     private fun setUpPageParsing(focusedView: View){
         // Execute only one time
-        if(splitterCreated) {
+        if(!splitterCreated) {
 
             createViewModel()
 
             val pageTextView: TextView = focusedView.findViewById(R.id.page_text_view)
             viewModel.pageSplitter = createPageSplitter(pageTextView, focusedView.width)
             initParse()
-            splitterCreated = false
+            splitterCreated = true
         }
     }
 
