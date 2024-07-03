@@ -34,6 +34,7 @@ import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.RecentFilesAdapter
 import com.guillermonegrete.tts.importtext.UriValidator
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
+import com.guillermonegrete.tts.importtext.visualize.VisualizeTextFragment
 import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
@@ -223,7 +224,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
     private fun visualizeText(text: String){
         val intent = Intent(context, VisualizeTextActivity::class.java)
-        intent.putExtra(VisualizeTextActivity.IMPORTED_TEXT, text)
+        intent.putExtra(VisualizeTextFragment.IMPORTED_TEXT, text)
         startActivity(intent)
     }
 
@@ -236,9 +237,9 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         if (uriValidator.isLoadable(requireContext(), uri)) {
 
             val intent = Intent(context, VisualizeTextActivity::class.java).apply {
-                action = VisualizeTextActivity.SHOW_EPUB
-                putExtra(VisualizeTextActivity.EPUB_URI, uri)
-                putExtra(VisualizeTextActivity.FILE_ID, fileId)
+                action = VisualizeTextFragment.SHOW_EPUB
+                putExtra(VisualizeTextFragment.EPUB_URI, uri)
+                putExtra(VisualizeTextFragment.FILE_ID, fileId)
             }
 
             startActivity(intent)
