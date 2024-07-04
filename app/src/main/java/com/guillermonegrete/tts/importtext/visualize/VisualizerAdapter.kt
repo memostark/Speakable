@@ -4,10 +4,12 @@ import android.annotation.SuppressLint
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
+import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.GestureDetectorCompat
+import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
@@ -34,12 +36,14 @@ class VisualizerAdapter(
 
     private var pageMarginsSize = 0
     private var lineSpacingExtra = 0f
+    private var largeText = 0
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
         with(recyclerView.context){
             lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
             pageMarginsSize = resources.getDimensionPixelSize(R.dimen.visualize_sheet_bar_height)
+            largeText = resources.getDimensionPixelSize(R.dimen.text_size_large)
         }
     }
 
@@ -182,7 +186,14 @@ class VisualizerAdapter(
 
         fun updateLayoutParams(splitPage: Boolean){
             binding.pageBottomTextView.layoutParams = if(splitPage) halfShownParams else hiddenParams
-            pageTextView.setLineSpacing(if(splitPage) 0f else lineSpacingExtra, 1f)
+            if (splitPage) {
+                pageTextView.setLineSpacing(0f, 1f)
+                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+            } else {
+                pageTextView.setLineSpacing(lineSpacingExtra, 1f)
+                TextViewCompat.setAutoSizeTextTypeWithDefaults(pageTextView, TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE)
+                pageTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, largeText.toFloat())
+            }
         }
 
         fun setHighlightedText(item: PageItem, start: Int, end: Int){
