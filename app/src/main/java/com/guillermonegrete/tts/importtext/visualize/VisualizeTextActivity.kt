@@ -5,9 +5,10 @@ import android.view.MotionEvent
 import android.webkit.URLUtil
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
-import androidx.navigation.fragment.NavHostFragment
+import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
+import com.guillermonegrete.tts.webreader.WebReaderFragment
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -20,20 +21,18 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val text = getSharedText()
         val binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.main_fragment_container) as NavHostFragment
+        val fragment: Fragment
         if (URLUtil.isValidUrl(text)) {
-            val navController = navHostFragment.navController
-            val inflater = navController.navInflater
-            val graph = inflater.inflate(R.navigation.importtext)
-            graph.setStartDestination(R.id.webReaderFragment)
-            navController.setGraph(graph, bundleOf("link" to text))
-            return
+            fragment = WebReaderFragment()
+            fragment.arguments = bundleOf("link" to text)
+        } else {
+            fragment = VisualizeTextFragment()
+            visualizerFragment = fragment
         }
 
-        val fragment = VisualizeTextFragment()
         supportFragmentManager.beginTransaction()
             .add(R.id.main_fragment_container, fragment).commitNow()
-        visualizerFragment = fragment
+
         // Set content view after the fragment was committed to make sure the fragment's theme is applied correctly
         setContentView(binding.root)
     }
