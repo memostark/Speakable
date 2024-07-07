@@ -43,7 +43,14 @@
         </activity>
         <activity
             android:name="com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity"
-            android:label="@string/visualize_label"/>
+            android:exported="true"
+            android:label="@string/visualize_label">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="com.guillermonegrete.tts.main.AcquireScreenshotPermission"
             android:theme="@style/Theme.Transparent"

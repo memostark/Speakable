@@ -16,7 +16,7 @@
         android:textIsSelectable="true"
         android:lineSpacingExtra="@dimen/visualize_page_text_line_spacing_extra"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        app:autoSizeTextType="uniform"
+        app:autoSizeTextType="none"
         app:autoSizeMaxTextSize="@dimen/text_size_large"
         app:autoSizeStepGranularity="1sp"
         tools:text="@string/large_text">
