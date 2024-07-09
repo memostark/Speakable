@@ -32,6 +32,16 @@ class AcquireScreenshotPermission : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        // For the overlay permission, the result code might not be OK and the intent data null, so handle separately.
+        if (requestCode == REQUEST_CODE_DRAW_OVERLAY) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
+                getScreenCaptureIntent()
+            } else {
+                finish()
+            }
+            return
+        }
+
         if (resultCode == AppCompatActivity.RESULT_OK && data != null) {
             when(requestCode) {
                 REQUEST_CODE_SCREEN_CAPTURE -> {
@@ -44,14 +54,9 @@ class AcquireScreenshotPermission : Activity() {
                     startService(intent)
                     finish()
                 }
-                REQUEST_CODE_DRAW_OVERLAY -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                        getScreenCaptureIntent()
-                    } else {
-                        finish()
-                    }
-                }
             }
+        } else {
+            finish()
         }
     }
 
