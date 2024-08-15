@@ -255,9 +255,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         presenterImp.wordInfo().observe(this) {result ->
             when(result) {
-                is WordResult.Local -> wordState.value = WordState(result.word.toUI(),true, selectedWordSpan)
-                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
-                is WordResult.Error -> { Toast.makeText(context, "Error: ${result.exception}", Toast.LENGTH_SHORT).show() }
+                is WordResult.Local -> wordState.value = WordState(result.word.toUI(), result.word.id, selectedWordSpan)
+                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), span = selectedWordSpan)
+                is WordResult.Error -> {
+                    Toast.makeText(context, "Couldn't load selected word", Toast.LENGTH_SHORT).show()
+                    Timber.e(result.exception, "Couldn't load selected word info")
+                }
             }
         }
 
@@ -275,7 +278,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                     if (_bindingWord != null) {
                         setSavedWordToolbar()
                     } else {
-                        wordState.value = wordState.value.copy(word = result.word.toUI(), isSaved = true)
+                        wordState.value = wordState.value.copy(word = result.word.toUI(), dbId = result.word.id)
                     }
                 }
                 ResultType.Update -> editDialogShown.value = false
@@ -352,7 +355,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
-                wordState.value = WordState(word.toUI())
+                wordState.value = WordState(word.toUI(), dbId = word.id)
                 EditDeleteWordDialogs(wordState)
             }
         }
@@ -467,11 +470,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     override fun showWordDeleted() {
         if (_bindingWord != null) {
             bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
-            wordState.value = wordState.value.copy(isSaved = false)
+            wordState.value = wordState.value.copy(dbId = NOT_SAVED_ID)
         } else {
             val oldWord = wordState.value.word ?: return
-            val word = Words(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
-            wordState.value = wordState.value.copy(word = word.toUI(), isSaved = false)
+            val word = WordUI(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
+            wordState.value = wordState.value.copy(word = word, dbId = NOT_SAVED_ID)
         }
         deleteDialogShown.value = false
         editDialogShown.value = false
@@ -683,7 +686,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.textLanguageCode.text = mFoundWords.lang
         bindingWord.textLanguageCode.visibility = View.VISIBLE
 
-        wordState.value = wordState.value.copy(isSaved = true, word = mFoundWords.toUI())
+        wordState.value = wordState.value.copy(word = mFoundWords.toUI(), dbId = mFoundWords.id)
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
@@ -882,7 +885,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             languagesISO = StringList(languagesISO),
             isSaved = wordState.value.isSaved,
             onSave = {
-                if(wordState.value.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
+                val resultWord = it.toWord()
+                resultWord.id = wordState.value.dbId
+                if(wordState.value.isSaved) saveWordViewModel.update(resultWord) else saveWordViewModel.save(resultWord)
             },
             onDelete = { deleteDialogShown.value = true },
             onDismiss = { editDialogShown.value = false }

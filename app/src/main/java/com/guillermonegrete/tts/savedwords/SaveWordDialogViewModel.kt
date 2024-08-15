@@ -54,7 +54,7 @@ class SaveWordDialogViewModel @Inject constructor(
 
 sealed class ResultType {
     data class Insert(val word: Words): ResultType()
-    object Update : ResultType()
+    data object Update : ResultType()
 }
 
 /**
@@ -89,7 +89,7 @@ fun setContent(
                 languages = languages,
                 languagesISO = languagesISO,
                 isSaved = isSaved,
-                onSave = { onSave(it) },
+                onSave = { onSave(it.toWord()) },
                 onDelete = { deleteDialogShown = true },
                 onDismiss = { editDialogShown = false }
             )

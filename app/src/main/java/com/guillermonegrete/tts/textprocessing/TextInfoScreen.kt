@@ -76,7 +76,6 @@ import com.guillermonegrete.tts.common.compose.Spinner
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
-import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
@@ -379,7 +378,7 @@ fun EditWordDialog(
     languages: StringList,
     languagesISO: StringList,
     isSaved: Boolean = false,
-    onSave: (Words) -> Unit = {},
+    onSave: (WordUI) -> Unit = {},
     onDelete: () -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
@@ -468,7 +467,7 @@ fun EditWordDialog(
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
                     Button(onClick = {
-                        onSave(Words(wordText, languagesISO.items[indexLang], translationText).apply { this.notes = notesText })
+                        onSave(WordUI(wordText, languagesISO.items[indexLang], translationText, notesText))
                     }) {
                         Text(text = stringResource(android.R.string.ok))
                     }
@@ -481,9 +480,11 @@ fun EditWordDialog(
 
 data class WordState(
     val word: WordUI? = null,
-    val isSaved: Boolean = false,
+    val dbId: Int = NOT_SAVED_ID,
     val span: Span? = null,
-)
+) {
+    val isSaved = dbId != NOT_SAVED_ID
+}
 
 data class PlayIconState(
     val isPlaying: Boolean = false,
@@ -531,7 +532,7 @@ fun DarkSentenceDialogWithWordPreview(@PreviewParameter(LoremIpsum::class) text:
             targetLangIndex = 1,
             sourceLangIndex = 0,
             detectedLanguageState = remember { mutableIntStateOf(3) },
-            wordState = remember { mutableStateOf(WordState(WordUI("Original", "en",  "Translation"), true, Span(6, 11))) }
+            wordState = remember { mutableStateOf(WordState(WordUI("Original", "en",  "Translation"), 1, Span(6, 11))) }
         )
     }
 }
@@ -552,3 +553,5 @@ fun EditWordDialogPreview() {
         )
     }
 }
+
+const val NOT_SAVED_ID = 0
