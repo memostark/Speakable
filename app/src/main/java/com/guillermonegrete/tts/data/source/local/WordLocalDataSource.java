@@ -33,6 +33,11 @@ public class WordLocalDataSource implements WordDataSource {
     }
 
     @Override
+    public int insertWord(Words word) {
+        return (int) mWordDAO.insert(word);
+    }
+
+    @Override
     public void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordCallback callback) {
         Words retrieved_word = mWordDAO.findWord(wordText);
         if(retrieved_word == null){

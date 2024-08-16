@@ -277,11 +277,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                     editDialogShown.value = false
                     if (_bindingWord != null) {
                         setSavedWordToolbar()
-                    } else {
-                        wordState.value = wordState.value.copy(word = result.word.toUI(), dbId = result.word.id)
                     }
+                    wordState.value = wordState.value.copy(word = result.word.toUI(), dbId = result.word.id)
                 }
-                ResultType.Update -> editDialogShown.value = false
+                is ResultType.Update -> {
+                    wordState.value = wordState.value.copy(word = result.word.toUI())
+                    editDialogShown.value = false
+                }
             }
         }
     }
@@ -470,12 +472,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     override fun showWordDeleted() {
         if (_bindingWord != null) {
             bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
-            wordState.value = wordState.value.copy(dbId = NOT_SAVED_ID)
-        } else {
-            val oldWord = wordState.value.word ?: return
-            val word = WordUI(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
-            wordState.value = wordState.value.copy(word = word, dbId = NOT_SAVED_ID)
         }
+        val oldWord = wordState.value.word ?: return
+        val word = WordUI(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
+        wordState.value = wordState.value.copy(word = word, dbId = NOT_SAVED_ID)
         deleteDialogShown.value = false
         editDialogShown.value = false
     }
