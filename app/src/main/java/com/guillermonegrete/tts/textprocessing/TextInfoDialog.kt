@@ -278,6 +278,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                     if (_bindingWord != null) {
                         setSavedWordToolbar()
                     }
+                    updateDatabaseWord(result.word.id)
                     wordState.value = wordState.value.copy(word = result.word.toUI(), dbId = result.word.id)
                 }
                 is ResultType.Update -> {
@@ -476,6 +477,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val oldWord = wordState.value.word ?: return
         val word = WordUI(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
         wordState.value = wordState.value.copy(word = word, dbId = NOT_SAVED_ID)
+        updateDatabaseWord(NOT_SAVED_ID)
         deleteDialogShown.value = false
         editDialogShown.value = false
     }
@@ -814,6 +816,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         }
     }
 
+    private fun updateDatabaseWord(id: Int) {
+        val fragment = childFragmentManager.fragments.find { it is TranslationFragment}
+        if (fragment != null && fragment is TranslationFragment) {
+            fragment.setWordId(id)
+        }
+    }
 
     private inner class MyPageAdapter(fragment: Fragment) :
         FragmentStateAdapter(fragment) {
