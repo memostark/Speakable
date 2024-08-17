@@ -384,14 +384,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         createSmallViewPager()
 
         setSavedWordToolbar()
-        languagePreferenceIndex = -1 // Indicates spinner not visible
-
     }
 
     override fun setDictWithSaveWordLayout(word: Words, items: List<WikiItem>) {
         setWiktionaryLayout(word, items)
         setSavedWordToolbar()
-        languagePreferenceIndex = -1 // Indicates spinner not visible
     }
 
     override fun showTranslationError(error: String) {
@@ -542,7 +539,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
             val word = Words(inputText ?: "", translation.src, translation.translatedText)
-            if (fragment is TranslationFragment) fragment.updateTranslation(word)
+            if (fragment is TranslationFragment) fragment.updateTranslation(word, languagePreferenceIndex)
+            wordState.value = wordState.value.copy(word = word.toUI())
         } else {
             if(selectedSpans.value != null) selectedSpans.value = null
             translatedText.value = translation.translatedText
@@ -744,6 +742,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private val translationFragListener = object : TranslationFragment.Listener {
         override fun onItemSelected(position: Int) {
             languageToISO = languagesISO[position]
+            languagePreferenceIndex = position
             val editor = preferences.edit()
             editor.putInt(LANGUAGE_PREFERENCE, position)
             editor.apply()
@@ -765,6 +764,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                         "auto"
                     else
                         languagesISO[position - 1]
+                    languageFromIndex = position
                     editor.putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom)
                     editor.apply()
                     presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
@@ -789,6 +789,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun updateLanguageTo(position: Int) {
+        languagePreferenceIndex = position
         languageToISO = languagesISO[position]
         val editor = preferences.edit()
         editor.putInt(LANGUAGE_PREFERENCE, position)

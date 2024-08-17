@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData;
 
 import com.guillermonegrete.tts.data.Result;
 import com.guillermonegrete.tts.data.Translation;
+import com.guillermonegrete.tts.data.TranslationKey;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.di.ApplicationModule;
@@ -26,7 +27,7 @@ public class WordRepository implements WordRepositorySource {
 
     private final TranslationSource translationSource;
 
-    private final ConcurrentMap<String, Words> cachedWords;
+    private final ConcurrentMap<TranslationKey, Words> cachedWords;
 
 
     @Inject
@@ -125,17 +126,18 @@ public class WordRepository implements WordRepositorySource {
 
     private void getRemoteWord(String wordText, String languageFrom, String languageTo, final GetWordRepositoryCallback callback) {
 
-        Words cacheWord = cachedWords.get(wordText);
-        if(cachedWords.get(wordText) != null){
+        var key = new TranslationKey(wordText, languageFrom, languageTo);
+        var cacheWord = cachedWords.get(key);
+        if (cacheWord != null) {
             callback.onRemoteWordLoaded(cacheWord);
             return;
         }
 
         try{
-            Translation translation = translationSource.getTranslation(wordText, languageFrom, languageTo);
-            Words word = new Words(wordText, translation.getSrc(), translation.getTranslatedText());
+            var translation = translationSource.getTranslation(wordText, languageFrom, languageTo);
+            var word = new Words(wordText, translation.getSrc(), translation.getTranslatedText());
             callback.onRemoteWordLoaded(word);
-            cachedWords.put(wordText, word);
+            cachedWords.put(key, word);
         }catch (Exception e){
             callback.onDataNotAvailable(new Words(wordText, "un", "un"));
         }

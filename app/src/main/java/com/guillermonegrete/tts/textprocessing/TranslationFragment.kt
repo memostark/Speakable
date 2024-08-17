@@ -77,11 +77,13 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         clipboard.setPrimaryClip(clip)
     }
 
-    fun updateTranslation(word: Words){
+    fun updateTranslation(word: Words, languageIndex: Int){
         if(isAdded) {
             binding.translationText.text = word.definition
+            spinnerIndex = languageIndex
         }else{
             arguments?.putParcelable(ARGUMENT_WORD, word)
+            arguments?.putInt(ARGUMENT_SPINNER_INDEX, languageIndex)
         }
     }
 
