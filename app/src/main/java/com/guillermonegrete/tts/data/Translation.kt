@@ -14,3 +14,8 @@ data class Translation(
 }
 
 data class Segment(val trans: String, val orig: String)
+
+/**
+ * Used as the key for the cache of remote translations.
+ */
+data class TranslationKey(val word: String, val languageFrom: String, val languageTo: String)
