@@ -22,6 +22,11 @@ class FakeWordDataSource: WordDataSource {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    override fun insertWord(word: Words): Int {
+        translationsData[word.id] = word
+        return word.id
+    }
+
     override fun insertWords(vararg words: Words) {
         for(word in words) {
             translationsData[word.id] = word

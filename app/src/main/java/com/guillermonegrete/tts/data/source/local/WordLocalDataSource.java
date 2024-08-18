@@ -33,7 +33,7 @@ public class WordLocalDataSource implements WordDataSource {
     }
 
     @Override
-    public int insertWord(Words word) {
+    public int insertWord(@NonNull Words word) {
         return (int) mWordDAO.insert(word);
     }
 
