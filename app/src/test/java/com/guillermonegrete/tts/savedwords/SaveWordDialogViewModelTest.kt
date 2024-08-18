@@ -47,6 +47,6 @@ class SaveWordDialogViewModelTest {
         val word = Words("casa", "es", "house new").apply { id = 1 }
         viewModel.update(word)
 
-        assertEquals(ResultType.Update, viewModel.update.getOrAwaitValue())
+        assertEquals(ResultType.Update(word), viewModel.update.getOrAwaitValue())
     }
 }

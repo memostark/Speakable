@@ -22,7 +22,7 @@ public interface WordDataSource {
 
     List<String> getLanguagesISO();
 
-    int insertWord(Words word);
+    int insertWord(@NonNull Words word);
 
     void insertWords(Words... words);
 
