@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData;
 import com.guillermonegrete.tts.data.Result;
 import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.data.TranslationKey;
+import com.guillermonegrete.tts.data.TranslationKt;
 import com.guillermonegrete.tts.data.source.local.WordLocalDataSource;
 import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.di.ApplicationModule;
@@ -27,7 +28,7 @@ public class WordRepository implements WordRepositorySource {
 
     private final TranslationSource translationSource;
 
-    private final ConcurrentMap<TranslationKey, Words> cachedWords;
+    private final ConcurrentMap<TranslationKey, Translation> translationCache;
 
 
     @Inject
@@ -36,7 +37,7 @@ public class WordRepository implements WordRepositorySource {
         mWordLocalDataSource = checkNotNull(wordLocalDataSource);
         this.translationSource = translationSource;
 
-        cachedWords = new ConcurrentHashMap<>();
+        translationCache = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -94,8 +95,15 @@ public class WordRepository implements WordRepositorySource {
 
     @Override
     public Result<Translation> getTranslation(@NonNull String text, @NonNull String languageFrom, @NonNull String languageTo) {
+        var key = new TranslationKey(text, languageFrom, languageTo);
+        var cacheTranslation = translationCache.get(key);
+        if (cacheTranslation != null) {
+            return new Result.Success<>(cacheTranslation);
+        }
+
         try{
             Translation wordTranslation = translationSource.getTranslation(text, languageFrom, languageTo);
+            translationCache.put(key, wordTranslation);
             return new Result.Success<>(wordTranslation);
         }catch (Exception e){
             return new Result.Error<>(e);
@@ -127,17 +135,17 @@ public class WordRepository implements WordRepositorySource {
     private void getRemoteWord(String wordText, String languageFrom, String languageTo, final GetWordRepositoryCallback callback) {
 
         var key = new TranslationKey(wordText, languageFrom, languageTo);
-        var cacheWord = cachedWords.get(key);
-        if (cacheWord != null) {
-            callback.onRemoteWordLoaded(cacheWord);
+        var cacheTranslation = translationCache.get(key);
+        if (cacheTranslation != null) {
+            var word = TranslationKt.toWord(cacheTranslation);
+            callback.onRemoteWordLoaded(word);
             return;
         }
 
         try{
             var translation = translationSource.getTranslation(wordText, languageFrom, languageTo);
-            var word = new Words(wordText, translation.getSrc(), translation.getTranslatedText());
-            callback.onRemoteWordLoaded(word);
-            cachedWords.put(key, word);
+            callback.onRemoteWordLoaded(TranslationKt.toWord(translation));
+            translationCache.put(key, translation);
         }catch (Exception e){
             callback.onDataNotAvailable(new Words(wordText, "un", "un"));
         }

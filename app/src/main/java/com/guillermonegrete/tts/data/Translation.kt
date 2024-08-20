@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.data
 
+import com.guillermonegrete.tts.db.Words
+
 data class Translation(
     val sentences: List<Segment>,
     /**
@@ -14,6 +16,8 @@ data class Translation(
 }
 
 data class Segment(val trans: String, val orig: String)
+
+fun Translation.toWord() = Words(originalText, src, translatedText)
 
 /**
  * Used as the key for the cache of remote translations.
