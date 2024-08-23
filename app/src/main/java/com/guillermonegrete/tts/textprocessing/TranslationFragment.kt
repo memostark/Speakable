@@ -9,13 +9,22 @@ import android.widget.*
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.distinctUntilChanged
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FragmentProcessTranslationBinding
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -30,6 +39,9 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
 
     @Inject lateinit var wordsDAO: WordsDAO
 
+    private var wordJob: Job? = null
+    private val _wordId = MutableStateFlow(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         word = arguments?.getParcelable(ARGUMENT_WORD)
@@ -42,25 +54,14 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         _binding = FragmentProcessTranslationBinding.bind(view)
 
         word?.let {word ->
-            setWord(word)
 
             // If spinner index is set then it's a sentence layout
-            if(spinnerIndex != -1) {
-                with(binding) {
-                    setSpinner(root)
-                    definitionGroup.isVisible = false
-                    translationGroup.isVisible = true
-                    translationText.text = word.definition
-                    copyTranslationButton.setOnClickListener {
-                        saveTextToClipboard(word.definition)
-                    }
-                }
+            if(word.id == NOT_SAVED_ID) {
+                setSpinnerLayout(word)
             } else {
                 // Only query the database when it's a word layout
-                wordsDAO.loadWordById(word.id).distinctUntilChanged().observe(viewLifecycleOwner) {
-                    it ?: return@observe
-                    setWord(it)
-                }
+                _wordId.value = word.id
+                launchWordJob()
             }
         }
     }
@@ -70,30 +71,19 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         _binding = null
     }
 
-    private fun setWord(word: Words){
-        with(binding){
-            savedDefinitionText.text = word.definition
-            val isEmpty = word.notes.isNullOrBlank()
-            notesGroup.isGone = isEmpty
-            if(!isEmpty) savedNotesText.text = word.notes
-
-            copyDefinitionButton.setOnClickListener {
-                saveTextToClipboard(word.definition)
-            }
-        }
-    }
-
     private fun saveTextToClipboard(text: String){
         val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip: ClipData = ClipData.newPlainText("simple text", text)
         clipboard.setPrimaryClip(clip)
     }
 
-    fun updateTranslation(word: Words){
+    fun updateTranslation(word: Words, languageIndex: Int){
         if(isAdded) {
             binding.translationText.text = word.definition
+            spinnerIndex = languageIndex
         }else{
             arguments?.putParcelable(ARGUMENT_WORD, word)
+            arguments?.putInt(ARGUMENT_SPINNER_INDEX, languageIndex)
         }
     }
 
@@ -108,8 +98,32 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         this.listener = listener
     }
 
-    private fun setSpinner(root: View) {
-        val spinner = root.findViewById<Spinner>(R.id.translate_to_spinner)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun launchWordJob() {
+        wordJob = lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                _wordId.flatMapLatest { id ->
+                    wordsDAO.loadWordById(id).distinctUntilChanged().asFlow()
+                }.collect { dbWord ->
+                    if (dbWord == null) {
+                        word?.let { setSpinnerLayout(it) }
+                    } else {
+                        setSavedWordLayout(dbWord)
+                    }
+                }
+            }
+        }
+    }
+
+    fun setWordId(id: Int) {
+        _wordId.value = id
+        if (wordJob == null) {
+            launchWordJob()
+        }
+    }
+
+    private fun setSpinnerLayout(word: Words) {
         val arrayAdapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
             R.array.googleTranslateLanguagesValue,
@@ -119,12 +133,37 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         // Specify the layout to use when the list of choices appears
         arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         // Apply the adapter to the spinner
-        spinner.apply {
-            adapter = arrayAdapter
-            spinnerIndex?.let { setSelection(it, false) }
-            post { onItemSelectedListener = SpinnerListener() } // the post{} avoids the listener being called
-        }
+        with (binding) {
+            translateToSpinner.apply {
+                adapter = arrayAdapter
+                spinnerIndex?.let { setSelection(it, false) }
+                post { onItemSelectedListener = SpinnerListener() } // the post{} avoids the listener being called
+            }
 
+            definitionGroup.isVisible = false
+            notesGroup.isVisible = false
+            translationGroup.isVisible = true
+            translationText.text = word.definition
+            copyTranslationButton.setOnClickListener {
+                saveTextToClipboard(word.definition)
+            }
+        }
+    }
+
+    private fun setSavedWordLayout(word: Words) {
+        with(binding){
+            savedDefinitionText.text = word.definition
+            val isEmpty = word.notes.isNullOrBlank()
+            notesGroup.isGone = isEmpty
+            if(!isEmpty) savedNotesText.text = word.notes
+
+            copyDefinitionButton.setOnClickListener {
+                saveTextToClipboard(word.definition)
+            }
+            definitionGroup.isVisible = true
+            translationGroup.isVisible = false
+            translateToSpinner.adapter = null
+        }
     }
 
     inner class SpinnerListener: AdapterView.OnItemSelectedListener {

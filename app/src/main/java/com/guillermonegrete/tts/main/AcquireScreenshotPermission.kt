@@ -32,26 +32,37 @@ class AcquireScreenshotPermission : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        // For the overlay permission, the result code might not be OK and the intent data null, so handle separately.
+        if (requestCode == REQUEST_CODE_DRAW_OVERLAY) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
+                getScreenCaptureIntent()
+            } else {
+                finish()
+            }
+            return
+        }
+
         if (resultCode == AppCompatActivity.RESULT_OK && data != null) {
             when(requestCode) {
                 REQUEST_CODE_SCREEN_CAPTURE -> {
                     val intent = Intent(this, ScreenTextService::class.java)
-                    // If an action is set, return it to the service so it performs the action otherwise return a normal service action
-                    val action = getIntent().action ?: NORMAL_SERVICE
+                    val intentAction = getIntent().action
+                    // If an action is set (e.g. translate text), return it to the service so it performs the action otherwise return a normal service action
+                    val action = if (intentAction == null) {
+                        NORMAL_SERVICE
+                    } else {
+                        // If the intent action is VIEW, it means this was called from a shortcut, start a normal service
+                        if (intentAction == Intent.ACTION_VIEW) NORMAL_SERVICE else intentAction
+                    }
                     intent.action = action
                     intent.putExtra(ScreenTextService.EXTRA_RESULT_CODE, resultCode)
                     intent.putExtras(data)
                     startService(intent)
                     finish()
                 }
-                REQUEST_CODE_DRAW_OVERLAY -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                        getScreenCaptureIntent()
-                    } else {
-                        finish()
-                    }
-                }
             }
+        } else {
+            finish()
         }
     }
 

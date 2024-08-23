@@ -39,7 +39,8 @@ class SaveWordDialogViewModel @Inject constructor(
             return
 
         viewModelScope.launch {
-            withContext(ioDispatcher) { wordSource.insertWords(word) }
+            val id = withContext(ioDispatcher) { wordSource.insertWord(word) }
+            word.id = id
             _update.value = ResultType.Insert(word)
         }
     }
@@ -47,14 +48,14 @@ class SaveWordDialogViewModel @Inject constructor(
     fun update(newWord: Words){
         viewModelScope.launch {
             val rowsUpdated = withContext(ioDispatcher) { wordSource.update(newWord) }
-            if(rowsUpdated > 0) _update.value = ResultType.Update
+            if(rowsUpdated > 0) _update.value = ResultType.Update(newWord)
         }
     }
 }
 
 sealed class ResultType {
     data class Insert(val word: Words): ResultType()
-    object Update : ResultType()
+    data class Update(val word: Words): ResultType()
 }
 
 /**
@@ -89,7 +90,7 @@ fun setContent(
                 languages = languages,
                 languagesISO = languagesISO,
                 isSaved = isSaved,
-                onSave = { onSave(it) },
+                onSave = { onSave(it.toWord()) },
                 onDelete = { deleteDialogShown = true },
                 onDismiss = { editDialogShown = false }
             )

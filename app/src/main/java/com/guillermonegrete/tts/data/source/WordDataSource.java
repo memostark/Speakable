@@ -22,6 +22,8 @@ public interface WordDataSource {
 
     List<String> getLanguagesISO();
 
+    int insertWord(@NonNull Words word);
+
     void insertWords(Words... words);
 
     void deleteWords(Words... words);

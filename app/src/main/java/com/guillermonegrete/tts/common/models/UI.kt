@@ -9,7 +9,9 @@ data class WordUI(
     val definition: String,
     val notes: String? = null
 ) {
-    fun toWord() = Words(word, lang, definition)
+    fun toWord() = Words(word, lang, definition).also { dbWord ->
+        dbWord.notes = notes
+    }
 }
 
 fun Words.toUI() = WordUI(word, lang, definition, notes)

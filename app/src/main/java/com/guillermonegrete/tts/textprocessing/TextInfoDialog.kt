@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.distinctUntilChanged
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
@@ -65,7 +64,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     private var inputText: String? = null
 
-    private lateinit var mFoundWords: Words
+    private var mFoundWords: Words? = null
     private var dbWord: Words? = null
 
     @Inject
@@ -249,15 +248,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             }
         }
 
-        presenter.wordStream(inputText, languageFrom).distinctUntilChanged().observe(this) {
-            dbWord = it
-        }
-
         presenterImp.wordInfo().observe(this) {result ->
             when(result) {
-                is WordResult.Local -> wordState.value = WordState(result.word.toUI(),true, selectedWordSpan)
-                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), false, selectedWordSpan)
-                is WordResult.Error -> { Toast.makeText(context, "Error: ${result.exception}", Toast.LENGTH_SHORT).show() }
+                is WordResult.Local -> wordState.value = WordState(result.word.toUI(), result.word.id, selectedWordSpan)
+                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), span = selectedWordSpan)
+                is WordResult.Error -> {
+                    Toast.makeText(context, "Couldn't load selected word", Toast.LENGTH_SHORT).show()
+                    Timber.e(result.exception, "Couldn't load selected word info")
+                }
             }
         }
 
@@ -273,12 +271,17 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                 is ResultType.Insert -> {
                     editDialogShown.value = false
                     if (_bindingWord != null) {
-                        setSavedWordToolbar()
-                    } else {
-                        wordState.value = wordState.value.copy(word = result.word.toUI(), isSaved = true)
+                        setSavedWordToolbar(result.word)
                     }
+                    updateDatabaseWord(result.word.id)
+                    wordState.value = wordState.value.copy(word = result.word.toUI(), dbId = result.word.id)
+                    dbWord = result.word
                 }
-                ResultType.Update -> editDialogShown.value = false
+                is ResultType.Update -> {
+                    wordState.value = wordState.value.copy(word = result.word.toUI())
+                    dbWord = result.word
+                    editDialogShown.value = false
+                }
             }
         }
     }
@@ -352,10 +355,15 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
-                wordState.value = WordState(word.toUI())
+                wordState.value = WordState(word.toUI(), dbId = word.id)
                 EditDeleteWordDialogs(wordState)
             }
         }
+    }
+
+    private fun setDictRemoteWordLayout(word: Words, items: List<WikiItem>) {
+        mFoundWords = word
+        setWiktionaryLayout(word, items)
     }
 
     private fun setWiktionaryLayout(word: Words, items: List<WikiItem>) {
@@ -363,7 +371,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         if (isLargeWindow) setCenterDialog() else setBottomDialog()
         dictionaryAdapter = WiktionaryAdapter(items)
 
-        mFoundWords = word
         setWordLayout(word)
 
         if (isLargeWindow) createViewPager() else createSmallViewPager()
@@ -372,20 +379,16 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     override fun setSavedWordLayout(word: Words) {
         setBottomDialog()
-        mFoundWords = word
-
-//        setWordLayout(word)
+        dbWord = word
         createSmallViewPager()
 
-        setSavedWordToolbar()
-        languagePreferenceIndex = -1 // Indicates spinner not visible
-
+        setSavedWordToolbar(word)
     }
 
     override fun setDictWithSaveWordLayout(word: Words, items: List<WikiItem>) {
+        dbWord = word
         setWiktionaryLayout(word, items)
-        setSavedWordToolbar()
-        languagePreferenceIndex = -1 // Indicates spinner not visible
+        setSavedWordToolbar(word)
     }
 
     override fun showTranslationError(error: String) {
@@ -418,9 +421,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         if (dictionaryAdapter != null) pagerAdapter.addFragment(
             DefinitionFragment.newInstance(dictionaryAdapter)
         )
-        val translationFragment = TranslationFragment.newInstance(mFoundWords, languagePreferenceIndex)
-        translationFragment.setListener(translationFragListener)
-        pagerAdapter.addFragment(translationFragment)
+        val word = dbWord ?: mFoundWords
+        if (word != null) {
+            val translationFragment = TranslationFragment.newInstance(word, languagePreferenceIndex)
+            translationFragment.setListener(translationFragListener)
+            pagerAdapter.addFragment(translationFragment)
+        }
         pagerAdapter.addFragment(
             ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
         )
@@ -444,7 +450,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             }
             is GetLayoutResult.Sentence -> setSentenceLayout(result.translation)
             is GetLayoutResult.DictionarySuccess ->
-                if(requireArguments().getBoolean(WORD_SAVED_KEY)) setDictWithSaveWordLayout(result.word, result.items) else setWiktionaryLayout(result.word, result.items)
+                if(requireArguments().getBoolean(WORD_SAVED_KEY)) setDictWithSaveWordLayout(result.word, result.items) else setDictRemoteWordLayout(result.word, result.items)
             is GetLayoutResult.Error -> {
                 Timber.e(result.exception, "Error getting the layout")
                 showTranslationError(result.exception.message ?: result.exception.toString())
@@ -467,12 +473,16 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     override fun showWordDeleted() {
         if (_bindingWord != null) {
             bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp)
-            wordState.value = wordState.value.copy(isSaved = false)
-        } else {
-            val oldWord = wordState.value.word ?: return
-            val word = Words(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
-            wordState.value = wordState.value.copy(word = word.toUI(), isSaved = false)
         }
+        dbWord = null
+        val oldWord = mFoundWords
+        if (oldWord != null) {
+            val word = WordUI(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
+            wordState.value = wordState.value.copy(word = word, dbId = NOT_SAVED_ID)
+        } else {
+            presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
+        }
+        updateDatabaseWord(NOT_SAVED_ID)
         deleteDialogShown.value = false
         editDialogShown.value = false
     }
@@ -537,7 +547,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
             val word = Words(inputText ?: "", translation.src, translation.translatedText)
-            if (fragment is TranslationFragment) fragment.updateTranslation(word)
+            if (fragment is TranslationFragment) fragment.updateTranslation(word, languagePreferenceIndex)
+            mFoundWords = word
+            wordState.value = wordState.value.copy(word = word.toUI())
         } else {
             if(selectedSpans.value != null) selectedSpans.value = null
             translatedText.value = translation.translatedText
@@ -674,16 +686,16 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         }
     }
 
-    private fun setSavedWordToolbar() {
+    private fun setSavedWordToolbar(word: Words) {
         bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
         bindingWord.saveIcon.setOnClickListener { editDialogShown.value = true }
 
         // Hides language from spinner, because language is already predefined.
         bindingWord.spinnerLanguageFrom.visibility = View.INVISIBLE
-        bindingWord.textLanguageCode.text = mFoundWords.lang
+        bindingWord.textLanguageCode.text = word.lang
         bindingWord.textLanguageCode.visibility = View.VISIBLE
 
-        wordState.value = wordState.value.copy(isSaved = true, word = mFoundWords.toUI())
+        wordState.value = wordState.value.copy(word = word.toUI(), dbId = word.id)
         bindingWord.composeRoot.setContent {
             AppTheme {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
@@ -739,6 +751,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private val translationFragListener = object : TranslationFragment.Listener {
         override fun onItemSelected(position: Int) {
             languageToISO = languagesISO[position]
+            languagePreferenceIndex = position
             val editor = preferences.edit()
             editor.putInt(LANGUAGE_PREFERENCE, position)
             editor.apply()
@@ -760,6 +773,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                         "auto"
                     else
                         languagesISO[position - 1]
+                    languageFromIndex = position
                     editor.putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom)
                     editor.apply()
                     presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
@@ -784,6 +798,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun updateLanguageTo(position: Int) {
+        languagePreferenceIndex = position
         languageToISO = languagesISO[position]
         val editor = preferences.edit()
         editor.putInt(LANGUAGE_PREFERENCE, position)
@@ -811,6 +826,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         }
     }
 
+    private fun updateDatabaseWord(id: Int) {
+        val fragment = childFragmentManager.fragments.find { it is TranslationFragment}
+        if (fragment != null && fragment is TranslationFragment) {
+            fragment.setWordId(id)
+        }
+    }
 
     private inner class MyPageAdapter(fragment: Fragment) :
         FragmentStateAdapter(fragment) {
@@ -882,7 +903,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             languagesISO = StringList(languagesISO),
             isSaved = wordState.value.isSaved,
             onSave = {
-                if(wordState.value.isSaved) saveWordViewModel.update(it) else saveWordViewModel.save(it)
+                val resultWord = it.toWord()
+                resultWord.id = wordState.value.dbId
+                if(wordState.value.isSaved) saveWordViewModel.update(resultWord) else saveWordViewModel.save(resultWord)
             },
             onDelete = { deleteDialogShown.value = true },
             onDismiss = { editDialogShown.value = false }
