@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.db;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
@@ -10,11 +11,16 @@ import androidx.room.Update;
 
 import java.util.List;
 
+import kotlinx.coroutines.flow.Flow;
+
 @Dao
 public interface WordsDAO {
 
     @Query("SELECT * FROM words where word = :word LIMIT 1")
     Words findWord(String word);
+
+    @Query("SELECT * FROM words where word in (:words)")
+    Flow<List<Words>> findWords(@NonNull final List<String> words);
 
     @Query("SELECT * FROM words WHERE word = :word AND lang = :language")
     LiveData<Words> loadWord(String word, String language);

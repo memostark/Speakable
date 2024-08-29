@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.IntentCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -40,6 +41,9 @@ import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
@@ -62,7 +66,9 @@ import com.guillermonegrete.tts.utils.getScreenSizes
 import com.guillermonegrete.tts.webreader.AddNoteDialog
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.text.BreakIterator
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -148,7 +154,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
         viewPager.adapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
-            {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment]
+            {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
 
         viewPager.post{
             addPagerCallback()
@@ -424,6 +430,15 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 linksDialogShown.value = true
             }
 
+            lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    pageSavedWords.collect { words ->
+                        Timber.d("Found words: $words")
+                    }
+                }
+            }
+
+
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
     }
@@ -431,7 +446,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private fun initParse() {
         val intent = requireActivity().intent
         if(SHOW_EPUB == intent.action) {
-            val uri: Uri = intent.getParcelableExtra(EPUB_URI) ?: return
+            val uri: Uri = IntentCompat.getParcelableExtra(intent, EPUB_URI, Uri::class.java) ?: return
             val rootStream = requireContext().contentResolver.openInputStream(uri)
             viewModel.fileReader = DefaultZipFileReader(rootStream, requireContext())
             viewModel.fileUri = uri.toString()
@@ -588,6 +603,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                     viewPager.post { pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE) }
                 }
 
+                // Load saved words when reaching new áge
+                val text = pagesAdapter.getPageText(position)
+                val words = splitByWords(text.toString())
+                Timber.d("Split words: $words")
+                viewModel.loadLocalWords(words)
+
                 previousPage = position
             }
 
@@ -628,7 +649,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     }
 
     private fun createPageSplitter(textView: TextView, width: Int): PageSplitter {
-        val uri: Uri? = requireActivity().intent.getParcelableExtra(EPUB_URI)
+        val uri: Uri? = IntentCompat.getParcelableExtra(requireActivity().intent, EPUB_URI, Uri::class.java)
         val imageGetter = if(uri != null) {
             val zipReader = DefaultZipFileReader(requireContext().contentResolver.openInputStream(uri), requireContext())
             InputStreamImageGetter(requireContext(), zipReader)
@@ -899,6 +920,22 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             }
         }
         return text
+    }
+
+    private fun splitByWords(text: String): List<String> {
+        val words = arrayListOf<String>()
+        val iterator = BreakIterator.getWordInstance()
+        iterator.setText(text)
+        var start = iterator.first()
+        var end = iterator.next()
+
+        while (end != BreakIterator.DONE) {
+            val possibleWord = text.substring(start, end)
+            if (possibleWord.isNotBlank()) words.add(possibleWord)
+            start = end
+            end = iterator.next()
+        }
+        return words
     }
 
     @Composable

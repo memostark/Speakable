@@ -95,6 +95,8 @@ class VisualizerAdapter(
         return R.layout.visualizer_page_item
     }
 
+    fun getPageText(position: Int) = pages.getOrNull(position)?.text
+
     @SuppressLint("ClickableViewAccessibility")
     open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
         protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
