@@ -56,10 +56,12 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
+import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.theme.VisualizerTheme
 import com.guillermonegrete.tts.utils.getScreenSizes
@@ -153,8 +155,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
-        viewPager.adapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
+        pagesAdapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
             {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
+        viewPager.adapter = pagesAdapter
 
         viewPager.post{
             addPagerCallback()
@@ -433,7 +436,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     pageSavedWords.collect { words ->
-                        Timber.d("Found words: $words")
+                        highlightSavedWords(words)
                     }
                 }
             }
@@ -441,6 +444,27 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
+    }
+
+    private fun highlightSavedWords(dbWords: List<Words>) {
+        val text = pagesAdapter.getPageText(viewPager.currentItem).toString()
+        val words = arrayListOf<WordState>()
+
+        val iterator = BreakIterator.getWordInstance()
+        iterator.setText(text)
+        var start = iterator.first()
+        var end = iterator.next()
+
+        while (end != BreakIterator.DONE) {
+            val possibleWord = text.substring(start, end)
+            val dbWord = dbWords.find { it.word == possibleWord }
+            if (dbWord != null) {
+                words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
+            }
+            start = end
+            end = iterator.next()
+        }
+        pagesAdapter.updateSavedWords(words, viewPager.currentItem)
     }
 
     private fun initParse() {
@@ -606,7 +630,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 // Load saved words when reaching new áge
                 val text = pagesAdapter.getPageText(position)
                 val words = splitByWords(text.toString())
-                Timber.d("Split words: $words")
                 viewModel.loadLocalWords(words)
 
                 previousPage = position

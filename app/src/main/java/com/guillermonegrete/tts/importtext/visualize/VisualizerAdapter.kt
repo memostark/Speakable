@@ -8,7 +8,6 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.view.GestureDetectorCompat
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
@@ -17,6 +16,7 @@ import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
 import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
+import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
@@ -106,7 +106,7 @@ class VisualizerAdapter(
         init {
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
-            val detector = GestureDetectorCompat(itemView.context, PageGestureListener())
+            val detector = GestureDetector(itemView.context, PageGestureListener())
             pageTextView.setOnTouchListener { _, event ->
                 detector.onTouchEvent(event)
             }
@@ -115,6 +115,18 @@ class VisualizerAdapter(
 
         open fun bind(pageItem: PageItem) {
             actionModeCallback.item = pageItem
+        }
+
+        protected fun addHighlightItems(pageItem: PageItem, text: Spannable) {
+            pageItem.notes.forEach {
+                val span = it.span
+                text.addHighlightedText(span.start, span.end, it.color)
+            }
+
+            pageItem.savedWords.forEach {
+                val span = it.span
+                if (span != null) text.addHighlightedText(span.start, span.end)
+            }
         }
 
         private inner class PageGestureListener : GestureDetector.SimpleOnGestureListener() {
@@ -152,11 +164,7 @@ class VisualizerAdapter(
         override fun bind(pageItem: PageItem){
             super.bind(pageItem)
             val spannable = SpannableString(pageItem.text)
-
-            pageItem.notes.forEach {
-                val span = it.span
-                spannable.addHighlightedText(span.start, span.end, it.color)
-            }
+            addHighlightItems(pageItem, spannable)
             pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
         }
     }
@@ -179,10 +187,7 @@ class VisualizerAdapter(
                 spannable.setSpan(it.span, it.pos.start, it.pos.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
 
-            pageItem.notes.forEach {
-                val span = it.span
-                spannable.addHighlightedText(span.start, span.end, it.color)
-            }
+            addHighlightItems(pageItem, spannable)
             pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
         }
 
@@ -310,9 +315,16 @@ class VisualizerAdapter(
             note != null
         }
         if (pos == -1) return
-        val paragraphItem = pages[pos]
-        paragraphItem.notes.removeAll { noteId == it.id }
+        val pageItem = pages[pos]
+        pageItem.notes.removeAll { noteId == it.id }
         notifyItemChanged(pos)
+    }
+
+    fun updateSavedWords(words: List<WordState>, position: Int) {
+        val pageItem = pages[position]
+        pageItem.savedWords.clear()
+        pageItem.savedWords.addAll(words)
+        notifyItemChanged(position)
     }
 
     companion object {
@@ -326,6 +338,7 @@ class VisualizerAdapter(
          * The index of the paragraph's first char with respect to the whole text.
          */
         val firstCharIndex: Int,
+        val savedWords: MutableList<WordState> = mutableListOf(),
     ) {
         companion object {
             val EMPTY = PageItem("", mutableListOf(), 0)
