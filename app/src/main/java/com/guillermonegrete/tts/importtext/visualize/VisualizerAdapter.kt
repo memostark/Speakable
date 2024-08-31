@@ -221,6 +221,12 @@ class VisualizerAdapter(
                 if (start < noteSpan.end && end > noteSpan.start)
                     text.addHighlightedText(noteSpan.start, noteSpan.end, it.color)
             }
+            item.savedWords.forEach {
+                val noteSpan = it.span
+                if (noteSpan != null && start < noteSpan.end && end > noteSpan.start)
+                    text.addHighlightedText(noteSpan.start, noteSpan.end)
+            }
+
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
         }
 
