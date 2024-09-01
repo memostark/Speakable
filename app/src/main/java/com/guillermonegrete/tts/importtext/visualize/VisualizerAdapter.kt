@@ -8,6 +8,7 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.graphics.ColorUtils
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
@@ -17,9 +18,12 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
 import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
 import com.guillermonegrete.tts.textprocessing.WordState
+import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
+import kotlin.math.max
+import kotlin.math.min
 
 class VisualizerAdapter(
     private val pages: List<PageItem>,
@@ -127,6 +131,18 @@ class VisualizerAdapter(
                 val span = it.span
                 if (span != null) text.addHighlightedText(span.start, span.end)
             }
+
+            // When a note and saved word overlap add a blend of their colors
+            pageItem.notes.forEach { note ->
+                pageItem.savedWords.forEach {
+                    val span = it.span
+                    if (span != null && note.span.intersects(it.span)) {
+                        val start = max(span.start, note.span.start)
+                        val end = min(span.end, note.span.end)
+                        text.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
+                    }
+                }
+            }
         }
 
         private inner class PageGestureListener : GestureDetector.SimpleOnGestureListener() {
@@ -135,6 +151,12 @@ class VisualizerAdapter(
                 val offset = pageTextView.getOffsetForPosition(e.x, e.y)
 
                 val item = pages[adapterPosition]
+                val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
+                if (savedWord != null) {
+                    showTextDialog(savedWord.word?.word ?: "")
+                    return true
+                }
+
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (clickedNote != null) {
                     val span = clickedNote.span
