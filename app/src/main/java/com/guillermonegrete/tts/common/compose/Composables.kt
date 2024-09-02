@@ -212,6 +212,36 @@ fun ExternalLinksDialog(
     }
 }
 
+@Composable
+fun DialogList(
+    list: List<String>,
+    title: String? = null,
+    onItemSelected: (Int, String) -> Unit = { _, _ -> },
+    onDismiss: () -> Unit = {},
+) {
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface {
+            Column {
+                if (title != null) {
+                    Text(text = title, modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.h5)
+                    Divider()
+                }
+
+                LazyColumn {
+                    itemsIndexed(list) { index, item ->
+                        DropdownMenuItem(onClick = {
+                            onItemSelected(index, item)
+                        }){
+                            Text(text = item)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 fun ExternalLinksDialogPreview() {
@@ -231,5 +261,21 @@ fun SpinnerPreview() {
             Spinner(suggestions)
             Spinner(suggestions, 0)
         }
+    }
+}
+
+@Preview
+@Composable
+fun DialogListPreview() {
+    AppTheme {
+        DialogList(List(3) { "Item ${it + 1}" }, "With title")
+    }
+}
+
+@Preview
+@Composable
+fun DialogListNoTitlePreview() {
+    AppTheme {
+        DialogList(List(3) { "Item ${it + 1}" })
     }
 }
