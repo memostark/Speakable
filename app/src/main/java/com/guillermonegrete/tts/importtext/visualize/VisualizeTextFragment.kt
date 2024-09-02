@@ -48,6 +48,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.DialogList
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
 import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
 import com.guillermonegrete.tts.common.models.EditNote
@@ -101,10 +102,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private val addNoteDialogVisible = mutableStateOf(false)
     private val noteSheetVisible = mutableStateOf(false)
     private var linksDialogShown = mutableStateOf(false)
+    private val pickInfoDialogVisible = mutableStateOf(false)
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
     private var selectedLink = 0
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
+    private var clickedWord = ""
 
     private var splitterCreated = false
 
@@ -484,14 +487,24 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private fun setUpPagerAndIndexLabel(chapter: BookChapter){
         pagesAdapter = VisualizerAdapter(
             createPageItems(chapter),
-            showTextDialog = ::showTextDialog,
             onCreateNote = {
                 noteInfo.value = it
                 addNoteDialogVisible.value = true
             },
-            onNoteClicked = {
-                noteInfo.value = it
-                noteSheetVisible.value = true
+            onTextClick = { result ->
+                when(result) {
+                    is VisualizerAdapter.TextClick.Note -> {
+                        noteInfo.value = result.note
+                        noteSheetVisible.value = true
+                    }
+                    is VisualizerAdapter.TextClick.SavedWord -> showTextDialog(result.word)
+                    is VisualizerAdapter.TextClick.Overlap -> {
+                        noteInfo.value = result.note
+                        clickedWord = result.word
+                        pickInfoDialogVisible.value = true
+                    }
+                    is VisualizerAdapter.TextClick.Word -> showTextDialog(result.word)
+                }
             },
             getPageCharPos = viewModel::getCharPos
         )
@@ -993,6 +1006,21 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 addNoteVisible = false
             },
         )
+        
+        if (pickInfoDialogVisible.value) {
+            DialogList(
+                list = listOf(resources.getString(R.string.note), resources.getString(R.string.saved_word)),
+                title = resources.getString(R.string.pick_info_dialog_title),
+                onItemSelected = { index, _ ->
+                    when (index) {
+                        0 -> noteSheetVisible.value = true
+                        1 -> showTextDialog(clickedWord)
+                    }
+                    pickInfoDialogVisible.value = false
+                },
+                onDismiss = { pickInfoDialogVisible.value = false }
+            )
+        }
     }
 
     @Composable

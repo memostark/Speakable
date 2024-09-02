@@ -27,9 +27,8 @@ import kotlin.math.min
 
 class VisualizerAdapter(
     private val pages: List<PageItem>,
-    private val showTextDialog: (CharSequence) -> Unit,
     private val onCreateNote: (EditNote) -> Unit,
-    private val onNoteClicked: (EditNote) -> Unit = {},
+    private val onTextClick: (TextClick) -> Unit = {},
     private val getPageCharPos: () -> Int = {0},
     private val measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -105,7 +104,9 @@ class VisualizerAdapter(
     open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
         protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
-        private val actionModeCallback = PageActionModeCallback(pageTextView, showTextDialog)
+        private val actionModeCallback = PageActionModeCallback(pageTextView) {
+            onTextClick(TextClick.Word(it.toString()))
+        }
 
         init {
             // Color taken from member variable mHighlightColor from TextView class.
@@ -152,17 +153,17 @@ class VisualizerAdapter(
 
                 val item = pages[adapterPosition]
                 val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
-                if (savedWord != null) {
-                    showTextDialog(savedWord.word?.word ?: "")
-                    return true
-                }
-
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
-                if (clickedNote != null) {
-                    val span = clickedNote.span
-                    val text = item.text.substring(span.start, span.end)
-                    val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
-                    onNoteClicked(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id))
+                if (savedWord != null && clickedNote != null) {
+                    val word = savedWord.word?.word ?: ""
+                    val note = createNote(clickedNote, item)
+                    onTextClick(TextClick.Overlap(note, word))
+                    return true
+                } else if (savedWord != null) {
+                    onTextClick(TextClick.SavedWord(savedWord.word?.word ?: ""))
+                    return true
+                } else if (clickedNote != null) {
+                    onTextClick(TextClick.Note(createNote(clickedNote, item)))
                     return true
                 }
 
@@ -170,7 +171,7 @@ class VisualizerAdapter(
                 val clickedWord = pageTextView.text.substring(wordSpan.start, wordSpan.end)
 
                 if (clickedWord.isNotEmpty()) {
-                    showTextDialog(clickedWord)
+                    onTextClick(TextClick.Word(clickedWord))
                     return true
                 }
 
@@ -355,6 +356,13 @@ class VisualizerAdapter(
         notifyItemChanged(position)
     }
 
+    private fun createNote(clickedNote: NoteItem, item: PageItem): EditNote {
+        val span = clickedNote.span
+        val text = item.text.substring(span.start, span.end)
+        val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
+        return EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id)
+    }
+
     companion object {
         const val UNSELECT_SENTENCE = 10
     }
@@ -374,4 +382,11 @@ class VisualizerAdapter(
     }
 
     data class SentenceHighlight(val span: BackgroundColorSpan, val pos: Span)
+
+    sealed class TextClick {
+        data class Note(val note: EditNote): TextClick()
+        data class SavedWord(val word: String): TextClick()
+        data class Overlap(val note: EditNote, val word: String): TextClick()
+        data class Word(val word: String): TextClick()
+    }
 }
