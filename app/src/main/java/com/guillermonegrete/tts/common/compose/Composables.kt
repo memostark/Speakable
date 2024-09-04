@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -182,8 +184,25 @@ fun ExternalLinksDialog(
 
                 LazyRow(state = listState) {
                     itemsIndexed(links.items) {index, link ->
-                        if (index == selected) {
-                            Box(modifier = Modifier.width(IntrinsicSize.Max)) {
+
+                        Row(
+                            modifier = Modifier.height(IntrinsicSize.Min) // This prevents the divider's height from taking all the space
+                        ) {
+                            if (index == selected) {
+                                Box(modifier = Modifier.width(IntrinsicSize.Max)) {
+                                    TextButton(onClick = {
+                                        selected = index
+                                        coroutineScope.launch { listState.animateScrollToItem(index) }
+                                        onItemClick(index)
+                                    }) {
+                                        Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
+                                    }
+                                    Divider(
+                                        thickness = 4.dp,
+                                        color = MaterialTheme.colors.primary
+                                    )
+                                }
+                            } else {
                                 TextButton(onClick = {
                                     selected = index
                                     coroutineScope.launch { listState.animateScrollToItem(index) }
@@ -191,19 +210,10 @@ fun ExternalLinksDialog(
                                 }) {
                                     Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                                 }
-                                Divider(
-                                    thickness = 4.dp,
-                                    color = MaterialTheme.colors.primary
-                                )
                             }
-                        } else {
-                            TextButton(onClick = {
-                                selected = index
-                                coroutineScope.launch { listState.animateScrollToItem(index) }
-                                onItemClick(index)
-                            }) {
-                                Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
-                            }
+
+                            if (index < links.items.lastIndex)
+                                Divider(modifier = Modifier.fillMaxHeight().width(1.dp))
                         }
                     }
                 }
@@ -220,8 +230,11 @@ fun DialogList(
     onDismiss: () -> Unit = {},
 ) {
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(Modifier.padding(horizontal = 16.dp)) {
             Column {
                 if (title != null) {
                     Text(text = title, modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.h5)
