@@ -74,14 +74,13 @@ object ApplicationModule {
     }
 
     @Provides
-    fun provideBrightnessTheme(preferences: SharedPreferences, @ApplicationContext context: Context): BrightnessTheme{
+    fun provideBrightnessTheme(preferences: SharedPreferences, @ApplicationContext context: Context): BrightnessTheme {
         val preference = preferences.getString(BrightnessTheme.PREFERENCE_KEY, null)
-        val theme = if (preference == null) {
-            if (isNightMode(context)) BrightnessTheme.BLACK else BrightnessTheme.WHITE
+        return if (preference == null) {
+            BrightnessTheme.get(isNightMode(context))
         } else {
             BrightnessTheme.get(preference)
         }
-        return theme
     }
 
     @Singleton
