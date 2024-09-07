@@ -14,6 +14,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -45,9 +46,10 @@ import com.guillermonegrete.tts.textprocessing.domain.model.StatusTTS
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.DifferentValuesAdapter
-import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.ui.theme.VisualizerTheme
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.findWord
+import com.guillermonegrete.tts.utils.isNightMode
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.*
@@ -97,6 +99,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     @Inject
     internal lateinit var preferences: SharedPreferences
+    private lateinit var brightnessTheme: BrightnessTheme
 
     /**
      * List of languages without auto-detect entry.
@@ -149,7 +152,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             return ComposeView(requireContext()).apply {
                 setContent {
 
-                    AppTheme {
+                    VisualizerTheme(brightnessTheme) {
                         SentenceDialog(
                             isVisible = isVisible,
                             text = text,
@@ -235,7 +238,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = available)
         }
 
-        val extraWord: Words? = arguments?.getParcelable(WORD_KEY)
+        val extraWord = BundleCompat.getParcelable(requireArguments(), WORD_KEY, Words::class.java)
         if(extraWord != null){
             val isSaved = requireArguments().getBoolean(WORD_SAVED_KEY)
             presenter.getDictionaryEntry(extraWord, isSaved)
@@ -353,7 +356,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         bindingWord.saveIcon.setOnClickListener { editDialogShown.value = true }
         bindingWord.composeRoot.setContent {
-            AppTheme {
+            VisualizerTheme(theme = brightnessTheme) {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
                 wordState.value = WordState(word.toUI(), dbId = word.id)
                 EditDeleteWordDialogs(wordState)
@@ -647,17 +650,20 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun setBrightnessTheme(){
-        val theme = arguments?.getString(THEME_KEY) ?: return
+        val theme = arguments?.getString(THEME_KEY)
 
-        if(theme.isNotEmpty()) {
+        if(!theme.isNullOrEmpty()) {
+            brightnessTheme = BrightnessTheme.get(theme)
 
-            val id = when (BrightnessTheme.get(theme)) {
+            val id = when (brightnessTheme) {
                 BrightnessTheme.WHITE -> R.style.ProcessTextStyle_White
                 BrightnessTheme.BEIGE -> R.style.ProcessTextStyle_Beige
                 BrightnessTheme.BLACK -> R.style.ProcessTextStyle_Dark
             }
 
             context?.theme?.applyStyle(id, true)
+        } else {
+            brightnessTheme = BrightnessTheme.get(isNightMode(requireContext()))
         }
     }
 
@@ -697,7 +703,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         wordState.value = wordState.value.copy(word = word.toUI(), dbId = word.id)
         bindingWord.composeRoot.setContent {
-            AppTheme {
+            VisualizerTheme(theme = brightnessTheme) {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
                 EditDeleteWordDialogs(wordState)
             }

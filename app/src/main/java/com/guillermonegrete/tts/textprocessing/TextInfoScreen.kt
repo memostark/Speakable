@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenuItem
@@ -128,31 +129,33 @@ fun SentenceDialog(
             )
         }
 
-        Surface(modifier = Modifier
-            .padding(16.dp)
-            .onSizeChanged {
-                val sizePx = it.width.toFloat()
-                swipeableState.updateAnchors(
-                    DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
-                )
-            }
-            .anchoredDraggable(swipeableState, Orientation.Horizontal)
-            .pointerInput(Unit) {
-                // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
-                detectVerticalDragGestures(
-                    onVerticalDrag = { _, dragAmount ->
-                        // Because we are using Bottom gravity the axis sign is inverted
-                        wlp.y -= dragAmount.toInt()
-                        window.attributes = wlp
-                    },
-                    onDragEnd = {
-                        wlp.y = initialY
-                        window.attributes = wlp
-                    }
-                )
-            }
-            .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
-            .testTag("sentence_dialog")
+        Card(
+            modifier = Modifier
+                .padding(16.dp)
+                .onSizeChanged {
+                    val sizePx = it.width.toFloat()
+                    swipeableState.updateAnchors(
+                        DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
+                    )
+                }
+                .anchoredDraggable(swipeableState, Orientation.Horizontal)
+                .pointerInput(Unit) {
+                    // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
+                    detectVerticalDragGestures(
+                        onVerticalDrag = { _, dragAmount ->
+                            // Because we are using Bottom gravity the axis sign is inverted
+                            wlp.y -= dragAmount.toInt()
+                            window.attributes = wlp
+                        },
+                        onDragEnd = {
+                            wlp.y = initialY
+                            window.attributes = wlp
+                        }
+                    )
+                }
+                .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
+                .testTag("sentence_dialog"),
+            elevation = 8.dp
         ) {
             // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
             // This is similar to how Text creates its style
@@ -208,7 +211,8 @@ fun WordRow(
 ) {
     val word = wordState.value.word
     if (word != null) {
-        Row(verticalAlignment = Alignment.CenterVertically,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(word.definition, Modifier.padding(horizontal = 8.dp))
@@ -246,13 +250,13 @@ fun TopText(
 
         val selectionColors = LocalTextSelectionColors.current
         val highlightColor = remember { selectionColors.backgroundColor }
-        val highlightedSpan = highlightedSpanState.value
-        if (highlightedSpan != null)
-            addStyle(style = SpanStyle(background = highlightColor), highlightedSpan.topSpan.start, highlightedSpan.topSpan.end)
+        val topSpan = highlightedSpanState.value?.topSpan
+        if (topSpan != null)
+            addStyle(style = SpanStyle(background = highlightColor), topSpan.start, topSpan.end)
 
         val wordSpan = wordState.value.span
         if (wordSpan != null) {
-            val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
+            val highlight = if (topSpan != null && topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
             addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
         }
     }
@@ -310,9 +314,9 @@ fun BottomText(
 ) {
     val annotatedString = buildAnnotatedString {
         append(translation.value)
-        val highlightedSpan = highlightedSpanState.value
-        if (highlightedSpan != null)
-            this.addStyle(SpanStyle(background = LocalTextSelectionColors.current.backgroundColor), highlightedSpan.bottomSpan.start, highlightedSpan.bottomSpan.end)
+        val bottomSpan = highlightedSpanState.value?.bottomSpan
+        if (bottomSpan != null)
+            this.addStyle(SpanStyle(background = LocalTextSelectionColors.current.backgroundColor), bottomSpan.start, bottomSpan.end)
     }
 
     ClickableText(
@@ -353,7 +357,7 @@ fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: ()
                 .size(24.dp)
         )
     } else {
-        val iconRes = if(playIcon.isTTSAvailable) {
+        val iconRes = if (playIcon.isTTSAvailable) {
             if (playIcon.isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
         } else {
             R.drawable.baseline_volume_off_24
@@ -430,7 +434,7 @@ fun EditWordDialog(
                                     DropdownMenuItem(onClick = {
                                         indexLang = i
                                         expanded = false
-                                    }){
+                                    }) {
                                         Text(text = "$lang (${languagesISO.items[i]})")
                                     }
                                 }
@@ -453,9 +457,9 @@ fun EditWordDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Row (horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
 
-                    if(isSaved) {
+                    if (isSaved) {
                         IconButton(onClick = onDelete) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_delete_black_24dp),

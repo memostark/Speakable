@@ -11,5 +11,7 @@ enum class BrightnessTheme(val value: String) {
         fun get(value: String): BrightnessTheme {
             return entries.find { it.value == value } ?: WHITE
         }
+
+        fun get(isDarkMode: Boolean) = if (isDarkMode) BLACK else WHITE
     }
 }
