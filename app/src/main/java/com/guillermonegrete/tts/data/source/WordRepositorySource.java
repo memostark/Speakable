@@ -28,6 +28,13 @@ public interface WordRepositorySource {
         void onDataNotAvailable();
     }
 
+    interface GetWordsCallback {
+
+        void onWordsLoaded(@NonNull List<Words> words);
+
+        void onDataNotAvailable(@NonNull Exception exception);
+    }
+
     List<Words> getWords();
 
     LiveData<List<Words>> getWordsStream();
@@ -35,6 +42,8 @@ public interface WordRepositorySource {
     LiveData<Words> getLocalWord(@NonNull String word, @NonNull String language);
 
     List<String> getLanguagesISO();
+
+    void findWords(@NonNull List<String> words, GetWordsCallback callback);
 
     void getWordLanguageInfo(@NonNull String wordText, @NonNull String languageFrom, @NonNull String languageTo, @NonNull GetWordRepositoryCallback callback);
 

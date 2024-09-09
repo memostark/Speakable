@@ -176,6 +176,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 isPageSaved.value = it.uuid != null
             }
 
+            lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    viewModel.pageSavedWords.collect { words ->
+                        Timber.d("Database words : $words")
+                    }
+                }
+            }
+
             val spinnerItems = StringList(resources.getStringArray(R.array.googleTranslateLangsWithAutoArray).toList())
 
             composeBar.apply {
@@ -297,6 +305,24 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             )
             adapter = newAdapter
             paragraphsList.adapter = adapter
+            paragraphsList.post {
+                Timber.d("On paragraphsList post method")
+                for (i in 0 ..< paragraphsList.childCount) {
+                    val holder = paragraphsList.getChildViewHolder(paragraphsList.getChildAt(i))
+                    Timber.d("Item $i: $holder")
+                }
+                val text = adapter?.getItemsText(0 .. paragraphsList.childCount) ?: return@post
+                viewModel.loadLocalWords(text)
+            }
+            /*paragraphsList.doOnNextLayout {
+                Timber.d("On paragraphsList doOnNextLayout method")
+            }
+            paragraphsList.addOnLayoutChangeListener { view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                Timber.d("On paragraphsList addOnLayoutChangeListener method")
+            }
+            paragraphsList.getViewTreeObserver().addOnGlobalLayoutListener {
+                Timber.d("On paragraphsList addOnGlobalLayoutListener method")
+            }*/
 
             iconsVisible.value = true
             setAdapterListeners()

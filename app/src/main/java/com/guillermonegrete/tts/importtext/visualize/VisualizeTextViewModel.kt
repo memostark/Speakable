@@ -132,7 +132,7 @@ class VisualizeTextViewModel @Inject constructor(
     private val pageWords = MutableStateFlow(emptyList<String>())
     @OptIn(ExperimentalCoroutinesApi::class)
     val pageSavedWords = pageWords.flatMapLatest { words ->
-        wordDAO.findWords(words)
+        wordDAO.findWordsStream(words)
     }
 
 
