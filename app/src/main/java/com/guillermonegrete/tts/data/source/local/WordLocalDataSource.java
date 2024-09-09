@@ -8,13 +8,16 @@ import com.guillermonegrete.tts.db.Words;
 import com.guillermonegrete.tts.db.WordsDAO;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 
 public class WordLocalDataSource implements WordDataSource {
 
     private final WordsDAO mWordDAO;
+    private final Executor executor;
 
-    public WordLocalDataSource(WordsDAO wordsDAO){
+    public WordLocalDataSource(WordsDAO wordsDAO, Executor executor){
         mWordDAO = wordsDAO;
+        this.executor = executor;
     }
 
     @Override
@@ -25,6 +28,17 @@ public class WordLocalDataSource implements WordDataSource {
     @Override
     public LiveData<List<Words>> getWordsStream() {
         return mWordDAO.getAllWordsLive();
+    }
+
+    @Override
+    public void findWords(List<String> words, GetWordsCallback callback) {
+        executor.execute(() -> {
+            try {
+                callback.onWordsLoaded(mWordDAO.findWords(words));
+            } catch (Exception e) {
+                callback.onDataNotAvailable(e);
+            }
+        });
     }
 
     @Override

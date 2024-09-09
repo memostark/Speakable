@@ -42,6 +42,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.xmlpull.v1.XmlPullParser
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -86,7 +87,7 @@ object ApplicationModule {
     @Singleton
     @WordsLocalDataSource
     @Provides
-    fun provideLocalSource(database: WordsDatabase): WordDataSource = WordLocalDataSource(database.wordsDAO())
+    fun provideLocalSource(database: WordsDatabase, executor: Executor): WordDataSource = WordLocalDataSource(database.wordsDAO(), executor)
 
     @Singleton
     @Provides
@@ -207,7 +208,10 @@ object NetworkModule {
 abstract class ApplicationModuleBinds {
 
     @Binds
-    abstract fun bindThread(executor: MainThreadImpl): MainThread
+    abstract fun bindThread(mainThread: MainThreadImpl): MainThread
+
+    @Binds
+    abstract fun bindExecutor(executor: ExecutorService): Executor
 
     @Binds
     abstract fun bindFileRepository(repository: DefaultFileRepository): FileRepository

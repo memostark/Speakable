@@ -16,9 +16,18 @@ public interface WordDataSource {
         void onDataNotAvailable();
     }
 
+    interface GetWordsCallback{
+
+        void onWordsLoaded(@NonNull List<Words> words);
+
+        void onDataNotAvailable(@NonNull Exception exception);
+    }
+
     List<Words> getWords();
 
     LiveData<List<Words>> getWordsStream();
+
+    void findWords(final List<String> words, GetWordsCallback callback);
 
     List<String> getLanguagesISO();
 

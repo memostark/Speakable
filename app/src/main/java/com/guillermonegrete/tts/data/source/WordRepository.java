@@ -15,6 +15,7 @@ import com.guillermonegrete.tts.di.ApplicationModule;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -58,6 +59,17 @@ public class WordRepository implements WordRepositorySource {
     @Override
     public List<String> getLanguagesISO() {
         return mWordLocalDataSource.getLanguagesISO();
+    }
+
+    @Override
+    public void findWords(@NonNull List<String> words, GetWordsCallback callback) {
+        mWordLocalDataSource.findWords(words, new WordDataSource.GetWordsCallback() {
+            @Override
+            public void onWordsLoaded(@NonNull List<Words> words) { callback.onWordsLoaded(words); }
+
+            @Override
+            public void onDataNotAvailable(@NonNull Exception exception) { callback.onDataNotAvailable(exception); }
+        });
     }
 
     @Override

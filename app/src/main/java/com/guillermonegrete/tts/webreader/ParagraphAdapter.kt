@@ -728,6 +728,10 @@ class ParagraphAdapter(
         notifyItemChanged(pos, PAYLOAD_WORD)
     }
 
+    fun getItemsText(range: IntRange): String {
+        return items.subList(range.first, range.last).joinToString { it.original }
+    }
+
     companion object {
         private const val TRANSLATE_MENU_ITEM_ID = 3
 

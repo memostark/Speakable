@@ -2,15 +2,18 @@ package com.guillermonegrete.tts.webreader
 
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.source.WordRepositorySource
+import com.guillermonegrete.tts.data.source.WordRepositorySource.GetWordsCallback
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.deleteAllFolder
 import com.guillermonegrete.tts.utils.makeDir
@@ -23,10 +26,15 @@ import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flatMapLatest
 import org.jsoup.Jsoup
+import timber.log.Timber
 import java.io.File
 import java.io.IOException
+import java.lang.Exception
 import java.text.BreakIterator
 import java.util.*
 import javax.inject.Inject
@@ -66,6 +74,9 @@ class WebReaderViewModel @Inject constructor(
 
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
+
+    private val _pageSavedWords = MutableStateFlow(emptyList<Words>())
+    val pageSavedWords: StateFlow<List<Words>> = _pageSavedWords
 
     private var cacheWebLink: WebLink? = null
 
@@ -429,6 +440,35 @@ class WebReaderViewModel @Inject constructor(
                 _updatedNote.value = ModifiedNote.Delete(id)
             }
         }
+    }
+
+    fun loadLocalWords(text: String) {
+        val words = splitByWords(text)
+        wordRepository.findWords(words, object : GetWordsCallback {
+            override fun onWordsLoaded(words: MutableList<Words>) {
+                _pageSavedWords.value = words.toList()
+            }
+
+            override fun onDataNotAvailable(exception: Exception) {
+
+            }
+        })
+    }
+
+    private fun splitByWords(text: String): List<String> {
+        val words = arrayListOf<String>()
+        val iterator = BreakIterator.getWordInstance()
+        iterator.setText(text)
+        var start = iterator.first()
+        var end = iterator.next()
+
+        while (end != BreakIterator.DONE) {
+            val possibleWord = text.substring(start, end)
+            if (possibleWord.isNotBlank()) words.add(possibleWord)
+            start = end
+            end = iterator.next()
+        }
+        return words
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)

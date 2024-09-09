@@ -20,7 +20,10 @@ public interface WordsDAO {
     Words findWord(String word);
 
     @Query("SELECT * FROM words where word in (:words)")
-    Flow<List<Words>> findWords(@NonNull final List<String> words);
+    Flow<List<Words>> findWordsStream(final List<String> words);
+
+    @Query("SELECT * FROM words where word in (:words)")
+    List<Words> findWords(final List<String> words);
 
     @Query("SELECT * FROM words WHERE word = :word AND lang = :language")
     LiveData<Words> loadWord(String word, String language);
