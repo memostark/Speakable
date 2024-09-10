@@ -75,8 +75,8 @@ class WebReaderViewModel @Inject constructor(
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
 
-    private val _pageSavedWords = MutableStateFlow(emptyList<Words>())
-    val pageSavedWords: StateFlow<List<Words>> = _pageSavedWords
+    private val _pageSavedWords = MutableStateFlow<SavedWordsSection?>(null)
+    val pageSavedWords: StateFlow<SavedWordsSection?> = _pageSavedWords
 
     private var cacheWebLink: WebLink? = null
 
@@ -442,11 +442,11 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun loadLocalWords(text: String) {
+    fun loadLocalWords(text: String, range: IntRange) {
         val words = splitByWords(text)
         wordRepository.findWords(words, object : GetWordsCallback {
             override fun onWordsLoaded(words: MutableList<Words>) {
-                _pageSavedWords.value = words.toList()
+                _pageSavedWords.value = SavedWordsSection(words.toList(), range)
             }
 
             override fun onDataNotAvailable(exception: Exception) {
@@ -488,3 +488,5 @@ class WebReaderViewModel @Inject constructor(
  * Return class for the UI, used to display the paragraph with the notes
  */
 data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)
+
+data class SavedWordsSection(val words: List<Words>, val range: IntRange)
