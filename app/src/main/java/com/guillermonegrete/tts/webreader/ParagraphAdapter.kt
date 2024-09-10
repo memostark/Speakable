@@ -13,6 +13,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +23,8 @@ import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
+import com.guillermonegrete.tts.textprocessing.WordState
+import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
@@ -29,6 +32,8 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class ParagraphAdapter(
     val items: List<ParagraphItem>,
@@ -129,7 +134,7 @@ class ParagraphAdapter(
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root){
+    inner class ViewHolder(val binding: ParagraphItemBinding): RecyclerView.ViewHolder(binding.root) {
 
         var firstCharIndex = 0
 
@@ -179,6 +184,23 @@ class ParagraphAdapter(
             item.notes.forEach {
                 val span = it.span
                 binding.paragraph.addHighlightedText(span.start, span.end, it.color)
+            }
+
+            item.savedWords.forEach {
+                val span = it.span
+                if (span != null) binding.paragraph.addHighlightedText(span.start, span.end)
+            }
+
+            // When a note and saved word overlap add a blend of their colors
+            item.notes.forEach { note ->
+                item.savedWords.forEach {
+                    val span = it.span
+                    if (span != null && note.span.intersects(it.span)) {
+                        val start = max(span.start, note.span.start)
+                        val end = min(span.end, note.span.end)
+                        binding.paragraph.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
+                    }
+                }
             }
 
             actionModeCallback.item = item
@@ -695,6 +717,7 @@ class ParagraphAdapter(
         /**
          * Index of the selected sentence, -1 means no selection.
          */
+        val savedWords: MutableList<WordState> = mutableListOf(),
         var selectedIndex: Int = -1,
         var selectedWord: Span? = null,
         var translation: String = "",
@@ -730,6 +753,20 @@ class ParagraphAdapter(
 
     fun getItemsText(range: IntRange): String {
         return items.subList(range.first, range.last).joinToString { it.original }
+    }
+
+    fun getParagraphsText(range: IntRange): List<CharSequence> {
+        return items.subList(range.first, range.last).map { it.original }
+    }
+
+    fun updateSavedWords(paragraphWords: List<List<WordState>>, start: Int) {
+        val end = start + paragraphWords.size
+        for (i in start..< end) {
+            val pageItem = items[i]
+            pageItem.savedWords.clear()
+            pageItem.savedWords.addAll(paragraphWords[i - start])
+        }
+        notifyItemRangeChanged(start, paragraphWords.size)
     }
 
     companion object {

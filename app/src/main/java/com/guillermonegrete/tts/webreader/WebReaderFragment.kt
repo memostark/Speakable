@@ -29,9 +29,12 @@ import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
+import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
@@ -40,6 +43,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.text.BreakIterator
 import java.util.*
 
 @AndroidEntryPoint
@@ -178,8 +182,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    viewModel.pageSavedWords.collect { words ->
-                        Timber.d("Database words : $words")
+                    viewModel.pageSavedWords.collect { result ->
+                        result ?: return@collect
+                        highlightSavedWords(result.words, result.range)
                     }
                 }
             }
@@ -311,18 +316,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     val holder = paragraphsList.getChildViewHolder(paragraphsList.getChildAt(i))
                     Timber.d("Item $i: $holder")
                 }
-                val text = adapter?.getItemsText(0 .. paragraphsList.childCount) ?: return@post
-                viewModel.loadLocalWords(text)
+                val range = 0 .. paragraphsList.childCount
+                val text = adapter?.getItemsText(range) ?: return@post
+                viewModel.loadLocalWords(text, range)
             }
-            /*paragraphsList.doOnNextLayout {
-                Timber.d("On paragraphsList doOnNextLayout method")
-            }
-            paragraphsList.addOnLayoutChangeListener { view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
-                Timber.d("On paragraphsList addOnLayoutChangeListener method")
-            }
-            paragraphsList.getViewTreeObserver().addOnGlobalLayoutListener {
-                Timber.d("On paragraphsList addOnGlobalLayoutListener method")
-            }*/
 
             iconsVisible.value = true
             setAdapterListeners()
@@ -679,6 +676,35 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val padding = if (isVisible) 0 else resources.getDimensionPixelSize(R.dimen.default_dialog_padding)
             constraintLayout.updatePadding(bottom = padding)
         }
+    }
+
+    private fun highlightSavedWords(dbWords: List<Words>, range: IntRange) {
+        val adapter = adapter ?: return
+        val paragraphs = adapter.getParagraphsText(range)
+        val paragraphWords = arrayListOf<List<WordState>>()
+
+        paragraphs.forEach { paragraph ->
+            val text = paragraph.toString()
+            val iterator = BreakIterator.getWordInstance()
+            iterator.setText(text)
+            var start = iterator.first()
+            var end = iterator.next()
+
+            val words = arrayListOf<WordState>()
+            while (end != BreakIterator.DONE) {
+                val possibleWord = text.substring(start, end)
+                val dbWord = dbWords.find { it.word == possibleWord }
+                if (dbWord != null) {
+                    words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
+                }
+                start = end
+                end = iterator.next()
+            }
+
+            paragraphWords.add(words)
+        }
+
+        adapter.updateSavedWords(paragraphWords, range.first)
     }
 
     private fun updateListBottomPadding(pixels: Int) {
