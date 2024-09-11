@@ -169,26 +169,26 @@ class ParagraphAdapter(
             return -1
         }
 
-        fun bind(item: ParagraphItem){
-            binding.paragraph.text = item.original
+        fun bind(item: ParagraphItem) {
+            val spannable = SpannableString(item.original)
             if(item.selectedIndex != -1){
                 val span = item.indexes[item.selectedIndex]
-                selectionSpan = binding.paragraph.setHighlightedText(span.start, span.end)
+                selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
                 val wordSpan = item.selectedWord
-                if(wordSpan != null) binding.paragraph.addHighlightedText(wordSpan.start, wordSpan.end)
+                if(wordSpan != null) spannable.addHighlightedText(wordSpan.start, wordSpan.end)
             } else {
                 val span = item.selectedWord
-                if(span != null) binding.paragraph.setHighlightedText(span.start, span.end)
+                if(span != null) spannable.addHighlightedText(span.start, span.end)
             }
 
             item.notes.forEach {
                 val span = it.span
-                binding.paragraph.addHighlightedText(span.start, span.end, it.color)
+                spannable.addHighlightedText(span.start, span.end, it.color)
             }
 
             item.savedWords.forEach {
                 val span = it.span
-                if (span != null) binding.paragraph.addHighlightedText(span.start, span.end)
+                if (span != null) spannable.addHighlightedText(span.start, span.end)
             }
 
             // When a note and saved word overlap add a blend of their colors
@@ -198,11 +198,12 @@ class ParagraphAdapter(
                     if (span != null && note.span.intersects(it.span)) {
                         val start = max(span.start, note.span.start)
                         val end = min(span.end, note.span.end)
-                        binding.paragraph.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
+                        spannable.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
                     }
                 }
             }
 
+            binding.paragraph.setText(spannable, TextView.BufferType.SPANNABLE)
             actionModeCallback.item = item
             firstCharIndex = item.firstCharIndex
         }
@@ -316,7 +317,7 @@ class ParagraphAdapter(
                 text.getSpans(span.start, span.end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
 
                 // add highlight
-                selectionSpan = BackgroundColorSpan(0x6633B5E5)
+                selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
                 text.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
                 // reapply notes so they are still in front of the selection
@@ -332,7 +333,7 @@ class ParagraphAdapter(
          * Set the highlighted span without reassigning the text to the TextView.
          */
         fun highlightWord(item: ParagraphItem) {
-            selectionSpan = BackgroundColorSpan(0x6633B5E5)
+            selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
             val text = binding.paragraph.text as? Spannable
             val span = item.selectedWord
             if (span != null) text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -667,7 +668,7 @@ class ParagraphAdapter(
         //Remove previous
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
-        val selectionSpan = BackgroundColorSpan(0x6633B5E5)
+        val selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
         text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         this.setText(text, TextView.BufferType.SPANNABLE)
         return selectionSpan
@@ -777,5 +778,7 @@ class ParagraphAdapter(
 
         private const val PAYLOAD_WORD = "update_word"
         private const val PAYLOAD_WORD_SENTENCE = "word_sentence"
+
+        private const val HIGHLIGHT_COLOR = 0x6633B5E5
     }
 }

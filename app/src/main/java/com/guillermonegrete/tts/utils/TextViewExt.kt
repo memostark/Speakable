@@ -96,6 +96,8 @@ fun Spannable.addHighlightedText(
     start: Int,
     end: Int,
     @ColorInt color: Int = HighlightColorInt
-){
-    setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+): BackgroundColorSpan {
+    val span = BackgroundColorSpan(color)
+    setSpan(span, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+    return span
 }
