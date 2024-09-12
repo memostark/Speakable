@@ -13,8 +13,8 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
-import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
@@ -27,6 +27,7 @@ import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
+import com.guillermonegrete.tts.utils.getBgColorSpan
 import com.guillermonegrete.tts.utils.getSelectedText
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -153,7 +154,7 @@ class ParagraphAdapter(
             // Because of a bug when having a TextView inside a CoordinatorLayout, the paragraph TextView has to have width equals to wrap_content so its text can be selectable.
             // Using match_parent the text can't be selected
             with(binding){
-                val detector = GestureDetectorCompat(itemView.context, MyGestureListener())
+                val detector = GestureDetector(itemView.context, MyGestureListener())
                 paragraph.setOnTouchListener { _, event ->
                     detector.onTouchEvent(event)
                 }
@@ -320,13 +321,55 @@ class ParagraphAdapter(
                 selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
                 text.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-                // reapply notes so they are still in front of the selection
-                item.notes.forEach {
-                    val noteSpan = it.span
-                    if (span.start < noteSpan.end && span.end > noteSpan.start)
-                        binding.paragraph.addHighlightedText(noteSpan.start, noteSpan.end, it.color)
+                val overlaps = mutableSetOf<BgColorSpan>()
+                // reapply notes and words so they are still in front of the selection
+                item.notes.forEach { note ->
+                    val noteSpan = note.span
+                    if (span.start < noteSpan.end && span.end > noteSpan.start) {
+                        item.savedWords.forEach {
+                            val wordSpan = it.span
+                            if (wordSpan != null) {
+                                val overlap = getOverlap(note, wordSpan)
+                                if (overlap != null) {
+                                    val overlapSpan = text.getBgColorSpan(overlap.start, overlap.end, overlap.color)
+                                    if (overlapSpan != null) text.removeSpan(overlapSpan)
+                                    overlaps.add(overlap)
+                                }
+                            }
+                        }
+                        text.addHighlightedText(noteSpan.start, noteSpan.end, note.color)
+                    }
                 }
+
+                item.savedWords.forEach { word ->
+                    val wordSpan = word.span
+                    if (wordSpan != null && span.start < wordSpan.end && span.end > wordSpan.start) {
+                        item.notes.forEach {
+                            val overlap = getOverlap(it, wordSpan)
+                            if (overlap != null) {
+                                val overlapSpan = text.getBgColorSpan(overlap.start, overlap.end, overlap.color)
+                                if (overlapSpan != null) text.removeSpan(overlapSpan)
+                                overlaps.add(overlap)
+                            }
+                        }
+                        text.addHighlightedText(wordSpan.start, wordSpan.end)
+                    }
+                }
+
+                // Reapply overlaps
+                overlaps.map { text.addHighlightedText(it.start, it.end, it.color) }
             }
+        }
+
+        private fun getOverlap(note: NoteItem, wordSpan: Span): BgColorSpan? {
+            val noteSpan = note.span
+            if (noteSpan.intersects(wordSpan)) {
+                val start = max(wordSpan.start, noteSpan.start)
+                val end = min(wordSpan.end, noteSpan.end)
+                val color = ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f)
+                return BgColorSpan(start, end, color)
+            }
+            return null
         }
 
         /**
@@ -769,6 +812,8 @@ class ParagraphAdapter(
         }
         notifyItemRangeChanged(start, paragraphWords.size)
     }
+
+    data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
 
     companion object {
         private const val TRANSLATE_MENU_ITEM_ID = 3

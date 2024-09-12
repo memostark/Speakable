@@ -101,3 +101,12 @@ fun Spannable.addHighlightedText(
     setSpan(span, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
     return span
 }
+
+fun Spannable.getBgColorSpan(start: Int, end: Int, @ColorInt color: Int): BackgroundColorSpan? {
+    getSpans(start, end, BackgroundColorSpan::class.java).map { bgSpan ->
+        if (start == getSpanStart(bgSpan) && end == getSpanEnd(bgSpan) && color == bgSpan.backgroundColor) {
+            return bgSpan
+        }
+    }
+    return null
+}
