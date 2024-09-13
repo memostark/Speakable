@@ -32,6 +32,7 @@ import com.guillermonegrete.tts.utils.getSelectedText
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -46,12 +47,18 @@ class ParagraphAdapter(
     val onSentenceSelected: () -> Unit,
     val onTextHighlighted: () -> Unit = {},
     val onTranslateHighlightedText: (String) -> Unit = {},
+    val loadDatabaseWord: (text: CharSequence, pos: Int) -> Unit = { _, _ -> },
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var expandedItemPos = -1
         private set
 
     var isLoading = false
+
+    /**
+     * Indicates whether the initial load of words from the database has been completed.
+     */
+    var initialWordsLoaded = false
 
     /**
      * Whether the current selected text (started with a long-press) is overlapping a note.
@@ -202,6 +209,10 @@ class ParagraphAdapter(
                         spannable.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
                     }
                 }
+            }
+
+            if (initialWordsLoaded && !item.databaseWordsLoaded) {
+                loadDatabaseWord(item.original, adapterPosition)
             }
 
             binding.paragraph.setText(spannable, TextView.BufferType.SPANNABLE)
@@ -765,6 +776,7 @@ class ParagraphAdapter(
         var selectedIndex: Int = -1,
         var selectedWord: Span? = null,
         var translation: String = "",
+        var databaseWordsLoaded: Boolean = false,
     ) {
         fun toAbsolute(span: Span) : Span {
             return Span(firstCharIndex + span.start, firstCharIndex + span.end)
@@ -796,11 +808,11 @@ class ParagraphAdapter(
     }
 
     fun getItemsText(range: IntRange): String {
-        return items.subList(range.first, range.last).joinToString { it.original }
+        return items.slice(range).joinToString { it.original }
     }
 
     fun getParagraphsText(range: IntRange): List<CharSequence> {
-        return items.subList(range.first, range.last).map { it.original }
+        return items.slice(range).map { it.original }
     }
 
     fun updateSavedWords(paragraphWords: List<List<WordState>>, start: Int) {
@@ -809,6 +821,7 @@ class ParagraphAdapter(
             val pageItem = items[i]
             pageItem.savedWords.clear()
             pageItem.savedWords.addAll(paragraphWords[i - start])
+            pageItem.databaseWordsLoaded = true
         }
         notifyItemRangeChanged(start, paragraphWords.size)
     }

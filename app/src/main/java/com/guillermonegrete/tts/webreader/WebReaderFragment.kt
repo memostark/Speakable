@@ -183,8 +183,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     viewModel.pageSavedWords.collect { result ->
-                        result ?: return@collect
-                        highlightSavedWords(result.words, result.range)
+                        highlightSavedWords(result.words, result.start..result.end)
+                        adapter?.initialWordsLoaded = true
                     }
                 }
             }
@@ -306,17 +306,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 onTranslateHighlightedText = {
                     viewModel.translateText(it)
                     adapter?.selectHighlightedText()
+                },
+                loadDatabaseWord = {text, pos ->
+                    viewModel.loadLocalWords(text.toString(), pos..pos)
                 }
             )
             adapter = newAdapter
             paragraphsList.adapter = adapter
             paragraphsList.post {
-                Timber.d("On paragraphsList post method")
-                for (i in 0 ..< paragraphsList.childCount) {
-                    val holder = paragraphsList.getChildViewHolder(paragraphsList.getChildAt(i))
-                    Timber.d("Item $i: $holder")
-                }
-                val range = 0 .. paragraphsList.childCount
+                val range = 0 ..< paragraphsList.childCount
                 val text = adapter?.getItemsText(range) ?: return@post
                 viewModel.loadLocalWords(text, range)
             }

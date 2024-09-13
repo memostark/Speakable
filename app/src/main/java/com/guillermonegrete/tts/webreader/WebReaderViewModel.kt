@@ -26,7 +26,10 @@ import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flatMapLatest
@@ -75,8 +78,8 @@ class WebReaderViewModel @Inject constructor(
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
 
-    private val _pageSavedWords = MutableStateFlow<SavedWordsSection?>(null)
-    val pageSavedWords: StateFlow<SavedWordsSection?> = _pageSavedWords
+    private val _pageSavedWords = MutableSharedFlow<SavedWordsSection>()
+    val pageSavedWords: SharedFlow<SavedWordsSection> = _pageSavedWords
 
     private var cacheWebLink: WebLink? = null
 
@@ -446,11 +449,13 @@ class WebReaderViewModel @Inject constructor(
         val words = splitByWords(text)
         wordRepository.findWords(words, object : GetWordsCallback {
             override fun onWordsLoaded(words: MutableList<Words>) {
-                _pageSavedWords.value = SavedWordsSection(words.toList(), range)
+                viewModelScope.launch {
+                    _pageSavedWords.emit(SavedWordsSection(words.toList(), range.first, range.last))
+                }
             }
 
             override fun onDataNotAvailable(exception: Exception) {
-
+                Timber.e(exception, "Error loading db words for $range")
             }
         })
     }
@@ -489,4 +494,4 @@ class WebReaderViewModel @Inject constructor(
  */
 data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)
 
-data class SavedWordsSection(val words: List<Words>, val range: IntRange)
+data class SavedWordsSection(val words: List<Words>, val start: Int, val end: Int)
