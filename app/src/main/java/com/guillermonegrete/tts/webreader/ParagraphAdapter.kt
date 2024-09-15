@@ -78,12 +78,12 @@ class ParagraphAdapter(
 
     private var highlightedTextPos = -1
 
-    private val _sentenceClicked = MutableSharedFlow<String>(
+    private val _textClicked = MutableSharedFlow<TextClick>(
         replay = 0,
         extraBufferCapacity = 1,
         BufferOverflow.DROP_OLDEST
     )
-    val sentenceClicked = _sentenceClicked.asSharedFlow()
+    val textClicked = _textClicked.asSharedFlow()
 
     private val _addNoteClicked = MutableSharedFlow<EditNote>(
         replay = 0,
@@ -178,6 +178,7 @@ class ParagraphAdapter(
         }
 
         fun bind(item: ParagraphItem) {
+            Timber.d("Binding item: $adapterPosition")
             val spannable = SpannableString(item.original)
             if(item.selectedIndex != -1){
                 val span = item.indexes[item.selectedIndex]
@@ -212,6 +213,7 @@ class ParagraphAdapter(
             }
 
             if (initialWordsLoaded && !item.databaseWordsLoaded) {
+                Timber.d("Loading words for item: $adapterPosition")
                 loadDatabaseWord(item.original, adapterPosition)
             }
 
@@ -227,6 +229,14 @@ class ParagraphAdapter(
 
                 // First check if a note was tapped
                 val item = items[adapterPosition]
+                val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
+                if (savedWord != null) {
+                    _textClicked.tryEmit(TextClick.SavedWord(savedWord))
+                    unselectSentence()
+                    unselectWord()
+                    return true
+                }
+
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (clickedNote != null) {
 
@@ -241,12 +251,12 @@ class ParagraphAdapter(
                 val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
 
                 // If a highlighted sentence was tapped, notify sentence clicked to observers
-                if(item.selectedIndex != -1) {
+                if (item.selectedIndex != -1) {
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
                         item.selectedWord = wordSpan
                         selectedSentence.wordSelected = true
-                        _sentenceClicked.tryEmit(clickedWord)
+                        _textClicked.tryEmit(TextClick.Sentence(clickedWord))
                         return super.onSingleTapConfirmed(e)
                     }
                 }
@@ -827,6 +837,11 @@ class ParagraphAdapter(
     }
 
     data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
+
+    sealed interface TextClick {
+        data class SavedWord(val word: WordState): TextClick
+        data class Sentence(val word: String): TextClick
+    }
 
     companion object {
         private const val TRANSLATE_MENU_ITEM_ID = 3

@@ -37,7 +37,7 @@ public interface WordRepositorySource {
 
     List<Words> getWords();
 
-    LiveData<List<Words>> getWordsStream();
+    @NonNull LiveData<List<Words>> getWordsStream();
 
     LiveData<Words> getLocalWord(@NonNull String word, @NonNull String language);
 
@@ -64,4 +64,9 @@ public interface WordRepositorySource {
     void delete(Words... words);
 
     void insert(Words... words);
+
+    /**
+     * @return -1 if the operation was an update, otherwise the id of the inserted row.
+     */
+    long upsert(@NonNull Words word);
 }

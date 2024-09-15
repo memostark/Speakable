@@ -7,4 +7,7 @@ import com.guillermonegrete.tts.common.models.ExternalLinkUI
 data class StringList(val items: List<String>)
 
 @Immutable
+data class LanguagesList(val fullNames: List<String>, val iso: List<String>)
+
+@Immutable
 data class ExternalLinkList(val items: List<ExternalLinkUI>)

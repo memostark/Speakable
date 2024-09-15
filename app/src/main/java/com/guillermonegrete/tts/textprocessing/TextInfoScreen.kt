@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.Spinner
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.Span
@@ -379,8 +380,7 @@ fun EditWordDialog(
     language: String,
     translation: String,
     notes: String?,
-    languages: StringList,
-    languagesISO: StringList,
+    languages: LanguagesList,
     isSaved: Boolean = false,
     onSave: (WordUI) -> Unit = {},
     onDelete: () -> Unit = {},
@@ -389,7 +389,7 @@ fun EditWordDialog(
     if (!isShown) return
 
     var wordText by remember { mutableStateOf(word) }
-    val isoIndex = languagesISO.items.indexOf(language)
+    val isoIndex = languages.iso.indexOf(language)
     var indexLang by remember { mutableIntStateOf(isoIndex) }
     var translationText by remember { mutableStateOf(translation) }
     var notesText by remember { mutableStateOf(notes) }
@@ -416,7 +416,7 @@ fun EditWordDialog(
                 ) {
                     TextField(
                         readOnly = true,
-                        value = languages.items.getOrNull(indexLang) ?: "",
+                        value = languages.fullNames.getOrNull(indexLang) ?: "",
                         onValueChange = { },
                         label = { Text(stringResource(R.string.language_edit_text)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -430,12 +430,12 @@ fun EditWordDialog(
 
                         Box(modifier = Modifier.size(width = 300.dp, height = 600.dp)) {
                             LazyColumn {
-                                itemsIndexed(languages.items) { i, lang ->
+                                itemsIndexed(languages.fullNames) { i, lang ->
                                     DropdownMenuItem(onClick = {
                                         indexLang = i
                                         expanded = false
                                     }) {
-                                        Text(text = "$lang (${languagesISO.items[i]})")
+                                        Text(text = "$lang (${languages.iso[i]})")
                                     }
                                 }
                             }
@@ -471,7 +471,7 @@ fun EditWordDialog(
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
                     Button(onClick = {
-                        onSave(WordUI(wordText, languagesISO.items[indexLang], translationText, notesText))
+                        onSave(WordUI(wordText, languages.iso[indexLang], translationText, notesText))
                     }) {
                         Text(text = stringResource(android.R.string.ok))
                     }
@@ -551,8 +551,7 @@ fun EditWordDialogPreview() {
             "es",
             "Hello",
             "Spanish greeting",
-            StringList(listOf("English", "Spanish", "German")),
-            StringList(listOf("en", "es", "de")),
+            LanguagesList(listOf("English", "Spanish", "German"), listOf("en", "es", "de")),
             true
         )
     }

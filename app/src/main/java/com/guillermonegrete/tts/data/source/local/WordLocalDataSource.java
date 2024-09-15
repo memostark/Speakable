@@ -77,6 +77,11 @@ public class WordLocalDataSource implements WordDataSource {
     }
 
     @Override
+    public long upsert(@NonNull Words word) {
+        return mWordDAO.upsert(word);
+    }
+
+    @Override
     public void deleteWords(Words... words) {
         mWordDAO.deleteWords(words);
     }

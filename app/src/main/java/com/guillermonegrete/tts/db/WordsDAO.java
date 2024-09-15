@@ -8,6 +8,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
+import androidx.room.Upsert;
 
 import java.util.List;
 
@@ -39,6 +40,12 @@ public interface WordsDAO {
 
     @Update(onConflict = OnConflictStrategy.IGNORE)
     int update(Words words);
+
+    /**
+     * @return -1 if the operation was an update, otherwise the id of the inserted row.
+     */
+    @Upsert
+    long upsert(Words word);
 
     @Query("DELETE FROM words where word = :word")
     void deleteWord(String word);
