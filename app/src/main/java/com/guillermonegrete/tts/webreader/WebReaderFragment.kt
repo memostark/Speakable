@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
@@ -33,6 +34,8 @@ import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.savedwords.ResultType
+import com.guillermonegrete.tts.textprocessing.EditDeleteWordDialogs
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.AppTheme
@@ -63,7 +66,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val loadingDialogVisible = mutableStateOf(false)
     private val deleteDialogVisible = mutableStateOf(false)
     private val addNoteDialogVisible = mutableStateOf(false)
+    private val editWordDialogVisible = mutableStateOf(false)
+    private val wordState = mutableStateOf(WordState())
     private val isPageSaved = mutableStateOf(false)
+
+    private val languagesFull: List<String> by lazy { resources.getStringArray(R.array.googleTranslateLanguagesArray).toList() }
+    private val languagesISO: List<String> by lazy  { resources.getStringArray(R.array.googleTranslateLanguagesValue).toList() }
 
     private var sbScope: CoroutineScope? = null
     private val snackbarHostState = mutableStateOf(SnackbarHostState())
@@ -171,6 +179,24 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             }
 
+            viewModel.updatedWord.observe(viewLifecycleOwner) { result ->
+                when (result) {
+                    is ResultType.Update -> {
+                        val word = result.word
+                        wordState.value = wordState.value.copy(word = word.toUI(), dbId = word.id)
+                        transSheet.translatedText.text = word.definition
+                        transSheet.notesText.isGone = word.notes.isNullOrEmpty()
+                        transSheet.notesText.text = word.notes
+                    }
+                    is ResultType.Insert -> {}
+                    is ResultType.Delete -> {
+                        wordState.value = WordState()
+                        hideTranslationSheet()
+                    }
+                }
+                editWordDialogVisible.value = false
+            }
+
             val langSelection = mutableIntStateOf(-1)
             val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
 
@@ -222,6 +248,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         sbScope = rememberCoroutineScope()
                         SnackbarHost(hostState = snackbarHostState.value)
                     }
+
+                    Dialogs()
                 }
             }
 
@@ -330,14 +358,20 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             repeatOnLifecycle(Lifecycle.State.STARTED) {
 
                 launch {
-                    paragraphAdapter.sentenceClicked.collect {
-
-                        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
-                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
-                            paragraphAdapter.unselectSentence()
-                        } else {
-                            viewModel.translateWordInSentence(it)
-                            paragraphAdapter.updateWordInSentence()
+                    paragraphAdapter.textClicked.collect { result ->
+                        when(result) {
+                            is ParagraphAdapter.TextClick.SavedWord -> {
+                                showSavedWord(result.word)
+                            }
+                            is ParagraphAdapter.TextClick.Sentence -> {
+                                val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
+                                if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
+                                    paragraphAdapter.unselectSentence()
+                                } else {
+                                    viewModel.translateWordInSentence(result.word)
+                                    paragraphAdapter.updateWordInSentence()
+                                }
+                            }
                         }
                     }
                 }
@@ -354,6 +388,30 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                 }
             }
+        }
+    }
+
+    private fun showSavedWord(state: WordState) {
+        with(binding.transSheet) {
+            val word = state.word ?: return
+            translatedText.text = word.definition
+            notesText.isGone = word.notes.isNullOrEmpty()
+            notesText.text = word.notes
+
+            addNoteBtn.isVisible = true
+            addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+            addNoteBtn.setOnClickListener {
+                wordState.value = state
+                editWordDialogVisible.value = true
+            }
+
+            moreInfoBtn.isVisible = true
+            moreInfoBtn.setOnClickListener {
+                viewModel.getLinksForWord(word.word, word.lang)
+            }
+
+            val bottomSheetBehavior = BottomSheetBehavior.from(root)
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
         }
     }
 
@@ -530,6 +588,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             if(span != null) noteInfo = EditNote(word.word, word.definition, span, 0, false, 0)
                         }
 
+                        addNoteBtn.setOnClickListener {
+                            addNoteDialogVisible.value = true
+                        }
+
                         addWordNoteBtn.setOnClickListener {
                             addNoteDialogVisible.value = true
                         }
@@ -655,8 +717,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun hideBottomSheets() {
         val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
         webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+    }
+
+    private fun hideTranslationSheet() {
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
@@ -751,6 +816,28 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val noteItem = noteInfo ?: return@AddNoteDialog
                 viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
                 addNoteVisible = false
+            },
+        )
+    }
+
+    @Composable
+    fun Dialogs() {
+        val deleteDialogShown = remember { mutableStateOf(false) }
+        val languages = LanguagesList(languagesFull, languagesISO)
+
+        EditDeleteWordDialogs(
+            wordState,
+            editWordDialogVisible,
+            deleteDialogShown,
+            languages,
+            onSave = {
+                val resultWord = it.toWord()
+                resultWord.id = wordState.value.dbId
+                viewModel.upsert(resultWord)
+            },
+            onDelete = {
+                val word = wordState.value.word?.word
+                if (word != null) viewModel.deleteWord(word)
             },
         )
     }

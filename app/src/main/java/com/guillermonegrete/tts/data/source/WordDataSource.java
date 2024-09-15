@@ -35,6 +35,8 @@ public interface WordDataSource {
 
     void insertWords(Words... words);
 
+    long upsert(@NonNull Words word);
+
     void deleteWords(Words... words);
 
     void getWordLanguageInfo(String wordText, String languageFrom, String languageTo, GetWordCallback callback);

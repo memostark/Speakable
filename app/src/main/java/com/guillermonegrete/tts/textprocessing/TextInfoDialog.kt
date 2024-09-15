@@ -11,9 +11,13 @@ import android.view.*
 import android.widget.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -24,6 +28,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
 import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
+import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.common.models.Span
@@ -175,7 +180,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             onDismiss = { dismiss() },
                         )
 
-                        EditDeleteWordDialogs(wordState)
+                        Dialogs()
 
                         LocalExternalLinksDialog()
                     }
@@ -285,6 +290,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                     dbWord = result.word
                     editDialogShown.value = false
                 }
+                is ResultType.Delete -> {}
             }
         }
     }
@@ -359,7 +365,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             VisualizerTheme(theme = brightnessTheme) {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
                 wordState.value = WordState(word.toUI(), dbId = word.id)
-                EditDeleteWordDialogs(wordState)
+                Dialogs()
             }
         }
     }
@@ -705,7 +711,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.composeRoot.setContent {
             VisualizerTheme(theme = brightnessTheme) {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
-                EditDeleteWordDialogs(wordState)
+                Dialogs()
             }
         }
     }
@@ -896,35 +902,21 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     @Composable
-    fun EditDeleteWordDialogs(wordState: MutableState<WordState>) {
+    fun Dialogs() {
         val word = wordState.value.word ?: return
 
-        EditWordDialog(
-            isShown = editDialogShown.value,
-            word = word.word,
-            language = word.lang,
-            translation = word.definition,
-            notes = word.notes,
-            languages = StringList(languages),
-            languagesISO = StringList(languagesISO),
-            isSaved = wordState.value.isSaved,
+        EditDeleteWordDialogs(
+            wordState,
+            editDialogShown,
+            deleteDialogShown,
+            LanguagesList(languages, languagesISO),
             onSave = {
                 val resultWord = it.toWord()
                 resultWord.id = wordState.value.dbId
                 if(wordState.value.isSaved) saveWordViewModel.update(resultWord) else saveWordViewModel.save(resultWord)
             },
-            onDelete = { deleteDialogShown.value = true },
-            onDismiss = { editDialogShown.value = false }
+            onDelete = { presenter.onClickDeleteWord(word.word) },
         )
-
-        if (deleteDialogShown.value) {
-            YesNoDialog(
-                onDismissRequest = { deleteDialogShown.value = false },
-                onConfirmation = { presenter.onClickDeleteWord(word.word) },
-                dialogTitle = getString(R.string.delete_word_message),
-                dialogText = getString(R.string.delete_word_message),
-            )
-        }
     }
 
     @Composable
@@ -936,6 +928,43 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             selection = selectedLink,
             onItemClick = { selectedLink = it},
             onDismiss = { linksDialogShown.value = false },
+        )
+    }
+}
+
+@Composable
+fun EditDeleteWordDialogs(
+    wordState: MutableState<WordState>,
+    editDialogShown: MutableState<Boolean>,
+    deleteDialogShown: MutableState<Boolean>,
+    languages: LanguagesList,
+    onSave: (word: WordUI) -> Unit = { _ -> },
+    onDelete: () -> Unit = {},
+) {
+    val word = wordState.value.word ?: return
+
+    var editShown by remember { editDialogShown }
+    var deleteShown by remember { deleteDialogShown }
+
+    EditWordDialog(
+        isShown = editShown,
+        word = word.word,
+        language = word.lang,
+        translation = word.definition,
+        notes = word.notes,
+        languages = languages,
+        isSaved = wordState.value.isSaved,
+        onSave = onSave,
+        onDelete = { deleteDialogShown.value = true },
+        onDismiss = { editShown = false },
+    )
+
+    if (deleteDialogShown.value) {
+        YesNoDialog(
+            onDismissRequest = { deleteShown = false },
+            onConfirmation = onDelete,
+            dialogTitle = LocalContext.current.getString(R.string.delete_word_message),
+            dialogText = LocalContext.current.getString(R.string.delete_word_message),
         )
     }
 }

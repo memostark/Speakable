@@ -15,7 +15,6 @@ import com.guillermonegrete.tts.di.ApplicationModule;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -46,6 +45,7 @@ public class WordRepository implements WordRepositorySource {
         return mWordLocalDataSource.getWords();
     }
 
+    @NonNull
     @Override
     public LiveData<List<Words>> getWordsStream() {
         return mWordLocalDataSource.getWordsStream();
@@ -142,6 +142,11 @@ public class WordRepository implements WordRepositorySource {
     @Override
     public void insert(Words... words) {
         mWordLocalDataSource.insertWords(words);
+    }
+
+    @Override
+    public long upsert(@NonNull Words word) {
+        return mWordLocalDataSource.upsert(word);
     }
 
     private void getRemoteWord(String wordText, String languageFrom, String languageTo, final GetWordRepositoryCallback callback) {

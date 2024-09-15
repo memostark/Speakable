@@ -2,7 +2,6 @@ package com.guillermonegrete.tts.webreader
 
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.Span
-import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
@@ -13,7 +12,7 @@ import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
-import com.guillermonegrete.tts.textprocessing.WordState
+import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.deleteAllFolder
 import com.guillermonegrete.tts.utils.makeDir
@@ -26,13 +25,9 @@ import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMapLatest
 import org.jsoup.Jsoup
 import timber.log.Timber
 import java.io.File
@@ -77,6 +72,9 @@ class WebReaderViewModel @Inject constructor(
 
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
+
+    private val _updatedWord = MutableLiveData<ResultType>()
+    val updatedWord: LiveData<ResultType> = _updatedWord
 
     private val _pageSavedWords = MutableSharedFlow<SavedWordsSection>()
     val pageSavedWords: SharedFlow<SavedWordsSection> = _pageSavedWords
@@ -474,6 +472,26 @@ class WebReaderViewModel @Inject constructor(
             end = iterator.next()
         }
         return words
+    }
+
+    fun upsert(word: Words) {
+        viewModelScope.launch {
+            val resultId = withContext(ioDispatcher) { wordRepository.upsert(word) }
+            val result = if(resultId == -1L) {
+                ResultType.Update(word)
+            } else {
+                word.id = resultId.toInt()
+                ResultType.Insert(word)
+            }
+            _updatedWord.value = result
+        }
+    }
+
+    fun deleteWord(word: String) {
+        viewModelScope.launch {
+            withContext(ioDispatcher) { wordRepository.deleteWord(word) }
+            _updatedWord.value = ResultType.Delete
+        }
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
