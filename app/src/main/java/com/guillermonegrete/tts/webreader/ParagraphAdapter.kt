@@ -32,7 +32,6 @@ import com.guillermonegrete.tts.utils.getSelectedText
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -178,7 +177,6 @@ class ParagraphAdapter(
         }
 
         fun bind(item: ParagraphItem) {
-            Timber.d("Binding item: $adapterPosition")
             val spannable = SpannableString(item.original)
             if(item.selectedIndex != -1){
                 val span = item.indexes[item.selectedIndex]
@@ -213,7 +211,6 @@ class ParagraphAdapter(
             }
 
             if (initialWordsLoaded && !item.databaseWordsLoaded) {
-                Timber.d("Loading words for item: $adapterPosition")
                 loadDatabaseWord(item.original, adapterPosition)
             }
 
@@ -231,7 +228,10 @@ class ParagraphAdapter(
                 val item = items[adapterPosition]
                 val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
                 if (savedWord != null) {
-                    _textClicked.tryEmit(TextClick.SavedWord(savedWord))
+                    val span = savedWord.span ?: return true
+                    val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
+                    val word = savedWord.copy(span = absoluteSpan)
+                    _textClicked.tryEmit(TextClick.SavedWord(word))
                     unselectSentence()
                     unselectWord()
                     return true
@@ -243,7 +243,8 @@ class ParagraphAdapter(
                     val span = clickedNote.span
                     val text = item.original.substring(span.start, span.end)
                     val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
-                    _addNoteClicked.tryEmit(EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id))
+                    val editNote = EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id)
+                    _textClicked.tryEmit(TextClick.Note(editNote))
                     return true
                 }
 
@@ -841,6 +842,7 @@ class ParagraphAdapter(
     sealed interface TextClick {
         data class SavedWord(val word: WordState): TextClick
         data class Sentence(val word: String): TextClick
+        data class Note(val item: EditNote): TextClick
     }
 
     companion object {
