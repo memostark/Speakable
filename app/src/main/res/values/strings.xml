@@ -232,6 +232,7 @@
     <string name="more_information">More information for text</string>
     <string name="more_information_word">More information for word</string>
     <string name="pick_language_web_reader">To see more information about this text, please pick a language using the bottom bar</string>
+    <string name="create_db_item_dialog_title">Create new:</string>
 
     <!-- Text/Epub visualizer-->
     <string name="white_theme">White theme</string>

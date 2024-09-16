@@ -256,6 +256,7 @@ class WebReaderViewModel @Inject constructor(
         job = viewModelScope.launch {
 
             wordRepository.getLocalWord(text, cacheWebLink?.language ?: "en")
+                .distinctUntilChanged()
                 .asFlow().collectLatest {
 
                     if(it == null) {
