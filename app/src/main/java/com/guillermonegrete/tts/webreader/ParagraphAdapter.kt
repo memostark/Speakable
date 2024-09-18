@@ -232,8 +232,6 @@ class ParagraphAdapter(
                     val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
                     val word = savedWord.copy(span = absoluteSpan)
                     _textClicked.tryEmit(TextClick.SavedWord(word))
-                    unselectSentence()
-                    unselectWord()
                     return true
                 }
 
