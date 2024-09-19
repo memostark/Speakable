@@ -37,17 +37,15 @@ import kotlin.math.max
 import kotlin.math.min
 
 class ParagraphAdapter(
-    val items: List<ParagraphItem>,
-    /**
-     * Indicates if the page is saved in the local device storage, in contrast to being loaded from the web.
-     */
-    var isPageSaved: Boolean,
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: () -> Unit,
     val onTextHighlighted: () -> Unit = {},
     val onTranslateHighlightedText: (String) -> Unit = {},
     val loadDatabaseWord: (text: CharSequence, pos: Int) -> Unit = { _, _ -> },
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    private var items = emptyList<ParagraphItem>()
+    var isPageSaved: Boolean = false
 
     var expandedItemPos = -1
         private set
@@ -131,6 +129,12 @@ class ParagraphAdapter(
     override fun getItemCount() = items.size
 
     override fun getItemViewType(position: Int) = if(expandedItemPos == position) R.layout.paragraph_expanded_item else R.layout.paragraph_item
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateItems(items: List<ParagraphItem>) {
+        this.items = items
+        notifyDataSetChanged()
+    }
 
     fun updateTranslation(translation: String){
         items[expandedItemPos].translation = translation

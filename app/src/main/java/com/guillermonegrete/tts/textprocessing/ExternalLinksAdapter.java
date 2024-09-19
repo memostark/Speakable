@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.textprocessing;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,7 @@ import com.guillermonegrete.tts.databinding.ExternalLinkFlatItemBinding;
 import com.guillermonegrete.tts.databinding.ExternalLinkItemBinding;
 import com.guillermonegrete.tts.db.ExternalLink;
 
+import java.util.Collections;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -26,6 +28,11 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
     public ExternalLinksAdapter(@NonNull List<ExternalLink> links, @NonNull Callback callback){
         this.links = links;
         this.callback = callback;
+    }
+
+    public ExternalLinksAdapter() {
+        this.links = Collections.emptyList();
+        this.callback = null;
     }
 
 
@@ -58,7 +65,7 @@ public class ExternalLinksAdapter extends RecyclerView.Adapter<ExternalLinksAdap
         this.selectedPos = pos;
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder{
+    public class ViewHolder extends RecyclerView.ViewHolder{
 
         Button linkButton;
         View selectionView;
