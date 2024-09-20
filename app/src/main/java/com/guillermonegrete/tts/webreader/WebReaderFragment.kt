@@ -70,6 +70,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val addNoteDialogVisible = mutableStateOf(false)
     private val editWordDialogVisible = mutableStateOf(false)
     private val deleteWordDialogShown = mutableStateOf(false)
+    private val pickNewTypeDialogVisible = mutableStateOf(false)
     private val pickInfoDialogVisible = mutableStateOf(false)
     private val wordState = mutableStateOf(WordState())
     private val isPageSaved = mutableStateOf(false)
@@ -378,9 +379,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 launch {
                     adapter.textClicked.collect { result ->
                         when(result) {
-                            is ParagraphAdapter.TextClick.SavedWord -> {
-                                showSavedWord(result.word)
-                            }
+                            is ParagraphAdapter.TextClick.SavedWord -> showSavedWord(result.word)
                             is ParagraphAdapter.TextClick.Sentence -> {
                                 val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
                                 if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
@@ -390,8 +389,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     adapter.updateWordInSentence()
                                 }
                             }
-                            is ParagraphAdapter.TextClick.Note -> {
-                                showSheetWithNote(result.item)
+                            is ParagraphAdapter.TextClick.Note -> showSheetWithNote(result.item)
+                            is ParagraphAdapter.TextClick.Overlap -> {
+                                noteInfo = result.note
+                                wordState.value = result.word
+                                pickInfoDialogVisible.value = true
                             }
                         }
                     }
@@ -650,7 +652,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addNoteBtn.setOnClickListener {
                 when (val sheet = sheetInfo) {
-                    Sheet.None -> pickInfoDialogVisible.value = true
+                    Sheet.None -> pickNewTypeDialogVisible.value = true
                     is Sheet.Note -> {
                         noteInfo = sheet.info
                         addNoteDialogVisible.value = true
@@ -665,7 +667,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addWordNoteBtn.setOnClickListener {
                 when (val sheet = sheetInfo) {
-                    Sheet.None -> pickInfoDialogVisible.value = true
+                    Sheet.None -> pickNewTypeDialogVisible.value = true
                     is Sheet.Note -> {
                         noteInfo = sheet.info
                         addNoteDialogVisible.value = true
@@ -869,7 +871,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             },
         )
 
-        if (pickInfoDialogVisible.value) {
+        if (pickNewTypeDialogVisible.value) {
             DialogList(
                 list = listOf(resources.getString(R.string.note), resources.getString(R.string.saved_word)),
                 title = resources.getString(R.string.create_db_item_dialog_title),
@@ -877,6 +879,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     when (index) {
                         0 -> addNoteDialogVisible.value = true
                         1 -> editWordDialogVisible.value = true
+                    }
+                    pickNewTypeDialogVisible.value = false
+                },
+                onDismiss = { pickNewTypeDialogVisible.value = false }
+            )
+        }
+
+        if (pickInfoDialogVisible.value) {
+            DialogList(
+                list = listOf(resources.getString(R.string.note), resources.getString(R.string.saved_word)),
+                title = resources.getString(R.string.pick_info_dialog_title),
+                onItemSelected = { index, _ ->
+                    when (index) {
+                        0 -> noteInfo?.let { showSheetWithNote(it) }
+                        1 -> showSavedWord(wordState.value)
                     }
                     pickInfoDialogVisible.value = false
                 },

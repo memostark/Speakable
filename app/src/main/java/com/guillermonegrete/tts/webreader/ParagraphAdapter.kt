@@ -231,21 +231,22 @@ class ParagraphAdapter(
                 // First check if a note was tapped
                 val item = items[adapterPosition]
                 val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
-                if (savedWord != null) {
+                val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
+                if (savedWord != null && clickedNote != null) {
+                    val span = savedWord.span ?: return true
+                    val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
+                    val word = savedWord.copy(span = absoluteSpan)
+                    val editNote = createNote(clickedNote, item)
+                    _textClicked.tryEmit(TextClick.Overlap(word, editNote))
+                    return true
+                } else if (savedWord != null) {
                     val span = savedWord.span ?: return true
                     val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
                     val word = savedWord.copy(span = absoluteSpan)
                     _textClicked.tryEmit(TextClick.SavedWord(word))
                     return true
-                }
-
-                val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
-                if (clickedNote != null) {
-
-                    val span = clickedNote.span
-                    val text = item.original.substring(span.start, span.end)
-                    val absoluteSpan = Span(firstCharIndex + span.start, firstCharIndex + span.end)
-                    val editNote = EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id)
+                } else if (clickedNote != null) {
+                    val editNote = createNote(clickedNote, item)
                     _textClicked.tryEmit(TextClick.Note(editNote))
                     return true
                 }
@@ -741,6 +742,13 @@ class ParagraphAdapter(
         return selectionSpan
     }
 
+    private fun createNote(clickedNote: NoteItem, item: ParagraphItem): EditNote {
+        val span = clickedNote.span
+        val text = item.original.substring(span.start, span.end)
+        val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
+        return EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id)
+    }
+
     fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {
         val pos = items.indexOfFirst { it.firstCharIndex + it.original.length > selection.start }
         if (pos == -1) return
@@ -845,6 +853,7 @@ class ParagraphAdapter(
         data class SavedWord(val word: WordState): TextClick
         data class Sentence(val word: String): TextClick
         data class Note(val item: EditNote): TextClick
+        data class Overlap(val word: WordState, val note: EditNote): TextClick
     }
 
     companion object {
