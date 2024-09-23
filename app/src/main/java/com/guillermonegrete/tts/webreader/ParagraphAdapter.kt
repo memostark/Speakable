@@ -21,8 +21,10 @@ import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
@@ -32,6 +34,7 @@ import com.guillermonegrete.tts.utils.getSelectedText
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import java.text.BreakIterator
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -88,6 +91,8 @@ class ParagraphAdapter(
         BufferOverflow.DROP_OLDEST
     )
     val addNoteClicked = _addNoteClicked.asSharedFlow()
+
+    val newWords = mutableSetOf<Words>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -196,6 +201,8 @@ class ParagraphAdapter(
                 val span = it.span
                 spannable.addHighlightedText(span.start, span.end, it.color)
             }
+
+            addNewWords(item)
 
             item.savedWords.forEach {
                 val span = it.span
@@ -492,6 +499,19 @@ class ParagraphAdapter(
             }
 
         }
+    }
+
+    /**
+     * Adds the newly inserted database words to the item if the list doesn't have them and if the paragraph contains the word.
+     */
+    private fun addNewWords(item: ParagraphItem) {
+        val wordsToAdd = mutableListOf<Words>()
+        newWords.forEach { newWord ->
+            val wordAdded = item.savedWords.any { newWord.id == it.dbId }
+            if (!wordAdded) wordsToAdd.add(newWord)
+        }
+        val paragraphWords = findWordsInParagraph(wordsToAdd, item.original)
+        item.savedWords.addAll(paragraphWords)
     }
 
     fun unselectSentence(){
@@ -793,7 +813,7 @@ class ParagraphAdapter(
         /**
          * Index of the selected sentence, -1 means no selection.
          */
-        val savedWords: MutableList<WordState> = mutableListOf(),
+        val savedWords: MutableSet<WordState> = mutableSetOf(),
         var selectedIndex: Int = -1,
         var selectedWord: Span? = null,
         var translation: String = "",
@@ -845,6 +865,37 @@ class ParagraphAdapter(
             pageItem.databaseWordsLoaded = true
         }
         notifyItemRangeChanged(start, paragraphWords.size)
+    }
+
+    fun addSavedWords(paragraphWords: List<List<WordState>>, start: Int) {
+        val end = start + paragraphWords.size
+        for (i in start..< end) {
+            val pageItem = items[i]
+            pageItem.savedWords.addAll(paragraphWords[i - start])
+            pageItem.databaseWordsLoaded = true
+        }
+        notifyItemRangeChanged(start, paragraphWords.size)
+    }
+
+    fun findWordsInParagraph(dbWords: List<Words>, paragraph: CharSequence): List<WordState> {
+        val text = paragraph.toString()
+        val iterator = BreakIterator.getWordInstance()
+        iterator.setText(text)
+        var start = iterator.first()
+        var end = iterator.next()
+
+        val words = arrayListOf<WordState>()
+        while (end != BreakIterator.DONE) {
+            val possibleWord = text.substring(start, end)
+            val dbWord = dbWords.find { it.word == possibleWord }
+            if (dbWord != null) {
+                words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
+            }
+            start = end
+            end = iterator.next()
+        }
+
+        return words
     }
 
     data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
