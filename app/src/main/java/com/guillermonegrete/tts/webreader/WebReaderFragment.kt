@@ -48,7 +48,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.text.BreakIterator
 import java.util.*
 
 @AndroidEntryPoint
@@ -204,7 +203,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ResultType.Update -> {
                         val word = result.word
                         val newState = wordState.value.copy(word = word.toUI(), dbId = word.id)
-                        wordState.value = newState
+                        sheetInfo = Sheet.Word(newState)
                         if (newState.span != null && adapter.isInsideSelectedSentence(newState.span)) {
                             transSheet.wordTranslation.text = word.definition
                         } else {
@@ -216,6 +215,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ResultType.Insert -> {
                         val word = result.word
                         val state = wordState.value.copy(word = word.toUI(), dbId = word.id)
+                        val start = paragraphsList.getChildLayoutPosition(paragraphsList.getChildAt(0))
+                        val end = paragraphsList.getChildLayoutPosition(paragraphsList.getChildAt(paragraphsList.childCount - 1))
+                        highlightSavedWord(word, start..end)
                         showSavedWord(state)
                     }
                     is ResultType.Delete -> {
@@ -361,10 +363,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             adapter.updateItems(paragraphItems)
             paragraphsList.adapter = adapter
             paragraphsList.post {
-                // Load words for the initial visible items
-                val range = 0 ..< paragraphsList.childCount
-                val text = adapter.getItemsText(range)
-                viewModel.loadLocalWords(text, range)
+                loadWordsForVisibleItems()
             }
 
             iconsVisible.value = true
@@ -766,36 +765,38 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun highlightSavedWords(dbWords: List<Words>, range: IntRange) {
+        val paragraphWords = findWordsInItems(dbWords, range)
+        adapter.updateSavedWords(paragraphWords, range.first)
+    }
+
+    private fun highlightSavedWord(dbWord: Words, range: IntRange) {
+        val paragraphWords = findWordsInItems(listOf(dbWord), range)
+        adapter.newWords.add(dbWord)
+        adapter.addSavedWords(paragraphWords, range.first)
+    }
+
+    private fun findWordsInItems(dbWords: List<Words>, range: IntRange): List<List<WordState>> {
         val paragraphs = adapter.getParagraphsText(range)
         val paragraphWords = arrayListOf<List<WordState>>()
-
         paragraphs.forEach { paragraph ->
-            val text = paragraph.toString()
-            val iterator = BreakIterator.getWordInstance()
-            iterator.setText(text)
-            var start = iterator.first()
-            var end = iterator.next()
-
-            val words = arrayListOf<WordState>()
-            while (end != BreakIterator.DONE) {
-                val possibleWord = text.substring(start, end)
-                val dbWord = dbWords.find { it.word == possibleWord }
-                if (dbWord != null) {
-                    words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
-                }
-                start = end
-                end = iterator.next()
-            }
-
+            val words = adapter.findWordsInParagraph(dbWords, paragraph)
             paragraphWords.add(words)
         }
-
-        adapter.updateSavedWords(paragraphWords, range.first)
+        return paragraphWords
     }
 
     private fun updateListBottomPadding(pixels: Int) {
         val extra = if(pixels == 0) appBarSize else requireContext().dpToPixel(16)
         binding.paragraphsList.updatePadding(bottom = pixels + extra)
+    }
+
+    private fun loadWordsForVisibleItems() {
+        val list = binding.paragraphsList
+        val start = list.getChildLayoutPosition(list.getChildAt(0))
+        val end = list.getChildLayoutPosition(list.getChildAt(list.childCount - 1))
+        val range =  start.. end
+        val text = adapter.getItemsText(range)
+        viewModel.loadLocalWords(text, range)
     }
 
     private fun isSheetVisible(): Boolean {
