@@ -40,6 +40,7 @@ import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.textprocessing.EditDeleteWordDialogs
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.WordState
+import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
@@ -203,6 +204,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ResultType.Update -> {
                         val word = result.word
                         val newState = wordState.value.copy(word = word.toUI(), dbId = word.id)
+                        wordState.value = newState
                         sheetInfo = Sheet.Word(newState)
                         if (newState.span != null && adapter.isInsideSelectedSentence(newState.span)) {
                             transSheet.wordTranslation.text = word.definition
@@ -227,6 +229,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         } else {
                             hideTranslationSheet()
                         }
+                        adapter.removeWord(result.id)
                         wordState.value = WordState()
                         deleteWordDialogShown.value = false
                     }
@@ -409,6 +412,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun showSavedWord(state: WordState) {
+        wordState.value = state
         sheetInfo = Sheet.Word(state)
         val word = state.word ?: return
         val wordSpan = state.span ?: return
@@ -776,10 +780,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun findWordsInItems(dbWords: List<Words>, range: IntRange): List<List<WordState>> {
-        val paragraphs = adapter.getParagraphsText(range)
         val paragraphWords = arrayListOf<List<WordState>>()
-        paragraphs.forEach { paragraph ->
-            val words = adapter.findWordsInParagraph(dbWords, paragraph)
+        range.forEach { pos ->
+            val words = adapter.findWordsInParagraph(dbWords, pos)
             paragraphWords.add(words)
         }
         return paragraphWords
@@ -861,7 +864,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 viewModel.upsert(resultWord)
             },
             onDelete = {
-                val word = wordState.value.word?.word
+                val word = wordState.value.toWord()
                 if (word != null) viewModel.deleteWord(word)
             },
         )

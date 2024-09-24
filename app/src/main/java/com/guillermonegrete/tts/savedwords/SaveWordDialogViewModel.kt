@@ -57,7 +57,7 @@ class SaveWordDialogViewModel @Inject constructor(
 sealed class ResultType {
     data class Insert(val word: Words): ResultType()
     data class Update(val word: Words): ResultType()
-    data object Delete : ResultType()
+    data class Delete(val id: Int) : ResultType()
 }
 
 /**

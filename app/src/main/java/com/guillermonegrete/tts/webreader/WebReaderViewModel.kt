@@ -488,10 +488,10 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun deleteWord(word: String) {
+    fun deleteWord(word: Words) {
         viewModelScope.launch {
             withContext(ioDispatcher) { wordRepository.deleteWord(word) }
-            _updatedWord.value = ResultType.Delete
+            _updatedWord.value = ResultType.Delete(word.id)
         }
     }
 

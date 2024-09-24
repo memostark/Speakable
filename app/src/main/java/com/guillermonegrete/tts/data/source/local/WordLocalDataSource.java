@@ -92,6 +92,6 @@ public class WordLocalDataSource implements WordDataSource {
     }
 
     public void deleteWord(Words word) {
-        // TODO implement method to delete word by Words object
+        mWordDAO.deleteWord(word);
     }
 }

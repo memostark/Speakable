@@ -93,6 +93,7 @@ class ParagraphAdapter(
     val addNoteClicked = _addNoteClicked.asSharedFlow()
 
     val newWords = mutableSetOf<Words>()
+    private val idToPositions = hashMapOf<Int, MutableSet<Int>>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -202,7 +203,7 @@ class ParagraphAdapter(
                 spannable.addHighlightedText(span.start, span.end, it.color)
             }
 
-            addNewWords(item)
+            addNewWords(item, adapterPosition)
 
             item.savedWords.forEach {
                 val span = it.span
@@ -504,13 +505,13 @@ class ParagraphAdapter(
     /**
      * Adds the newly inserted database words to the item if the list doesn't have them and if the paragraph contains the word.
      */
-    private fun addNewWords(item: ParagraphItem) {
+    private fun addNewWords(item: ParagraphItem, position: Int) {
         val wordsToAdd = mutableListOf<Words>()
         newWords.forEach { newWord ->
             val wordAdded = item.savedWords.any { newWord.id == it.dbId }
             if (!wordAdded) wordsToAdd.add(newWord)
         }
-        val paragraphWords = findWordsInParagraph(wordsToAdd, item.original)
+        val paragraphWords = findWordsInParagraph(wordsToAdd, position)
         item.savedWords.addAll(paragraphWords)
     }
 
@@ -877,8 +878,8 @@ class ParagraphAdapter(
         notifyItemRangeChanged(start, paragraphWords.size)
     }
 
-    fun findWordsInParagraph(dbWords: List<Words>, paragraph: CharSequence): List<WordState> {
-        val text = paragraph.toString()
+    fun findWordsInParagraph(dbWords: List<Words>, position: Int): List<WordState> {
+        val text = items[position].original.toString()
         val iterator = BreakIterator.getWordInstance()
         iterator.setText(text)
         var start = iterator.first()
@@ -890,12 +891,25 @@ class ParagraphAdapter(
             val dbWord = dbWords.find { it.word == possibleWord }
             if (dbWord != null) {
                 words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
+                // Store position of the respective word id.
+                val positions = idToPositions.getOrPut(dbWord.id, ::mutableSetOf)
+                positions.add(position)
             }
             start = end
             end = iterator.next()
         }
 
         return words
+    }
+
+    fun removeWord(id: Int) {
+        newWords.removeAll { it.id == id }
+        val positions = idToPositions[id] ?: return
+        positions.map { pos ->
+            val item = items[pos]
+            val removed = item.savedWords.removeAll { it.dbId == id }
+            if (removed) notifyItemChanged(pos)
+        }
     }
 
     data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
