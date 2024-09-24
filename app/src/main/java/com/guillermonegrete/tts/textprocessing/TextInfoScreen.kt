@@ -490,6 +490,8 @@ data class WordState(
     val isSaved = dbId != NOT_SAVED_ID
 }
 
+fun WordState.toWord() = word?.toWord()?.apply { id = dbId }
+
 data class PlayIconState(
     val isPlaying: Boolean = false,
     val isLoading: Boolean = false,

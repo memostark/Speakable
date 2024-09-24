@@ -53,6 +53,9 @@ public interface WordsDAO {
     @Delete
     void deleteWords(Words... words);
 
+    @Delete
+    void deleteWord(Words word);
+
     @Query("SELECT * FROM words")
     List<Words> getAllWords();
 
