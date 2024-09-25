@@ -204,23 +204,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ResultType.Update -> {
                         val word = result.word
                         val newState = wordState.value.copy(word = word.toUI(), dbId = word.id)
-                        wordState.value = newState
-                        sheetInfo = Sheet.Word(newState)
-                        if (newState.span != null && adapter.isInsideSelectedSentence(newState.span)) {
-                            transSheet.wordTranslation.text = word.definition
-                        } else {
-                            transSheet.translatedText.text = word.definition
-                            transSheet.notesText.isGone = word.notes.isNullOrEmpty()
-                            transSheet.notesText.text = word.notes
-                        }
+                        showSavedWord(newState)
                     }
                     is ResultType.Insert -> {
                         val word = result.word
-                        val state = wordState.value.copy(word = word.toUI(), dbId = word.id)
                         val start = paragraphsList.getChildLayoutPosition(paragraphsList.getChildAt(0))
                         val end = paragraphsList.getChildLayoutPosition(paragraphsList.getChildAt(paragraphsList.childCount - 1))
                         highlightSavedWord(word, start..end)
-                        showSavedWord(state)
+                        viewModel.setSavedWord(word.word)
                     }
                     is ResultType.Delete -> {
                         val span = wordState.value.span
@@ -381,7 +372,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 launch {
                     adapter.textClicked.collect { result ->
                         when(result) {
-                            is ParagraphAdapter.TextClick.SavedWord -> showSavedWord(result.word)
+                            is ParagraphAdapter.TextClick.SavedWord -> {
+                                wordState.value = result.word
+                                sheetInfo = Sheet.Word(result.word)
+                                val text = result.word.word?.word
+                                if (text != null) viewModel.setSavedWord(text)
+                            }
                             is ParagraphAdapter.TextClick.Sentence -> {
                                 val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
                                 if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
@@ -435,6 +431,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
             } else {
+                setWordSheetViews(false)
                 translatedText.text = info.definition
                 notesText.isGone = info.notes.isNullOrEmpty()
                 notesText.text = info.notes
@@ -891,7 +888,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 onItemSelected = { index, _ ->
                     when (index) {
                         0 -> noteInfo?.let { showSheetWithNote(it) }
-                        1 -> showSavedWord(wordState.value)
+                        1 -> {
+                            val text = wordState.value.word?.word
+                            if (text != null) viewModel.setSavedWord(text)
+                        }
                     }
                     pickInfoDialogVisible.value = false
                 },

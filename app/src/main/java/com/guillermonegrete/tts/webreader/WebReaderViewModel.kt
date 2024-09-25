@@ -26,8 +26,10 @@ import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flatMapLatest
 import org.jsoup.Jsoup
 import timber.log.Timber
 import java.io.File
@@ -84,6 +86,9 @@ class WebReaderViewModel @Inject constructor(
     private val _weblink = MutableLiveData<WebLink>()
     val webLink: LiveData<WebLink>
         get() = _weblink
+
+    private var job: Job? = null
+    private val _savedWord = MutableStateFlow("")
 
     // Path of the app's external storage folder
     var folderPath = ""
@@ -239,8 +244,6 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    private var job: Job? = null
-
     fun translateText(text: String){
         translateText(text, _textInfo)
     }
@@ -249,25 +252,36 @@ class WebReaderViewModel @Inject constructor(
         translateText(text, _wordInfo)
     }
 
+    fun setSavedWord(word: String) {
+        _savedWord.value = word
+        if (job == null) {
+            launchWordJob()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun launchWordJob() {
+        job = viewModelScope.launch {
+            _savedWord.flatMapLatest { word ->
+                wordRepository.getLocalWord(word, cacheWebLink?.language ?: "en")
+                    .distinctUntilChanged()
+                    .asFlow()
+            }.collectLatest {
+                if (it != null) {
+                    _updatedWord.value = ResultType.Update(it)
+                }
+            }
+        }
+    }
+
     private fun translateText(text: String, observer: MutableLiveData<LoadResult<WordResult>>) {
         observer.value = LoadResult.Loading
 
-        job?.cancel() // cancel the previous job otherwise you'll receive its updates
-        job = viewModelScope.launch {
-
-            wordRepository.getLocalWord(text, cacheWebLink?.language ?: "en")
-                .distinctUntilChanged()
-                .asFlow().collectLatest {
-
-                    if(it == null) {
-                        getTranslation(text) { translation ->
-                            val word = Words(text, translation.src, translation.translatedText)
-                            observer.value = LoadResult.Success(WordResult(word, false))
-                        }
-                    }  else {
-                        observer.value = LoadResult.Success(WordResult(it, true))
-                    }
-                }
+        viewModelScope.launch {
+            getTranslation(text) { translation ->
+                val word = Words(text, translation.src, translation.translatedText)
+                observer.value = LoadResult.Success(WordResult(word, false))
+            }
         }
     }
 
@@ -478,13 +492,10 @@ class WebReaderViewModel @Inject constructor(
     fun upsert(word: Words) {
         viewModelScope.launch {
             val resultId = withContext(ioDispatcher) { wordRepository.upsert(word) }
-            val result = if(resultId == -1L) {
-                ResultType.Update(word)
-            } else {
+            if(resultId != -1L) {
                 word.id = resultId.toInt()
-                ResultType.Insert(word)
+                _updatedWord.value = ResultType.Insert(word)
             }
-            _updatedWord.value = result
         }
     }
 
