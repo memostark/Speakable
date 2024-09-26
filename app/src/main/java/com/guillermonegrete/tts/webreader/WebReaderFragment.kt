@@ -44,6 +44,7 @@ import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
+import com.guillermonegrete.tts.utils.isWord
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -403,6 +404,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         addNoteDialogVisible.value = true
                     }
                 }
+                launch {
+                    adapter.addWordClicked.collect { state ->
+                        wordState.value = state
+                        editWordDialogVisible.value = true
+                    }
+                }
             }
         }
     }
@@ -559,18 +566,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         notesText.text = word.notes
 
                         // Only show the add note button if selection is not a sentence and doesn't overlap any other note
-                        addNoteBtn.isGone = !adapter.isPageSaved || wordResult.isSentence || adapter.isOverlappingNotes
+                        val text = word.word
+                        val isWord = text.isWord()
+                        addNoteBtn.isGone = !adapter.isPageSaved || wordResult.isSentence || (adapter.isOverlappingNotes && !isWord)
                         addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
+
                         val span = adapter.getSelectedWordSpan() ?: adapter.getHighlightedTextSpan()
                         if(span != null) {
-                            val text = word.word
                             val note = EditNote(text, word.definition, span, 0, false, 0)
-                            val isWord = text.isWord()
-                            sheetInfo = if (isWord) {
-                                wordState.value = WordState(word.toUI(), span = span)
-                                Sheet.None
-                            } else {
-                                Sheet.Note(note)
+                            sheetInfo = when {
+                                isWord && !adapter.isOverlappingSavedWord -> {
+                                    val state = WordState(word.toUI(), span = span)
+                                    wordState.value = state
+                                    if (adapter.isOverlappingNotes) Sheet.Word(state) else Sheet.None
+                                }
+                                else -> Sheet.Note(note)
                             }
                             noteInfo = note
                         }
@@ -742,6 +752,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun hideBottomSheets() {
         val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
         webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        hideTranslationSheet()
     }
 
     private fun hideTranslationSheet() {
@@ -803,8 +814,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val behavior = BottomSheetBehavior.from(binding.transSheet.root)
         return behavior.state == BottomSheetBehavior.STATE_EXPANDED
     }
-
-    private fun String.isWord() = split(" ").size == 1
 
     @Composable
     fun WebReaderDialogs() {

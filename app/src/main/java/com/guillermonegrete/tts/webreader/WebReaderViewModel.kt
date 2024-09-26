@@ -88,7 +88,7 @@ class WebReaderViewModel @Inject constructor(
         get() = _weblink
 
     private var job: Job? = null
-    private val _savedWord = MutableStateFlow("")
+    private val _savedWord = MutableSharedFlow<String>(1)
 
     // Path of the app's external storage folder
     var folderPath = ""
@@ -253,7 +253,9 @@ class WebReaderViewModel @Inject constructor(
     }
 
     fun setSavedWord(word: String) {
-        _savedWord.value = word
+        viewModelScope.launch {
+            _savedWord.emit(word)
+        }
         if (job == null) {
             launchWordJob()
         }

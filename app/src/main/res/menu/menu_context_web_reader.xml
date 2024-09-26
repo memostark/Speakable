@@ -6,6 +6,11 @@
         android:id="@+id/add_new_note_action"
         android:title="@string/new_note"
         android:icon="@drawable/baseline_note_add_24"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/add_saved_word_action"
+        android:title="@string/save_icon_description"
         app:showAsAction="always" />
 
 </menu>

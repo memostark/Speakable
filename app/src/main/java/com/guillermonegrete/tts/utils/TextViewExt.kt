@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.utils
 
 import android.text.Spannable
-import android.text.SpannableString
 import android.text.method.ScrollingMovementMethod
 import android.text.style.BackgroundColorSpan
 import android.view.MotionEvent
@@ -85,13 +84,6 @@ fun AppCompatTextView.makeScrollableInsideScrollView() {
     }
 }
 
-fun TextView.addHighlightedText(start: Int, end: Int, @ColorInt color: Int = HighlightColorInt){
-    val text = SpannableString(this.text)
-
-    text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-    this.setText(text, TextView.BufferType.SPANNABLE)
-}
-
 fun Spannable.addHighlightedText(
     start: Int,
     end: Int,
@@ -110,3 +102,5 @@ fun Spannable.getBgColorSpan(start: Int, end: Int, @ColorInt color: Int): Backgr
     }
     return null
 }
+
+fun String.isWord() = split(" ").size == 1
