@@ -21,6 +21,7 @@ import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
@@ -31,6 +32,7 @@ import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getBgColorSpan
 import com.guillermonegrete.tts.utils.getSelectedText
+import com.guillermonegrete.tts.utils.isWord
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -64,6 +66,10 @@ class ParagraphAdapter(
      * Whether the current selected text (started with a long-press) is overlapping a note.
      */
     var isOverlappingNotes = false
+    /**
+     * Whether the current selected text (started with a long-press) is overlapping a saved word.
+     */
+    var isOverlappingSavedWord = false
 
     /**
      * Current TextView highlighted by a long-press.
@@ -91,6 +97,13 @@ class ParagraphAdapter(
         BufferOverflow.DROP_OLDEST
     )
     val addNoteClicked = _addNoteClicked.asSharedFlow()
+
+    private val _addWordClicked = MutableSharedFlow<WordState>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        BufferOverflow.DROP_OLDEST
+    )
+    val addWordClicked = _addWordClicked.asSharedFlow()
 
     val newWords = mutableSetOf<Words>()
     private val idToPositions = hashMapOf<Int, MutableSet<Int>>()
@@ -450,22 +463,39 @@ class ParagraphAdapter(
                 menu.clear()
                 menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
                 menu.add(Menu.NONE, TRANSLATE_MENU_ITEM_ID, Menu.NONE, R.string.translate_description)
+                val inflater = mode?.menuInflater
+                inflater?.inflate(R.menu.menu_context_web_reader, menu)
 
                 val selStart = binding.paragraph.selectionStart
                 val selEnd = binding.paragraph.selectionEnd
 
                 // Check if selected text and note spans overlap
-                localItem.notes.forEach {
-                    val span = it.span
+                for(note in localItem.notes) {
+                    val span = note.span
                     isOverlappingNotes = span.start < selEnd && span.end > selStart
                     if (isOverlappingNotes) {
-                        return false
+                        menu.findItem(R.id.add_new_note_action)?.setVisible(false)
+                        break
                     }
                 }
 
-                // We can only add a note if it doesn't overlap with another
-                val inflater = mode?.menuInflater
-                inflater?.inflate(R.menu.menu_context_web_reader, menu)
+                val isWord = highlightedTextView?.getSelectedText().toString().isWord()
+                if (!isWord) {
+                    menu.findItem(R.id.add_saved_word_action)?.setVisible(false)
+                    return true
+                }
+
+                // Check if selected text and note spans overlap
+                for(word in localItem.savedWords) {
+                    val span = word.span
+                    if (span != null) {
+                        isOverlappingSavedWord = span.start < selEnd && span.end > selStart
+                        if (isOverlappingSavedWord) {
+                            menu.findItem(R.id.add_saved_word_action)?.setVisible(false)
+                            break
+                        }
+                    }
+                }
 
                 return true
             }
@@ -482,6 +512,13 @@ class ParagraphAdapter(
                         mode?.finish()
                         true
                     }
+                    R.id.add_saved_word_action -> {
+                        val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
+                        val text = highlightedTextView?.getSelectedText().toString()
+                        _addWordClicked.tryEmit(WordState(WordUI(text, "", ""), span = span))
+                        mode?.finish()
+                        true
+                    }
                     TRANSLATE_MENU_ITEM_ID -> {
                         val text = getHighlightedText() ?: return false
                         onTranslateHighlightedText(text.toString())
@@ -495,8 +532,11 @@ class ParagraphAdapter(
             override fun onDestroyActionMode(mode: ActionMode?) {
                 highlightedTextView = null
                 highlightedTextPos = -1
-                // Only reset this flag if no text was selected using the mode (if text was selected it may overlap notes)
-                if (selectedWordPos == -1) isOverlappingNotes = false
+                // Only reset these flags if no text was selected using the mode (if text was selected it may overlap notes)
+                if (selectedWordPos == -1) {
+                    isOverlappingNotes = false
+                    isOverlappingSavedWord = false
+                }
             }
 
         }
@@ -568,6 +608,7 @@ class ParagraphAdapter(
             notifyItemChanged(selectedWordPos, -1)
             selectedWordPos = -1
             isOverlappingNotes = false
+            isOverlappingSavedWord = false
         }
 
         // unselect word that is within a sentence
@@ -851,10 +892,6 @@ class ParagraphAdapter(
 
     fun getItemsText(range: IntRange): String {
         return items.slice(range).joinToString { it.original }
-    }
-
-    fun getParagraphsText(range: IntRange): List<CharSequence> {
-        return items.slice(range).map { it.original }
     }
 
     fun updateSavedWords(paragraphWords: List<List<WordState>>, start: Int) {
