@@ -139,6 +139,10 @@ class ParagraphAdapter(
                         is Int -> holder.setHighlightedText(items[position], payload)
                         PAYLOAD_WORD -> holder.highlightWord(items[position])
                         PAYLOAD_WORD_SENTENCE -> holder.highlightInsideWord(items[position])
+                        PAYLOAD_INITIAL_DB_WORDS ->  {
+                            val spannable = holder.getSpannable()
+                            if (spannable != null) holder.addSavedWords(items[position], spannable)
+                        }
                     }
                 }
             }
@@ -218,22 +222,7 @@ class ParagraphAdapter(
 
             addNewWords(item, adapterPosition)
 
-            item.savedWords.forEach {
-                val span = it.span
-                if (span != null) spannable.addHighlightedText(span.start, span.end)
-            }
-
-            // When a note and saved word overlap add a blend of their colors
-            item.notes.forEach { note ->
-                item.savedWords.forEach {
-                    val span = it.span
-                    if (span != null && note.span.intersects(it.span)) {
-                        val start = max(span.start, note.span.start)
-                        val end = min(span.end, note.span.end)
-                        spannable.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
-                    }
-                }
-            }
+            addSavedWords(item, spannable)
 
             if (initialWordsLoaded && !item.databaseWordsLoaded) {
                 loadDatabaseWord(item.original, adapterPosition)
@@ -441,6 +430,27 @@ class ParagraphAdapter(
 
             wordInsideSpan = BackgroundColorSpan(Color.argb(128, 255, 0, 0))
             text.setSpan(wordInsideSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+
+        fun getSpannable() = binding.paragraph.text as? Spannable
+
+        fun addSavedWords(item: ParagraphItem, spannable: Spannable) {
+            item.savedWords.forEach {
+                val span = it.span
+                if (span != null) spannable.addHighlightedText(span.start, span.end)
+            }
+
+            // When a note and saved word overlap add a blend of their colors
+            item.savedWords.forEach { word ->
+                item.notes.forEach { note ->
+                    val span = word.span
+                    if (span != null && note.span.intersects(word.span)) {
+                        val start = max(span.start, note.span.start)
+                        val end = min(span.end, note.span.end)
+                        spannable.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
+                    }
+                }
+            }
         }
 
         inner class ParagraphActionModeCallback: ActionMode.Callback {
@@ -902,17 +912,17 @@ class ParagraphAdapter(
             pageItem.savedWords.addAll(paragraphWords[i - start])
             pageItem.databaseWordsLoaded = true
         }
-        notifyItemRangeChanged(start, paragraphWords.size)
+        notifyItemRangeChanged(start, paragraphWords.size, PAYLOAD_INITIAL_DB_WORDS)
     }
 
     fun addSavedWords(paragraphWords: List<List<WordState>>, start: Int) {
         val end = start + paragraphWords.size
         for (i in start..< end) {
             val pageItem = items[i]
-            pageItem.savedWords.addAll(paragraphWords[i - start])
             pageItem.databaseWordsLoaded = true
+            val modified = pageItem.savedWords.addAll(paragraphWords[i - start])
+            if (modified) notifyItemChanged(i)
         }
-        notifyItemRangeChanged(start, paragraphWords.size)
     }
 
     fun findWordsInParagraph(dbWords: List<Words>, position: Int): List<WordState> {
@@ -966,6 +976,7 @@ class ParagraphAdapter(
 
         private const val PAYLOAD_WORD = "update_word"
         private const val PAYLOAD_WORD_SENTENCE = "word_sentence"
+        private const val PAYLOAD_INITIAL_DB_WORDS = "initial_db_words"
 
         private const val HIGHLIGHT_COLOR = 0x6633B5E5
     }
