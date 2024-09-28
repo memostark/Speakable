@@ -96,7 +96,7 @@ fun SentenceDialog(
     sourceLangIndex: Int = 0,
     detectedLanguageState: MutableIntState = mutableIntStateOf(-1),
     highlightedSpanState: MutableState<SplitPageSpan?> = mutableStateOf(null),
-    wordState: MutableState<WordState> = mutableStateOf(WordState()),
+    wordState: MutableState<WordState?> = mutableStateOf(null),
     onPlayButtonClick: () -> Unit = {},
     onTopTextClick: (Int) -> Unit = {},
     onBottomTextClick: (Int) -> Unit = {},
@@ -206,20 +206,20 @@ fun SentenceDialog(
 
 @Composable
 fun WordRow(
-    wordState: MutableState<WordState>,
+    wordState: MutableState<WordState?>,
     onBookmarkClicked: () -> Unit,
     onMoreInfoClicked: () -> Unit
 ) {
-    val word = wordState.value.word
-    if (word != null) {
+    val state = wordState.value
+    if (state != null) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(word.definition, Modifier.padding(horizontal = 8.dp))
+            Text(state.word.definition, Modifier.padding(horizontal = 8.dp))
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onBookmarkClicked) {
-                val iconRes = if(wordState.value.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
+                val iconRes = if(state.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = stringResource(R.string.save_icon_description),
@@ -240,7 +240,7 @@ fun WordRow(
 @Composable
 fun TopText(
     text: String,
-    wordState: MutableState<WordState>,
+    wordState: MutableState<WordState?>,
     highlightedSpanState: MutableState<SplitPageSpan?>,
     textStyle: TextStyle,
     onTopTextClick: (Int) -> Unit
@@ -255,7 +255,7 @@ fun TopText(
         if (topSpan != null)
             addStyle(style = SpanStyle(background = highlightColor), topSpan.start, topSpan.end)
 
-        val wordSpan = wordState.value.span
+        val wordSpan = wordState.value?.span
         if (wordSpan != null) {
             val highlight = if (topSpan != null && topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
             addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
@@ -483,14 +483,14 @@ fun EditWordDialog(
 }
 
 data class WordState(
-    val word: WordUI? = null,
+    val word: WordUI,
     val dbId: Int = NOT_SAVED_ID,
     val span: Span? = null,
 ) {
     val isSaved = dbId != NOT_SAVED_ID
 }
 
-fun WordState.toWord() = word?.toWord()?.apply { id = dbId }
+fun WordState.toWord() = word.toWord().apply { id = dbId }
 
 data class PlayIconState(
     val isPlaying: Boolean = false,
