@@ -39,6 +39,7 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.textprocessing.EditDeleteWordDialogs
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
+import com.guillermonegrete.tts.textprocessing.NOT_SAVED_ID
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.theme.AppTheme
@@ -73,7 +74,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val deleteWordDialogShown = mutableStateOf(false)
     private val pickNewTypeDialogVisible = mutableStateOf(false)
     private val pickInfoDialogVisible = mutableStateOf(false)
-    private val wordState = mutableStateOf(WordState())
+    private val wordState = mutableStateOf<WordState?>(null)
     private val isPageSaved = mutableStateOf(false)
 
     private val languagesFull: List<String> by lazy { resources.getStringArray(R.array.googleTranslateLanguagesArray).toList() }
@@ -204,7 +205,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 when (result) {
                     is ResultType.Update -> {
                         val word = result.word
-                        val newState = wordState.value.copy(word = word.toUI(), dbId = word.id)
+                        val newState = WordState(word.toUI(), word.id, wordState.value?.span)
                         showSavedWord(newState)
                     }
                     is ResultType.Insert -> {
@@ -215,14 +216,14 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         viewModel.setSavedWord(word.word)
                     }
                     is ResultType.Delete -> {
-                        val span = wordState.value.span
+                        val span = wordState.value?.span
                         if (span != null && adapter.isInsideSelectedSentence(span)) {
                             setWordSheetViews(false)
                         } else {
                             hideTranslationSheet()
                         }
                         adapter.removeWord(result.id)
-                        wordState.value = WordState()
+                        wordState.value = null
                         deleteWordDialogShown.value = false
                     }
                 }
@@ -857,22 +858,20 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     @Composable
     fun Dialogs() {
+        val state = wordState.value ?: return
         val languages = LanguagesList(languagesFull, languagesISO)
 
         EditDeleteWordDialogs(
-            wordState,
+            remember { mutableStateOf(state) },
             editWordDialogVisible,
             deleteWordDialogShown,
             languages,
             onSave = {
                 val resultWord = it.toWord()
-                resultWord.id = wordState.value.dbId
+                resultWord.id = state.dbId
                 viewModel.upsert(resultWord)
             },
-            onDelete = {
-                val word = wordState.value.toWord()
-                if (word != null) viewModel.deleteWord(word)
-            },
+            onDelete = { viewModel.deleteWord(state.toWord()) },
         )
 
         if (pickNewTypeDialogVisible.value) {
@@ -898,7 +897,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     when (index) {
                         0 -> noteInfo?.let { showSheetWithNote(it) }
                         1 -> {
-                            val text = wordState.value.word?.word
+                            val text = wordState.value?.word?.word
                             if (text != null) viewModel.setSavedWord(text)
                         }
                     }

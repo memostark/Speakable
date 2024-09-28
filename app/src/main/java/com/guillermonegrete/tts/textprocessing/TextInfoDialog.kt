@@ -91,7 +91,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private val playIconState = mutableStateOf(PlayIconState())
     private val detectedLanguage = mutableIntStateOf(-1)
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
-    private val wordState = mutableStateOf(WordState())
+    private val wordState = mutableStateOf<WordState?>(null)
 
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
     private var selectedLink = 0
@@ -202,7 +202,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun onMoreInfoClicked() {
-        val wordUI = wordState.value.word ?: return
+        val wordUI = wordState.value?.word ?: return
         (presenter as ProcessTextPresenter).getExternalLinks(wordUI.toWord())
     }
 
@@ -210,7 +210,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         // If true the selected word was tapped, unselect
         if (selectedWordSpan.inside(offset)) {
             selectedWordSpan = Span(0, 0)
-            wordState.value = WordState()
+            wordState.value = null
             return
         }
 
@@ -282,11 +282,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                         setSavedWordToolbar(result.word)
                     }
                     updateDatabaseWord(result.word.id)
-                    wordState.value = wordState.value.copy(word = result.word.toUI(), dbId = result.word.id)
+                    wordState.value = WordState(result.word.toUI(), result.word.id, wordState.value?.span)
                     dbWord = result.word
                 }
                 is ResultType.Update -> {
-                    wordState.value = wordState.value.copy(word = result.word.toUI())
+                    wordState.value = WordState(result.word.toUI(), result.word.id, wordState.value?.span)
                     dbWord = result.word
                     editDialogShown.value = false
                 }
@@ -487,7 +487,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val oldWord = mFoundWords
         if (oldWord != null) {
             val word = WordUI(oldWord.word, oldWord.lang, oldWord.definition) // Deleted word has same values but no id and notes
-            wordState.value = wordState.value.copy(word = word, dbId = NOT_SAVED_ID)
+            wordState.value = WordState(word, NOT_SAVED_ID, wordState.value?.span)
         } else {
             presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
         }
@@ -558,7 +558,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             val word = Words(inputText ?: "", translation.src, translation.translatedText)
             if (fragment is TranslationFragment) fragment.updateTranslation(word, languagePreferenceIndex)
             mFoundWords = word
-            wordState.value = wordState.value.copy(word = word.toUI())
+            wordState.value = WordState(word.toUI(), word.id, wordState.value?.span)
         } else {
             if(selectedSpans.value != null) selectedSpans.value = null
             translatedText.value = translation.translatedText
@@ -707,7 +707,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         bindingWord.textLanguageCode.text = word.lang
         bindingWord.textLanguageCode.visibility = View.VISIBLE
 
-        wordState.value = wordState.value.copy(word = word.toUI(), dbId = word.id)
+        wordState.value = WordState(word.toUI(), word.id, wordState.value?.span)
         bindingWord.composeRoot.setContent {
             VisualizerTheme(theme = brightnessTheme) {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
@@ -903,17 +903,18 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     @Composable
     fun Dialogs() {
-        val word = wordState.value.word ?: return
+        val state = wordState.value ?: return
+        val word = state.word
 
         EditDeleteWordDialogs(
-            wordState,
+            remember { mutableStateOf(state) },
             editDialogShown,
             deleteDialogShown,
             LanguagesList(languages, languagesISO),
             onSave = {
                 val resultWord = it.toWord()
-                resultWord.id = wordState.value.dbId
-                if(wordState.value.isSaved) saveWordViewModel.update(resultWord) else saveWordViewModel.save(resultWord)
+                resultWord.id = state.dbId
+                if(state.isSaved) saveWordViewModel.update(resultWord) else saveWordViewModel.save(resultWord)
             },
             onDelete = { presenter.onClickDeleteWord(word.word) },
         )
@@ -941,7 +942,7 @@ fun EditDeleteWordDialogs(
     onSave: (word: WordUI) -> Unit = { _ -> },
     onDelete: () -> Unit = {},
 ) {
-    val word = wordState.value.word ?: return
+    val word = wordState.value.word
 
     var editShown by remember { editDialogShown }
     var deleteShown by remember { deleteDialogShown }
