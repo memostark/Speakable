@@ -862,7 +862,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val languages = LanguagesList(languagesFull, languagesISO)
 
         EditDeleteWordDialogs(
-            remember { mutableStateOf(state) },
+            state,
             editWordDialogVisible,
             deleteWordDialogShown,
             languages,

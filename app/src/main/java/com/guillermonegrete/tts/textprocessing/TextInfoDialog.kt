@@ -907,7 +907,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val word = state.word
 
         EditDeleteWordDialogs(
-            remember { mutableStateOf(state) },
+            state,
             editDialogShown,
             deleteDialogShown,
             LanguagesList(languages, languagesISO),
@@ -935,14 +935,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
 @Composable
 fun EditDeleteWordDialogs(
-    wordState: MutableState<WordState>,
+    wordState: WordState,
     editDialogShown: MutableState<Boolean>,
     deleteDialogShown: MutableState<Boolean>,
     languages: LanguagesList,
     onSave: (word: WordUI) -> Unit = { _ -> },
     onDelete: () -> Unit = {},
 ) {
-    val word = wordState.value.word
+    val word = wordState.word
 
     var editShown by remember { editDialogShown }
     var deleteShown by remember { deleteDialogShown }
@@ -954,7 +954,7 @@ fun EditDeleteWordDialogs(
         translation = word.definition,
         notes = word.notes,
         languages = languages,
-        isSaved = wordState.value.isSaved,
+        isSaved = wordState.isSaved,
         onSave = onSave,
         onDelete = { deleteDialogShown.value = true },
         onDismiss = { editShown = false },
