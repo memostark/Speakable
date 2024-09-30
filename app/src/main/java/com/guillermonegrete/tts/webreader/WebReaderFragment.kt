@@ -39,7 +39,6 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.textprocessing.EditDeleteWordDialogs
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
-import com.guillermonegrete.tts.textprocessing.NOT_SAVED_ID
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.theme.AppTheme
@@ -116,9 +115,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 viewModel.translateText(it)
                 adapter.selectHighlightedText()
             },
-            loadDatabaseWord = {text, pos ->
-                viewModel.loadLocalWords(text.toString(), pos..pos)
+            loadDatabaseWord = { text, pos ->
+                viewModel.loadLocalWords(listOf(text.toString()), pos)
             },
+            scanParagraph = viewModel::findWordsInParagraph,
         )
 
         val iconsVisible = mutableStateOf(false)
@@ -222,7 +222,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         } else {
                             hideTranslationSheet()
                         }
-                        adapter.removeWord(result.id)
+                        adapter.removeWord(viewModel.getWordIndexes(result.id), result.id)
                         wordState.value = null
                         deleteWordDialogShown.value = false
                     }
@@ -242,7 +242,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     viewModel.pageSavedWords.collect { result ->
-                        highlightSavedWords(result.words, result.start..result.end)
+                        adapter.updateSavedWords(result.words, result.start)
                         adapter.initialWordsLoaded = true
                     }
                 }
@@ -377,8 +377,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             is ParagraphAdapter.TextClick.SavedWord -> {
                                 wordState.value = result.word
                                 sheetInfo = Sheet.Word(result.word)
-                                val text = result.word.word?.word
-                                if (text != null) viewModel.setSavedWord(text)
+                                viewModel.setSavedWord(result.word.word.word)
                             }
                             is ParagraphAdapter.TextClick.Sentence -> {
                                 val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
@@ -418,7 +417,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun showSavedWord(state: WordState) {
         wordState.value = state
         sheetInfo = Sheet.Word(state)
-        val word = state.word ?: return
+        val word = state.word
         val wordSpan = state.span ?: return
         updateSheet(word, wordSpan, true)
     }
@@ -777,12 +776,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun highlightSavedWords(dbWords: List<Words>, range: IntRange) {
-        val paragraphWords = findWordsInItems(dbWords, range)
-        adapter.updateSavedWords(paragraphWords, range.first)
-    }
-
     private fun highlightSavedWord(dbWord: Words, range: IntRange) {
+        adapter.setScanNewWords()
         val paragraphWords = findWordsInItems(listOf(dbWord), range)
         adapter.newWords.add(dbWord)
         adapter.addSavedWords(paragraphWords, range.first)
@@ -791,7 +786,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun findWordsInItems(dbWords: List<Words>, range: IntRange): List<List<WordState>> {
         val paragraphWords = arrayListOf<List<WordState>>()
         range.forEach { pos ->
-            val words = adapter.findWordsInParagraph(dbWords, pos)
+            val words = viewModel.findWordsInParagraph(dbWords,  adapter.getText(pos), pos)
             paragraphWords.add(words)
         }
         return paragraphWords
@@ -806,9 +801,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val list = binding.paragraphsList
         val start = list.getChildLayoutPosition(list.getChildAt(0))
         val end = list.getChildLayoutPosition(list.getChildAt(list.childCount - 1))
-        val range =  start.. end
-        val text = adapter.getItemsText(range)
-        viewModel.loadLocalWords(text, range)
+        val text = adapter.getItemsText(start.. end)
+        viewModel.loadLocalWords(text, start)
     }
 
     private fun isSheetVisible(): Boolean {

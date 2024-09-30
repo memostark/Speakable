@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.webreader
 
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
@@ -13,6 +14,7 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.savedwords.ResultType
+import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.deleteAllFolder
 import com.guillermonegrete.tts.utils.makeDir
@@ -26,7 +28,6 @@ import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flatMapLatest
@@ -47,6 +48,7 @@ class WebReaderViewModel @Inject constructor(
     private val webLinkDAO: WebLinkDAO,
     private val noteDAO: NoteDAO,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): ViewModel() {
 
     private val _page = MutableLiveData<LoadResult<PageInfo>>()
@@ -89,6 +91,8 @@ class WebReaderViewModel @Inject constructor(
 
     private var job: Job? = null
     private val _savedWord = MutableSharedFlow<String>(1)
+
+    private val wordIdToIndexes = hashMapOf<Int, MutableSet<Int>>()
 
     // Path of the app's external storage folder
     var folderPath = ""
@@ -460,36 +464,98 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun loadLocalWords(text: String, range: IntRange) {
-        val words = splitByWords(text)
-        wordRepository.findWords(words, object : GetWordsCallback {
-            override fun onWordsLoaded(words: MutableList<Words>) {
-                viewModelScope.launch {
-                    _pageSavedWords.emit(SavedWordsSection(words.toList(), range.first, range.last))
+    fun loadLocalWords(texts: List<String>, index: Int) {
+        viewModelScope.launch {
+            val sections = withContext(defaultDispatcher) { splitByWords(texts) }
+            val words = sections.flatMap { it.words }
+            wordRepository.findWords(words, object : GetWordsCallback {
+                override fun onWordsLoaded(words: List<Words>) {
+                    viewModelScope.launch {
+                        val paragraphWords = withContext(defaultDispatcher) { findWordsInSections(words, sections, index) }
+                        _pageSavedWords.emit(SavedWordsSection(paragraphWords, index))
+                    }
                 }
-            }
 
-            override fun onDataNotAvailable(exception: Exception) {
-                Timber.e(exception, "Error loading db words for $range")
-            }
-        })
+                override fun onDataNotAvailable(exception: Exception) {
+                    Timber.e(exception, "Error loading db words for ${index..(index + texts.lastIndex)}")
+                }
+            })
+        }
     }
 
-    private fun splitByWords(text: String): List<String> {
-        val words = arrayListOf<String>()
+    private fun findWordsInSections(dbWords: List<Words>, sections: List<WordSpans>, position: Int): List<List<WordState>> {
+        val paragraphWords = arrayListOf<List<WordState>>()
+        sections.forEachIndexed { index, wordSpans ->
+            val words = findWordsInSection(dbWords, wordSpans, position + index)
+            paragraphWords.add(words)
+        }
+        return paragraphWords
+    }
+
+    private fun findWordsInSection(dbWords: List<Words>, section: WordSpans, position: Int): List<WordState> {
+        val words = arrayListOf<WordState>()
+        section.words.forEachIndexed { index, word ->
+            val dbWord = dbWords.find { it.word == word }
+            if (dbWord != null) {
+                words.add(WordState(dbWord.toUI(), dbWord.id, section.spans[index]))
+                // Store position of the respective word id.
+                val positions = wordIdToIndexes.getOrPut(dbWord.id, ::mutableSetOf)
+                positions.add(position)
+            }
+        }
+        return words
+    }
+
+    fun findWordsInParagraph(dbWords: List<Words>, text: String, position: Int): List<WordState> {
         val iterator = BreakIterator.getWordInstance()
         iterator.setText(text)
         var start = iterator.first()
         var end = iterator.next()
 
+        val words = arrayListOf<WordState>()
         while (end != BreakIterator.DONE) {
             val possibleWord = text.substring(start, end)
-            if (possibleWord.isNotBlank()) words.add(possibleWord)
+            val dbWord = dbWords.find { it.word == possibleWord }
+            if (dbWord != null) {
+                words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
+                // Store position of the respective word id.
+                val positions = wordIdToIndexes.getOrPut(dbWord.id, ::mutableSetOf)
+                positions.add(position)
+            }
             start = end
             end = iterator.next()
         }
+
         return words
     }
+
+    /**
+     * Takes a list of sections of the text (e.g. paragraphs of a page) and turns each section into an object containing
+     * all the words and their positions with the text.
+     */
+    private fun splitByWords(sections: List<String>): List<WordSpans> {
+        return sections.map { text ->
+            val words = arrayListOf<String>()
+            val spans = arrayListOf<Span>()
+            val iterator = BreakIterator.getWordInstance()
+            iterator.setText(text)
+            var start = iterator.first()
+            var end = iterator.next()
+
+            while (end != BreakIterator.DONE) {
+                val possibleWord = text.substring(start, end)
+                if (possibleWord.isNotBlank()) {
+                    words.add(possibleWord)
+                    spans.add(Span(start, end))
+                }
+                start = end
+                end = iterator.next()
+            }
+            WordSpans(words, spans)
+        }
+    }
+
+    fun getWordIndexes(id: Int) = wordIdToIndexes[id] ?: emptySet()
 
     fun upsert(word: Words) {
         viewModelScope.launch {
@@ -516,6 +582,8 @@ class WebReaderViewModel @Inject constructor(
 
     data class Page(val title: String, val content: String)
 
+    data class WordSpans(val words: List<String>, val spans: List<Span>)
+
     companion object {
         private const val PAGE_FILENAME = "content.xml"
     }
@@ -526,4 +594,4 @@ class WebReaderViewModel @Inject constructor(
  */
 data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)
 
-data class SavedWordsSection(val words: List<Words>, val start: Int, val end: Int)
+data class SavedWordsSection(val words: List<List<WordState>>, val start: Int)
