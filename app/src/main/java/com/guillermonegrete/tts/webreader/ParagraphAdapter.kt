@@ -22,7 +22,6 @@ import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
-import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
 import com.guillermonegrete.tts.db.Words
@@ -36,7 +35,6 @@ import com.guillermonegrete.tts.utils.isWord
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import java.text.BreakIterator
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -47,6 +45,7 @@ class ParagraphAdapter(
     val onTextHighlighted: () -> Unit = {},
     val onTranslateHighlightedText: (String) -> Unit = {},
     val loadDatabaseWord: (text: CharSequence, pos: Int) -> Unit = { _, _ -> },
+    val scanParagraph: (dbWords: List<Words>, text: String, position: Int) -> List<WordState> = { _, _, _ -> emptyList() },
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var items = emptyList<ParagraphItem>()
@@ -106,7 +105,6 @@ class ParagraphAdapter(
     val addWordClicked = _addWordClicked.asSharedFlow()
 
     val newWords = mutableSetOf<Words>()
-    private val idToPositions = hashMapOf<Int, MutableSet<Int>>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -220,7 +218,9 @@ class ParagraphAdapter(
                 spannable.addHighlightedText(span.start, span.end, it.color)
             }
 
-            addNewWords(item, adapterPosition)
+            if (item.scanNewWords) {
+                addNewWords(item, adapterPosition)
+            }
 
             addSavedWords(item, spannable)
 
@@ -561,8 +561,11 @@ class ParagraphAdapter(
             val wordAdded = item.savedWords.any { newWord.id == it.dbId }
             if (!wordAdded) wordsToAdd.add(newWord)
         }
-        val paragraphWords = findWordsInParagraph(wordsToAdd, position)
-        item.savedWords.addAll(paragraphWords)
+        if (wordsToAdd.isNotEmpty()) {
+            val paragraphWords = scanParagraph(wordsToAdd, item.original.toString(), position)
+            item.savedWords.addAll(paragraphWords)
+        }
+        item.scanNewWords = false
     }
 
     fun unselectSentence(){
@@ -870,6 +873,7 @@ class ParagraphAdapter(
         var selectedWord: Span? = null,
         var translation: String = "",
         var databaseWordsLoaded: Boolean = false,
+        var scanNewWords: Boolean = false,
     ) {
         fun toAbsolute(span: Span) : Span {
             return Span(firstCharIndex + span.start, firstCharIndex + span.end)
@@ -900,8 +904,12 @@ class ParagraphAdapter(
         notifyItemChanged(pos, PAYLOAD_WORD)
     }
 
-    fun getItemsText(range: IntRange): String {
-        return items.slice(range).joinToString { it.original }
+    fun getText(pos: Int): String {
+        return items[pos].original.toString()
+    }
+
+    fun getItemsText(range: IntRange): List<String> {
+        return items.slice(range).map { it.original.toString() }
     }
 
     fun updateSavedWords(paragraphWords: List<List<WordState>>, start: Int) {
@@ -920,43 +928,23 @@ class ParagraphAdapter(
         for (i in start..< end) {
             val pageItem = items[i]
             pageItem.databaseWordsLoaded = true
+            pageItem.scanNewWords = false
             val modified = pageItem.savedWords.addAll(paragraphWords[i - start])
             if (modified) notifyItemChanged(i)
         }
     }
 
-    fun findWordsInParagraph(dbWords: List<Words>, position: Int): List<WordState> {
-        val text = items[position].original.toString()
-        val iterator = BreakIterator.getWordInstance()
-        iterator.setText(text)
-        var start = iterator.first()
-        var end = iterator.next()
-
-        val words = arrayListOf<WordState>()
-        while (end != BreakIterator.DONE) {
-            val possibleWord = text.substring(start, end)
-            val dbWord = dbWords.find { it.word == possibleWord }
-            if (dbWord != null) {
-                words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
-                // Store position of the respective word id.
-                val positions = idToPositions.getOrPut(dbWord.id, ::mutableSetOf)
-                positions.add(position)
-            }
-            start = end
-            end = iterator.next()
-        }
-
-        return words
-    }
-
-    fun removeWord(id: Int) {
+    fun removeWord(wordIndexes: Set<Int>, id: Int) {
         newWords.removeAll { it.id == id }
-        val positions = idToPositions[id] ?: return
-        positions.map { pos ->
+        wordIndexes.map { pos ->
             val item = items[pos]
             val removed = item.savedWords.removeAll { it.dbId == id }
             if (removed) notifyItemChanged(pos)
         }
+    }
+
+    fun setScanNewWords() {
+        items.forEach { it.scanNewWords = true }
     }
 
     data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
