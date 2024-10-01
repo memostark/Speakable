@@ -259,10 +259,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             langSelection,
                             iconsVisible,
                             isPageSaved,
-                            { onTranslateClicked() },
-                            { onArrowClicked(it) },
-                            { onBarMenuItemClicked(it) },
-                            { onPageVersionChanged(it) },
+                            true,
+                            ::onTranslateClicked,
+                            ::onArrowClicked,
+                            ::onBarMenuItemClicked,
                         ) { index, _ ->
                             val langShort = if (index == 0) null else langShortNames[index]
                             languageFrom = langShort
@@ -300,25 +300,29 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         viewModel.loadDoc(args.link)
     }
 
-    private fun onPageVersionChanged(pageVersion: String) {
-        when(pageVersion) {
-            "Local" -> viewModel.loadLocalPage()
-            "Web" -> viewModel.loadPageFromWeb()
-        }
-    }
+    private fun onBarMenuItemClicked(action: WebReaderMenuAction) {
+        when(action) {
+            WebReaderMenuAction.PageStatus -> {
+                if (isPageSaved.value) {
+                    deleteDialogVisible.value = true
+                } else {
+                    loadingDialogVisible.value = true
+                    val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
+                    viewModel.saveWebLinkFolder(externalDir, UUID.randomUUID(), pageText)
 
-    private fun onBarMenuItemClicked(index: Int) {
-        if (isPageSaved.value) {
-            deleteDialogVisible.value = true
-        } else {
-            loadingDialogVisible.value = true
-            val externalDir = context?.getExternalFilesDir(null)?.absolutePath.toString()
-            viewModel.saveWebLinkFolder(externalDir, UUID.randomUUID(), pageText)
+                    isPageSaved.value = true
+                    loadingDialogVisible.value = false
 
-            isPageSaved.value = true
-            loadingDialogVisible.value = false
-
-            adapter.isPageSaved = true
+                    adapter.isPageSaved = true
+                }
+            }
+            is WebReaderMenuAction.PageVersion -> {
+                when(action.version) {
+                    "Local" -> viewModel.loadLocalPage()
+                    "Web" -> viewModel.loadPageFromWeb()
+                }
+            }
+            is WebReaderMenuAction.ShowWords -> Toast.makeText(context, "Words visible: ${action.shown}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -568,7 +572,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         // Only show the add note button if selection is not a sentence and doesn't overlap any other note
                         val text = word.word
                         val isWord = text.isWord()
-                        addNoteBtn.isGone = !adapter.isPageSaved || wordResult.isSentence || (adapter.isOverlappingNotes && !isWord)
+                        val noteUnavailable = adapter.isOverlappingNotes || !adapter.isPageSaved
+                        addNoteBtn.isGone = wordResult.isSentence || (noteUnavailable && !isWord)
                         addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
 
                         val span = adapter.getSelectedWordSpan() ?: adapter.getHighlightedTextSpan()
@@ -578,7 +583,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 isWord && !adapter.isOverlappingSavedWord -> {
                                     val state = WordState(word.toUI(), span = span)
                                     wordState.value = state
-                                    if (adapter.isOverlappingNotes) Sheet.Word(state) else Sheet.None
+                                    if (noteUnavailable) Sheet.Word(state) else Sheet.None
                                 }
                                 else -> Sheet.Note(note)
                             }
