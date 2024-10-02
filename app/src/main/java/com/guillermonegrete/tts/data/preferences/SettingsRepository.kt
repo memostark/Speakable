@@ -8,9 +8,13 @@ interface SettingsRepository {
 
     fun setLanguageFrom(language: String)
 
+    suspend fun setShowSavedWords(enabled: Boolean)
+
     fun getLanguageTo(): String
 
     fun getLanguageFrom(): String
+
+    fun showSavedWords(): Flow<Boolean>
 
     fun getImportTabPosition(): Flow<Int>
 

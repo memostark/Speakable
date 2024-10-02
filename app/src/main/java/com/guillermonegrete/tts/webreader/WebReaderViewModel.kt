@@ -6,6 +6,7 @@ import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.WordRepositorySource
 import com.guillermonegrete.tts.data.source.WordRepositorySource.GetWordsCallback
 import com.guillermonegrete.tts.db.WebLink
@@ -30,6 +31,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import org.jsoup.Jsoup
 import timber.log.Timber
@@ -47,6 +49,7 @@ class WebReaderViewModel @Inject constructor(
     private val wordRepository: WordRepositorySource,
     private val webLinkDAO: WebLinkDAO,
     private val noteDAO: NoteDAO,
+    private val settings: SettingsRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): ViewModel() {
@@ -93,6 +96,13 @@ class WebReaderViewModel @Inject constructor(
     private val _savedWord = MutableSharedFlow<String>(1)
 
     private val wordIdToIndexes = hashMapOf<Int, MutableSet<Int>>()
+
+    // Synchronously reads the preference
+    var showWords = runBlocking { settings.showSavedWords().first() }
+        set(value) {
+            field = value
+            runBlocking { settings.setShowSavedWords(value) }
+        }
 
     // Path of the app's external storage folder
     var folderPath = ""
@@ -465,6 +475,8 @@ class WebReaderViewModel @Inject constructor(
     }
 
     fun loadLocalWords(texts: List<String>, index: Int) {
+        if (!showWords) return
+
         viewModelScope.launch {
             val sections = withContext(defaultDispatcher) { splitByWords(texts) }
             val words = sections.flatMap { it.words }
@@ -572,6 +584,10 @@ class WebReaderViewModel @Inject constructor(
             withContext(ioDispatcher) { wordRepository.deleteWord(word) }
             _updatedWord.value = ResultType.Delete(word.id)
         }
+    }
+
+    fun resetWordData() {
+        wordIdToIndexes.clear()
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
