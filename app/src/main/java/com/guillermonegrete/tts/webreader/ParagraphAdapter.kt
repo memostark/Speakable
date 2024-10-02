@@ -947,6 +947,22 @@ class ParagraphAdapter(
         items.forEach { it.scanNewWords = true }
     }
 
+    fun removeWords(visibleItems: IntRange) {
+        newWords.clear()
+        visibleItems.map {
+            val words = items[it].savedWords
+            if (words.isNotEmpty()) {
+                words.clear()
+                notifyItemChanged(it)
+            }
+        }
+        items.forEach {
+            it.savedWords.clear()
+            it.databaseWordsLoaded = false
+        }
+        initialWordsLoaded = false
+    }
+
     data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
 
     sealed interface TextClick {

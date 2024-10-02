@@ -210,9 +210,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                     is ResultType.Insert -> {
                         val word = result.word
-                        val start = paragraphsList.getChildLayoutPosition(paragraphsList.getChildAt(0))
-                        val end = paragraphsList.getChildLayoutPosition(paragraphsList.getChildAt(paragraphsList.childCount - 1))
-                        highlightSavedWord(word, start..end)
+                        if (viewModel.showWords) highlightSavedWord(word, getVisibleListItems())
                         viewModel.setSavedWord(word.word)
                     }
                     is ResultType.Delete -> {
@@ -259,7 +257,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             langSelection,
                             iconsVisible,
                             isPageSaved,
-                            true,
+                            viewModel.showWords,
                             ::onTranslateClicked,
                             ::onArrowClicked,
                             ::onBarMenuItemClicked,
@@ -322,7 +320,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     "Web" -> viewModel.loadPageFromWeb()
                 }
             }
-            is WebReaderMenuAction.ShowWords -> Toast.makeText(context, "Words visible: ${action.shown}", Toast.LENGTH_SHORT).show()
+            is WebReaderMenuAction.ShowWords -> {
+                viewModel.showWords = action.shown
+                if (action.shown) loadWordsForVisibleItems() else hideSavedWords()
+            }
         }
     }
 
@@ -803,11 +804,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun loadWordsForVisibleItems() {
+        val range = getVisibleListItems()
+        val text = adapter.getItemsText(range)
+        viewModel.loadLocalWords(text, range.first)
+    }
+
+    private fun hideSavedWords() {
+        viewModel.resetWordData()
+        adapter.removeWords(getVisibleListItems())
+    }
+
+    private fun getVisibleListItems(): IntRange {
         val list = binding.paragraphsList
         val start = list.getChildLayoutPosition(list.getChildAt(0))
         val end = list.getChildLayoutPosition(list.getChildAt(list.childCount - 1))
-        val text = adapter.getItemsText(start.. end)
-        viewModel.loadLocalWords(text, start)
+        return start..end
     }
 
     private fun isSheetVisible(): Boolean {
