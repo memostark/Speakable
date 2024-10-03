@@ -211,7 +211,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ResultType.Insert -> {
                         val word = result.word
                         if (viewModel.showWords) highlightSavedWord(word, getVisibleListItems())
-                        viewModel.setSavedWord(word.word)
+                        viewModel.setSavedWord(word.word, word.lang)
                     }
                     is ResultType.Delete -> {
                         val span = wordState.value?.span
@@ -381,8 +381,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         when(result) {
                             is ParagraphAdapter.TextClick.SavedWord -> {
                                 wordState.value = result.word
+                                val wordData = result.word.word
                                 sheetInfo = Sheet.Word(result.word)
-                                viewModel.setSavedWord(result.word.word.word)
+                                viewModel.setSavedWord(wordData.word, wordData.lang)
                             }
                             is ParagraphAdapter.TextClick.Sentence -> {
                                 val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
@@ -423,7 +424,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         wordState.value = state
         sheetInfo = Sheet.Word(state)
         val word = state.word
-        val wordSpan = state.span ?: return
+        val wordSpan = state.span ?: Span(0, 0)
         updateSheet(word, wordSpan, true)
     }
 
@@ -907,8 +908,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     when (index) {
                         0 -> noteInfo?.let { showSheetWithNote(it) }
                         1 -> {
-                            val text = wordState.value?.word?.word
-                            if (text != null) viewModel.setSavedWord(text)
+                            val wordUI = wordState.value?.word
+                            if (wordUI != null) viewModel.setSavedWord(wordUI.word, wordUI.lang)
                         }
                     }
                     pickInfoDialogVisible.value = false

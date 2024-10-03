@@ -52,7 +52,7 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
-    public LiveData<Words> getLocalWord(@NonNull String word, @NonNull String language) {
+    public LiveData<Words> getLocalWord(@NonNull String word, String language) {
         return mWordLocalDataSource.loadWord(word, language);
     }
 

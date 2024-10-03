@@ -39,7 +39,7 @@ public interface WordRepositorySource {
 
     @NonNull LiveData<List<Words>> getWordsStream();
 
-    LiveData<Words> getLocalWord(@NonNull String word, @NonNull String language);
+    LiveData<Words> getLocalWord(@NonNull String word, String language);
 
     List<String> getLanguagesISO();
 
