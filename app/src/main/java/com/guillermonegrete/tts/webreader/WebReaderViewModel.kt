@@ -93,7 +93,7 @@ class WebReaderViewModel @Inject constructor(
         get() = _weblink
 
     private var job: Job? = null
-    private val _savedWord = MutableSharedFlow<String>(1)
+    private val _savedWord = MutableSharedFlow<WordLang>(1)
 
     private val wordIdToIndexes = hashMapOf<Int, MutableSet<Int>>()
 
@@ -258,17 +258,23 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun translateText(text: String){
-        translateText(text, _textInfo)
+    fun translateText(text: String) {
+        if (showWords) {
+            // This text is not a saved word, so skip directly to translation
+            translateText(text, _textInfo)
+        } else {
+            // The text might be a saved word, query the database first to check
+            setSavedWord(text, null)
+        }
     }
 
-    fun translateWordInSentence(text: String){
+    fun translateWordInSentence(text: String) {
         translateText(text, _wordInfo)
     }
 
-    fun setSavedWord(word: String) {
+    fun setSavedWord(word: String, lang: String?) {
         viewModelScope.launch {
-            _savedWord.emit(word)
+            _savedWord.emit(WordLang(word, lang))
         }
         if (job == null) {
             launchWordJob()
@@ -278,13 +284,18 @@ class WebReaderViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun launchWordJob() {
         job = viewModelScope.launch {
-            _savedWord.flatMapLatest { word ->
-                wordRepository.getLocalWord(word, cacheWebLink?.language ?: "en")
+            _savedWord.flatMapLatest { data ->
+                wordRepository.getLocalWord(data.word, data.lang ?: cacheWebLink?.language)
                     .distinctUntilChanged()
                     .asFlow()
             }.collectLatest {
                 if (it != null) {
                     _updatedWord.value = ResultType.Update(it)
+                } else {
+                    if (!showWords) {
+                        val data = _savedWord.first()
+                        getTranslationInfo(data.word)
+                    }
                 }
             }
         }
@@ -298,6 +309,13 @@ class WebReaderViewModel @Inject constructor(
                 val word = Words(text, translation.src, translation.translatedText)
                 observer.value = LoadResult.Success(WordResult(word, false))
             }
+        }
+    }
+
+    private suspend fun getTranslationInfo(text: String) {
+        getTranslation(text) { translation ->
+            val word = Words(text, translation.src, translation.translatedText)
+            _textInfo.value = LoadResult.Success(WordResult(word, false))
         }
     }
 
@@ -599,6 +617,8 @@ class WebReaderViewModel @Inject constructor(
     data class Page(val title: String, val content: String)
 
     data class WordSpans(val words: List<String>, val spans: List<Span>)
+
+    data class WordLang(val word: String, val lang: String?)
 
     companion object {
         private const val PAGE_FILENAME = "content.xml"

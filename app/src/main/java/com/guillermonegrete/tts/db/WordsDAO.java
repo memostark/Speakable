@@ -1,6 +1,6 @@
 package com.guillermonegrete.tts.db;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
@@ -26,8 +26,9 @@ public interface WordsDAO {
     @Query("SELECT * FROM words where word in (:words)")
     List<Words> findWords(final List<String> words);
 
-    @Query("SELECT * FROM words WHERE word = :word AND lang = :language")
-    LiveData<Words> loadWord(String word, String language);
+    // The second condition is ignored if lang is null, see explanation here: https://stackoverflow.com/a/41141640/10244759
+    @Query("SELECT * FROM words WHERE word = :word AND lang = COALESCE(NULLIF(:language , ''), lang)")
+    LiveData<Words> loadWord(String word, @Nullable String language);
 
     @Query("SELECT * FROM words WHERE wid = :id")
     LiveData<Words> loadWordById(int id);
