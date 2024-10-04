@@ -18,6 +18,13 @@ class FakeWordDataSource: WordDataSource {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    override fun findWords(
+        words: MutableList<String>?,
+        callback: WordDataSource.GetWordsCallback?
+    ) {
+        TODO("Not yet implemented")
+    }
+
     override fun getLanguagesISO(): MutableList<String> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -31,6 +38,10 @@ class FakeWordDataSource: WordDataSource {
         for(word in words) {
             translationsData[word.id] = word
         }
+    }
+
+    override fun upsert(word: Words): Long {
+        TODO("Not yet implemented")
     }
 
     override fun deleteWords(vararg words: Words?) {

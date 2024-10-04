@@ -397,7 +397,7 @@ fun EditWordDialog(
     var expanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface {
+        Surface(Modifier.testTag(EDIT_WORD_DIALOG_TAG)) {
             Column(Modifier.padding(16.dp)) {
                 TextField(
                     value = wordText,
@@ -479,8 +479,9 @@ fun EditWordDialog(
             }
         }
     }
-
 }
+
+const val EDIT_WORD_DIALOG_TAG = "edit word dialog tag"
 
 data class WordState(
     val word: WordUI,

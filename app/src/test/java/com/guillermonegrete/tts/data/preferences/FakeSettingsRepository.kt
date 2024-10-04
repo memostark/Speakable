@@ -15,12 +15,20 @@ class FakeSettingsRepository: SettingsRepository {
         languageFrom = language
     }
 
+    override suspend fun setShowSavedWords(enabled: Boolean) {
+        TODO("Not yet implemented")
+    }
+
     override fun getLanguageTo(): String {
         return languageTo
     }
 
     override fun getLanguageFrom(): String {
         return languageFrom
+    }
+
+    override fun showSavedWords(): Flow<Boolean> {
+        TODO("Not yet implemented")
     }
 
     override fun getImportTabPosition(): Flow<Int> {
