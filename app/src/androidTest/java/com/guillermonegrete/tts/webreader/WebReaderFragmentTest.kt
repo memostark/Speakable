@@ -18,12 +18,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.DIALOG_LIST_TAG
 import com.guillermonegrete.tts.data.source.remote.GoogleTranslateResponse
 import com.guillermonegrete.tts.data.source.remote.Sentence
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.di.TestApplicationModuleBinds
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
+import com.guillermonegrete.tts.textprocessing.EDIT_WORD_DIALOG_TAG
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import com.guillermonegrete.tts.utils.atPosition
@@ -119,8 +121,11 @@ class WebReaderFragmentTest{
 
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText("My")))
-        // Add note button is not visible because the page is not saved
-        onView(withId(R.id.add_note_btn)).check(matches(not(isDisplayed())))
+        // Add note button opens the EditWordDialog directly because the page is not saved so notes aren't available
+        onView(withId(R.id.add_note_btn)).perform(click())
+        composeTestRule.onNodeWithTag(DIALOG_LIST_TAG).assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(EDIT_WORD_DIALOG_TAG).assertIsDisplayed()
+        Espresso.pressBack()
 
         showWebBottomSheet()
     }
@@ -177,7 +182,7 @@ class WebReaderFragmentTest{
     }
 
     @Test
-    fun given_sentence_selected_when_word_tapped_then_big_sheet_shown(){
+    fun given_selected_sentence_when_word_tapped_then_big_sheet_shown(){
         setRemotePage()
 
         // Highlight first sentence
@@ -198,7 +203,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.word_translation)).check(matches(isDisplayed()))
         onView(withId(R.id.word_translation)).check(matches(withText("My")))
         // Add note button is not visible because the page is not saved
-        onView(withId(R.id.add_note_btn)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.add_word_note_btn)).check(matches(not(isDisplayed())))
     }
 
     // endregion
@@ -215,7 +220,7 @@ class WebReaderFragmentTest{
 
         tapParagraphItemStart(0)
 
-        onView(withId(R.id.add_note_btn)).perform(click())
+        pickNoteDialog()
 
         composeTestRule.onNodeWithText("Save").performClick()
         // Verify highlight was added to word "Mi" at the start of the paragraph
@@ -294,7 +299,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.word_translation)).check(matches(withText("parrafo")))
 
         // Add note
-        onView(withId(R.id.add_word_note_btn)).perform(click())
+        pickNoteDialogWordButton()
         updateWordNote("New note text", 1, 10, 19, listPos)
 
         // Show more info
@@ -342,11 +347,11 @@ class WebReaderFragmentTest{
         onView(withId(R.id.word_translation)).check(matches(withText("parrafo")))
 
         // Add new note
-        onView(withId(R.id.add_word_note_btn)).perform(click())
+        pickNoteDialogWordButton()
         updateWordNote("New note text", 1, 10, 19, listPos)
 
         // Delete new note
-        onView(withId(R.id.add_word_note_btn)).perform(click())
+        pickNoteDialogWordButton()
         composeTestRule.onNodeWithTag(DELETE_BTN_TAG).performClick()
 
         // Verify word layout removed from sheet
@@ -376,7 +381,7 @@ class WebReaderFragmentTest{
 
     private fun setLocalPage(language: String? = null, initialNote: Note? = null) {
         val url = server.url("/").toString()
-        val uuid = UUID.fromString(default_uuid)
+        val uuid = UUID.fromString(DEFAULT_UUID)
         val link = WebLink(url, language = language, uuid = uuid, id = DEFAULT_LINK_ID)
         runBlocking {
             linkDAO.upsert(link)
@@ -452,6 +457,17 @@ class WebReaderFragmentTest{
         onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
     }
 
+    private fun pickNoteDialog() {
+        onView(withId(R.id.add_note_btn)).perform(click())
+        // Pick add note option (first item in the list)
+        composeTestRule.onNodeWithTag(DIALOG_LIST_TAG).onChildren().onFirst().performClick()
+    }
+
+    private fun pickNoteDialogWordButton() {
+        onView(withId(R.id.add_word_note_btn)).perform(click())
+        composeTestRule.onNodeWithTag(DIALOG_LIST_TAG).onChildren().onFirst().performClick()
+    }
+
     private fun updateWordNote(
         text: String,
         colorIndex: Int,
@@ -477,7 +493,7 @@ class WebReaderFragmentTest{
      * Create a local copy of the page using the default folder location
      */
     private fun createXmlFile() {
-        val folder = File(externalFilesPath, default_uuid)
+        val folder = File(externalFilesPath, DEFAULT_UUID)
         if(!folder.exists()) folder.mkdir()
 
         val tempFile = File(folder, "content.xml")
@@ -512,7 +528,7 @@ class WebReaderFragmentTest{
         private const val FIRST_PARAGRAPH_TRANS = FIRST_SENTENCE_TRANS + SECOND_SENTENCE_TRANS
         val paragraphTranslationResponse = GoogleTranslateResponse(listOf(Sentence(FIRST_PARAGRAPH_TRANS, FIRST_PARAGRAPH)), "es")
 
-        const val default_uuid = "7e57d235-3553-4a57-bd35-37af9d5b1ffb"
+        const val DEFAULT_UUID = "7e57d235-3553-4a57-bd35-37af9d5b1ffb"
         const val DEFAULT_LINK_ID = 2
 
         val DEFAULT_NOTE = Note("note text", "My", 37, 2, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)

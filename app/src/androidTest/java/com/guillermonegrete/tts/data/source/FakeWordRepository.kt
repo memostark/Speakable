@@ -39,6 +39,13 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         return languagesData.toMutableList()
     }
 
+    override fun findWords(
+        words: MutableList<String>,
+        callback: WordRepositorySource.GetWordsCallback?
+    ) {
+        TODO("Not yet implemented")
+    }
+
     override fun getWordLanguageInfo(
         wordText: String,
         languageFrom: String,
@@ -96,6 +103,10 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
 
     override fun insert(vararg words: Words?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun upsert(word: Words): Long {
+        TODO("Not yet implemented")
     }
 
     @VisibleForTesting
