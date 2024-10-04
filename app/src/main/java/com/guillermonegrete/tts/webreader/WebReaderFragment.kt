@@ -412,7 +412,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
                 launch {
                     adapter.addWordClicked.collect { state ->
-                        wordState.value = state
+                        val lang = viewModel.getLanguage()
+                        val newState = if (lang == null) state else state.copy(word = state.word.copy(lang = lang))
+                        wordState.value = newState
                         editWordDialogVisible.value = true
                     }
                 }
