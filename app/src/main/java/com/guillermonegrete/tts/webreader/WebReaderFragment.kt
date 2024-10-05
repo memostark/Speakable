@@ -587,7 +587,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 isWord && !adapter.isOverlappingSavedWord -> {
                                     val state = WordState(word.toUI(), span = span)
                                     wordState.value = state
-                                    if (noteUnavailable) Sheet.Word(state) else Sheet.None
+                                    if (noteUnavailable) Sheet.Word(state) else Sheet.Multiple
                                 }
                                 else -> Sheet.Note(note)
                             }
@@ -638,11 +638,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                         setWordSheetViews(true)
 
-                        addWordNoteBtn.isGone = !adapter.isPageSaved
                         val span = adapter.getSelectedWordSpan()
                         if (span != null) {
-                            sheetInfo = Sheet.None
-                            wordState.value = WordState(word.toUI(), span = span)
+                            val state = WordState(word.toUI(), span = span)
+                            wordState.value = state
+                            val noteUnavailable = !adapter.isPageSaved
+                            sheetInfo = if (noteUnavailable) Sheet.Word(state) else Sheet.Multiple
                             noteInfo = EditNote(word.word, word.definition, span, 0, false, 0)
                         }
 
@@ -665,7 +666,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addNoteBtn.setOnClickListener {
                 when (val sheet = sheetInfo) {
-                    Sheet.None -> pickNewTypeDialogVisible.value = true
+                    Sheet.Multiple -> pickNewTypeDialogVisible.value = true
                     is Sheet.Note -> {
                         noteInfo = sheet.info
                         addNoteDialogVisible.value = true
@@ -680,7 +681,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addWordNoteBtn.setOnClickListener {
                 when (val sheet = sheetInfo) {
-                    Sheet.None -> pickNewTypeDialogVisible.value = true
+                    Sheet.Multiple -> pickNewTypeDialogVisible.value = true
                     is Sheet.Note -> {
                         noteInfo = sheet.info
                         addNoteDialogVisible.value = true
@@ -924,6 +925,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     sealed interface Sheet {
         data class Note(val info: EditNote): Sheet
         data class Word(val state: WordState): Sheet
-        data object None: Sheet
+        data object Multiple: Sheet
     }
 }

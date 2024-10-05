@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
+import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -122,10 +123,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
         onView(withId(R.id.translated_text)).check(matches(withText("My")))
         // Add note button opens the EditWordDialog directly because the page is not saved so notes aren't available
-        onView(withId(R.id.add_note_btn)).perform(click())
-        composeTestRule.onNodeWithTag(DIALOG_LIST_TAG).assertIsNotDisplayed()
-        composeTestRule.onNodeWithTag(EDIT_WORD_DIALOG_TAG).assertIsDisplayed()
-        Espresso.pressBack()
+        verifyOnlyWordDialogShown()
 
         showWebBottomSheet()
     }
@@ -202,8 +200,8 @@ class WebReaderFragmentTest{
         // Verify sheet is correct
         onView(withId(R.id.word_translation)).check(matches(isDisplayed()))
         onView(withId(R.id.word_translation)).check(matches(withText("My")))
-        // Add note button is not visible because the page is not saved
-        onView(withId(R.id.add_word_note_btn)).check(matches(not(isDisplayed())))
+        // Only saving words is available when the page is not saved
+        verifyOnlyWordDialogShown(R.id.add_word_note_btn)
     }
 
     // endregion
@@ -299,7 +297,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.word_translation)).check(matches(withText("parrafo")))
 
         // Add note
-        pickNoteDialogWordButton()
+        pickNoteDialog(R.id.add_word_note_btn)
         updateWordNote("New note text", 1, 10, 19, listPos)
 
         // Show more info
@@ -347,11 +345,11 @@ class WebReaderFragmentTest{
         onView(withId(R.id.word_translation)).check(matches(withText("parrafo")))
 
         // Add new note
-        pickNoteDialogWordButton()
+        pickNoteDialog(R.id.add_word_note_btn)
         updateWordNote("New note text", 1, 10, 19, listPos)
 
         // Delete new note
-        pickNoteDialogWordButton()
+        pickNoteDialog(R.id.add_word_note_btn)
         composeTestRule.onNodeWithTag(DELETE_BTN_TAG).performClick()
 
         // Verify word layout removed from sheet
@@ -457,15 +455,20 @@ class WebReaderFragmentTest{
         onView(withId(R.id.info_webview)).check(matches(isDisplayed()))
     }
 
-    private fun pickNoteDialog() {
-        onView(withId(R.id.add_note_btn)).perform(click())
+    private fun pickNoteDialog(@IdRes buttonId: Int = R.id.add_note_btn) {
+        onView(withId(buttonId)).perform(click())
         // Pick add note option (first item in the list)
         composeTestRule.onNodeWithTag(DIALOG_LIST_TAG).onChildren().onFirst().performClick()
     }
 
-    private fun pickNoteDialogWordButton() {
-        onView(withId(R.id.add_word_note_btn)).perform(click())
-        composeTestRule.onNodeWithTag(DIALOG_LIST_TAG).onChildren().onFirst().performClick()
+    /**
+     * Verifies that the pick dialog list is not shown and the edit word dialog is directly shown when clicking the edit button.
+     */
+    private fun verifyOnlyWordDialogShown(@IdRes buttonId: Int = R.id.add_note_btn) {
+        onView(withId(buttonId)).perform(click())
+        composeTestRule.onNodeWithTag(DIALOG_LIST_TAG).assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(EDIT_WORD_DIALOG_TAG).assertIsDisplayed()
+        Espresso.pressBack()
     }
 
     private fun updateWordNote(
