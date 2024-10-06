@@ -177,7 +177,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 sheet.translatedText.text = note.text
                                 sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
                             }
-                            noteInfo = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
+                            val newNote = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
+                            noteInfo = newNote
+                            sheetInfo = Sheet.Note(newNote)
                         } else {
                             // If sheet not visible note was added using the selected text menu, no UI to update
                             noteInfo = null

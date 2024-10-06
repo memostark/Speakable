@@ -349,7 +349,7 @@ class WebReaderFragmentTest{
         updateWordNote("New note text", 1, 10, 19, listPos)
 
         // Delete new note
-        pickNoteDialog(R.id.add_word_note_btn)
+        onView(withId(R.id.add_word_note_btn)).perform(click())
         composeTestRule.onNodeWithTag(DELETE_BTN_TAG).performClick()
 
         // Verify word layout removed from sheet
