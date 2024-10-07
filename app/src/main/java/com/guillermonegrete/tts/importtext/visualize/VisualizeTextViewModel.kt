@@ -12,6 +12,7 @@ import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.ExternalLink
+import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
@@ -25,6 +26,8 @@ import com.guillermonegrete.tts.webreader.db.NoteDAO
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import timber.log.Timber
 import java.io.File
 import java.util.*
@@ -36,6 +39,7 @@ class VisualizeTextViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val fileRepository: FileRepository,
     private val noteDAO: NoteDAO,
+    private val wordDAO: WordsDAO,
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -124,6 +128,12 @@ class VisualizeTextViewModel @Inject constructor(
                 _translatedPages = arrayOfNulls<Translation>(pagesSize).toMutableList()
             }
         }
+
+    private val pageWords = MutableStateFlow(emptyList<String>())
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val pageSavedWords = pageWords.flatMapLatest { words ->
+        wordDAO.findWordsStream(words)
+    }
 
 
     fun parseEpub() {
@@ -487,6 +497,10 @@ class VisualizeTextViewModel @Inject constructor(
             val links = getExternalLinksInteractor(languageFrom, word)
             _linksForWord.value = links
         }
+    }
+
+    fun loadLocalWords(words: List<String>) {
+        pageWords.value = words
     }
 
 }

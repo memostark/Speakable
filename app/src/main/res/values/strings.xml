@@ -29,6 +29,9 @@
     <string name="yes">Yes</string>
     <string name="cancel">Cancel</string>
 
+    <string name="note">Note</string>
+    <string name="saved_word">Saved word</string>
+
     <string name="play_tts_icon_description">Play TTS</string>
     <string name="edit_icon_description">Edit</string>
     <string name="save_icon_description">Save word</string>
@@ -229,6 +232,8 @@
     <string name="more_information">More information for text</string>
     <string name="more_information_word">More information for word</string>
     <string name="pick_language_web_reader">To see more information about this text, please pick a language using the bottom bar</string>
+    <string name="create_db_item_dialog_title">Create new:</string>
+    <string name="web_reader_words_action">Show saved words</string>
 
     <!-- Text/Epub visualizer-->
     <string name="white_theme">White theme</string>
@@ -238,5 +243,6 @@
     <string name="split_page">Split page</string>
     <string name="book_language_label">Book language:</string>
     <string name="translate_to_label">Translate to:</string>
+    <string name="pick_info_dialog_title">Show information for:</string>
 
 </resources>

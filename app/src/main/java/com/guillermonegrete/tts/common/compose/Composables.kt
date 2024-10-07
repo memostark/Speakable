@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -39,6 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -182,8 +186,25 @@ fun ExternalLinksDialog(
 
                 LazyRow(state = listState) {
                     itemsIndexed(links.items) {index, link ->
-                        if (index == selected) {
-                            Box(modifier = Modifier.width(IntrinsicSize.Max)) {
+
+                        Row(
+                            modifier = Modifier.height(IntrinsicSize.Min) // This prevents the divider's height from taking all the space
+                        ) {
+                            if (index == selected) {
+                                Box(modifier = Modifier.width(IntrinsicSize.Max)) {
+                                    TextButton(onClick = {
+                                        selected = index
+                                        coroutineScope.launch { listState.animateScrollToItem(index) }
+                                        onItemClick(index)
+                                    }) {
+                                        Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
+                                    }
+                                    Divider(
+                                        thickness = 4.dp,
+                                        color = MaterialTheme.colors.primary
+                                    )
+                                }
+                            } else {
                                 TextButton(onClick = {
                                     selected = index
                                     coroutineScope.launch { listState.animateScrollToItem(index) }
@@ -191,19 +212,10 @@ fun ExternalLinksDialog(
                                 }) {
                                     Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                                 }
-                                Divider(
-                                    thickness = 4.dp,
-                                    color = MaterialTheme.colors.primary
-                                )
                             }
-                        } else {
-                            TextButton(onClick = {
-                                selected = index
-                                coroutineScope.launch { listState.animateScrollToItem(index) }
-                                onItemClick(index)
-                            }) {
-                                Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
-                            }
+
+                            if (index < links.items.lastIndex)
+                                Divider(modifier = Modifier.fillMaxHeight().width(1.dp))
                         }
                     }
                 }
@@ -211,6 +223,44 @@ fun ExternalLinksDialog(
         }
     }
 }
+
+@Composable
+fun DialogList(
+    list: List<String>,
+    title: String? = null,
+    onItemSelected: (Int, String) -> Unit = { _, _ -> },
+    onDismiss: () -> Unit = {},
+) {
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            Modifier.padding(horizontal = 16.dp),
+            elevation = 8.dp
+        ) {
+            Column {
+                if (title != null) {
+                    Text(text = title, modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.h5)
+                    Divider()
+                }
+
+                LazyColumn(Modifier.testTag(DIALOG_LIST_TAG)) {
+                    itemsIndexed(list) { index, item ->
+                        DropdownMenuItem(onClick = {
+                            onItemSelected(index, item)
+                        }){
+                            Text(text = item)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+const val DIALOG_LIST_TAG = "dialog list tag"
 
 @Preview
 @Composable
@@ -231,5 +281,21 @@ fun SpinnerPreview() {
             Spinner(suggestions)
             Spinner(suggestions, 0)
         }
+    }
+}
+
+@Preview
+@Composable
+fun DialogListPreview() {
+    AppTheme {
+        DialogList(List(3) { "Item ${it + 1}" }, "With title")
+    }
+}
+
+@Preview
+@Composable
+fun DialogListNoTitlePreview() {
+    AppTheme {
+        DialogList(List(3) { "Item ${it + 1}" })
     }
 }

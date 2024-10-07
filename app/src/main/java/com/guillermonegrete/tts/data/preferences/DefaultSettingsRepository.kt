@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -29,12 +30,25 @@ class DefaultSettingsRepository @Inject constructor(
         preferences.edit { putString(LANGUAGE_FROM_KEY, language) }
     }
 
+    override suspend fun setShowSavedWords(enabled: Boolean) {
+        val key = booleanPreferencesKey(SHOW_WORDS_KEY)
+        context.dataStore.edit { settings -> settings[key] = enabled }
+    }
+
     override fun getLanguageTo(): String {
         return preferences.getString(LANGUAGE_TO_KEY, null) ?: "en"
     }
 
     override fun getLanguageFrom(): String {
         return preferences.getString(LANGUAGE_FROM_KEY, null) ?: "auto"
+    }
+
+    override fun showSavedWords(): Flow<Boolean> {
+        val key = booleanPreferencesKey(SHOW_WORDS_KEY)
+        return context.dataStore.data.map { preferences ->
+            // No type safety.
+            preferences[key] ?: true
+        }
     }
 
     override fun getImportTabPosition(): Flow<Int> {
@@ -53,6 +67,7 @@ class DefaultSettingsRepository @Inject constructor(
     companion object{
         const val LANGUAGE_TO_KEY = "translate_to_pref"
         const val LANGUAGE_FROM_KEY = "translate_from_pref_key"
+        const val SHOW_WORDS_KEY = "show_words_pref"
         const val IMPORT_TAB_KEY = "import_tab"
     }
 }

@@ -51,23 +51,28 @@
             app:tint="?colorOnSurface"
             tools:visibility="visible" />
 
-        <TextView
-            android:id="@+id/translated_text"
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/translated_text_scroll"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-            android:scrollbars="vertical"
-            android:maxLines="4"
             app:layout_constraintBottom_toTopOf="@+id/notes_text"
             app:layout_constraintEnd_toStartOf="@+id/add_note_btn"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0"
             app:layout_constraintVertical_chainStyle="packed"
-            app:layout_constrainedHeight="true"
-            app:layout_goneMarginEnd="16dp"
-            tools:text="A secondary color provides more ways to accent and distinguish your product. Having a secondary color is optional, and should be applied sparingly to accent select parts of your UI." />
+            app:layout_constraintHeight_max="80dp"
+            app:layout_goneMarginEnd="16dp">
+
+            <TextView
+                android:id="@+id/translated_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:nestedScrollingEnabled="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                tools:text="A secondary color provides more ways to accent and distinguish your product. Having a secondary color is optional, and should be applied sparingly to accent select parts of your UI." />
+        </androidx.core.widget.NestedScrollView>
 
         <TextView
             android:id="@+id/notes_text"
@@ -76,9 +81,9 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
             android:visibility="gone"
             app:layout_constraintBottom_toTopOf="@id/word_translation"
-            app:layout_constraintEnd_toEndOf="@+id/translated_text"
-            app:layout_constraintStart_toStartOf="@+id/translated_text"
-            app:layout_constraintTop_toBottomOf="@+id/translated_text"
+            app:layout_constraintEnd_toEndOf="@+id/translated_text_scroll"
+            app:layout_constraintStart_toStartOf="@+id/translated_text_scroll"
+            app:layout_constraintTop_toBottomOf="@+id/translated_text_scroll"
             tools:text="Saved notes text"
             tools:visibility="visible" />
 
@@ -102,7 +107,7 @@
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/add_word_note_btn"
-            app:layout_constraintStart_toStartOf="@+id/translated_text"
+            app:layout_constraintStart_toStartOf="@+id/translated_text_scroll"
             app:layout_constraintTop_toBottomOf="@id/notes_text"
             tools:text="Word translation"
             tools:visibility="visible" />

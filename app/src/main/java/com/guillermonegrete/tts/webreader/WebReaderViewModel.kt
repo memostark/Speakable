@@ -2,15 +2,20 @@ package com.guillermonegrete.tts.webreader
 
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.WordRepositorySource
+import com.guillermonegrete.tts.data.source.WordRepositorySource.GetWordsCallback
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.savedwords.ResultType
+import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.deleteAllFolder
 import com.guillermonegrete.tts.utils.makeDir
@@ -23,10 +28,16 @@ import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import org.jsoup.Jsoup
+import timber.log.Timber
 import java.io.File
 import java.io.IOException
+import java.lang.Exception
 import java.text.BreakIterator
 import java.util.*
 import javax.inject.Inject
@@ -38,7 +49,9 @@ class WebReaderViewModel @Inject constructor(
     private val wordRepository: WordRepositorySource,
     private val webLinkDAO: WebLinkDAO,
     private val noteDAO: NoteDAO,
+    private val settings: SettingsRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): ViewModel() {
 
     private val _page = MutableLiveData<LoadResult<PageInfo>>()
@@ -67,11 +80,29 @@ class WebReaderViewModel @Inject constructor(
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
 
+    private val _updatedWord = MutableLiveData<ResultType>()
+    val updatedWord: LiveData<ResultType> = _updatedWord
+
+    private val _pageSavedWords = MutableSharedFlow<SavedWordsSection>()
+    val pageSavedWords: SharedFlow<SavedWordsSection> = _pageSavedWords
+
     private var cacheWebLink: WebLink? = null
 
     private val _weblink = MutableLiveData<WebLink>()
     val webLink: LiveData<WebLink>
         get() = _weblink
+
+    private var job: Job? = null
+    private val _savedWord = MutableSharedFlow<WordLang>(1)
+
+    private val wordIdToIndexes = hashMapOf<Int, MutableSet<Int>>()
+
+    // Synchronously reads the preference
+    var showWords = runBlocking { settings.showSavedWords().first() }
+        set(value) {
+            field = value
+            runBlocking { settings.setShowSavedWords(value) }
+        }
 
     // Path of the app's external storage folder
     var folderPath = ""
@@ -227,34 +258,64 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    private var job: Job? = null
-
-    fun translateText(text: String){
-        translateText(text, _textInfo)
+    fun translateText(text: String) {
+        if (showWords) {
+            // This text is not a saved word, so skip directly to translation
+            translateText(text, _textInfo)
+        } else {
+            // The text might be a saved word, query the database first to check
+            setSavedWord(text, null)
+        }
     }
 
-    fun translateWordInSentence(text: String){
+    fun translateWordInSentence(text: String) {
         translateText(text, _wordInfo)
+    }
+
+    fun setSavedWord(word: String, lang: String?) {
+        viewModelScope.launch {
+            _savedWord.emit(WordLang(word, lang))
+        }
+        if (job == null) {
+            launchWordJob()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun launchWordJob() {
+        job = viewModelScope.launch {
+            _savedWord.flatMapLatest { data ->
+                wordRepository.getLocalWord(data.word, data.lang ?: cacheWebLink?.language)
+                    .distinctUntilChanged()
+                    .asFlow()
+            }.collectLatest {
+                if (it != null) {
+                    _updatedWord.value = ResultType.Update(it)
+                } else {
+                    if (!showWords) {
+                        val data = _savedWord.first()
+                        getTranslationInfo(data.word)
+                    }
+                }
+            }
+        }
     }
 
     private fun translateText(text: String, observer: MutableLiveData<LoadResult<WordResult>>) {
         observer.value = LoadResult.Loading
 
-        job?.cancel() // cancel the previous job otherwise you'll receive its updates
-        job = viewModelScope.launch {
+        viewModelScope.launch {
+            getTranslation(text) { translation ->
+                val word = Words(text, translation.src, translation.translatedText)
+                observer.value = LoadResult.Success(WordResult(word, false))
+            }
+        }
+    }
 
-            wordRepository.getLocalWord(text, cacheWebLink?.language ?: "en")
-                .asFlow().collectLatest {
-
-                    if(it == null) {
-                        getTranslation(text) { translation ->
-                            val word = Words(text, translation.src, translation.translatedText)
-                            observer.value = LoadResult.Success(WordResult(word, false))
-                        }
-                    }  else {
-                        observer.value = LoadResult.Success(WordResult(it, true))
-                    }
-                }
+    private suspend fun getTranslationInfo(text: String) {
+        getTranslation(text) { translation ->
+            val word = Words(text, translation.src, translation.translatedText)
+            _textInfo.value = LoadResult.Success(WordResult(word, false))
         }
     }
 
@@ -431,6 +492,122 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
+    fun loadLocalWords(texts: List<String>, index: Int) {
+        if (!showWords) return
+
+        viewModelScope.launch {
+            val sections = withContext(defaultDispatcher) { splitByWords(texts) }
+            val words = sections.flatMap { it.words }
+            wordRepository.findWords(words, object : GetWordsCallback {
+                override fun onWordsLoaded(words: List<Words>) {
+                    viewModelScope.launch {
+                        val paragraphWords = withContext(defaultDispatcher) { findWordsInSections(words, sections, index) }
+                        _pageSavedWords.emit(SavedWordsSection(paragraphWords, index))
+                    }
+                }
+
+                override fun onDataNotAvailable(exception: Exception) {
+                    Timber.e(exception, "Error loading db words for ${index..(index + texts.lastIndex)}")
+                }
+            })
+        }
+    }
+
+    private fun findWordsInSections(dbWords: List<Words>, sections: List<WordSpans>, position: Int): List<List<WordState>> {
+        val paragraphWords = arrayListOf<List<WordState>>()
+        sections.forEachIndexed { index, wordSpans ->
+            val words = findWordsInSection(dbWords, wordSpans, position + index)
+            paragraphWords.add(words)
+        }
+        return paragraphWords
+    }
+
+    private fun findWordsInSection(dbWords: List<Words>, section: WordSpans, position: Int): List<WordState> {
+        val words = arrayListOf<WordState>()
+        section.words.forEachIndexed { index, word ->
+            val dbWord = dbWords.find { it.word == word }
+            if (dbWord != null) {
+                words.add(WordState(dbWord.toUI(), dbWord.id, section.spans[index]))
+                // Store position of the respective word id.
+                val positions = wordIdToIndexes.getOrPut(dbWord.id, ::mutableSetOf)
+                positions.add(position)
+            }
+        }
+        return words
+    }
+
+    fun findWordsInParagraph(dbWords: List<Words>, text: String, position: Int): List<WordState> {
+        val iterator = BreakIterator.getWordInstance()
+        iterator.setText(text)
+        var start = iterator.first()
+        var end = iterator.next()
+
+        val words = arrayListOf<WordState>()
+        while (end != BreakIterator.DONE) {
+            val possibleWord = text.substring(start, end)
+            val dbWord = dbWords.find { it.word == possibleWord }
+            if (dbWord != null) {
+                words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
+                // Store position of the respective word id.
+                val positions = wordIdToIndexes.getOrPut(dbWord.id, ::mutableSetOf)
+                positions.add(position)
+            }
+            start = end
+            end = iterator.next()
+        }
+
+        return words
+    }
+
+    /**
+     * Takes a list of sections of the text (e.g. paragraphs of a page) and turns each section into an object containing
+     * all the words and their positions with the text.
+     */
+    private fun splitByWords(sections: List<String>): List<WordSpans> {
+        return sections.map { text ->
+            val words = arrayListOf<String>()
+            val spans = arrayListOf<Span>()
+            val iterator = BreakIterator.getWordInstance()
+            iterator.setText(text)
+            var start = iterator.first()
+            var end = iterator.next()
+
+            while (end != BreakIterator.DONE) {
+                val possibleWord = text.substring(start, end)
+                if (possibleWord.isNotBlank()) {
+                    words.add(possibleWord)
+                    spans.add(Span(start, end))
+                }
+                start = end
+                end = iterator.next()
+            }
+            WordSpans(words, spans)
+        }
+    }
+
+    fun getWordIndexes(id: Int) = wordIdToIndexes[id] ?: emptySet()
+
+    fun upsert(word: Words) {
+        viewModelScope.launch {
+            val resultId = withContext(ioDispatcher) { wordRepository.upsert(word) }
+            if(resultId != -1L) {
+                word.id = resultId.toInt()
+                _updatedWord.value = ResultType.Insert(word)
+            }
+        }
+    }
+
+    fun deleteWord(word: Words) {
+        viewModelScope.launch {
+            withContext(ioDispatcher) { wordRepository.deleteWord(word) }
+            _updatedWord.value = ResultType.Delete(word.id)
+        }
+    }
+
+    fun resetWordData() {
+        wordIdToIndexes.clear()
+    }
+
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
@@ -438,6 +615,10 @@ class WebReaderViewModel @Inject constructor(
     data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
 
     data class Page(val title: String, val content: String)
+
+    data class WordSpans(val words: List<String>, val spans: List<Span>)
+
+    data class WordLang(val word: String, val lang: String?)
 
     companion object {
         private const val PAGE_FILENAME = "content.xml"
@@ -448,3 +629,5 @@ class WebReaderViewModel @Inject constructor(
  * Return class for the UI, used to display the paragraph with the notes
  */
 data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)
+
+data class SavedWordsSection(val words: List<List<WordState>>, val start: Int)

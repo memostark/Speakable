@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.IntentCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -40,10 +41,14 @@ import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.DialogList
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
 import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
 import com.guillermonegrete.tts.common.models.EditNote
@@ -52,17 +57,21 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
+import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.theme.VisualizerTheme
 import com.guillermonegrete.tts.utils.getScreenSizes
 import com.guillermonegrete.tts.webreader.AddNoteDialog
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.text.BreakIterator
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -93,10 +102,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private val addNoteDialogVisible = mutableStateOf(false)
     private val noteSheetVisible = mutableStateOf(false)
     private var linksDialogShown = mutableStateOf(false)
+    private val pickInfoDialogVisible = mutableStateOf(false)
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
     private var selectedLink = 0
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
+    private var clickedWord = ""
 
     private var splitterCreated = false
 
@@ -147,8 +158,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
-        viewPager.adapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
-            {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment]
+        pagesAdapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
+            {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
+        viewPager.adapter = pagesAdapter
 
         viewPager.post{
             addPagerCallback()
@@ -424,14 +436,44 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 linksDialogShown.value = true
             }
 
+            lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    pageSavedWords.collect { words ->
+                        highlightSavedWords(words)
+                    }
+                }
+            }
+
+
             languagesISO = resources.getStringArray(R.array.googleTranslateLanguagesValue)
         }
+    }
+
+    private fun highlightSavedWords(dbWords: List<Words>) {
+        val text = pagesAdapter.getPageText(viewPager.currentItem).toString()
+        val words = arrayListOf<WordState>()
+
+        val iterator = BreakIterator.getWordInstance()
+        iterator.setText(text)
+        var start = iterator.first()
+        var end = iterator.next()
+
+        while (end != BreakIterator.DONE) {
+            val possibleWord = text.substring(start, end)
+            val dbWord = dbWords.find { it.word == possibleWord }
+            if (dbWord != null) {
+                words.add(WordState(dbWord.toUI(), dbWord.id, Span(start, end)))
+            }
+            start = end
+            end = iterator.next()
+        }
+        pagesAdapter.updateSavedWords(words, viewPager.currentItem)
     }
 
     private fun initParse() {
         val intent = requireActivity().intent
         if(SHOW_EPUB == intent.action) {
-            val uri: Uri = intent.getParcelableExtra(EPUB_URI) ?: return
+            val uri: Uri = IntentCompat.getParcelableExtra(intent, EPUB_URI, Uri::class.java) ?: return
             val rootStream = requireContext().contentResolver.openInputStream(uri)
             viewModel.fileReader = DefaultZipFileReader(rootStream, requireContext())
             viewModel.fileUri = uri.toString()
@@ -445,14 +487,24 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private fun setUpPagerAndIndexLabel(chapter: BookChapter){
         pagesAdapter = VisualizerAdapter(
             createPageItems(chapter),
-            showTextDialog = ::showTextDialog,
             onCreateNote = {
                 noteInfo.value = it
                 addNoteDialogVisible.value = true
             },
-            onNoteClicked = {
-                noteInfo.value = it
-                noteSheetVisible.value = true
+            onTextClick = { result ->
+                when(result) {
+                    is VisualizerAdapter.TextClick.Note -> {
+                        noteInfo.value = result.note
+                        noteSheetVisible.value = true
+                    }
+                    is VisualizerAdapter.TextClick.SavedWord -> showTextDialog(result.word)
+                    is VisualizerAdapter.TextClick.Overlap -> {
+                        noteInfo.value = result.note
+                        clickedWord = result.word
+                        pickInfoDialogVisible.value = true
+                    }
+                    is VisualizerAdapter.TextClick.Word -> showTextDialog(result.word)
+                }
             },
             getPageCharPos = viewModel::getCharPos
         )
@@ -588,6 +640,11 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                     viewPager.post { pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE) }
                 }
 
+                // Load saved words when reaching new áge
+                val text = pagesAdapter.getPageText(position)
+                val words = splitByWords(text.toString())
+                viewModel.loadLocalWords(words)
+
                 previousPage = position
             }
 
@@ -628,7 +685,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     }
 
     private fun createPageSplitter(textView: TextView, width: Int): PageSplitter {
-        val uri: Uri? = requireActivity().intent.getParcelableExtra(EPUB_URI)
+        val uri: Uri? = IntentCompat.getParcelableExtra(requireActivity().intent, EPUB_URI, Uri::class.java)
         val imageGetter = if(uri != null) {
             val zipReader = DefaultZipFileReader(requireContext().contentResolver.openInputStream(uri), requireContext())
             InputStreamImageGetter(requireContext(), zipReader)
@@ -901,6 +958,22 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         return text
     }
 
+    private fun splitByWords(text: String): List<String> {
+        val words = arrayListOf<String>()
+        val iterator = BreakIterator.getWordInstance()
+        iterator.setText(text)
+        var start = iterator.first()
+        var end = iterator.next()
+
+        while (end != BreakIterator.DONE) {
+            val possibleWord = text.substring(start, end)
+            if (possibleWord.isNotBlank()) words.add(possibleWord)
+            start = end
+            end = iterator.next()
+        }
+        return words
+    }
+
     @Composable
     fun Dialogs() {
 
@@ -933,6 +1006,21 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 addNoteVisible = false
             },
         )
+        
+        if (pickInfoDialogVisible.value) {
+            DialogList(
+                list = listOf(resources.getString(R.string.note), resources.getString(R.string.saved_word)),
+                title = resources.getString(R.string.pick_info_dialog_title),
+                onItemSelected = { index, _ ->
+                    when (index) {
+                        0 -> noteSheetVisible.value = true
+                        1 -> showTextDialog(clickedWord)
+                    }
+                    pickInfoDialogVisible.value = false
+                },
+                onDismiss = { pickInfoDialogVisible.value = false }
+            )
+        }
     }
 
     @Composable

@@ -1,14 +1,14 @@
 package com.guillermonegrete.tts.utils
 
-import android.graphics.Color
 import android.text.Spannable
-import android.text.SpannableString
 import android.text.method.ScrollingMovementMethod
 import android.text.style.BackgroundColorSpan
 import android.view.MotionEvent
 import android.widget.TextView
+import androidx.annotation.ColorInt
 import androidx.appcompat.widget.AppCompatTextView
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 
 /**
  * Finds the word in the text view for the given [offset] obtained using [TextView.getOffsetForPosition].
@@ -84,13 +84,23 @@ fun AppCompatTextView.makeScrollableInsideScrollView() {
     }
 }
 
-fun TextView.addHighlightedText(start: Int, end: Int, color: Int = Color.argb(128, 255, 0, 0)){
-    val text = SpannableString(this.text)
-
-    text.setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-    this.setText(text, TextView.BufferType.SPANNABLE)
+fun Spannable.addHighlightedText(
+    start: Int,
+    end: Int,
+    @ColorInt color: Int = HighlightColorInt
+): BackgroundColorSpan {
+    val span = BackgroundColorSpan(color)
+    setSpan(span, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+    return span
 }
 
-fun Spannable.addHighlightedText(start: Int, end: Int, color: Int = Color.argb(128, 255, 0, 0)){
-    setSpan(BackgroundColorSpan(color), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+fun Spannable.getBgColorSpan(start: Int, end: Int, @ColorInt color: Int): BackgroundColorSpan? {
+    getSpans(start, end, BackgroundColorSpan::class.java).map { bgSpan ->
+        if (start == getSpanStart(bgSpan) && end == getSpanEnd(bgSpan) && color == bgSpan.backgroundColor) {
+            return bgSpan
+        }
+    }
+    return null
 }
+
+fun String.isWord() = split(" ").size == 1

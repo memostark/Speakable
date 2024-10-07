@@ -19,7 +19,7 @@ sealed class LoadResult<out T>{
 
     data class Success<out T>(val data: T): LoadResult<T>()
     data class Error<out T>(val exception: Exception): LoadResult<T>()
-    object Loading : LoadResult<Nothing>()
+    data object Loading : LoadResult<Nothing>()
 }
 
 /**
@@ -27,14 +27,14 @@ sealed class LoadResult<out T>{
  */
 sealed class PlayAudioState {
 
-    object Playing : PlayAudioState()
-    object Stopped : PlayAudioState()
+    data object Playing : PlayAudioState()
+    data object Stopped : PlayAudioState()
     data class Error(val exception: Exception): PlayAudioState()
     /**
      * State that represents when some TTS engines are initializing or latency from requesting the audio to an API.
      * It can be ignored.
      */
-    object Loading : PlayAudioState()
+    data object Loading : PlayAudioState()
 }
 
 /**

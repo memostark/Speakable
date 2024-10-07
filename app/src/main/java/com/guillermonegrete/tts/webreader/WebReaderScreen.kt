@@ -44,10 +44,10 @@ fun WebReaderBottomBar(
     langSelection: MutableState<Int> = mutableIntStateOf(-1),
     iconsEnabled: MutableState<Boolean> = mutableStateOf(true),
     isPageSaved: MutableState<Boolean> = mutableStateOf(false),
+    wordsShown: Boolean = false,
     onTranslateClicked: () -> Unit = {},
     onArrowClicked: (isLeft: Boolean) -> Unit = {},
-    onMenuItemClick: (index: Int) -> Unit = {},
-    onPageVersionChanged: (String) -> Unit = {},
+    onMenuItemClick: (action: WebReaderMenuAction) -> Unit = {},
     onLangSelected: (Int, String) -> Unit = { _, _ -> },
 ) {
     val iconsState by remember { iconsEnabled }
@@ -88,20 +88,21 @@ fun WebReaderBottomBar(
 
         Spinner(languages, langSelection.value, onItemSelected = onLangSelected)
 
-        WebReaderBarMenu(isPageSaved, onMenuItemClick, onPageVersionChanged)
+        WebReaderBarMenu(isPageSaved, wordsShown, onMenuItemClick)
     }
 }
 
 @Composable
 fun WebReaderBarMenu(
     isPageSaved: MutableState<Boolean>,
-    onMenuItemClick: (index: Int) -> Unit,
-    onPageVersionChanged: (String) -> Unit,
+    wordsShown: Boolean,
+    onMenuItemClick: (action: WebReaderMenuAction) -> Unit,
 ) {
     Box {
         var menuExpanded by remember { mutableStateOf(false) }
         val pageVersionStates = listOf("Local", "Web")
         var pageVersionSelection by remember { mutableStateOf(pageVersionStates.first()) }
+        var checked by remember { mutableStateOf(wordsShown) }
 
         IconButton(onClick = { menuExpanded = true }) {
             Icon(Icons.Filled.MoreVert, contentDescription = "Desc")
@@ -114,7 +115,7 @@ fun WebReaderBarMenu(
 
             val isSaved by isPageSaved
             DropdownMenuItem(onClick = {
-                onMenuItemClick(0)
+                onMenuItemClick(WebReaderMenuAction.PageStatus)
                 menuExpanded = false
             }) {
                 val icon =
@@ -132,12 +133,29 @@ fun WebReaderBarMenu(
                     MultiToggleButton(pageVersionSelection, StringList(pageVersionStates)) {
                         pageVersionSelection = it
                         menuExpanded = false
-                        onPageVersionChanged(pageVersionSelection)
+                        onMenuItemClick(WebReaderMenuAction.PageVersion(pageVersionSelection))
                     }
                 }
             }
+
+            DropdownMenuItem(onClick = {}) {
+                Text(stringResource(R.string.web_reader_words_action))
+                Switch(
+                    checked,
+                    onCheckedChange = {
+                        checked = it
+                        onMenuItemClick(WebReaderMenuAction.ShowWords(it))
+                    }
+                )
+            }
         }
     }
+}
+
+sealed interface WebReaderMenuAction {
+    data object PageStatus : WebReaderMenuAction
+    data class PageVersion(val version: String): WebReaderMenuAction
+    data class ShowWords(val shown: Boolean): WebReaderMenuAction
 }
 
 @Composable

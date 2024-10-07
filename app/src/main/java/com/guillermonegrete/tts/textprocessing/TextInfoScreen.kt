@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenuItem
@@ -72,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.Spinner
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.models.Span
@@ -94,7 +96,7 @@ fun SentenceDialog(
     sourceLangIndex: Int = 0,
     detectedLanguageState: MutableIntState = mutableIntStateOf(-1),
     highlightedSpanState: MutableState<SplitPageSpan?> = mutableStateOf(null),
-    wordState: MutableState<WordState> = mutableStateOf(WordState()),
+    wordState: MutableState<WordState?> = mutableStateOf(null),
     onPlayButtonClick: () -> Unit = {},
     onTopTextClick: (Int) -> Unit = {},
     onBottomTextClick: (Int) -> Unit = {},
@@ -128,31 +130,33 @@ fun SentenceDialog(
             )
         }
 
-        Surface(modifier = Modifier
-            .padding(16.dp)
-            .onSizeChanged {
-                val sizePx = it.width.toFloat()
-                swipeableState.updateAnchors(
-                    DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
-                )
-            }
-            .anchoredDraggable(swipeableState, Orientation.Horizontal)
-            .pointerInput(Unit) {
-                // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
-                detectVerticalDragGestures(
-                    onVerticalDrag = { _, dragAmount ->
-                        // Because we are using Bottom gravity the axis sign is inverted
-                        wlp.y -= dragAmount.toInt()
-                        window.attributes = wlp
-                    },
-                    onDragEnd = {
-                        wlp.y = initialY
-                        window.attributes = wlp
-                    }
-                )
-            }
-            .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
-            .testTag("sentence_dialog")
+        Card(
+            modifier = Modifier
+                .padding(16.dp)
+                .onSizeChanged {
+                    val sizePx = it.width.toFloat()
+                    swipeableState.updateAnchors(
+                        DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
+                    )
+                }
+                .anchoredDraggable(swipeableState, Orientation.Horizontal)
+                .pointerInput(Unit) {
+                    // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
+                    detectVerticalDragGestures(
+                        onVerticalDrag = { _, dragAmount ->
+                            // Because we are using Bottom gravity the axis sign is inverted
+                            wlp.y -= dragAmount.toInt()
+                            window.attributes = wlp
+                        },
+                        onDragEnd = {
+                            wlp.y = initialY
+                            window.attributes = wlp
+                        }
+                    )
+                }
+                .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
+                .testTag("sentence_dialog"),
+            elevation = 8.dp
         ) {
             // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
             // This is similar to how Text creates its style
@@ -202,19 +206,20 @@ fun SentenceDialog(
 
 @Composable
 fun WordRow(
-    wordState: MutableState<WordState>,
+    wordState: MutableState<WordState?>,
     onBookmarkClicked: () -> Unit,
     onMoreInfoClicked: () -> Unit
 ) {
-    val word = wordState.value.word
-    if (word != null) {
-        Row(verticalAlignment = Alignment.CenterVertically,
+    val state = wordState.value
+    if (state != null) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(word.definition, Modifier.padding(horizontal = 8.dp))
+            Text(state.word.definition, Modifier.padding(horizontal = 8.dp))
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onBookmarkClicked) {
-                val iconRes = if(wordState.value.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
+                val iconRes = if(state.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = stringResource(R.string.save_icon_description),
@@ -235,7 +240,7 @@ fun WordRow(
 @Composable
 fun TopText(
     text: String,
-    wordState: MutableState<WordState>,
+    wordState: MutableState<WordState?>,
     highlightedSpanState: MutableState<SplitPageSpan?>,
     textStyle: TextStyle,
     onTopTextClick: (Int) -> Unit
@@ -246,13 +251,13 @@ fun TopText(
 
         val selectionColors = LocalTextSelectionColors.current
         val highlightColor = remember { selectionColors.backgroundColor }
-        val highlightedSpan = highlightedSpanState.value
-        if (highlightedSpan != null)
-            addStyle(style = SpanStyle(background = highlightColor), highlightedSpan.topSpan.start, highlightedSpan.topSpan.end)
+        val topSpan = highlightedSpanState.value?.topSpan
+        if (topSpan != null)
+            addStyle(style = SpanStyle(background = highlightColor), topSpan.start, topSpan.end)
 
-        val wordSpan = wordState.value.span
+        val wordSpan = wordState.value?.span
         if (wordSpan != null) {
-            val highlight = if (highlightedSpan != null && highlightedSpan.topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
+            val highlight = if (topSpan != null && topSpan.intersects(wordSpan)) YellowNoteHighlight else highlightColor
             addStyle(SpanStyle(background = highlight), wordSpan.start, wordSpan.end)
         }
     }
@@ -310,9 +315,9 @@ fun BottomText(
 ) {
     val annotatedString = buildAnnotatedString {
         append(translation.value)
-        val highlightedSpan = highlightedSpanState.value
-        if (highlightedSpan != null)
-            this.addStyle(SpanStyle(background = LocalTextSelectionColors.current.backgroundColor), highlightedSpan.bottomSpan.start, highlightedSpan.bottomSpan.end)
+        val bottomSpan = highlightedSpanState.value?.bottomSpan
+        if (bottomSpan != null)
+            this.addStyle(SpanStyle(background = LocalTextSelectionColors.current.backgroundColor), bottomSpan.start, bottomSpan.end)
     }
 
     ClickableText(
@@ -353,7 +358,7 @@ fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: ()
                 .size(24.dp)
         )
     } else {
-        val iconRes = if(playIcon.isTTSAvailable) {
+        val iconRes = if (playIcon.isTTSAvailable) {
             if (playIcon.isPlaying) R.drawable.ic_stop_black_24dp else R.drawable.ic_volume_up_black_24dp
         } else {
             R.drawable.baseline_volume_off_24
@@ -375,8 +380,7 @@ fun EditWordDialog(
     language: String,
     translation: String,
     notes: String?,
-    languages: StringList,
-    languagesISO: StringList,
+    languages: LanguagesList,
     isSaved: Boolean = false,
     onSave: (WordUI) -> Unit = {},
     onDelete: () -> Unit = {},
@@ -385,7 +389,7 @@ fun EditWordDialog(
     if (!isShown) return
 
     var wordText by remember { mutableStateOf(word) }
-    val isoIndex = languagesISO.items.indexOf(language)
+    val isoIndex = languages.iso.indexOf(language)
     var indexLang by remember { mutableIntStateOf(isoIndex) }
     var translationText by remember { mutableStateOf(translation) }
     var notesText by remember { mutableStateOf(notes) }
@@ -393,7 +397,7 @@ fun EditWordDialog(
     var expanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface {
+        Surface(Modifier.testTag(EDIT_WORD_DIALOG_TAG)) {
             Column(Modifier.padding(16.dp)) {
                 TextField(
                     value = wordText,
@@ -412,7 +416,7 @@ fun EditWordDialog(
                 ) {
                     TextField(
                         readOnly = true,
-                        value = languages.items.getOrNull(indexLang) ?: "",
+                        value = languages.fullNames.getOrNull(indexLang) ?: "",
                         onValueChange = { },
                         label = { Text(stringResource(R.string.language_edit_text)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -426,12 +430,12 @@ fun EditWordDialog(
 
                         Box(modifier = Modifier.size(width = 300.dp, height = 600.dp)) {
                             LazyColumn {
-                                itemsIndexed(languages.items) { i, lang ->
+                                itemsIndexed(languages.fullNames) { i, lang ->
                                     DropdownMenuItem(onClick = {
                                         indexLang = i
                                         expanded = false
-                                    }){
-                                        Text(text = "$lang (${languagesISO.items[i]})")
+                                    }) {
+                                        Text(text = "$lang (${languages.iso[i]})")
                                     }
                                 }
                             }
@@ -453,9 +457,9 @@ fun EditWordDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Row (horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
 
-                    if(isSaved) {
+                    if (isSaved) {
                         IconButton(onClick = onDelete) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_delete_black_24dp),
@@ -467,7 +471,7 @@ fun EditWordDialog(
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
                     Button(onClick = {
-                        onSave(WordUI(wordText, languagesISO.items[indexLang], translationText, notesText))
+                        onSave(WordUI(wordText, languages.iso[indexLang], translationText, notesText))
                     }) {
                         Text(text = stringResource(android.R.string.ok))
                     }
@@ -475,16 +479,19 @@ fun EditWordDialog(
             }
         }
     }
-
 }
 
+const val EDIT_WORD_DIALOG_TAG = "edit word dialog tag"
+
 data class WordState(
-    val word: WordUI? = null,
+    val word: WordUI,
     val dbId: Int = NOT_SAVED_ID,
     val span: Span? = null,
 ) {
     val isSaved = dbId != NOT_SAVED_ID
 }
+
+fun WordState.toWord() = word.toWord().apply { id = dbId }
 
 data class PlayIconState(
     val isPlaying: Boolean = false,
@@ -547,8 +554,7 @@ fun EditWordDialogPreview() {
             "es",
             "Hello",
             "Spanish greeting",
-            StringList(listOf("English", "Spanish", "German")),
-            StringList(listOf("en", "es", "de")),
+            LanguagesList(listOf("English", "Spanish", "German"), listOf("en", "es", "de")),
             true
         )
     }

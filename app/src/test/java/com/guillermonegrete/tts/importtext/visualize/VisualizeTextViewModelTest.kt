@@ -10,6 +10,7 @@ import com.guillermonegrete.tts.data.preferences.FakeSettingsRepository
 import com.guillermonegrete.tts.data.source.FakeFileRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.getUnitLiveDataValue
 import com.guillermonegrete.tts.importtext.ImportedFileType
@@ -19,6 +20,8 @@ import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.threading.TestMainThread
 import com.guillermonegrete.tts.webreader.db.FakeNoteDAO
+import io.mockk.MockKAnnotations
+import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -51,6 +54,7 @@ class VisualizeTextViewModelTest {
 
     @Mock private lateinit var epubParser: EpubParser
     @Mock private lateinit var fileReader: DefaultZipFileReader
+    @MockK private lateinit var wordDao: WordsDAO
     private lateinit var fileRepository: FakeFileRepository
     private lateinit var wordRepository: FakeWordRepository
     private lateinit var notesDAO: FakeNoteDAO
@@ -69,6 +73,7 @@ class VisualizeTextViewModelTest {
     @Before
     fun setUp(){
         MockitoAnnotations.openMocks(this)
+        MockKAnnotations.init(this)
 
         fileRepository = FakeFileRepository()
         wordRepository = FakeWordRepository()
@@ -78,13 +83,13 @@ class VisualizeTextViewModelTest {
         val getTranslationInteractor = GetLangAndTranslation(TestThreadExecutor(), TestMainThread(), wordRepository)
         val getExternalLinks = GetExternalLink(TestThreadExecutor(), TestMainThread(), mockk(), mainCoroutineRule.dispatcher)
 
-        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, notesDAO, getTranslationInteractor, getExternalLinks, mainCoroutineRule.dispatcher)
+        viewModel = VisualizeTextViewModel(epubParser, settingsRepository, fileRepository, notesDAO, wordDao, getTranslationInteractor, getExternalLinks, mainCoroutineRule.dispatcher)
         viewModel.pageSplitter = pageSplitter
         viewModel.fileReader = fileReader
 
         bookFile.apply {
             chapter = 0
-            page = 0
+            lastChar = 0
         }
     }
 
@@ -292,7 +297,7 @@ class VisualizeTextViewModelTest {
         // Set up with saved values
         val initialPage = 2
         val initialChapter = 3
-        bookFile.page = initialPage
+
         bookFile.chapter = initialChapter
         fileRepository.addFiles(bookFile)
 
@@ -323,7 +328,8 @@ class VisualizeTextViewModelTest {
 
         splitPages(7)
 
-        // Swipe to right three times
+        // Swipe to right four times
+        viewModel.swipeChapterRight()
         viewModel.swipeChapterRight()
         viewModel.swipeChapterRight()
         viewModel.swipeChapterRight()
@@ -336,7 +342,7 @@ class VisualizeTextViewModelTest {
         val uuid = "random"
         viewModel.saveBookData(lastReadDate, uuid)
 
-        val sumPreviousChars = sumCharacters(3, initialPage)
+        val sumPreviousChars = sumCharacters(4, initialPage)
 
         val expectedFile = BookFile(
             uri,
@@ -344,7 +350,7 @@ class VisualizeTextViewModelTest {
             ImportedFileType.EPUB,
             folderPath = uuid,
             lastChar = 50,
-            chapter = 3,
+            chapter = 4,
             percentageDone = 100 * sumPreviousChars / DEFAULT_BOOK.totalChars,
             lastRead = lastReadDate
         )

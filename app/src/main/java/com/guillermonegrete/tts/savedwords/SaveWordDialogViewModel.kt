@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.data.source.WordDataSource
@@ -56,6 +57,7 @@ class SaveWordDialogViewModel @Inject constructor(
 sealed class ResultType {
     data class Insert(val word: Words): ResultType()
     data class Update(val word: Words): ResultType()
+    data class Delete(val id: Int) : ResultType()
 }
 
 /**
@@ -73,8 +75,9 @@ fun setContent(
 ) {
 
     val context = composeView.context
-    val languages = StringList(context.resources.getStringArray(R.array.googleTranslateLanguagesArray).toList())
-    val languagesISO = StringList(context.resources.getStringArray(R.array.googleTranslateLanguagesValue).toList())
+    val languagesFull = context.resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
+    val languagesISO = context.resources.getStringArray(R.array.googleTranslateLanguagesValue).toList()
+    val languages = LanguagesList(languagesFull, languagesISO)
 
     composeView.setContent {
         AppTheme {
@@ -88,7 +91,6 @@ fun setContent(
                 translation = word.definition,
                 notes = word.notes,
                 languages = languages,
-                languagesISO = languagesISO,
                 isSaved = isSaved,
                 onSave = { onSave(it.toWord()) },
                 onDelete = { deleteDialogShown = true },

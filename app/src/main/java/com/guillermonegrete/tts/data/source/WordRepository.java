@@ -45,19 +45,31 @@ public class WordRepository implements WordRepositorySource {
         return mWordLocalDataSource.getWords();
     }
 
+    @NonNull
     @Override
     public LiveData<List<Words>> getWordsStream() {
         return mWordLocalDataSource.getWordsStream();
     }
 
     @Override
-    public LiveData<Words> getLocalWord(@NonNull String word, @NonNull String language) {
+    public LiveData<Words> getLocalWord(@NonNull String word, String language) {
         return mWordLocalDataSource.loadWord(word, language);
     }
 
     @Override
     public List<String> getLanguagesISO() {
         return mWordLocalDataSource.getLanguagesISO();
+    }
+
+    @Override
+    public void findWords(@NonNull List<String> words, GetWordsCallback callback) {
+        mWordLocalDataSource.findWords(words, new WordDataSource.GetWordsCallback() {
+            @Override
+            public void onWordsLoaded(@NonNull List<Words> words) { callback.onWordsLoaded(words); }
+
+            @Override
+            public void onDataNotAvailable(@NonNull Exception exception) { callback.onDataNotAvailable(exception); }
+        });
     }
 
     @Override
@@ -130,6 +142,11 @@ public class WordRepository implements WordRepositorySource {
     @Override
     public void insert(Words... words) {
         mWordLocalDataSource.insertWords(words);
+    }
+
+    @Override
+    public long upsert(@NonNull Words word) {
+        return mWordLocalDataSource.upsert(word);
     }
 
     private void getRemoteWord(String wordText, String languageFrom, String languageTo, final GetWordRepositoryCallback callback) {

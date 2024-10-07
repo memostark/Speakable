@@ -4,11 +4,14 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Segment
 import com.guillermonegrete.tts.data.Translation
+import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.data.source.local.FakeExternalLinkSource
+import com.guillermonegrete.tts.data.toWordUI
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.FakeWebLinkDAO
 import com.guillermonegrete.tts.db.WebLink
@@ -16,6 +19,7 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
+import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.threading.TestMainThread
 import com.guillermonegrete.tts.utils.deleteAllFolder
@@ -27,8 +31,10 @@ import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.jsoup.Jsoup
@@ -69,13 +75,17 @@ class WebReaderViewModelTest {
 
         webLinkDAO = FakeWebLinkDAO()
         notesDAO = FakeNoteDAO()
+        val settings = mockk<SettingsRepository>(relaxed = true)
+        every { settings.showSavedWords() } returns flowOf(true)
         viewModel = WebReaderViewModel(
             getTranslationInteractor,
             getExternalLink,
             wordRepository,
             webLinkDAO,
             notesDAO,
-            mainCoroutineRule.dispatcher
+            settings,
+            mainCoroutineRule.dispatcher,
+            mainCoroutineRule.dispatcher,
         )
 
         mockkStatic(Jsoup::class)
@@ -307,16 +317,14 @@ class WebReaderViewModelTest {
     // region Translation tests
 
     @Test
-    fun `Give saved word, when translate text, then text info update`() = runTest {
+    fun `Given saved word, when translate text, then text info update`() = runTest {
         val word = Words("Hola", "es", "Hello").apply { id = 3 }
         wordRepository.addWords(word)
 
-        viewModel.translateText("Hola")
+        viewModel.setSavedWord("Hola", "es")
 
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
         advanceUntilIdle()
-        val expected = LoadResult.Success(WebReaderViewModel.WordResult(word = word, isSaved = true))
-        assertEquals(expected, viewModel.textInfo.value)
+        assertEquals(ResultType.Update(word), viewModel.updatedWord.value)
     }
 
     @Test
@@ -346,16 +354,18 @@ class WebReaderViewModelTest {
     }
 
     @Test
-    fun `Give saved word, when translate word in sentence, then word info updated`() = runTest {
-        val word = Words("Hola", "es", "Hello").apply { id = 3 }
-        wordRepository.addWords(word)
+    fun `Given no saved word, when translate word in sentence, then word info updated`() = runTest {
+        val translation = Translation("Hola", "es", "Hello")
+        wordRepository.addTranslation(translation)
 
         viewModel.translateWordInSentence("Hola")
 
         assertEquals(LoadResult.Loading, viewModel.wordInfo.value)
         advanceUntilIdle()
-        val expected = LoadResult.Success(WebReaderViewModel.WordResult(word = word, isSaved = true))
-        assertEquals(expected, viewModel.wordInfo.value)
+        val result = (viewModel.wordInfo.value as LoadResult.Success).data
+        assertEquals(translation.toWordUI(), result.word.toUI())
+        assertEquals(false, result.isSaved)
+        assertEquals(false, result.isSentence)
     }
 
     // endregion
