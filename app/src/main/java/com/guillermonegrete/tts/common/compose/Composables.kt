@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,19 +18,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.Divider
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -125,13 +125,14 @@ fun Spinner(
             Box(modifier = Modifier.size(width = 200.dp, height = 500.dp)) {
                 LazyColumn {
                     itemsIndexed(list.items) { index, item ->
-                        DropdownMenuItem(onClick = {
-                            expanded = false
-                            selected = index
-                            onItemSelected(index, item)
-                        }) {
-                            Text(text = item)
-                        }
+                        DropdownMenuItem(
+                            text = { Text(text = item) },
+                            onClick = {
+                                expanded = false
+                                selected = index
+                                onItemSelected(index, item)
+                            }
+                        )
                     }
                 }
             }
@@ -199,9 +200,9 @@ fun ExternalLinksDialog(
                                     }) {
                                         Text(text = link.siteName, modifier = Modifier.padding(vertical = 6.dp))
                                     }
-                                    Divider(
+                                    HorizontalDivider(
                                         thickness = 4.dp,
-                                        color = MaterialTheme.colors.primary
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             } else {
@@ -214,8 +215,7 @@ fun ExternalLinksDialog(
                                 }
                             }
 
-                            if (index < links.items.lastIndex)
-                                Divider(modifier = Modifier.fillMaxHeight().width(1.dp))
+                            if (index < links.items.lastIndex) VerticalDivider()
                         }
                     }
                 }
@@ -236,23 +236,19 @@ fun DialogList(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Card(
-            Modifier.padding(horizontal = 16.dp),
-            elevation = 8.dp
-        ) {
+        Card(Modifier.padding(horizontal = 16.dp)) {
             Column {
                 if (title != null) {
-                    Text(text = title, modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.h5)
-                    Divider()
+                    Text(text = title, modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.headlineSmall)
+                    HorizontalDivider()
                 }
 
                 LazyColumn(Modifier.testTag(DIALOG_LIST_TAG)) {
                     itemsIndexed(list) { index, item ->
-                        DropdownMenuItem(onClick = {
-                            onItemSelected(index, item)
-                        }){
-                            Text(text = item)
-                        }
+                        DropdownMenuItem(
+                            text = { Text(text = item) },
+                            onClick = { onItemSelected(index, item) }
+                        )
                     }
                 }
             }

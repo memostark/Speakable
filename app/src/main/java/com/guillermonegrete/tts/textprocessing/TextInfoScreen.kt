@@ -3,6 +3,8 @@ package com.guillermonegrete.tts.textprocessing
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.compose.animation.core.FloatExponentialDecaySpec
+import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -10,6 +12,7 @@ import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,26 +27,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ExposedDropdownMenuBox
-import androidx.compose.material.ExposedDropdownMenuDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableIntState
@@ -62,8 +62,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -116,7 +117,7 @@ fun SentenceDialog(
 
         val wlp = window.attributes
         val initialY = wlp.y
-        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS // This also removes the background dim
         wlp.gravity = Gravity.BOTTOM
         window.attributes = wlp
 
@@ -126,11 +127,12 @@ fun SentenceDialog(
                 SwipeDirection.Initial,
                 { distance -> distance * 0.6f },
                 { with(density) { 125.dp.toPx() }},
-                tween()
+                tween(),
+                FloatExponentialDecaySpec().generateDecayAnimationSpec(),
             )
         }
 
-        Card(
+        ElevatedCard(
             modifier = Modifier
                 .padding(16.dp)
                 .onSizeChanged {
@@ -156,23 +158,14 @@ fun SentenceDialog(
                 }
                 .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
                 .testTag("sentence_dialog"),
-            elevation = 8.dp
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            // For whatever reason the ClickableText doesn't use the same style as the Text composable, this causes problems with dark mode
-            // This is similar to how Text creates its style
-            val style = LocalTextStyle.current
-            val color = LocalContentColor.current
-            val alpha = LocalContentAlpha.current
-
-            val newStyle = remember {
-                style.copy(color = color.copy(alpha = alpha))
-            }
 
             Column {
 
                 WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
 
-                TopText(text, wordState, highlightedSpanState, newStyle, onTopTextClick)
+                TopText(text, wordState, highlightedSpanState, onTopTextClick)
 
                 TopTextBar(
                     languagesFrom,
@@ -184,7 +177,7 @@ fun SentenceDialog(
                     onPlayButtonClick
                 )
 
-                BottomText(translation, highlightedSpanState, newStyle, onBottomTextClick)
+                BottomText(translation, highlightedSpanState, onBottomTextClick)
 
                 BottomTextBar(languagesTo, targetLangIndex, onTargetLangChanged)
             }
@@ -233,7 +226,7 @@ fun WordRow(
             }
         }
 
-        Divider()
+        HorizontalDivider()
     }
 }
 
@@ -242,8 +235,7 @@ fun TopText(
     text: String,
     wordState: MutableState<WordState?>,
     highlightedSpanState: MutableState<SplitPageSpan?>,
-    textStyle: TextStyle,
-    onTopTextClick: (Int) -> Unit
+    onTopTextClick: (Int) -> Unit,
 ) {
 
     val topString = buildAnnotatedString {
@@ -264,7 +256,6 @@ fun TopText(
 
     ClickableText(
         topString,
-        style = textStyle,
         modifier = Modifier
             .padding(8.dp)
             .heightIn(0.dp, 120.dp)
@@ -286,7 +277,7 @@ fun TopTextBar(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .background(MaterialTheme.colors.primary)
+            .background(MaterialTheme.colorScheme.primary)
             .fillMaxWidth()
     ) {
 
@@ -310,8 +301,7 @@ fun TopTextBar(
 fun BottomText(
     translation: MutableState<String>,
     highlightedSpanState: MutableState<SplitPageSpan?>,
-    textStyle: TextStyle,
-    onBottomTextClick: (Int) -> Unit
+    onBottomTextClick: (Int) -> Unit,
 ) {
     val annotatedString = buildAnnotatedString {
         append(translation.value)
@@ -322,7 +312,6 @@ fun BottomText(
 
     ClickableText(
         annotatedString,
-        style = textStyle,
         modifier = Modifier
             .padding(8.dp)
             .heightIn(0.dp, 120.dp)
@@ -336,7 +325,7 @@ fun BottomTextBar(languagesTo: StringList, langIndex: Int, onTargetLangChanged: 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .background(MaterialTheme.colors.primary)
+            .background(MaterialTheme.colorScheme.primary)
             .fillMaxWidth()
     ) {
         Text(text = "To:", Modifier.padding(horizontal = 8.dp))
@@ -352,7 +341,7 @@ fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: ()
 
     if (playIcon.isLoading) {
         CircularProgressIndicator(
-            color = MaterialTheme.colors.secondary,
+            color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier
                 .padding(8.dp)
                 .size(24.dp)
@@ -372,7 +361,7 @@ fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: ()
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditWordDialog(
     isShown: Boolean,
@@ -431,12 +420,13 @@ fun EditWordDialog(
                         Box(modifier = Modifier.size(width = 300.dp, height = 600.dp)) {
                             LazyColumn {
                                 itemsIndexed(languages.fullNames) { i, lang ->
-                                    DropdownMenuItem(onClick = {
-                                        indexLang = i
-                                        expanded = false
-                                    }) {
-                                        Text(text = "$lang (${languages.iso[i]})")
-                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(text = "$lang (${languages.iso[i]})") },
+                                        onClick = {
+                                            indexLang = i
+                                            expanded = false
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -479,6 +469,28 @@ fun EditWordDialog(
             }
         }
     }
+}
+
+@Composable
+fun ClickableText(
+    text: AnnotatedString,
+    modifier: Modifier = Modifier,
+    onClick: (Int) -> Unit,
+) {
+    val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+    val pressIndicator = Modifier.pointerInput(onClick) {
+        detectTapGestures { pos ->
+            layoutResult.value?.let { layoutResult ->
+                onClick(layoutResult.getOffsetForPosition(pos))
+            }
+        }
+    }
+
+    Text(
+        text = text,
+        modifier = modifier.then(pressIndicator),
+        onTextLayout = { layoutResult.value = it }
+    )
 }
 
 const val EDIT_WORD_DIALOG_TAG = "edit word dialog tag"
