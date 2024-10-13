@@ -1,7 +1,8 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import androidx.compose.animation.core.FloatExponentialDecaySpec
+import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
@@ -13,14 +14,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -63,7 +63,8 @@ fun NoteSheet(
             SwipeDirection.Initial,
             { distance -> distance * 0.5f },
             { with(density) { 125.dp.toPx() }},
-            tween()
+            tween(),
+            FloatExponentialDecaySpec().generateDecayAnimationSpec(),
         )
     }
 
@@ -100,8 +101,7 @@ fun NoteSheet(
         onDismissRequest = onDismiss,
         properties = PopupProperties(dismissOnClickOutside = false),
     ) {
-        Card(
-            border = BorderStroke(1.dp, MaterialTheme.colors.onSurface),
+        OutlinedCard(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .onSizeChanged {

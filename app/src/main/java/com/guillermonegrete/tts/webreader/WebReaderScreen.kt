@@ -7,9 +7,24 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.Spinner
 import com.guillermonegrete.tts.common.compose.StringList
+import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
 import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
@@ -52,7 +68,12 @@ fun WebReaderBottomBar(
 ) {
     val iconsState by remember { iconsEnabled }
 
-    BottomAppBar(modifier = Modifier.testTag("web_reader_bar")) {
+    BottomAppBar(
+        modifier = Modifier
+            .testTag("web_reader_bar")
+            .height(WebReaderBarHeight),
+        contentPadding = PaddingValues(vertical = 8.dp), // Default is 12dp but it's too much and causes asymmetry
+    ) {
         IconButton(
             onClick = { onTranslateClicked() },
             enabled = iconsState,
@@ -110,44 +131,50 @@ fun WebReaderBarMenu(
 
         DropdownMenu(
             expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false }
+            onDismissRequest = { menuExpanded = false },
         ) {
 
             val isSaved by isPageSaved
-            DropdownMenuItem(onClick = {
-                onMenuItemClick(WebReaderMenuAction.PageStatus)
-                menuExpanded = false
-            }) {
-                val icon =
-                    if (isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
-                Icon(painter = painterResource(icon), contentDescription = "Desc")
-                Spacer(modifier = Modifier.width(8.dp))
-                val text = stringResource(id = if (isSaved) R.string.delete else R.string.save)
-                Text(text)
-            }
+            DropdownMenuItem(
+                text = { Text(stringResource(if (isSaved) R.string.delete else R.string.save)) },
+                onClick = {
+                    onMenuItemClick(WebReaderMenuAction.PageStatus)
+                    menuExpanded = false
+                },
+                leadingIcon = {
+                    val icon = if (isSaved) R.drawable.ic_delete_black_24dp else R.drawable.baseline_save_24
+                    Icon(painter = painterResource(icon), contentDescription = if (isSaved) "Delete" else "Save")
+                },
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             if (isSaved) {
-                DropdownMenuItem(onClick = {}) {
-                    MultiToggleButton(pageVersionSelection, StringList(pageVersionStates)) {
-                        pageVersionSelection = it
-                        menuExpanded = false
-                        onMenuItemClick(WebReaderMenuAction.PageVersion(pageVersionSelection))
-                    }
-                }
-            }
-
-            DropdownMenuItem(onClick = {}) {
-                Text(stringResource(R.string.web_reader_words_action))
-                Switch(
-                    checked,
-                    onCheckedChange = {
-                        checked = it
-                        onMenuItemClick(WebReaderMenuAction.ShowWords(it))
-                    }
+                DropdownMenuItem(
+                    text = {
+                        MultiToggleButton(pageVersionSelection, StringList(pageVersionStates)) {
+                            pageVersionSelection = it
+                            menuExpanded = false
+                            onMenuItemClick(WebReaderMenuAction.PageVersion(pageVersionSelection))
+                        }
+                    },
+                    onClick = {},
                 )
             }
+
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.web_reader_words_action)) },
+                onClick = {},
+                trailingIcon = {
+                    Switch(
+                        checked,
+                        onCheckedChange = {
+                            checked = it
+                            onMenuItemClick(WebReaderMenuAction.ShowWords(it))
+                        }
+                    )
+                }
+            )
         }
     }
 }
@@ -157,6 +184,8 @@ sealed interface WebReaderMenuAction {
     data class PageVersion(val version: String): WebReaderMenuAction
     data class ShowWords(val shown: Boolean): WebReaderMenuAction
 }
+
+val WebReaderBarHeight = 64.dp // Default bar height is 80dp, looks too big for this case
 
 @Composable
 fun LoadingDialog(isVisible: Boolean) {
@@ -182,26 +211,11 @@ fun DeletePageDialog(
     okClicked: () -> Unit = {},
 ) {
     if (isOpen) {
-        AlertDialog(
-            onDismissRequest = { onDismiss() },
-            title = { Text(text = stringResource(R.string.delete_page_dialog_title)) },
-            text = { Text(stringResource(R.string.delete_page_dialog_body)) },
-            buttons = {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Button(onClick = { onDismiss() }) {
-                        Text(stringResource(id = R.string.cancel))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { okClicked() }) {
-                        Text(stringResource(id = android.R.string.ok))
-                    }
-                }
-            }
+        YesNoDialog(
+            onDismiss,
+            okClicked,
+            stringResource(R.string.delete_page_dialog_title),
+            stringResource(R.string.delete_page_dialog_body),
         )
     }
 }
@@ -318,7 +332,7 @@ fun ColorsRow(colorSel: MutableIntState) {
                     onClick = { colorSel.intValue = index },
                     modifier = modifier.testTag(index.toString()),
                     shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(backgroundColor = color)
+                    colors = ButtonDefaults.buttonColors(containerColor = color)
                 ) {}
             }
         }
@@ -335,7 +349,7 @@ fun MultiToggleButton(
     toggleStates: StringList,
     onToggleChange: (String) -> Unit
 ) {
-    val selectedTint = MaterialTheme.colors.primary
+    val selectedTint = MaterialTheme.colorScheme.primary
     val unselectedTint = Color.Unspecified
 
     Row(
@@ -349,7 +363,7 @@ fun MultiToggleButton(
             val textColor = if (isSelected) Color.White else Color.Unspecified
 
             if (index != 0) {
-                Divider(
+                VerticalDivider(
                     color = Color.LightGray,
                     modifier = Modifier
                         .fillMaxHeight()
@@ -416,6 +430,8 @@ fun AddNoteDialogPreview() {
 fun MultiToggleButtonPreview() {
     var selection by remember { mutableStateOf("Local") }
     AppTheme {
-        MultiToggleButton(selection, StringList(listOf("Local", "Web"))) { selection = it }
+        Surface {
+            MultiToggleButton(selection, StringList(listOf("Local", "Web"))) { selection = it }
+        }
     }
 }
