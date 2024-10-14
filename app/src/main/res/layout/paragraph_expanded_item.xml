@@ -18,7 +18,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:paddingBottom="16dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -32,7 +32,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/toggle_paragraph"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:contentDescription="@string/expand"
@@ -52,7 +52,7 @@
             android:layout_marginEnd="16dp"
             android:paddingBottom="8dp"
             android:text="@string/paragraph_not_translated"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/paragraph"

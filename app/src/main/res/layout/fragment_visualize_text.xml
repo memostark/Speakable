@@ -96,7 +96,7 @@
                     android:paddingStart="40dp"
                     android:paddingEnd="40dp"
                     android:paddingBottom="8dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
                     app:autoSizeMaxTextSize="30sp"
                     app:autoSizeTextType="uniform"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -110,11 +110,11 @@
                     android:orientation="horizontal"
                     app:layout_constraintGuide_percent="0.5" />
 
-                <ProgressBar
+                <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/page_translation_progress"
-                    style="@android:style/Widget.Material.ProgressBar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:indeterminate="true"
                     android:visibility="invisible"
                     app:layout_constraintBottom_toBottomOf="@+id/page_bottom_text_view"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -167,11 +167,11 @@
         app:srcCompat="@drawable/ic_settings_black_24dp"
         app:tint="?attr/iconTintColor" />
 
-    <ProgressBar
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/visualizer_progress_bar"
-        style="@android:style/Widget.Material.ProgressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:indeterminate="true"
         android:visibility="invisible"
         android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="@+id/text_reader_card_view"

@@ -204,7 +204,7 @@ public class ScreenTextService extends Service {
         playAudioObserver = state -> {
             if (state instanceof PlayAudioState.Playing) {
                 playLoadingIcon.setVisibility(View.INVISIBLE);
-                playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+                playButton.setIconResource(R.drawable.ic_stop_black_24dp);
                 playButton.setVisibility(View.VISIBLE);
 
             } else if (state instanceof PlayAudioState.Stopped) {
@@ -250,7 +250,7 @@ public class ScreenTextService extends Service {
     private void defaultPlayButton() {
         binding.playLoadingIcon.setVisibility(View.INVISIBLE);
         binding.playIconButton.setVisibility(View.VISIBLE);
-        binding.playIconButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+        binding.playIconButton.setIconResource(R.drawable.ic_volume_up_black_24dp);
         binding.languageText.setVisibility(View.INVISIBLE);
     }
 

@@ -44,36 +44,40 @@
             app:layout_constraintTop_toTopOf="@+id/image_bubble"
             tools:visibility="visible">
 
-            <androidx.appcompat.widget.AppCompatImageButton
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/play_icon_button"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="?android:selectableItemBackgroundBorderless"
                 android:contentDescription="@string/reproduce_description"
-                app:srcCompat="@drawable/ic_volume_up_black_24dp"
-                app:tint="@android:color/black" />
+                style="@style/Widget.App.Button.IconOnly"
+                app:icon="@drawable/ic_volume_up_black_24dp"
+                app:iconSize="32dp"
+                app:iconTint="@android:color/black" />
 
-            <ProgressBar
+            <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:id="@+id/play_loading_icon"
-                style="@android:style/Widget.Holo.ProgressBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:padding="8dp"
+                android:indeterminate="true"
                 android:visibility="gone"
+                app:indicatorColor="?colorOnPrimary"
                 tools:visibility="visible" />
         </FrameLayout>
 
-        <androidx.appcompat.widget.AppCompatImageButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/translate_icon_button"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:background="?android:selectableItemBackgroundBorderless"
             android:contentDescription="@string/translate_description"
             android:visibility="gone"
-            app:srcCompat="@drawable/ic_translate_black_24dp"
+            style="@style/Widget.App.Button.IconOnly"
+            app:icon="@drawable/ic_translate_black_24dp"
+            app:iconSize="32dp"
+            app:iconTint="@android:color/black"
             app:layout_constraintBottom_toBottomOf="@+id/play_icons_container"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"
@@ -81,13 +85,14 @@
             app:layout_constraintTop_toTopOf="@+id/play_icons_container"
             tools:visibility="visible" />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/loading_translate"
-            style="@android:style/Widget.Holo.ProgressBar"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:padding="8dp"
+            android:indeterminate="true"
             android:visibility="gone"
+            app:indicatorColor="?colorOnPrimary"
             app:layout_constraintBottom_toBottomOf="@+id/translate_icon_button"
             app:layout_constraintEnd_toEndOf="@id/translate_icon_button"
             app:layout_constraintStart_toStartOf="@+id/translate_icon_button"
@@ -98,7 +103,7 @@
             android:id="@+id/language_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             android:visibility="invisible"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

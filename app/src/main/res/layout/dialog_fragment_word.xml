@@ -116,6 +116,7 @@
             app:tabGravity="fill"
             app:tabIndicatorColor="?attr/colorPrimary"
             app:tabIndicatorHeight="4dp"
+            app:tabIndicatorFullWidth="true"
             app:tabMode="fixed" />
 
         <androidx.compose.ui.platform.ComposeView

@@ -9,7 +9,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
-        android:layout_height="200dp"
+        android:layout_height="wrap_content"
         android:background="?attr/popUpBackground"
         android:gravity="center">
 
@@ -60,7 +60,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:text="@string/page_setting"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             app:layout_constraintBottom_toBottomOf="@+id/page_toggle_container"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/page_toggle_container" />

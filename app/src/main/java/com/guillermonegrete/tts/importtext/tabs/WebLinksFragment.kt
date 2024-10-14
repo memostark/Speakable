@@ -42,7 +42,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        context?.apply { fabBottomMargin = actionBarSize + dpToPixel(8) }
+        context?.apply { fabBottomMargin = dpToPixel(80 + 8) }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
