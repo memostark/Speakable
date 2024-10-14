@@ -20,7 +20,7 @@
         android:paddingEnd="16dp"
         android:paddingBottom="8dp"
         android:textAllCaps="true"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         app:layout_constraintBottom_toBottomOf="@+id/pick_language"
         app:layout_constraintStart_toEndOf="@+id/pick_language"
         app:layout_constraintTop_toTopOf="@+id/pick_language"
@@ -30,7 +30,7 @@
         android:id="@+id/pick_language"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
+        style="@style/Widget.Material3.Button.TextButton"
         app:icon="@drawable/ic_baseline_arrow_drop_down_24"
         app:iconGravity="end"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,9 +44,11 @@
         android:hint="@string/tts_edit_text_hint"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
+        android:gravity="center"
         app:endIconMode="clear_text"
         app:layout_constraintTop_toBottomOf="@+id/pick_language"
-        tools:style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        app:layout_constraintWidth_max="400dp"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/tts_edit_text"
@@ -56,13 +58,12 @@
             android:inputType="textMultiLine"
             android:maxLines="3"
             android:minLines="2"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+            android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
     </com.google.android.material.textfield.TextInputLayout>
 
 
     <Button
         android:id="@+id/startBubble_btn"
-        style="@style/Widget.MaterialComponents.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
@@ -73,7 +74,6 @@
 
     <Button
         android:id="@+id/clipboard_btn"
-        style="@style/Widget.MaterialComponents.Button"
         android:layout_width="wrap_content"
         android:layout_height="48dp"
         android:text="@string/clipboard_btn_caption"
@@ -93,12 +93,12 @@
 
         <Button
             android:id="@+id/play_btn"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/reproduce_description"
             android:drawableTop="@drawable/ic_volume_up_black_24dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
             android:text="@string/reproduce_description"
             app:drawableTint="?colorOnSurface"
             app:textAllCaps="false"/>
@@ -120,13 +120,13 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/browse_btn"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
+        style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/browse_icon_description"
         android:drawableTop="@drawable/ic_public_black_24dp"
         android:text="@string/search"
-        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
         app:layout_constraintEnd_toStartOf="@+id/paste_btn"
         app:layout_constraintStart_toEndOf="@+id/play_icons_container"
         app:layout_constraintTop_toBottomOf="@+id/tts_text_layout"
@@ -134,13 +134,13 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/paste_btn"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
+        style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/paste_icon_description"
         android:drawableTop="@drawable/ic_content_paste_black_24dp"
         android:text="@string/paste_icon_description"
-        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
         app:layout_constraintBottom_toBottomOf="@+id/browse_btn"
         app:layout_constraintEnd_toStartOf="@id/web_reader_btn"
         app:layout_constraintStart_toEndOf="@+id/browse_btn"
@@ -148,12 +148,12 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/web_reader_btn"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
+        style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/reader_icon_description"
         android:text="@string/reader_icon_description"
-        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
         android:visibility="gone"
         app:icon="@drawable/ic_baseline_menu_book_24"
         app:iconTint="?colorOnSurface"

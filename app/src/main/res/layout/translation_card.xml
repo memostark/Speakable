@@ -70,7 +70,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:nestedScrollingEnabled="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                 tools:text="A secondary color provides more ways to accent and distinguish your product. Having a secondary color is optional, and should be applied sparingly to accent select parts of your UI." />
         </androidx.core.widget.NestedScrollView>
 
@@ -78,7 +78,7 @@
             android:id="@+id/notes_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             android:visibility="gone"
             app:layout_constraintBottom_toTopOf="@id/word_translation"
             app:layout_constraintEnd_toEndOf="@+id/translated_text_scroll"

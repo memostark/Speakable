@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/no_recent_files"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
             android:visibility="gone"
             tools:visibility="visible" />
 

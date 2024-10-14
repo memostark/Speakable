@@ -3,20 +3,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".main.MainActivity">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        tools:context=".main.MainActivity">
+        android:orientation="vertical">
 
-        <androidx.appcompat.widget.Toolbar
+        <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:fitsSystemWindows="true"
-            android:background="?attr/colorPrimary"
-            android:theme="@style/ThemeOverlay.AppCompat.DayNight.ActionBar" />
+            android:background="?attr/colorPrimary" />
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/main_fragment_container"
@@ -25,7 +25,8 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             app:defaultNavHost="true"
-            app:navGraph="@navigation/nav_graph"/>
+            app:navGraph="@navigation/nav_graph"
+            tools:layout="@layout/fragment_main_tts" />
 
     </LinearLayout>
 

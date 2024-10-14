@@ -86,7 +86,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
         val cont = context ?: return
         // So the fab is not overlapping with the action bar
-        fabBottomMargin = cont.actionBarSize + cont.dpToPixel(8)
+        fabBottomMargin = cont.dpToPixel(80 + 8)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -23,7 +23,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="@string/translation_label"
-        android:textAppearance="@android:style/TextAppearance.Material.Subhead"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         app:layout_constraintStart_toStartOf="@id/guideline_start"
         app:layout_constraintTop_toBottomOf="@id/translate_to_spinner" />
 
@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:textAppearance="@android:style/TextAppearance.Material.Medium"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         app:layout_constraintEnd_toStartOf="@id/copy_translation_button"
         app:layout_constraintStart_toStartOf="@id/guideline_start"
         app:layout_constraintTop_toBottomOf="@id/translation_label"
@@ -65,7 +65,7 @@
         android:layout_marginTop="8dp"
         android:maxLines="15"
         android:text="@string/definition_label"
-        android:textAppearance="@android:style/TextAppearance.Material.Title"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         app:layout_constraintEnd_toEndOf="@+id/saved_definition_text"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@id/translation_text" />
@@ -77,7 +77,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:maxLines="15"
-        android:textAppearance="@android:style/TextAppearance.Material.Medium"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         app:layout_constraintEnd_toStartOf="@+id/copy_definition_button"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@+id/saved_definition_label"
@@ -90,7 +90,7 @@
         android:layout_marginTop="8dp"
         android:maxLines="15"
         android:text="@string/notes_label"
-        android:textAppearance="@android:style/TextAppearance.Material.Subhead"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@+id/saved_definition_text" />
@@ -101,7 +101,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:maxLines="15"
-        android:textAppearance="@android:style/TextAppearance.Material.Small"
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@+id/saved_notes_label"

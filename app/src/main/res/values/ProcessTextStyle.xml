@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="ProcessTextStyle" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+    <style name="ProcessTextStyle" parent="Theme.Material3.DayNight.Dialog.Alert">
         <!--Color-->
         <item name="colorPrimary">#28C7BB</item>
         <item name="colorPrimaryDark">#00968b</item>

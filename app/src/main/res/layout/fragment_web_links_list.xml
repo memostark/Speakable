@@ -15,14 +15,14 @@
         android:layout_marginRight="16dp"
         app:layoutManager="LinearLayoutManager"
         tools:context=".importtext.tabs.WebLinksFragment"
-        tools:listitem="@layout/fragment_web_links" />
+        tools:listitem="@layout/web_link_item" />
 
     <TextView
         android:id="@+id/no_links_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/no_links_saved"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
         android:visibility="gone"
         android:layout_marginBottom="?actionBarSize"
         app:layout_constraintBottom_toBottomOf="parent"
