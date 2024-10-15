@@ -8,11 +8,21 @@
         <item name="preferenceTheme">@style/AppPreferenceThemeOverlay</item>
 
         <!--Color-->
-        <item name="colorPrimary">#28C7BB</item>
-        <item name="colorPrimaryDark">#00968b</item>
-        <item name="colorPrimaryVariant">#00968b</item>
-        <item name="colorSecondary">#6a98ba</item>
-        <item name="colorSecondaryVariant">#4a698a</item>
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/md_theme_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/md_theme_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_onTertiaryContainer</item>
+        <item name="colorOutline">@color/md_theme_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_outlineVariant</item>
+        <item name="colorPrimaryInverse">@color/md_theme_inversePrimary</item>
 
         <item name="textInfoDialogBG">?colorBackgroundFloating</item>
     </style>
