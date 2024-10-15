@@ -1,6 +1,5 @@
 package com.guillermonegrete.tts.textprocessing;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -17,12 +16,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class ExternalLinksFragment extends Fragment {
-
-    private Context mContext;
 
     private String wordExtra;
 
@@ -46,12 +42,6 @@ public class ExternalLinksFragment extends Fragment {
     }
 
     @Override
-    public void onAttach(@NonNull Context context) {
-        mContext = context;
-        super.onAttach(context);
-    }
-
-    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
@@ -66,7 +56,6 @@ public class ExternalLinksFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View fragment_layout = inflater.inflate(R.layout.external_links_grid, container, false);
         recyclerView = fragment_layout.findViewById(R.id.external_links_recycle);
-        recyclerView.setLayoutManager(new GridLayoutManager(mContext, 2));
 
         defaultWebBrowser = getDefaultWebBrowser();
         setExternalLinks(links);

@@ -1,7 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="DarkTheme" parent="Theme.Material3.Dark.NoActionBar">
 
         <!--Avoids showing two action bars-->
         <item name="windowActionModeOverlay">true</item>
@@ -23,8 +22,30 @@
         <item name="colorOutline">@color/md_theme_outline</item>
         <item name="colorOutlineVariant">@color/md_theme_outlineVariant</item>
         <item name="colorPrimaryInverse">@color/md_theme_inversePrimary</item>
+    </style>
 
-        <item name="textInfoDialogBG">?colorBackgroundFloating</item>
+    <style name="LightTheme" parent="Theme.Material3.Light.NoActionBar">
+
+        <!--Avoids showing two action bars-->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="preferenceTheme">@style/AppPreferenceThemeOverlay</item>
+
+        <!--Color-->
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/md_theme_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/md_theme_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_onTertiaryContainer</item>
+        <item name="colorOutline">@color/md_theme_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_outlineVariant</item>
+        <item name="colorPrimaryInverse">@color/md_theme_inversePrimary</item>
     </style>
 
     <style name="Theme.Transparent" parent="Theme.AppCompat">
@@ -41,6 +62,8 @@
         <item name="android:windowExitAnimation">@anim/popup_hide</item>
     </style>
 
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="LightTheme"/>
 
     <!--Ripple effect with white background-->
     <style name="SelectableItemTheme">
@@ -51,21 +74,11 @@
         <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
     </style>
 
-    <!--Base themes-->
-    <style name="AppMaterialTheme" parent="AppTheme"/>
-
     <!--Used to change brightness of AlertDialog: https://stackoverflow.com/a/29799142/10244759-->
     <style name="DialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert"/>
 
     <!--White theme-->
-    <style name="BaseThemeWhite" parent="AppMaterialTheme">
-        <item name="android:textColor">#000</item>
-        <item name="android:windowBackground">@color/white</item>
-        <item name="cardBackground">@color/white</item>
-        <item name="borderColor">@color/black</item>
-        <item name="iconTintColor">@color/grey</item>
-        <item name="popUpBackground">?android:windowBackground</item>
-
+    <style name="BaseThemeWhite" parent="LightTheme">
         <!--This ensures contrast between the white bar icons and the light background,
         in newer APIs the icon color can be changed-->
         <item name="android:statusBarColor">@color/black30percent</item>
@@ -81,13 +94,10 @@
     </style>
 
     <!--Beige theme-->
-    <style name="BaseThemeBeige" parent="AppMaterialTheme">
-        <item name="android:textColor">#000</item>
+    <style name="BaseThemeBeige" parent="LightTheme">
         <item name="android:windowBackground">@color/beige</item>
-        <item name="cardBackground">@color/beige</item>
-        <item name="borderColor">@color/black</item>
-        <item name="iconTintColor">@color/grey</item>
-        <item name="popUpBackground">?android:windowBackground</item>
+        <item name="colorBackgroundFloating">@color/beige</item>
+        <item name="colorSurface">@color/beige</item>
 
         <!--Same as the white theme, this ensure contrast with the bar icons-->
         <item name="android:statusBarColor">@color/black30percent</item>
@@ -104,13 +114,8 @@
     </style>
 
     <!--Black theme-->
-    <style name="AppMaterialTheme.Black">
-        <item name="android:textColor">@color/highEmphasisWhite</item>
+    <style name="AppMaterialTheme.Black" parent="DarkTheme">
         <item name="android:windowBackground">@color/DarkerGrey</item>
-        <item name="cardBackground">@color/black</item>
-        <item name="borderColor">@color/highEmphasisWhite</item>
-        <item name="iconTintColor">@color/highEmphasisWhite</item>
-        <item name="popUpBackground">@color/DarkerGrey</item>
 
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
