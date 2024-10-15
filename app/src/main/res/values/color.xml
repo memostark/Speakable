@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--This colors were obtained using the Material Theme Builder: https://material-foundation.github.io/material-theme-builder/
+    Set the source color as #28C7BB, leave "Stay true to my color inputs" unchecked so the tool generates the secondary, tertiary and other colors for you.
+    Then set the primary color as #28C7BB, check "Stay true to my color inputs" and copy the other 3 primary colors (onPrimary, etc...).-->
+    <color name="md_theme_primary">#28C7BB</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#3ad2c5</color>
+    <color name="md_theme_onPrimaryContainer">#003632</color>
+    <color name="md_theme_secondary">#4A6360</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer">#CCE8E4</color>
+    <color name="md_theme_onSecondaryContainer">#051F1D</color>
+    <color name="md_theme_tertiary">#47617A</color>
+    <color name="md_theme_onTertiary">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer">#CEE5FF</color>
+    <color name="md_theme_onTertiaryContainer">#001D33</color>
+    <color name="md_theme_outline">#6F7977</color>
+    <color name="md_theme_outlineVariant">#BEC9C6</color>
+    <color name="md_theme_inversePrimary">#81D5CC</color>
+
     <color name="transparentBG">#8000ff00</color>
     <color name="transparentBlueBG">#800000ff</color>
     <color name="indicatorSelected">#95979b</color>
