@@ -658,18 +658,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private fun setBrightnessTheme(){
         val theme = arguments?.getString(THEME_KEY)
 
-        if(!theme.isNullOrEmpty()) {
-            brightnessTheme = BrightnessTheme.get(theme)
-
-            val id = when (brightnessTheme) {
-                BrightnessTheme.WHITE -> R.style.ProcessTextStyle_White
-                BrightnessTheme.BEIGE -> R.style.ProcessTextStyle_Beige
-                BrightnessTheme.BLACK -> R.style.ProcessTextStyle_Dark
-            }
-
-            context?.theme?.applyStyle(id, true)
+        brightnessTheme = if(!theme.isNullOrEmpty()) {
+            BrightnessTheme.get(theme)
         } else {
-            brightnessTheme = BrightnessTheme.get(isNightMode(requireContext()))
+            BrightnessTheme.get(isNightMode(requireContext()))
         }
     }
 

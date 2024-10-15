@@ -9,5 +9,7 @@
     android:layout_height="wrap_content"
     android:ellipsize="marquee"
     android:textAlignment="textEnd"
+    android:textColor="?colorOnPrimaryContainer"
     android:gravity="end"
+    tools:background="?colorPrimaryContainer"
     tools:text="EN" />

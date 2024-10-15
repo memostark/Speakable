@@ -6,25 +6,24 @@
     android:id="@+id/text_dialog_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardElevation="5dp">
+    app:cardElevation="5dp"
+    app:cardBackgroundColor="?colorSurface"
+    tools:context=".textprocessing.ProcessTextActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:context=".textprocessing.ProcessTextActivity"
         android:id="@+id/testLayout"
         android:focusable="true"
         android:background="@drawable/black_border"
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
-
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:background="#FFFFBB33"
+            android:background="?colorPrimaryContainer"
             android:layout_marginTop="1dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
@@ -34,7 +33,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="?attr/colorOnBackground"
+                android:textColor="?colorOnPrimaryContainer"
                 android:textSize="20sp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="8dp"
@@ -53,7 +52,7 @@
                 android:id="@+id/text_language_code"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:textColor="?attr/colorOnBackground"
+                android:textColor="?colorOnPrimaryContainer"
                 android:gravity="center"
                 android:visibility="gone"
                 android:layout_marginEnd="8dp"
@@ -68,7 +67,8 @@
                 android:layout_gravity="center_vertical"
                 android:scaleType="fitCenter"
                 android:background="?android:selectableItemBackground"
-                app:srcCompat="@drawable/ic_bookmark_border_black_24dp"/>
+                app:srcCompat="@drawable/ic_bookmark_border_black_24dp"
+                app:tint="?colorOnPrimaryContainer"/>
 
             <FrameLayout
                 android:id="@+id/play_icons_container"
@@ -85,15 +85,16 @@
                     android:scaleType="fitCenter"
                     android:visibility="invisible"
                     app:srcCompat="@drawable/ic_volume_up_black_24dp"
-                    app:tint="@android:color/black" />
+                    app:tint="?colorOnPrimaryContainer" />
 
-                <ProgressBar
+                <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/play_loading_icon"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:padding="8dp"
                     android:layout_gravity="center"
-                    style="@android:style/Widget.Holo.ProgressBar"/>
+                    android:indeterminate="true"
+                    app:indicatorColor="?colorOnPrimaryContainer"/>
             </FrameLayout>
 
         </LinearLayout>
