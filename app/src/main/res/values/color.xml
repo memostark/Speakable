@@ -19,12 +19,20 @@
     <color name="md_theme_outlineVariant">#BEC9C6</color>
     <color name="md_theme_inversePrimary">#81D5CC</color>
 
+    <color name="md_theme_secondary_dark">#B1CCC8</color>
+    <color name="md_theme_onSecondary_dark">#1C3532</color>
+    <color name="md_theme_secondaryContainer_dark">#324B48</color>
+    <color name="md_theme_onSecondaryContainer_dark">#CCE8E4</color>
+
     <color name="transparentBG">#8000ff00</color>
     <color name="transparentBlueBG">#800000ff</color>
     <color name="indicatorSelected">#95979b</color>
 
     <color name="black">#000</color>
     <color name="beige">#ffedbf</color>
+    <color name="elevation_overlay_white">#CCFFFFFF</color>
+    <color name="elevation_overlay_beige">#80ffedbf</color>
+    <color name="elevation_overlay_black">#CC000000</color>
     <color name="white">#FFF</color>
     <color name="black30percent">#4D000000</color>
     

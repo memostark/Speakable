@@ -17,7 +17,6 @@
         android:id="@+id/constraint_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?colorSurface"
         android:paddingHorizontal="8dp"
         android:paddingVertical="16dp">
 

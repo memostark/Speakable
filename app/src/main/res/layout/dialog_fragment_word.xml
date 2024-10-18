@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/text_dialog_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
     app:cardElevation="5dp"
-    app:cardBackgroundColor="?colorSurface"
     tools:context=".textprocessing.ProcessTextActivity">
 
     <LinearLayout
@@ -15,7 +15,6 @@
         android:layout_height="wrap_content"
         android:id="@+id/testLayout"
         android:focusable="true"
-        android:background="@drawable/black_border"
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
@@ -23,10 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:background="?colorPrimaryContainer"
-            android:layout_marginTop="1dp"
-            android:layout_marginStart="1dp"
-            android:layout_marginEnd="1dp">
+            android:background="?colorPrimaryContainer">
 
             <TextView
                 android:id="@+id/text_tts"
@@ -36,18 +32,33 @@
                 android:textColor="?colorOnPrimaryContainer"
                 android:textSize="20sp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="8dp"
+                android:layout_marginHorizontal="4dp"
                 tools:text="Selected text" />
-            <Spinner
-                android:id="@+id/spinner_language_from"
-                style="@android:style/Widget.Material.Spinner"
-                android:layout_width="60dp"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/language_box"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:spinnerMode="dialog"
-                tools:listitem="@layout/spinner_layout_end" />
+                android:layout_gravity="center_vertical"
+                android:contentDescription="@string/language_label"
+                android:labelFor="@id/spinner_language_from"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense.ExposedDropdownMenu"
+                app:endIconMode="none"
+                app:hintEnabled="false">
+                <AutoCompleteTextView
+                    android:id="@+id/spinner_language_from"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:dropDownHeight="240dp"
+                    android:dropDownWidth="150dp"
+                    android:paddingHorizontal="2dp"
+                    android:gravity="center_horizontal"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:textColor="?colorOnPrimaryContainer"
+                    app:simpleItems="@array/googleTranslateLangsWithAutoValue"
+                    tools:text="auto"/>
+            </com.google.android.material.textfield.TextInputLayout>
             <TextView
                 android:id="@+id/text_language_code"
                 android:layout_width="wrap_content"
@@ -55,7 +66,7 @@
                 android:textColor="?colorOnPrimaryContainer"
                 android:gravity="center"
                 android:visibility="gone"
-                android:layout_marginEnd="8dp"
+                android:layout_marginStart="4dp"
                 tools:visibility="visible"
                 tools:text="ES" />
             <ImageButton
@@ -127,4 +138,4 @@
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

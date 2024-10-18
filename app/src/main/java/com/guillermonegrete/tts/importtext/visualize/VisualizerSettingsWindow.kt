@@ -43,48 +43,22 @@ class VisualizerSettingsWindow(
         }
 
         // Languages preferences
-        val fromAdapter = ArrayAdapter.createFromResource(
-            context,
-            R.array.googleTranslateLangsWithAutoArray,
-            android.R.layout.simple_spinner_dropdown_item
-        )
-        val toAdapter = ArrayAdapter.createFromResource(
-            context,
-            R.array.googleTranslateLanguagesArray,
-            android.R.layout.simple_spinner_item
-        )
-        toAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        val spinnerListener = SpinnerListener(callback)
-
-        val fromMenu = binding.spinnerLanguageFrom
-        fromMenu.adapter = fromAdapter
+        val fromMenu = binding.pickLanguageFrom
         var index = languagesISO.indexOf(languageFrom) + 1 // Increment because the list we searched is missing one element "auto"
-        fromMenu.setSelection(index, false)
-        fromMenu.onItemSelectedListener = spinnerListener
+        fromMenu.setText(fromMenu.adapter.getItem(index).toString(), false)
+        fromMenu.setOnItemClickListener { _, _, position, _ ->
+            callback.onLanguageFromChanged(position)
+        }
 
-        val toMenu = binding.spinnerLanguageTo
-        toMenu.adapter = toAdapter
+        val toMenu = binding.pickLanguageTo
         index = languagesISO.indexOf(languageTo)
         if(index == -1) index = 15 // 15 is English, the default.
-        toMenu.setSelection(index, false)
-        toMenu.onItemSelectedListener = spinnerListener
+        toMenu.setText(toMenu.adapter.getItem(index).toString(), false)
+        toMenu.setOnItemClickListener { _, _, position, _ ->
+            callback.onLanguageToChanged(position)
+        }
 
         contentView = binding.root
-    }
-
-    class SpinnerListener(private val callback: Callback): AdapterView.OnItemSelectedListener {
-
-        override fun onNothingSelected(parent: AdapterView<*>?) {}
-
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-            parent ?: return
-
-            when (parent.id) {
-                R.id.spinner_language_from -> callback.onLanguageFromChanged(position)
-                R.id.spinner_language_to -> callback.onLanguageToChanged(position)
-                else -> {}
-            }
-        }
     }
 
     interface Callback{
