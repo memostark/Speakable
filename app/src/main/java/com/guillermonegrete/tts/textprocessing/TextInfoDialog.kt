@@ -744,9 +744,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val spinner = bindingWord.spinnerLanguageFrom
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
-            R.array.googleTranslateLangsWithAutoArray,
             R.array.googleTranslateLangsWithAutoValue,
-            R.layout.spinner_layout_end
+            R.array.googleTranslateLangsWithAutoArray,
+            android.R.layout.simple_spinner_dropdown_item
         )
         spinner.setAdapter(adapter)
         val item = spinner.adapter.getItem(languageFromIndex)
