@@ -156,7 +156,7 @@ public class SavedWordsFragment extends Fragment implements SavedWordListAdapter
             allLangs = new ArrayList<>();
             allLangs.addAll(languages);
             allLangs.add(0, ALL_OPTION);
-            var adapter = new DifferentValuesAdapter(requireContext(), android.R.layout.simple_spinner_item, spinnerItems, allLangs);
+            var adapter = new DifferentValuesAdapter(requireContext(), android.R.layout.simple_spinner_item, allLangs, spinnerItems);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             var spinnerLang = binding.selectLanguageSpinner;
