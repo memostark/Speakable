@@ -32,8 +32,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.guillermonegrete.tts.R;
@@ -51,7 +49,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @AndroidEntryPoint
-public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSelectedListener, SavedWordListAdapter.Listener {
+public class SavedWordsFragment extends Fragment implements SavedWordListAdapter.Listener {
 
     private SavedWordListAdapter wordListAdapter;
     private SavedWordsViewModel wordsViewModel;
@@ -158,11 +156,15 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
             allLangs = new ArrayList<>();
             allLangs.addAll(languages);
             allLangs.add(0, ALL_OPTION);
-            var adapter = new DifferentValuesAdapter(requireContext(), android.R.layout.simple_spinner_item, allLangs, spinnerItems);
+            var adapter = new DifferentValuesAdapter(requireContext(), android.R.layout.simple_spinner_item, spinnerItems, allLangs);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-            Spinner spinnerLang = binding.selectLanguageSpinner;
-            spinnerLang.setOnItemSelectedListener(SavedWordsFragment.this);
+            var spinnerLang = binding.selectLanguageSpinner;
+            spinnerLang.setText(ALL_OPTION, false);
+            spinnerLang.setOnItemClickListener((parent, view, position, id) -> {
+                language_filter = allLangs.get(position);
+                filterWords();
+            });
             spinnerLang.setAdapter(adapter);
         });
 
@@ -261,17 +263,6 @@ public class SavedWordsFragment extends Fragment implements AdapterView.OnItemSe
         };
         ItemTouchHelper mItemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         mItemTouchHelper.attachToRecyclerView(recyclerView);
-    }
-
-    @Override
-    public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long id) {
-        language_filter = allLangs.get(pos);
-        filterWords();
-    }
-
-    @Override
-    public void onNothingSelected(AdapterView<?> adapterView) {
-
     }
 
     // TODO filter in worker thread

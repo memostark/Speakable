@@ -5,7 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
 import android.view.View
-import android.widget.*
+import androidx.core.os.BundleCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -18,7 +18,6 @@ import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FragmentProcessTranslationBinding
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.db.WordsDAO
-import com.guillermonegrete.tts.ui.DifferentValuesAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -44,7 +43,7 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        word = arguments?.getParcelable(ARGUMENT_WORD)
+        word = BundleCompat.getParcelable(requireArguments(), ARGUMENT_WORD, Words::class.java)
         spinnerIndex = arguments?.getInt(ARGUMENT_SPINNER_INDEX)
     }
 
@@ -124,20 +123,16 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
     }
 
     private fun setSpinnerLayout(word: Words) {
-        val arrayAdapter = DifferentValuesAdapter.createFromResource(
-            requireContext(),
-            R.array.googleTranslateLanguagesValue,
-            R.array.googleTranslateLanguagesArray,
-            android.R.layout.simple_spinner_item
-        )
-        // Specify the layout to use when the list of choices appears
-        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         // Apply the adapter to the spinner
         with (binding) {
             translateToSpinner.apply {
-                adapter = arrayAdapter
-                spinnerIndex?.let { setSelection(it, false) }
-                post { onItemSelectedListener = SpinnerListener() } // the post{} avoids the listener being called
+                spinnerIndex?.let {
+                    val item = adapter.getItem(it)
+                    if (item != null) setText(item.toString(), false)
+                }
+
+                setOnItemClickListener { _, _, position, _ -> listener?.onItemSelected(position) }
+                post { dropDownVerticalOffset = -height } // the popup display from the top instead of the bottom of the view
             }
 
             definitionGroup.isVisible = false
@@ -162,18 +157,7 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
             }
             definitionGroup.isVisible = true
             translationGroup.isVisible = false
-            translateToSpinner.adapter = null
         }
-    }
-
-    inner class SpinnerListener: AdapterView.OnItemSelectedListener {
-
-        override fun onNothingSelected(parent: AdapterView<*>?) {}
-
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-            listener?.onItemSelected(position)
-        }
-
     }
 
     interface Listener{

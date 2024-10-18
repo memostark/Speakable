@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.InsetDrawable
 import android.os.Bundle
 import android.view.*
 import android.widget.*
@@ -135,6 +138,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val dialog = super.onCreateDialog(savedInstanceState)
         window = dialog.window
         window?.requestFeature(Window.FEATURE_NO_TITLE)
+        val back = ColorDrawable(Color.TRANSPARENT)
+        val inset = InsetDrawable(back, requireContext().dpToPixel(20))
+        window?.setBackgroundDrawable(inset)
         return dialog
     }
 
@@ -192,7 +198,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         bindingWord.textTts.text = text
 
-        setLanguageFromSpinner(bindingWord.spinnerLanguageFrom)
+        setLanguageFromSpinner()
         setPlayButton(text)
         bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
 
@@ -734,19 +740,20 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         pager?.layoutParams = params
     }
 
-    private fun setLanguageFromSpinner(spinner: Spinner) {
-
+    private fun setLanguageFromSpinner() {
+        val spinner = bindingWord.spinnerLanguageFrom
         val adapter = DifferentValuesAdapter.createFromResource(
             requireContext(),
-            R.array.googleTranslateLangsWithAutoValue,
             R.array.googleTranslateLangsWithAutoArray,
+            R.array.googleTranslateLangsWithAutoValue,
             R.layout.spinner_layout_end
         )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-
-        spinner.setSelection(languageFromIndex, false)
-        spinner.post { spinner.onItemSelectedListener = SpinnerListener() }
+        spinner.setAdapter(adapter)
+        val item = spinner.adapter.getItem(languageFromIndex)
+        if (item != null) spinner.setText(item.toString(), false)
+        spinner.setOnItemClickListener { _, _, position, _ -> updateLanguageFrom(position) }
+        spinner.setOnClickListener { spinner.showDropDown() }
+        spinner.post { spinner.dropDownVerticalOffset = -spinner.height }
     }
 
     /**
@@ -761,32 +768,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             editor.apply()
             presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
         }
-    }
-
-    /**
-     * Listener when layout is for a sentence
-     */
-    internal inner class SpinnerListener : AdapterView.OnItemSelectedListener {
-
-        override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-
-            val editor = preferences.edit()
-            when (parent.id) {
-                R.id.spinner_language_from -> {
-                    languageFrom = if (position == 0)
-                        "auto"
-                    else
-                        languagesISO[position - 1]
-                    languageFromIndex = position
-                    editor.putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom)
-                    editor.apply()
-                    presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
-                }
-                else -> {}
-            }
-        }
-
-        override fun onNothingSelected(parent: AdapterView<*>) {}
     }
 
     private fun updateLanguageFrom(position: Int) {
