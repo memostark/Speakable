@@ -13,6 +13,8 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.marginBottom
@@ -74,7 +76,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                     val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
                 } catch (e: SecurityException){
-                    Timber.e("Couldn't make the uri persistable")
+                    Timber.e(e, "Couldn't make the uri persistable")
                 }
 
                 when(fileType){
@@ -86,7 +88,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
         val cont = context ?: return
         // So the fab is not overlapping with the action bar
-        fabBottomMargin = cont.dpToPixel(80 + 8)
+        fabBottomMargin = cont.dpToPixel(80 + 64 + 48 + 48) // bottom bar + top bar + tab layout + offset
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -96,7 +98,6 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         with(binding){
 
             pickFileFab.setOnClickListener { toggleButtons() }
-            fabContainer.setBottomMargin(fabBottomMargin)
             // the view is centered but it's not taking into account the bottom nav bar, add the missing offset
             noFilesMessage.setBottomMargin(noFilesMessage.marginBottom + requireContext().actionBarSize / 2)
 
@@ -126,6 +127,13 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                         fabContainer.isInvisible = true
                 }
             })
+
+            ViewCompat.setOnApplyWindowInsetsListener(fabContainer) { v, insets ->
+                val insets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                fabContainer.setBottomMargin(insets.bottom + fabBottomMargin)
+
+                WindowInsetsCompat.CONSUMED
+            }
         }
 
         setViewModel()
