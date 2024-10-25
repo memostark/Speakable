@@ -16,4 +16,7 @@
     <dimen name="text_margin">16dp</dimen>
 
     <dimen name="default_dialog_padding">16dp</dimen>
+
+    <!--80 + 64 + 48 + 8 = bottom bar + top bar + tab layout + margin-->
+    <dimen name="fab_margin_import_text">200dp</dimen>
 </resources>

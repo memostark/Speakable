@@ -7,8 +7,11 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -22,8 +25,6 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.DialogOpenLinkBinding
 import com.guillermonegrete.tts.databinding.FragmentWebLinksListBinding
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
-import com.guillermonegrete.tts.utils.actionBarSize
-import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -42,7 +43,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        context?.apply { fabBottomMargin = dpToPixel(80 + 8) }
+        fabBottomMargin = resources.getDimensionPixelSize(R.dimen.fab_margin_import_text)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -85,6 +86,14 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
             addBtn.setOnClickListener { showAddNewDialog() }
             (addBtn.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = fabBottomMargin
+            ViewCompat.setOnApplyWindowInsetsListener(addBtn) { v, insets ->
+                val insets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                addBtn.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = insets.bottom + insets.top + fabBottomMargin
+                }
+
+                WindowInsetsCompat.CONSUMED
+            }
         }
 
         viewModel.getRecentLinks()
