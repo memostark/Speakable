@@ -15,9 +15,9 @@ import androidx.navigation.ui.BottomNavigationViewKt;
 import androidx.navigation.ui.NavigationUI;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.material.behavior.HideBottomViewOnScrollBehavior;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.common.views.NestedHideViewOnScrollBehavior;
 import com.guillermonegrete.tts.databinding.ActivityMainBinding;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -81,6 +81,9 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
                 navView.setVisibility(View.GONE);
             } else {
                 navView.setVisibility(View.VISIBLE);
+                showBottomBar();
+                var bar = getActionBar();
+                if (bar != null) bar.show();
             }
         });
 
@@ -114,10 +117,10 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
         if (layoutParams instanceof CoordinatorLayout.LayoutParams) {
             var coordinatorLayoutBehavior =
                     ((CoordinatorLayout.LayoutParams) layoutParams).getBehavior();
-            if (coordinatorLayoutBehavior instanceof HideBottomViewOnScrollBehavior) {
+            if (coordinatorLayoutBehavior instanceof NestedHideViewOnScrollBehavior) {
                 @SuppressWarnings("unchecked")
                 var behavior =
-                        (HideBottomViewOnScrollBehavior<BottomNavigationView>) coordinatorLayoutBehavior;
+                        (NestedHideViewOnScrollBehavior<BottomNavigationView>) coordinatorLayoutBehavior;
                 behavior.slideUp(navView);
             }
         }

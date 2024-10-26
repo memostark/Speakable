@@ -72,7 +72,8 @@ fun WebReaderBottomBar(
         modifier = Modifier
             .testTag("web_reader_bar")
             .height(WebReaderBarHeight),
-        contentPadding = PaddingValues(vertical = 8.dp), // Default is 12dp but it's too much and causes asymmetry
+        contentPadding = PaddingValues(vertical = 8.dp), // Default is 12dp but it causes asymmetry with height 64 dp
+        windowInsets = WindowInsets(0, 0, 0, 0), // The default insets take too much space when E2E, the insets are handled in the parent view of this bar
     ) {
         IconButton(
             onClick = { onTranslateClicked() },

@@ -9,6 +9,8 @@ import androidx.appcompat.widget.SearchView;
 import androidx.compose.runtime.MutableState;
 import androidx.compose.runtime.SnapshotStateKt;
 import androidx.core.view.MenuProvider;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -96,9 +98,18 @@ public class SavedWordsFragment extends Fragment implements SavedWordListAdapter
         setUpItemTouchHelper(wordsList);
 
         initData();
+        setInsetListener();
         setupSearch(binding.searchWords);
         setEditDialog();
         createMenu();
+    }
+
+    private void setInsetListener() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.recyclerviewSavedWords, (v, windowInsets) -> {
+            var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(insets.left, v.getPaddingTop(), insets.right, insets.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
     }
 
     private void setEditDialog() {
