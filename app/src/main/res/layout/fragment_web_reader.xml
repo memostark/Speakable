@@ -61,7 +61,7 @@
             android:id="@+id/compose_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?colorPrimary"
+            android:background="?colorSurfaceContainer"
             android:layout_gravity="bottom"
             app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" />
 

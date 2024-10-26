@@ -291,12 +291,26 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             setBottomPanel()
             setTranslateBottomPanel()
-
+            setInsetListener()
             setBackButtonNav()
         }
 
         viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
         viewModel.loadDoc(args.link)
+    }
+
+    private fun setInsetListener() {
+        val initialBarSize = appBarSize
+        ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(top = insets.top)
+            binding.composeBar.updatePadding(bottom = insets.bottom)
+            appBarSize = initialBarSize + insets.bottom
+            updateListBottomPadding(0)
+            val card = binding.transSheet.root
+            card.setContentPadding(0, card.contentPaddingTop, 0, insets.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
     }
 
     private fun onBarMenuItemClicked(action: WebReaderMenuAction) {
