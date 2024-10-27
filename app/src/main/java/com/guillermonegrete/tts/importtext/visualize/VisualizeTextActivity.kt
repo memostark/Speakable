@@ -1,8 +1,11 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.MotionEvent
 import android.webkit.URLUtil
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -18,6 +21,7 @@ class VisualizeTextActivity: AppCompatActivity() {
     private var visualizerFragment: VisualizeTextFragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge(navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         val text = getSharedText()
         val binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
@@ -72,5 +76,13 @@ class VisualizeTextActivity: AppCompatActivity() {
             return stringBuilder.toString()
         }
         return ""
+    }
+
+    /**
+     * In case the child fragment has a different theme than the app theme, this allows to update the bar colors.
+     */
+    fun themeUpdated(isDark: Boolean) {
+        val style = if (isDark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(style, style)
     }
 }

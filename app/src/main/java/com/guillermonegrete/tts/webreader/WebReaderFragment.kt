@@ -307,8 +307,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             binding.composeBar.updatePadding(bottom = insets.bottom)
             appBarSize = initialBarSize + insets.bottom
             updateListBottomPadding(0)
-            val card = binding.transSheet.root
-            card.setContentPadding(0, card.contentPaddingTop, 0, insets.bottom)
             WindowInsetsCompat.CONSUMED
         }
     }

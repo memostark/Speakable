@@ -1,8 +1,10 @@
 package com.guillermonegrete.tts.main;
 
+import android.graphics.Color;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.annotation.NonNull;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.MenuProvider;
@@ -40,7 +42,9 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        EdgeToEdge.enable(this);
+        EdgeToEdge.enable(this,
+                SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+                SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)); // Using this removes the navigation scrim for some reason, even though it says light it works ok with light mode
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -82,8 +86,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             } else {
                 navView.setVisibility(View.VISIBLE);
                 showBottomBar();
-                var bar = getActionBar();
-                if (bar != null) bar.show();
+                binding.appBarLayout.setExpanded(true);
             }
         });
 

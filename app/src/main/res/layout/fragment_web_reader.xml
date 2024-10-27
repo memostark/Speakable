@@ -65,7 +65,7 @@
             android:layout_gravity="bottom"
             app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" />
 
-        <include android:id="@+id/trans_sheet" layout="@layout/translation_card"/>
+        <include android:id="@+id/trans_sheet" layout="@layout/translation_sheet"/>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
@@ -82,6 +82,11 @@
         app:tint="?colorOnSurface"
         tools:visibility="visible" />
 
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
     <TextView
         android:id="@+id/error_text"
         android:layout_width="wrap_content"
@@ -90,10 +95,5 @@
         android:layout_centerHorizontal="true"
         android:text="@string/loading_page_error_msg"
         tools:visibility="visible"/>
-
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/compose_root"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
 
 </RelativeLayout>
