@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.Selection
 import android.text.Spannable
@@ -15,7 +14,6 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.TextView
@@ -132,13 +130,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
-        val window = requireActivity().window
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            // Never draw on the cutout because it may obstruct text in full screen
-            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
-        }
-        // Let the layout cover the full screen (except cutout) this way the card is always centered
-        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -193,15 +184,15 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
      *  Changes the dimensions of the card to have the same aspect ratio as the screen
      *  and smaller size given by the defined ratio.
      */
-    private fun setUpCardViewDimensions(hasCutOut: Boolean) {
+    private fun setUpCardViewDimensions() {
         val screenSizes = requireContext().getScreenSizes()
         // Remove cutout height because it's not used
-        val screenHeight = if(!hasCutOut) screenSizes.height else screenSizes.height - screenSizes.statusHeight
+        val screenHeight = screenSizes.height - screenSizes.statusHeight
 
         val textCardView = binding.textReaderCardView
         val cardHeight = textCardView.height
         val cardCenterY = textCardView.y + cardHeight / 2
-        cardYOffset = (screenHeight / 2) - cardCenterY
+        cardYOffset = (screenHeight / 2 + screenSizes.statusHeight) - cardCenterY
         ratio = cardHeight / screenHeight.toFloat()
         cardWidth = (screenSizes.width * ratio).toInt()
 
@@ -311,16 +302,13 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
-                val hasCutOut = insets.isVisible(WindowInsetsCompat.Type.displayCutout())
-                if (!hasCutOut) { // Phones with a normal status bar require extra margin to avoid overlapping with the bar
-                    if (readerCurrentChapter.isVisible) {
-                        readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                            topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
-                        }
-                    } else {
-                        textReaderCardView.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                            goneTopMargin = readerCurrentChapter.marginTop + systemBarInsets.top
-                        }
+                if (readerCurrentChapter.isVisible) {
+                    readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                        topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                    }
+                } else {
+                    textReaderCardView.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                        goneTopMargin = readerCurrentChapter.marginTop + systemBarInsets.top
                     }
                 }
 
@@ -330,7 +318,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 }
 
                 textReaderCardView.post {
-                    setUpCardViewDimensions(hasCutOut)
+                    setUpCardViewDimensions()
                     setPageTransformListener()
                 }
 
@@ -365,7 +353,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             BrightnessTheme.BEIGE -> R.style.AppMaterialTheme_Beige
             BrightnessTheme.BLACK -> R.style.AppMaterialTheme_Black
         }
-        requireActivity().setTheme(themeRes)
+        val activity = requireActivity()
+        activity.setTheme(themeRes)
+        if (activity is VisualizeTextActivity) activity.themeUpdated(brightnessTheme == BrightnessTheme.BLACK)
     }
 
     private fun createViewModel() {
@@ -992,7 +982,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             addNoteVisible,
             noteInfo?.noteText ?: "",
             noteInfo?.color ?: 0,
-            noteInfo?.noteSaved ?: false,
+            noteInfo?.noteSaved == true,
             onDismiss = { addNoteVisible = false },
             onDelete = {
                 val noteItem = noteInfo ?: return@AddNoteDialog

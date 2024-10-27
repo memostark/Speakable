@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -34,6 +35,7 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        EdgeToEdge.enable(this);
         setFinishOnTouchOutside(false);
         hasOverlayDrawPermission();
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -42,9 +44,8 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
     }
 
     private String getSelectedText() {
-        var intent = getIntent();
-        final CharSequence selected_text = intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
-        return selected_text.toString();
+        var selected_text = getIntent().getCharSequenceExtra("android.intent.extra.PROCESS_TEXT");
+        return selected_text != null ? selected_text.toString() : "";
     }
 
     private void showDialog(){
