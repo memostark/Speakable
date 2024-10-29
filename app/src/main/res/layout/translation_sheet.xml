@@ -9,6 +9,7 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="8dp"
     style="@style/Widget.Material3.BottomSheet"
+    app:backgroundTint="?colorSurfaceContainerHigh"
     app:behavior_hideable="true"
     app:behavior_skipCollapsed="true"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
