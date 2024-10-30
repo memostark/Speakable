@@ -7,6 +7,8 @@
 
 package com.guillermonegrete.tts.services;
 
+import static android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
+
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Notification;
@@ -19,6 +21,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.graphics.*;
 import android.media.projection.MediaProjectionManager;
@@ -84,6 +87,10 @@ public class ScreenTextService extends Service {
     private ServiceProcesstextBinding binding;
     private TrashView trash_layout;
     private GestureDetector gestureDetector;
+    /**
+     * The TTS is stored in the service in order to keep it alive when a dialog is closed.
+     * This way the TTS only needs to be initialized once, and if a dialog is shown again the TTS doesn't need to be recreated and is available faster.
+     */
     @Inject CustomTTS tts;
 
     public static final String EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE";
@@ -204,7 +211,7 @@ public class ScreenTextService extends Service {
         playAudioObserver = state -> {
             if (state instanceof PlayAudioState.Playing) {
                 playLoadingIcon.setVisibility(View.INVISIBLE);
-                playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+                playButton.setIconResource(R.drawable.ic_stop_black_24dp);
                 playButton.setVisibility(View.VISIBLE);
 
             } else if (state instanceof PlayAudioState.Stopped) {
@@ -250,7 +257,7 @@ public class ScreenTextService extends Service {
     private void defaultPlayButton() {
         binding.playLoadingIcon.setVisibility(View.INVISIBLE);
         binding.playIconButton.setVisibility(View.VISIBLE);
-        binding.playIconButton.setImageResource(R.drawable.ic_volume_up_black_24dp);
+        binding.playIconButton.setIconResource(R.drawable.ic_volume_up_black_24dp);
         binding.languageText.setVisibility(View.INVISIBLE);
     }
 
@@ -495,14 +502,14 @@ public class ScreenTextService extends Service {
                     pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, pendingFlags);
                 }
             }
-            createForeground(pendingIntent);
+            createForeground(pendingIntent, action);
         } else {
             stopSelf();
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void createForeground(PendingIntent intent) {
+    private void createForeground(PendingIntent intent, String action) {
         var intentHide = new Intent(this, Receiver.class);
         int stopFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
@@ -527,7 +534,15 @@ public class ScreenTextService extends Service {
                 .setOngoing(true)
                 .setContentIntent(intent).build();
 
-        startForeground(1337, notification);
+        // Starting with SDK 34, foreground services are required to have a type. See: https://developer.android.com/about/versions/14/changes/fgs-types-required#use-cases
+        // Because the NO_FLOATING_ICON_SERVICE doesn't need media project to work, SPECIAL_USE is used instead.
+        if (NO_FLOATING_ICON_SERVICE.equals(action) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // This type doesn't need the runtime prerequisites that MEDIA_PROJECTIONS does (This avoids asking the user for permissions they might not even use).
+            startForeground(1337, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) startForeground(1337, notification, FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+            else startForeground(1337, notification);
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

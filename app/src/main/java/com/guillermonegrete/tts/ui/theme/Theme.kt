@@ -1,25 +1,24 @@
 package com.guillermonegrete.tts.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.guillermonegrete.tts.ui.BrightnessTheme
 
-private val DarkColorPalette = darkColors(
+private val DarkColorPalette = darkColorScheme(
     primary = GreenLight,
-    primaryVariant = GreenDark,
-    secondary = BlueLight,
-    secondaryVariant = BlueDark,
+    onPrimary = Color.White,
+    secondary = GreenDark,
+    tertiary = BlueLight,
 )
 
-private val LightColorPalette = lightColors(
+private val LightColorPalette = lightColorScheme(
     primary = GreenLight,
-    primaryVariant = GreenDark,
-    secondary = BlueLight,
-    secondaryVariant = BlueDark,
+    secondary = GreenDark,
+    tertiary = BlueLight,
 
     /* Other default colors to override
     background = Color.White,
@@ -31,14 +30,13 @@ private val LightColorPalette = lightColors(
     */
 )
 
-private val BeigeColorPalette = lightColors(
+private val BeigeColorPalette = lightColorScheme(
     primary = GreenLight,
-    primaryVariant = GreenDark,
-    secondary = BlueLight,
-    secondaryVariant = BlueDark,
+    secondary = GreenDark,
+    tertiary = BlueLight,
 
-    background = Color(0Xffffedbf),
-    surface = Color(0Xffffedbf),
+    background = Beige,
+    surface = Beige,
 )
 
 @Composable
@@ -53,7 +51,7 @@ fun AppTheme(
     }
 
     MaterialTheme(
-        colors = colors,
+        colorScheme = colors,
         content = content
     )
 }
@@ -70,7 +68,7 @@ fun VisualizerTheme(
     }
 
     MaterialTheme(
-        colors = colors,
+        colorScheme = colors,
         content = content
     )
 }

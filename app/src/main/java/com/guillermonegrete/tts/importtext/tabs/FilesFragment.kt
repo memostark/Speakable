@@ -13,9 +13,11 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
-import androidx.core.view.marginBottom
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
@@ -35,8 +37,6 @@ import com.guillermonegrete.tts.importtext.RecentFilesAdapter
 import com.guillermonegrete.tts.importtext.UriValidator
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextFragment
-import com.guillermonegrete.tts.utils.actionBarSize
-import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -74,7 +74,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                     val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
                 } catch (e: SecurityException){
-                    Timber.e("Couldn't make the uri persistable")
+                    Timber.e(e, "Couldn't make the uri persistable")
                 }
 
                 when(fileType){
@@ -84,9 +84,8 @@ class FilesFragment: Fragment(R.layout.files_layout) {
             }
         }
 
-        val cont = context ?: return
         // So the fab is not overlapping with the action bar
-        fabBottomMargin = cont.actionBarSize + cont.dpToPixel(8)
+        fabBottomMargin = resources.getDimensionPixelSize(R.dimen.fab_margin_import_text)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -96,9 +95,6 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         with(binding){
 
             pickFileFab.setOnClickListener { toggleButtons() }
-            fabContainer.setBottomMargin(fabBottomMargin)
-            // the view is centered but it's not taking into account the bottom nav bar, add the missing offset
-            noFilesMessage.setBottomMargin(noFilesMessage.marginBottom + requireContext().actionBarSize / 2)
 
             pickTxtFileBtn.apply {
                 setOnClickListener {
@@ -126,6 +122,16 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                         fabContainer.isInvisible = true
                 }
             })
+
+            ViewCompat.setOnApplyWindowInsetsListener(fabContainer) { v, insets ->
+                val insets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                fabContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    // Also adding the inset top because it was added to the TopBar and this also pushed the FAB down
+                    bottomMargin = insets.bottom + insets.top + fabBottomMargin
+                }
+
+                WindowInsetsCompat.CONSUMED
+            }
         }
 
         setViewModel()
@@ -213,7 +219,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
             }
 
         } catch (e: IOException) {
-            //You'll need to add proper error handling here
+            Timber.e(e, "Error reading text file")
         } finally {
             br?.close()
             inputStream?.close()
@@ -312,10 +318,6 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
             override fun onAnimationStart(animation: Animator) {}
         }
-    }
-
-    private fun View.setBottomMargin(margin: Int) {
-        (layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = margin
     }
 }
 

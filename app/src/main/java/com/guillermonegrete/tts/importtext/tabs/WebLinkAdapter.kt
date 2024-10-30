@@ -11,7 +11,7 @@ import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import com.guillermonegrete.tts.R
-import com.guillermonegrete.tts.databinding.FragmentWebLinksBinding
+import com.guillermonegrete.tts.databinding.WebLinkItemBinding
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
 import java.util.*
@@ -26,7 +26,7 @@ class WebLinkAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
 
         return ViewHolder(
-            FragmentWebLinksBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            WebLinkItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         )
     }
 
@@ -34,7 +34,7 @@ class WebLinkAdapter(
         holder.bind(getItem(position))
     }
 
-    inner class ViewHolder(private val binding: FragmentWebLinksBinding) :
+    inner class ViewHolder(private val binding: WebLinkItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
         private val contentView: TextView = binding.content
 

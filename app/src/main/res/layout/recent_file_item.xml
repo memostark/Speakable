@@ -31,7 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         app:layout_constraintBottom_toTopOf="@+id/book_author"
         app:layout_constraintEnd_toStartOf="@+id/file_progressBar"
         app:layout_constraintStart_toEndOf="@id/cover_image"
@@ -71,37 +71,25 @@
         app:layout_constraintTop_toTopOf="@+id/book_title"
         tools:text="EPUB" />-->
 
-    <ProgressBar
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/file_progressBar"
-        style="@android:style/Widget.Material.ProgressBar.Horizontal"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/circle_shape"
-        android:indeterminate="false"
         android:max="100"
-        android:progressDrawable="@drawable/circular_progress_bar"
         app:layout_constraintBottom_toBottomOf="@+id/last_read"
         app:layout_constraintEnd_toStartOf="@+id/menu_button"
         app:layout_constraintTop_toTopOf="@+id/book_title" />
 
     <ImageButton
         android:id="@+id/menu_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="?selectableItemBackgroundBorderless"
         android:contentDescription="@string/more_options"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/end_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:tint="?colorOnSurface"
-        app:srcCompat="@drawable/ic_more_vert_black_24dp" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/end_guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_end="20dp" />
+        app:srcCompat="@drawable/ic_more_vert_black_24dp"
+        app:tint="?colorOnSurface" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

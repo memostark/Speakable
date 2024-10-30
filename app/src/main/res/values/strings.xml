@@ -241,8 +241,8 @@
     <string name="black_theme">Black theme</string>
     <string name="single_page">Single page</string>
     <string name="split_page">Split page</string>
-    <string name="book_language_label">Book language:</string>
-    <string name="translate_to_label">Translate to:</string>
+    <string name="language_label">Language</string>
+    <string name="translate_to_label">Translate to</string>
     <string name="pick_info_dialog_title">Show information for:</string>
 
 </resources>

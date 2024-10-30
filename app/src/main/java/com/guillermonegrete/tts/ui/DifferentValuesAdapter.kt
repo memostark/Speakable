@@ -18,9 +18,9 @@ class DifferentValuesAdapter(
     context: Context,
     @LayoutRes private val resource: Int,
     @IdRes private val fieldId: Int = 0,
-    private val closedViewItems: Array<String>,
-    listViewItems: Array<String>
-): ArrayAdapter<String>(context, resource, listViewItems) {
+    closedViewItems: Array<String>,
+    private val listViewItems: Array<String>
+): ArrayAdapter<String>(context, resource, closedViewItems) {
 
     constructor (
         context: Context,
@@ -37,7 +37,7 @@ class DifferentValuesAdapter(
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
 
         val view = convertView ?: inflater.inflate(resource, parent, false)
-        val text: TextView
+        val text: TextView?
 
         try {
             if (fieldId == 0) {
@@ -60,7 +60,7 @@ class DifferentValuesAdapter(
             throw IllegalStateException("ArrayAdapter requires the resource ID to be a TextView", e)
         }
 
-        val item = closedViewItems[position]
+        val item = listViewItems[position]
         text.text = item
         return view
     }

@@ -22,6 +22,7 @@ import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers
+import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -97,9 +98,9 @@ class TextInfoDialogTest {
         onView(withId(R.id.text_tts)).check(matches(isDisplayed()))
         onView(withId(R.id.text_tts)).check(matches(withText("prueba")))
 
-        // Default language preference is "Auto detect"
+        // Default language preference is "auto"
         onView(withId(R.id.spinner_language_from))
-            .check(matches(withSpinnerText(containsString("Auto detect"))))
+            .check(matches(withText(containsString("auto"))))
 
         // Because is in "Auto detect" this view shows the detected language
         onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
@@ -123,7 +124,7 @@ class TextInfoDialogTest {
             putString(TextInfoDialog.TEXT_KEY, inputText)
             putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
         }
-        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
+        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle)
 
         // Specific surface of sentence layout
         composeTestRule.onNodeWithTag("sentence_dialog").assertIsDisplayed()
@@ -152,7 +153,7 @@ class TextInfoDialogTest {
 
         unregisterComposeEspressoLink()
 
-        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
+        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle)
 
         // Check pre-set language
         onView(withId(R.id.text_language_code)).check(matches(isDisplayed()))
@@ -198,8 +199,8 @@ class TextInfoDialogTest {
         onView(withId(R.id.translate_to_spinner)).perform(click())
 
 
-        onData(allOf(`is`(instanceOf(String::class.java)), `is`("German"))).perform(click())
-        onView(withId(R.id.translate_to_spinner)).check(matches(withSpinnerText("German")))
+        onData(equalTo("German")).inRoot(RootMatchers.isPlatformPopup()).perform(click())
+        onView(withId(R.id.translate_to_spinner)).check(matches(withText("German")))
 
         onView(withId(R.id.translation_text)).check(matches(withText("nachweisen")))
     }
@@ -236,7 +237,7 @@ class TextInfoDialogTest {
             putString(TextInfoDialog.ACTION_KEY, TextInfoDialog.NO_SERVICE)
         }
 
-        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle_White)
+        launchFragmentInHiltContainer<TextInfoDialog>(bundle,  R.style.ProcessTextStyle)
     }
 
 }

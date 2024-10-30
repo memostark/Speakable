@@ -8,10 +8,15 @@
     <dimen name="visualize_page_text_line_spacing_extra">8dp</dimen>
     <dimen name="visualize_sheet_bar_height">30dp</dimen>
 
+    <dimen name="web_reader_bar_height">64dp</dimen>
+
     <dimen name="text_size_small">14sp</dimen>
     <dimen name="text_size_medium">18sp</dimen>
     <dimen name="text_size_large">22sp</dimen>
     <dimen name="text_margin">16dp</dimen>
 
     <dimen name="default_dialog_padding">16dp</dimen>
+
+    <!--80 + 64 + 48 + 8 = bottom bar + top bar + tab layout + margin-->
+    <dimen name="fab_margin_import_text">200dp</dimen>
 </resources>

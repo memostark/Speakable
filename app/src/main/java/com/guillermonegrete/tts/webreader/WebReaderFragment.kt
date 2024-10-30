@@ -9,8 +9,8 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material.SnackbarHost
-import androidx.compose.material.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.text.HtmlCompat
@@ -42,7 +42,6 @@ import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.theme.AppTheme
-import com.guillermonegrete.tts.utils.actionBarSize
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.isWord
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
@@ -99,7 +98,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (activity as? AppCompatActivity)?.supportActionBar?.hide()
-        appBarSize = requireContext().actionBarSize
+        appBarSize = resources.getDimensionPixelSize(R.dimen.web_reader_bar_height)
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
         adapter = ParagraphAdapter(viewModel,
@@ -292,12 +291,24 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             setBottomPanel()
             setTranslateBottomPanel()
-
+            setInsetListener()
             setBackButtonNav()
         }
 
         viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
         viewModel.loadDoc(args.link)
+    }
+
+    private fun setInsetListener() {
+        val initialBarSize = appBarSize
+        ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(top = insets.top)
+            binding.composeBar.updatePadding(bottom = insets.bottom)
+            appBarSize = initialBarSize + insets.bottom
+            updateListBottomPadding(0)
+            WindowInsetsCompat.CONSUMED
+        }
     }
 
     private fun onBarMenuItemClicked(action: WebReaderMenuAction) {
@@ -856,7 +867,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             addNoteVisible,
             noteInfo?.noteText ?: "",
             noteInfo?.color ?: 0,
-            noteInfo?.noteSaved ?: false,
+            noteInfo?.noteSaved == true,
             onDismiss = { addNoteVisible = false },
             onDelete = {
                 val noteItem = noteInfo ?: return@AddNoteDialog
