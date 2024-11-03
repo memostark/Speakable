@@ -15,7 +15,6 @@ import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,8 +23,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
@@ -41,6 +38,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -398,9 +396,7 @@ fun EditWordDialog(
                 )
                 ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onExpandedChange = {
-                        expanded = !expanded
-                    },
+                    onExpandedChange = { expanded = !expanded },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     TextField(
@@ -410,25 +406,21 @@ fun EditWordDialog(
                         label = { Text(stringResource(R.string.language_edit_text)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.menuAnchor(PrimaryNotEditable).fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
 
-                        Box(modifier = Modifier.size(width = 300.dp, height = 600.dp)) {
-                            LazyColumn {
-                                itemsIndexed(languages.fullNames) { i, lang ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = "$lang (${languages.iso[i]})") },
-                                        onClick = {
-                                            indexLang = i
-                                            expanded = false
-                                        }
-                                    )
+                        languages.fullNames.mapIndexed { i, lang ->
+                            DropdownMenuItem(
+                                text = { Text(text = "$lang (${languages.iso[i]})") },
+                                onClick = {
+                                    indexLang = i
+                                    expanded = false
                                 }
-                            }
+                            )
                         }
                     }
                 }
