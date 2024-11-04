@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.main;
 
+import static com.guillermonegrete.tts.importtext.ImportTextFragment.MARGIN_OFFSET_NAME;
+
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -62,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
 
             // Return CONSUMED if you don't want want the window insets to keep passing
             // down to descendant views.
-            return WindowInsetsCompat.CONSUMED;
+            return windowInsets;
         });
     }
 
@@ -74,8 +76,21 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
         var navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_fragment_container);
         if(navHostFragment == null) return;
         navController = navHostFragment.getNavController();
+        var offset = getResources().getDimensionPixelSize(R.dimen.main_act_bars_height);
+        var bundle = new Bundle();
+        bundle.putInt(MARGIN_OFFSET_NAME, offset);
+
         var navView = binding.bottomNavView;
         BottomNavigationViewKt.setupWithNavController(navView, navController);
+        navView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.importtext) {
+                navController.navigate(id, bundle);
+                return true;
+            }
+            navController.navigate(id);
+            return true;
+        });
 
         navController.addOnDestinationChangedListener((nController, destination, arguments) -> {
 
