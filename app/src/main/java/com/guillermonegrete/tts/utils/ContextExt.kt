@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.utils
 
 import android.content.Context
+import android.content.res.Resources.getSystem
 import android.graphics.Point
 import android.os.Build
 import android.view.WindowInsets
@@ -11,6 +12,8 @@ import timber.log.Timber
 fun Context.dpToPixel(dp: Int): Int {
     return (dp * this.resources.displayMetrics.density).toInt()
 }
+
+val Int.dpToPixel: Int get() = (this * getSystem().displayMetrics.density).toInt()
 
 val Context.actionBarSize
     get() = theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))

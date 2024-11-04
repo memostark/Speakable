@@ -93,7 +93,7 @@ class ImportTextFragmentTest{
 
     @Test
     fun given_one_recent_file_when_clicked_then_navigate_to_visualizer(){
-        runTest { settingsRepository.setImportTabPosition(ImportTextFragment.FilesIndex) }
+        runTest { settingsRepository.setImportTabPosition(ImportTextFragment.FILES_INDEX) }
 
         val tempFile = testFolder.newFile("copied_file.epub")
 
@@ -115,7 +115,7 @@ class ImportTextFragmentTest{
 
     @Test
     fun when_file_added_then_navigate_to_visualizer(){
-        runTest { settingsRepository.setImportTabPosition(ImportTextFragment.FilesIndex) }
+        runTest { settingsRepository.setImportTabPosition(ImportTextFragment.FILES_INDEX) }
 
         launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)
 
@@ -138,7 +138,7 @@ class ImportTextFragmentTest{
 
         launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)
 
-        onView(withId(R.id.import_tab_layout)).perform(selectTabAtPosition(ImportTextFragment.EnterTextIndex))
+        onView(withId(R.id.import_tab_layout)).perform(selectTabAtPosition(ImportTextFragment.ENTER_TEXT_INDEX))
 
         // This can cause the tab to suddenly change, making the test fail
         // A fix hasn't been found yet

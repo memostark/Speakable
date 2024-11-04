@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isInvisible
@@ -25,6 +26,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.DialogOpenLinkBinding
 import com.guillermonegrete.tts.databinding.FragmentWebLinksListBinding
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
+import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -43,7 +45,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        fabBottomMargin = resources.getDimensionPixelSize(R.dimen.fab_margin_import_text)
+        fabBottomMargin = requireArguments().getInt(MARGIN_OFFSET_KEY) + 8.dpToPixel
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -131,6 +133,10 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
     companion object {
         @JvmStatic
-        fun newInstance() = WebLinksFragment()
+        fun newInstance(marginOffset: Int = 0) = WebLinksFragment().apply {
+            arguments = bundleOf(MARGIN_OFFSET_KEY to marginOffset)
+        }
+
+        const val MARGIN_OFFSET_KEY = "margin_offset_key"
     }
 }

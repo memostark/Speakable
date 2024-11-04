@@ -12,6 +12,10 @@
         <action
             android:id="@+id/to_webReaderFragment"
             app:destination="@id/webReaderFragment" />
+        <argument
+            android:name="offsetMargin"
+            app:argType="integer"
+            android:defaultValue="0" />
     </fragment>
     <fragment
         android:id="@+id/webReaderFragment"
