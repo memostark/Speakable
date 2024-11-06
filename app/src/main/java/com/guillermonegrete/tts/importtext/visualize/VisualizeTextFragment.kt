@@ -57,6 +57,7 @@ import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
@@ -94,6 +95,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     lateinit var preferences: SharedPreferences
     @Inject
     lateinit var brightnessTheme: BrightnessTheme
+    @Inject
+    lateinit var fileManager: EpubFileManager
     @StyleRes
     private var themeRes = R.style.AppMaterialTheme_Black
 
@@ -465,7 +468,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         if(SHOW_EPUB == intent.action) {
             val uri: Uri = IntentCompat.getParcelableExtra(intent, EPUB_URI, Uri::class.java) ?: return
             val rootStream = requireContext().contentResolver.openInputStream(uri)
-            viewModel.fileReader = DefaultZipFileReader(rootStream, requireContext())
+            viewModel.fileReader = DefaultZipFileReader(rootStream, fileManager)
             viewModel.fileUri = uri.toString()
             viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
             viewModel.parseEpub()
@@ -677,7 +680,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private fun createPageSplitter(textView: TextView, width: Int): PageSplitter {
         val uri: Uri? = IntentCompat.getParcelableExtra(requireActivity().intent, EPUB_URI, Uri::class.java)
         val imageGetter = if(uri != null) {
-            val zipReader = DefaultZipFileReader(requireContext().contentResolver.openInputStream(uri), requireContext())
+            val zipReader = DefaultZipFileReader(requireContext().contentResolver.openInputStream(uri), fileManager)
             InputStreamImageGetter(requireContext(), zipReader)
         } else null
 
