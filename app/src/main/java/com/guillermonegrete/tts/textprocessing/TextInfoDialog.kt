@@ -246,7 +246,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                 StatusTTS.LanguageReady -> true
                 StatusTTS.Unavailable -> false
             }
-            playIconState.value = playIconState.value.copy(isLoading = false, isPlaying = available)
+            playIconState.value = playIconState.value.copy(isLoading = false, isTTSAvailable = available)
         }
 
         val extraWord = BundleCompat.getParcelable(requireArguments(), WORD_KEY, Words::class.java)
