@@ -17,13 +17,6 @@ class EnterTextFragment: Fragment(R.layout.enter_text_layout) {
     private  var _binding: EnterTextLayoutBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var clipboardManager: ClipboardManager
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        clipboardManager = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = EnterTextLayoutBinding.bind(view)
@@ -41,8 +34,7 @@ class EnterTextFragment: Fragment(R.layout.enter_text_layout) {
     }
 
     private fun getClipboardText(): String{
-
-        val clip = clipboardManager.primaryClip ?: return ""
+        val clip = (requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip ?: return ""
         if (clip.itemCount <= 0) return ""
         val pasteData = clip.getItemAt(0).text
         return pasteData?.toString() ?: ""

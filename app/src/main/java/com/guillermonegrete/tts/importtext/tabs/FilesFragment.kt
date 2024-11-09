@@ -37,6 +37,7 @@ import com.guillermonegrete.tts.importtext.RecentFilesAdapter
 import com.guillermonegrete.tts.importtext.UriValidator
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextFragment
+import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -85,7 +86,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         }
 
         // So the fab is not overlapping with the action bar
-        fabBottomMargin = resources.getDimensionPixelSize(R.dimen.fab_margin_import_text)
+        fabBottomMargin = requireArguments().getInt(MARGIN_OFFSET_KEY) + 8.dpToPixel
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -95,6 +96,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         with(binding){
 
             pickFileFab.setOnClickListener { toggleButtons() }
+            fabContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = fabBottomMargin }
 
             pickTxtFileBtn.apply {
                 setOnClickListener {
@@ -123,14 +125,14 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                 }
             })
 
-            ViewCompat.setOnApplyWindowInsetsListener(fabContainer) { v, insets ->
-                val insets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, viewInsets ->
+                val insets = viewInsets.getInsets(WindowInsetsCompat.Type.systemBars())
                 fabContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     // Also adding the inset top because it was added to the TopBar and this also pushed the FAB down
                     bottomMargin = insets.bottom + insets.top + fabBottomMargin
                 }
 
-                WindowInsetsCompat.CONSUMED
+                viewInsets
             }
         }
 
@@ -317,6 +319,15 @@ class FilesFragment: Fragment(R.layout.files_layout) {
             override fun onAnimationCancel(animation: Animator) {}
 
             override fun onAnimationStart(animation: Animator) {}
+        }
+    }
+
+    companion object {
+        const val MARGIN_OFFSET_KEY = "margin_offset_key"
+
+        @JvmStatic
+        fun newInstance(marginOffset: Int = 0) = FilesFragment().apply {
+            arguments = bundleOf(MARGIN_OFFSET_KEY to marginOffset)
         }
     }
 }

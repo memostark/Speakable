@@ -32,7 +32,7 @@
             android:layout_height="360dp"
             android:orientation="vertical"
             android:elevation="2dp"
-            android:background="@drawable/browser_tab_background"
+            style="@style/Widget.Material3.BottomSheet"
             app:behavior_hideable="true"
             app:behavior_skipCollapsed="true"
             app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">

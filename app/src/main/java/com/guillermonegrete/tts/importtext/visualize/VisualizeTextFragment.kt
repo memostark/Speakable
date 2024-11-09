@@ -57,6 +57,7 @@ import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.epub.NavPoint
+import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
@@ -94,6 +95,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     lateinit var preferences: SharedPreferences
     @Inject
     lateinit var brightnessTheme: BrightnessTheme
+    @Inject
+    lateinit var fileManager: EpubFileManager
     @StyleRes
     private var themeRes = R.style.AppMaterialTheme_Black
 
@@ -460,12 +463,16 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         pagesAdapter.updateSavedWords(words, viewPager.currentItem)
     }
 
-    private fun initParse() {
+    private fun initParse(fileReader: DefaultZipFileReader?) {
         val intent = requireActivity().intent
         if(SHOW_EPUB == intent.action) {
+            if (fileReader == null) {
+                Toast.makeText(context, "Couldn't open file", Toast.LENGTH_SHORT).show()
+                requireActivity().finish()
+                return
+            }
             val uri: Uri = IntentCompat.getParcelableExtra(intent, EPUB_URI, Uri::class.java) ?: return
-            val rootStream = requireContext().contentResolver.openInputStream(uri)
-            viewModel.fileReader = DefaultZipFileReader(rootStream, requireContext())
+            viewModel.fileReader = fileReader
             viewModel.fileUri = uri.toString()
             viewModel.fileId = intent.getIntExtra(FILE_ID, -1)
             viewModel.parseEpub()
@@ -668,20 +675,25 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             createViewModel()
 
             val pageTextView: TextView = focusedView.findViewById(R.id.page_text_view)
-            viewModel.pageSplitter = createPageSplitter(pageTextView, focusedView.width)
-            initParse()
+            val fileReader = createFileReader()
+            val splitter = if (fileReader != null) InputStreamImageGetter(requireContext(), fileReader) else null
+            viewModel.pageSplitter = PageSplitter(pageTextView, focusedView.width, splitter)
+            initParse(fileReader)
             splitterCreated = true
         }
     }
 
-    private fun createPageSplitter(textView: TextView, width: Int): PageSplitter {
-        val uri: Uri? = IntentCompat.getParcelableExtra(requireActivity().intent, EPUB_URI, Uri::class.java)
-        val imageGetter = if(uri != null) {
-            val zipReader = DefaultZipFileReader(requireContext().contentResolver.openInputStream(uri), requireContext())
-            InputStreamImageGetter(requireContext(), zipReader)
-        } else null
-
-        return PageSplitter(textView, width, imageGetter)
+    private fun createFileReader(): DefaultZipFileReader? {
+        val uri = IntentCompat.getParcelableExtra(requireActivity().intent, EPUB_URI, Uri::class.java)
+        if (uri != null) {
+            try {
+                val stream = requireContext().contentResolver.openInputStream(uri)
+                return DefaultZipFileReader(stream, fileManager)
+            } catch (e: Exception) {
+                Timber.e(e, "Couldn't open URI stream")
+            }
+        }
+        return null
     }
 
     private fun showTableOfContents(navPoints: List<NavPoint>){

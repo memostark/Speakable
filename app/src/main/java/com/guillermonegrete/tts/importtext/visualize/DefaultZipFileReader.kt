@@ -1,10 +1,8 @@
 package com.guillermonegrete.tts.importtext.visualize
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Environment
-import androidx.core.content.ContextCompat
+import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.IOUtils
@@ -13,14 +11,14 @@ import java.util.zip.ZipInputStream
 import kotlin.math.roundToInt
 
 
-class DefaultZipFileReader(inputStream: InputStream?, context: Context): ZipFileReader {
+class DefaultZipFileReader(inputStream: InputStream?, fileManager: EpubFileManager): ZipFileReader {
 
     private val byteStream: ByteArrayInputStream
     private var shouldResetStream = false
 
     private val rootDir: File
     private val filesDir
-        get() = File(rootDir.absolutePath + File.separator + volumes_folder)
+        get() = File(rootDir.absolutePath + File.separator + VOLUMES_FOLDER)
 
     init {
         val baos = ByteArrayOutputStream()
@@ -29,17 +27,7 @@ class DefaultZipFileReader(inputStream: InputStream?, context: Context): ZipFile
         byteStream = ByteArrayInputStream(bytes)
 
         // Initialize files dir
-        val state = Environment.getExternalStorageState()
-        rootDir = if (Environment.MEDIA_MOUNTED == state) {
-
-            val dirs = ContextCompat.getExternalFilesDirs(context, null)
-            // Dirs[0] ==> (emulated)
-            // Dirs[1] ==> (SD card)
-            val dir = if(dirs.size == 2) dirs[1] else dirs[0]
-            dir
-        } else {
-            context.filesDir
-        }
+        rootDir = fileManager.rootDir
     }
 
     override suspend fun getFileStream(filePath: String): InputStream?{
@@ -98,7 +86,7 @@ class DefaultZipFileReader(inputStream: InputStream?, context: Context): ZipFile
 
     override suspend fun createFileFolder(path: String) {
         withContext(Dispatchers.IO) {
-            val dir = File(rootDir.absolutePath + File.separator + volumes_folder, path)
+            val dir = File(rootDir.absolutePath + File.separator + VOLUMES_FOLDER, path)
             if (!dir.exists()) dir.mkdirs()
         }
     }
@@ -152,6 +140,6 @@ class DefaultZipFileReader(inputStream: InputStream?, context: Context): ZipFile
     }
 
     companion object{
-        const val volumes_folder = "volumes"
+        const val VOLUMES_FOLDER = "volumes"
     }
 }

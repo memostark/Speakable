@@ -19,8 +19,8 @@ class DefaultEpubFileManager @Inject constructor(@ApplicationContext context: Co
 
             val dirs = ContextCompat.getExternalFilesDirs(context, null)
             // Dirs[0] ==> (emulated)
-            // Dirs[1] ==> (SD card)
-            val dir = if(dirs.size == 2) dirs[1] else dirs[0]
+            // Dirs[1] ==> (SD card) // might be null if the card was ejected
+            val dir = if(dirs.size == 2 && dirs[1] != null) dirs[1] else dirs[0]
             dir
         } else {
             context.filesDir
