@@ -10,7 +10,8 @@ import timber.log.Timber
 class FirebaseTextProcessor: ImageProcessingSource{
 
     override fun detectText(bitmap: Bitmap, callback: ImageProcessingSource.Callback) {
-        val bitmapCopy = bitmap.copy(bitmap.config, true)
+        val config = bitmap.config ?: return
+        val bitmapCopy = bitmap.copy(config, true)
         val image = InputImage.fromBitmap(bitmapCopy, 0)
         val detector = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         detector.process(image)
