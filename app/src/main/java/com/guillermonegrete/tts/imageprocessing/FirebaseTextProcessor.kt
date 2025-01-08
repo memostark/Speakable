@@ -1,7 +1,7 @@
 package com.guillermonegrete.tts.imageprocessing
 
 import android.graphics.Bitmap
-import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
+import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -27,7 +27,7 @@ class FirebaseTextProcessor: ImageProcessingSource{
     }
 
     private fun identifyLanguage(text: String, callback: ImageProcessingSource.Callback){
-        val languageIdentifier = FirebaseNaturalLanguage.getInstance().languageIdentification
+        val languageIdentifier = LanguageIdentification.getClient()
         languageIdentifier.identifyLanguage(text)
                 .addOnSuccessListener {
                     callback.onTextDetected(text, it)
