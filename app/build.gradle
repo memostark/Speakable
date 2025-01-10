@@ -5,7 +5,6 @@ plugins {
 
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
 apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs"
@@ -72,12 +71,6 @@ ext {
     supportLibVersion = '26.1.0'
 }
 
-kapt {
-    generateStubs = true
-    // Required by hilt: https://dagger.dev/hilt/gradle-setup
-    correctErrorTypes = true
-}
-
 ksp {
     arg('room.schemaLocation', "$projectDir/schemas")
 }
@@ -141,7 +134,6 @@ dependencies {
     // Room
     def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
-    annotationProcessor "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     ksp "androidx.room:room-compiler:$room_version"
     androidTestImplementation "androidx.room:room-testing:$room_version"
@@ -188,17 +180,17 @@ dependencies {
     debugImplementation 'com.github.amitshekhariitbhu.Android-Debug-Database:debug-db:v1.0.6'
 
     // Dagger 2
-    def dagger_version = "2.50"
+    def dagger_version = "2.55"
     implementation "com.google.dagger:dagger:$dagger_version"
-    kapt "com.google.dagger:dagger-compiler:$dagger_version"
+    ksp "com.google.dagger:dagger-compiler:$dagger_version"
 
     // Hilt
     implementation "com.google.dagger:hilt-android:$dagger_version"
-    kapt "com.google.dagger:hilt-android-compiler:$dagger_version"
+    ksp "com.google.dagger:hilt-android-compiler:$dagger_version"
 
     // Hilt testing
     androidTestImplementation "com.google.dagger:hilt-android-testing:$dagger_version"
-    kaptAndroidTest "com.google.dagger:hilt-compiler:$dagger_version"
+    kspAndroidTest "com.google.dagger:hilt-compiler:$dagger_version"
 
     lintChecks "com.google.dagger:dagger-lint-aar:$dagger_version"
 
