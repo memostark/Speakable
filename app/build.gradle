@@ -119,7 +119,7 @@ dependencies {
     implementation "androidx.core:core-ktx:1.13.1"
 
     // Google custom tabs
-    implementation 'androidx.browser:browser:1.0.0'
+    implementation 'androidx.browser:browser:1.8.0'
 
     // Firebase OCR
     implementation 'com.google.firebase:firebase-core:21.1.1'
@@ -139,9 +139,12 @@ dependencies {
     androidTestImplementation "androidx.room:room-testing:$room_version"
 
     // Retrofit
-    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
-    implementation 'com.squareup.retrofit2:converter-moshi:2.9.0'
+    def retrofit_version = "2.11.0"
+    implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-moshi:$retrofit_version"
+
+    implementation "com.squareup.moshi:moshi-kotlin:1.15.2"
 
     // Lifecycle-aware components
     def lifecycle_version = "2.5.0"
@@ -201,7 +204,7 @@ dependencies {
     implementation 'org.jsoup:jsoup:1.13.1'
 
     // Okhttp
-    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
     implementation("com.squareup.okhttp3:logging-interceptor")
     androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.10.0"
 
@@ -225,7 +228,7 @@ dependencies {
     }
 
     // Glide Image Library
-    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
 
     // How to use app library
     implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {
