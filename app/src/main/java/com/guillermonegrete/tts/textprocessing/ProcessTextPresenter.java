@@ -353,6 +353,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             }
             else {
                 mView.showPlayIcon();
+                EspressoIdlingResource.decrement();
             }
         }
 
