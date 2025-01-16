@@ -21,7 +21,7 @@ enum class DefaultWebBrowser(val type: String) {
         const val PREFERENCE_KEY = "default_browser_pref_key"
 
         fun get(type: String): DefaultWebBrowser {
-                return values().find { it.type == type } ?: CUSTOM_TABS
+                return entries.find { it.type == type } ?: CUSTOM_TABS
         }
     }
 }

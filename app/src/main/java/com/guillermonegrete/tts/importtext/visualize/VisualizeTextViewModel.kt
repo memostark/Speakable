@@ -146,7 +146,7 @@ class VisualizeTextViewModel @Inject constructor(
             try {
                 parsedBook = epubParser.parseBook(reader)
             } catch (e: Exception){
-                Timber.e("Error parsing book", e)
+                Timber.e(e, "Error parsing book")
                 return@launch
             }
 
