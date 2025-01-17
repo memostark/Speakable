@@ -221,6 +221,7 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-contrib:$espressoVersion"
     androidTestImplementation "androidx.test.espresso:espresso-intents:$espressoVersion"
     implementation "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
+    implementation "androidx.tracing:tracing:1.2.0"
 
     debugImplementation "androidx.fragment:fragment-testing-manifest:$fragment_version"
     androidTestImplementation "androidx.fragment:fragment-testing:$fragment_version"

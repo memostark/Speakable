@@ -427,7 +427,7 @@ class WebReaderFragmentTest{
                     SECOND_SENTENCE -> sentencesTranslationResponses[1]
                     THIRD_SENTENCE -> sentencesTranslationResponses.last()
                     LAST_WORD -> lastWordTransResponse
-                    else -> throw IllegalArgumentException()
+                    else -> throw IllegalArgumentException("No translation response found for $text")
                 }
                 val body = responseAdapter.toJson(response)
                 return MockResponse().setBody(body)
