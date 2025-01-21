@@ -133,7 +133,7 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideWiktionarySource(): DictionaryDataSource = WiktionarySource()
+    fun provideWiktionarySource(client: OkHttpClient): DictionaryDataSource = WiktionarySource(client)
 
     @Provides
     fun provideTextDetectorSource(
