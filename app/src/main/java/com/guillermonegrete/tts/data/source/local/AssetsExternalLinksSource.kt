@@ -1,46 +1,47 @@
 package com.guillermonegrete.tts.data.source.local
 
 import android.app.Application
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.google.gson.stream.JsonReader
 import com.guillermonegrete.tts.data.source.ExternalLinksDataSource
 import com.guillermonegrete.tts.db.ExternalLink
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import okio.buffer
+import okio.source
 import java.lang.Exception
 
-class AssetsExternalLinksSource(private val appContext: Application): ExternalLinksDataSource {
+class AssetsExternalLinksSource(
+    private val appContext: Application,
+    moshi: Moshi
+): ExternalLinksDataSource {
+
+    private val adapter = moshi.adapter<List<ExternalLink>>(Types.newParameterizedType(List::class.java, ExternalLink::class.java))
 
     override fun getLanguageLinks(language: String, callback: ExternalLinksDataSource.Callback) {
-        val linkType = object : TypeToken<List<ExternalLink>>() {}.type
-        var jsonReader: JsonReader? = null
 
         try {
             val inputStream = appContext.assets.open(EXTERNAL_LINKS_DATA_FILENAME)
-            jsonReader = JsonReader(inputStream.reader())
-            val linkList: List<ExternalLink> = Gson().fromJson(jsonReader, linkType)
+            val linkList: List<ExternalLink>? = adapter.fromJson(inputStream.source().buffer())
+            if (linkList == null) {
+                callback.onLinksRetrieved(emptyList())
+                return
+            }
             callback.onLinksRetrieved(linkList.filter { it.language == language })
         } catch (ex: Exception){
-            println("Error loading asset $ex")
+            println("Error loading asset ${ex.message}")
             callback.onLinksRetrieved(emptyList())
-        } finally {
-            jsonReader?.close()
         }
     }
 
     override fun getLanguageLinks(language: String): List<ExternalLink> {
-        val linkType = object : TypeToken<List<ExternalLink>>() {}.type
-        var jsonReader: JsonReader? = null
 
         return try {
             val inputStream = appContext.assets.open(EXTERNAL_LINKS_DATA_FILENAME)
-            jsonReader = JsonReader(inputStream.reader())
-            val linkList: List<ExternalLink> = Gson().fromJson(jsonReader, linkType)
+            val linkList: List<ExternalLink>? = adapter.fromJson(inputStream.source().buffer())
+            if (linkList == null) return emptyList()
             linkList.filter { it.language == language }
         } catch (ex: Exception){
-            println("Error loading asset $ex")
+            println("Error loading asset ${ex.message}")
             emptyList()
-        } finally {
-            jsonReader?.close()
         }
     }
 

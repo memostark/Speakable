@@ -129,11 +129,11 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideExternalLinksSource(app: Application): ExternalLinksDataSource = AssetsExternalLinksSource(app)
+    fun provideExternalLinksSource(app: Application, moshi: Moshi): ExternalLinksDataSource = AssetsExternalLinksSource(app, moshi)
 
     @Singleton
     @Provides
-    fun provideWiktionarySource(client: OkHttpClient): DictionaryDataSource = WiktionarySource(client)
+    fun provideWiktionarySource(client: OkHttpClient, moshi: Moshi): DictionaryDataSource = WiktionarySource(client, moshi)
 
     @Provides
     fun provideTextDetectorSource(
@@ -176,7 +176,7 @@ object ApplicationModule {
     fun provideRetrofit(client: OkHttpClient, baseUrl: String, moshi: Moshi): Retrofit = Retrofit.Builder()
         .baseUrl(baseUrl)
         .client(client)
-        .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 
     @Singleton

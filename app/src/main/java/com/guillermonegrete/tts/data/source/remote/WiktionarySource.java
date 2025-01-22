@@ -2,12 +2,11 @@ package com.guillermonegrete.tts.data.source.remote;
 
 import androidx.annotation.NonNull;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryLangHeader;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
+import com.squareup.moshi.Moshi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +17,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.moshi.MoshiConverterFactory;
 
 public class WiktionarySource implements DictionaryDataSource {
 
@@ -26,15 +25,11 @@ public class WiktionarySource implements DictionaryDataSource {
 
     private final WiktionaryAPI wiktionaryAPI;
 
-    public WiktionarySource(OkHttpClient client){
-        Gson gson = new GsonBuilder()
-                .setLenient()
-                .create();
-
+    public WiktionarySource(OkHttpClient client, Moshi moshi){
         var retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(client)
-                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addConverterFactory(MoshiConverterFactory.create(moshi))
                 .build();
 
         wiktionaryAPI = retrofit.create(WiktionaryAPI.class);
@@ -50,7 +45,7 @@ public class WiktionarySource implements DictionaryDataSource {
 
                 if (response.isSuccessful() && response.body() != null) {
 
-                    var pageEntry = response.body().getQuery().getPageNumber().firstEntry();
+                    var pageEntry = response.body().getQuery().getPageNumber().entrySet().iterator().next();
                     if (pageEntry == null) {
                         callback.onDataNotAvailable();
                         return;
