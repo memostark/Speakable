@@ -3,9 +3,6 @@ package com.guillermonegrete.tts.db;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-
 import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -26,14 +23,10 @@ public class Words implements Parcelable {
 
     @ColumnInfo(name = "lang")
     @NonNull
-    @SerializedName("detectedLanguage.language")
-    @Expose
     public String lang;
 
     @ColumnInfo(name = "definition")
     @NonNull
-    @SerializedName("translations.text")
-    @Expose
     public String definition;
 
     @Nullable
@@ -79,7 +72,7 @@ public class Words implements Parcelable {
         notes = in.readString();
     }
 
-    public static final Creator<Words> CREATOR = new Creator<Words>() {
+    public static final Creator<Words> CREATOR = new Creator<>() {
         @Override
         public Words createFromParcel(Parcel in) {
             return new Words(in);
