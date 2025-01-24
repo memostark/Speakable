@@ -18,6 +18,8 @@ import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.Composable
@@ -90,6 +92,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private var pageItemView: View? = null
 
     private lateinit var pagesAdapter: VisualizerAdapter
+    private lateinit var callback: OnBackPressedCallback
 
     @Inject
     lateinit var preferences: SharedPreferences
@@ -133,6 +136,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
+        callback = requireActivity().onBackPressedDispatcher.addCallback(this, false) {
+            noteSheetVisible.value = false
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -212,15 +218,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    fun onBackPressed(): Boolean {
-        if (noteSheetVisible.value) {
-            noteSheetVisible.value = false
-            return true
-        } else {
-            return false
-        }
     }
 
     private fun setPageTransformListener() {
@@ -1029,6 +1026,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     fun Sheet() {
         val noteInfo by remember { noteInfo }
         var noteSheetVisible by remember { noteSheetVisible }
+        callback.isEnabled = noteSheetVisible
 
         NoteSheet(
             noteSheetVisible,
