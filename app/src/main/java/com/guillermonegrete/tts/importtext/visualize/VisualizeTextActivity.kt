@@ -41,15 +41,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         setContentView(binding.root)
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        val fragment = visualizerFragment
-        if (fragment != null && fragment.onBackPressed()) {
-            return
-        }
-        super.onBackPressed()
-    }
-
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         val fragment = visualizerFragment ?: return super.dispatchTouchEvent(ev)
         return fragment.dispatchTouchEvent(ev) || super.dispatchTouchEvent(ev)
