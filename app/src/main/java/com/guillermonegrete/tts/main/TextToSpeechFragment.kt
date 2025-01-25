@@ -43,6 +43,7 @@ import com.guillermonegrete.tts.databinding.FragmentMainTtsBinding
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
+import com.guillermonegrete.tts.utils.createBackPressedCallback
 import dagger.hilt.android.AndroidEntryPoint
 import tourguide.tourguide.TourGuide
 import javax.inject.Inject
@@ -105,6 +106,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     override fun onResume() {
         super.onResume()
+        (activity as? AppCompatActivity)?.supportActionBar?.show()
         presenter.setView(this)
     }
 
@@ -129,11 +131,9 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        (activity as? AppCompatActivity)?.supportActionBar?.show()
         _binding = FragmentMainTtsBinding.bind(view)
 
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        val bottomSheetBehavior = setupBottomSheet()
 
         with(binding.main){
 
@@ -336,6 +336,27 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         val focusedView = context.currentFocus ?: return
         inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
+    }
+
+    private fun setupBottomSheet(): BottomSheetBehavior<LinearLayout> {
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        // Setup predictive back
+        val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+        bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_HIDDEN -> backPressedCallback.isEnabled = false
+                    BottomSheetBehavior.STATE_EXPANDED -> backPressedCallback.isEnabled = true
+                    else -> {}
+                }
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+        })
+
+        return bottomSheetBehavior
     }
 
     private fun playTutorial(){

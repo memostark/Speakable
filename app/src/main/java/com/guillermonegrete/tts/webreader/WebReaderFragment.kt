@@ -7,7 +7,6 @@ import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
 import android.widget.Toast
-import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -42,6 +41,7 @@ import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.theme.AppTheme
+import com.guillermonegrete.tts.utils.createBackPressedCallback
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.isWord
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
@@ -289,10 +289,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 viewModel.loadDoc(args.link)
             }
 
-            setBottomPanel()
             setTranslateBottomPanel()
+            setBottomPanel()
             setInsetListener()
-            setBackButtonNav()
         }
 
         viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
@@ -303,8 +302,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val initialBarSize = appBarSize
         ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(top = insets.top)
-            binding.composeBar.updatePadding(bottom = insets.bottom)
+            val barShown = false
+            if (!barShown) v.updatePadding(top = insets.top)
+            val extra = if (barShown) initialBarSize else 0
+            binding.composeBar.updatePadding(bottom = insets.bottom + extra)
             appBarSize = initialBarSize + insets.bottom
             updateListBottomPadding(0)
             WindowInsetsCompat.CONSUMED
@@ -504,10 +505,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
+            val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
+            requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, bottomSheetBackCallback)
+
             bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_HIDDEN
-                        && translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
+                    when (newState) {
+                        BottomSheetBehavior.STATE_HIDDEN -> {
+                            bottomSheetBackCallback.isEnabled = false
+                            if (translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
+                        }
+                        BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBackCallback.isEnabled = true
+                        else -> {}
+                    }
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -561,14 +571,20 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val bottomSheetBehavior = BottomSheetBehavior.from(root)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
+            val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
+
+            requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, backPressedCallback)
+
             bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
+                        backPressedCallback.isEnabled = false
                         adapter.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
                         updateListBottomPadding(0)
                     } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                        backPressedCallback.isEnabled = true
                         binding.composeBar.isVisible = false
                         updateListBottomPadding(root.height)
                     }
@@ -753,22 +769,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
         } else {
             viewModel.getLinksForWord(text)
-        }
-    }
-
-    private fun setBackButtonNav() {
-        val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
-        // If translate sheet is showing, hide it otherwise use normal back press
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            when {
-                webSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED -> webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                isEnabled -> {
-                    isEnabled = false
-                    requireActivity().onBackPressed()
-                }
-            }
         }
     }
 
