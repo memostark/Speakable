@@ -11,7 +11,11 @@
         tools:layout="@layout/fragment_import_text">
         <action
             android:id="@+id/to_webReaderFragment"
-            app:destination="@id/webReaderFragment" />
+            app:destination="@id/webReaderFragment"
+            app:enterAnim="@animator/nav_default_enter_anim"
+            app:exitAnim="@animator/nav_default_exit_anim"
+            app:popEnterAnim="@animator/nav_default_pop_enter_anim"
+            app:popExitAnim="@animator/nav_default_pop_exit_anim"/>
         <argument
             android:name="offsetMargin"
             app:argType="integer"
