@@ -22,6 +22,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -59,6 +60,8 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     private lateinit var requestOverlayPermission: ActivityResultLauncher<Intent>
     private lateinit var requestScreenCapture: ActivityResultLauncher<Intent>
+
+    private var backPressedCallback: OnBackPressedCallback? = null
 
     private var screenCaptureIntent: Intent? = null
     private val requestNotificationPermission =
@@ -201,6 +204,8 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     override fun onDestroyView() {
         _binding = null
+        backPressedCallback?.remove()
+        backPressedCallback = null
         super.onDestroyView()
     }
 
@@ -342,13 +347,14 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         // Setup predictive back
-        val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
-        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+        val callback = createBackPressedCallback(bottomSheetBehavior)
+        requireActivity().onBackPressedDispatcher.addCallback(this, callback)
+        backPressedCallback = callback
         bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
                 when (newState) {
-                    BottomSheetBehavior.STATE_HIDDEN -> backPressedCallback.isEnabled = false
-                    BottomSheetBehavior.STATE_EXPANDED -> backPressedCallback.isEnabled = true
+                    BottomSheetBehavior.STATE_HIDDEN -> backPressedCallback?.isEnabled = false
+                    BottomSheetBehavior.STATE_EXPANDED -> backPressedCallback?.isEnabled = true
                     else -> {}
                 }
             }
