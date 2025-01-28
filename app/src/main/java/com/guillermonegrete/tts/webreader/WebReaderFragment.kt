@@ -97,7 +97,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        (activity as? AppCompatActivity)?.supportActionBar?.hide()
         appBarSize = resources.getDimensionPixelSize(R.dimen.web_reader_bar_height)
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
@@ -296,6 +295,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
         viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
         viewModel.loadDoc(args.link)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        (activity as? AppCompatActivity)?.supportActionBar?.hide()
     }
 
     private fun setInsetListener() {
