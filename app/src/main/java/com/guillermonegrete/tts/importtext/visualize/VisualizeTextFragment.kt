@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.importtext.visualize
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
@@ -941,18 +942,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         val extras = intent.extras
         val text = extras?.getString(IMPORTED_TEXT)
         if (text == null) {
-            val clipData = intent.clipData
-            if (clipData != null && clipData.itemCount > 0) {
-                val size = clipData.itemCount
-                val stringBuilder = StringBuilder()
-                for (i in 0 until size) {
-                    val item = clipData.getItemAt(i)
-                    stringBuilder.append(item.text)
-                }
-                return stringBuilder.toString()
-            } else {
-                return "No text"
-            }
+            return intent.getStringExtra(Intent.EXTRA_TEXT) ?: "No text"
         }
         return text
     }

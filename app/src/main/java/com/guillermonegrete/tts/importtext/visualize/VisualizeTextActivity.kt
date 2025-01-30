@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.MotionEvent
@@ -55,19 +56,7 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
     }
 
-    private fun getSharedText(): String {
-        val clipData = intent.clipData
-        if (clipData != null && clipData.itemCount > 0) {
-            val size = clipData.itemCount
-            val stringBuilder = StringBuilder()
-            for (i in 0 until size) {
-                val item = clipData.getItemAt(i)
-                stringBuilder.append(item.text)
-            }
-            return stringBuilder.toString()
-        }
-        return ""
-    }
+    private fun getSharedText() = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
 
     /**
      * In case the child fragment has a different theme than the app theme, this allows to update the bar colors.
