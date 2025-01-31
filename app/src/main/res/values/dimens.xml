@@ -7,6 +7,7 @@
 
     <dimen name="visualize_page_text_line_spacing_extra">8dp</dimen>
     <dimen name="visualize_sheet_bar_height">30dp</dimen>
+    <dimen name="visualize_default_margin">16dp</dimen>
 
     <dimen name="web_reader_bar_height">64dp</dimen>
 
