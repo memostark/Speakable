@@ -37,8 +37,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
-import androidx.core.view.marginBottom
-import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -298,6 +296,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
         val window = requireActivity().window
         val view = window.decorView
+        val initialMargin = resources.getDimensionPixelSize(R.dimen.visualize_default_margin)
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
             with(binding) {
 
@@ -305,17 +304,17 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 if (readerCurrentChapter.isVisible) {
                     readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                        topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                        topMargin = initialMargin + systemBarInsets.top
                     }
                 } else {
                     textReaderCardView.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                        goneTopMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                        goneTopMargin = initialMargin + systemBarInsets.top
                     }
                 }
 
                 // Margin for the bottom icons
                 readerCurrentPage.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    bottomMargin = readerCurrentPage.marginBottom + systemBarInsets.bottom
+                    bottomMargin = initialMargin + systemBarInsets.bottom
                 }
 
                 textReaderCardView.post {
@@ -323,7 +322,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                     setPageTransformListener()
                 }
 
-                ViewCompat.setOnApplyWindowInsetsListener(view, null)
                 insets
             }
         }
