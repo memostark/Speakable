@@ -75,8 +75,9 @@ class WebReaderFragmentTest{
 
     private lateinit var server: MockWebServer
 
-    private val moshi: Moshi = Moshi.Builder().build()
-    private val responseAdapter: JsonAdapter<GoogleTranslateResponse> = moshi.adapter(GoogleTranslateResponse::class.java)
+    @Inject
+    lateinit var moshi: Moshi
+    private lateinit var responseAdapter: JsonAdapter<GoogleTranslateResponse>
 
     @Inject
     lateinit var linkDAO: WebLinkDAO
@@ -89,6 +90,7 @@ class WebReaderFragmentTest{
         server = MockWebServer()
         server.start(8081)
         hiltRule.inject()
+        responseAdapter = moshi.adapter(GoogleTranslateResponse::class.java)
     }
 
     @After
@@ -425,7 +427,7 @@ class WebReaderFragmentTest{
                     SECOND_SENTENCE -> sentencesTranslationResponses[1]
                     THIRD_SENTENCE -> sentencesTranslationResponses.last()
                     LAST_WORD -> lastWordTransResponse
-                    else -> throw IllegalArgumentException()
+                    else -> throw IllegalArgumentException("No translation response found for $text")
                 }
                 val body = responseAdapter.toJson(response)
                 return MockResponse().setBody(body)

@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.importtext.visualize
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
@@ -18,6 +19,8 @@ import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.Composable
@@ -34,8 +37,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
-import androidx.core.view.marginBottom
-import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -90,6 +91,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     private var pageItemView: View? = null
 
     private lateinit var pagesAdapter: VisualizerAdapter
+    private lateinit var callback: OnBackPressedCallback
 
     @Inject
     lateinit var preferences: SharedPreferences
@@ -133,6 +135,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
+        callback = requireActivity().onBackPressedDispatcher.addCallback(this, false) {
+            noteSheetVisible.value = false
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -214,15 +219,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         _binding = null
     }
 
-    fun onBackPressed(): Boolean {
-        if (noteSheetVisible.value) {
-            noteSheetVisible.value = false
-            return true
-        } else {
-            return false
-        }
-    }
-
     private fun setPageTransformListener() {
         // Before setting the transformer make sure the card has finished updating.
         binding.textReaderCardView.post {
@@ -300,6 +296,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
         val window = requireActivity().window
         val view = window.decorView
+        val initialMargin = resources.getDimensionPixelSize(R.dimen.visualize_default_margin)
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
             with(binding) {
 
@@ -307,17 +304,17 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 if (readerCurrentChapter.isVisible) {
                     readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                        topMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                        topMargin = initialMargin + systemBarInsets.top
                     }
                 } else {
                     textReaderCardView.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                        goneTopMargin = readerCurrentChapter.marginTop + systemBarInsets.top
+                        goneTopMargin = initialMargin + systemBarInsets.top
                     }
                 }
 
                 // Margin for the bottom icons
                 readerCurrentPage.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    bottomMargin = readerCurrentPage.marginBottom + systemBarInsets.bottom
+                    bottomMargin = initialMargin + systemBarInsets.bottom
                 }
 
                 textReaderCardView.post {
@@ -325,7 +322,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                     setPageTransformListener()
                 }
 
-                ViewCompat.setOnApplyWindowInsetsListener(view, null)
                 insets
             }
         }
@@ -944,18 +940,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         val extras = intent.extras
         val text = extras?.getString(IMPORTED_TEXT)
         if (text == null) {
-            val clipData = intent.clipData
-            if (clipData != null && clipData.itemCount > 0) {
-                val size = clipData.itemCount
-                val stringBuilder = StringBuilder()
-                for (i in 0 until size) {
-                    val item = clipData.getItemAt(i)
-                    stringBuilder.append(item.text)
-                }
-                return stringBuilder.toString()
-            } else {
-                return "No text"
-            }
+            return intent.getStringExtra(Intent.EXTRA_TEXT) ?: "No text"
         }
         return text
     }
@@ -1029,6 +1014,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     fun Sheet() {
         val noteInfo by remember { noteInfo }
         var noteSheetVisible by remember { noteSheetVisible }
+        callback.isEnabled = noteSheetVisible
 
         NoteSheet(
             noteSheetVisible,

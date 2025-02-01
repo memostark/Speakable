@@ -1,34 +1,75 @@
 package com.guillermonegrete.tts.data.source.remote;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.squareup.moshi.Json;
 
+import java.util.Map;
+
+// https://stackoverflow.com/questions/33758601/parse-dynamic-key-json-string-using-retrofit
 public class WiktionaryResponse {
 
-    @SerializedName("parse")
-    @Expose
-    private Parse parse;
+    private Query query;
 
-    public Parse getParse() {
-        return parse;
+    public Query getQuery() {
+        return query;
     }
 
-    public void setParse(Parse parse) {
-        this.parse = parse;
+    public void setQuery(Query query) {
+        this.query = query;
     }
 
-    public static class Parse {
+    public static class Query {
 
-        @SerializedName("text")
-        @Expose
-        private String text;
+        @Json(name="pages")
+        private Map<String, PageInfo> pageNumber;
 
-        public String getText() {
-            return text;
+        public Map<String, PageInfo> getPageNumber() {
+            return pageNumber;
         }
 
-        public void setText(String text) {
-            this.text = text;
+        public void setPageNumber(Map<String, PageInfo> pageNumber) {
+            this.pageNumber = pageNumber;
         }
+
+    }
+
+    public static class PageInfo {
+
+        private Integer pageid;
+        private Integer ns;
+        private String title;
+        private String extract;
+
+        public Integer getPageid() {
+            return pageid;
+        }
+
+        public void setPageid(Integer pageid) {
+            this.pageid = pageid;
+        }
+
+        public Integer getNs() {
+            return ns;
+        }
+
+        public void setNs(Integer ns) {
+            this.ns = ns;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getExtract() {
+            return extract;
+        }
+
+        public void setExtract(String extract) {
+            this.extract = extract;
+        }
+
     }
 }

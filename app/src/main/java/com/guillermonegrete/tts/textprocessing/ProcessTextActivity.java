@@ -25,8 +25,6 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import android.provider.Settings;
 import android.view.Window;
 
-import com.guillermonegrete.tts.R;
-
 import dagger.hilt.android.AndroidEntryPoint;
 
 
@@ -115,12 +113,6 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
         });
         var intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
         requestOverlayPermission.launch(intent);
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
     }
 
     @Override

@@ -1,27 +1,23 @@
 package com.guillermonegrete.tts.data.source.remote;
 
-import android.os.Build;
-import android.text.Html;
-import android.text.Spanned;
-
 import androidx.annotation.NonNull;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
+import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryLangHeader;
 import com.guillermonegrete.tts.data.source.DictionaryDataSource;
+import com.squareup.moshi.Moshi;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.moshi.MoshiConverterFactory;
 
 public class WiktionarySource implements DictionaryDataSource {
 
@@ -29,14 +25,11 @@ public class WiktionarySource implements DictionaryDataSource {
 
     private final WiktionaryAPI wiktionaryAPI;
 
-    public WiktionarySource(){
-        Gson gson = new GsonBuilder()
-                .setLenient()
-                .create();
-
-        Retrofit retrofit = new Retrofit.Builder()
+    public WiktionarySource(OkHttpClient client, Moshi moshi){
+        var retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
+                .client(client)
+                .addConverterFactory(MoshiConverterFactory.create(moshi))
                 .build();
 
         wiktionaryAPI = retrofit.create(WiktionaryAPI.class);
@@ -52,13 +45,17 @@ public class WiktionarySource implements DictionaryDataSource {
 
                 if (response.isSuccessful() && response.body() != null) {
 
-                    var parseAction = response.body().getParse();
-                    if(parseAction != null) {
-                        String htmlText = parseAction.getText();
-                        var items = WiktionaryParser.parse(htmlText);
+                    var pageEntry = response.body().getQuery().getPageNumber().entrySet().iterator().next();
+                    if (pageEntry == null) {
+                        callback.onDataNotAvailable();
+                        return;
+                    }
+
+                    var info = pageEntry.getValue();
+                    if (info.getExtract() != null) {
+                        List<WikiItem> items = WiktionaryParser.parse(info.getExtract());
                         callback.onDefinitionLoaded(items);
                     } else {
-                        // If the word doesn't exist then parse is null
                         callback.onDataNotAvailable();
                     }
                 } else {
@@ -76,28 +73,45 @@ public class WiktionarySource implements DictionaryDataSource {
 
     public static class WiktionaryParser {
 
-        public static List<WikiItem> parse(String htmlText) {
-            Document doc = Jsoup.parse(htmlText);
-            // Remove table of contents at the start
-            var toc = doc.getElementById("toc");
-            if (toc != null) toc.remove();
-            // Remove all the edit buttons/text
-            var editSections = doc.getElementsByClass("mw-editsection");
-            if (editSections != null) editSections.remove();
-            CharSequence info = formatHtml(doc.outerHtml());
-            return List.of(new WiktionaryItem(info, ""));
-        }
-    }
+        public static List<WikiItem> parse(String text){
+            List<String> languageSections = getLanguages(text);
+            List<WikiItem> items = new ArrayList<>();
 
-    /**
-     * Format the raw xhtml text to get a more accurate length of the text.
-     */
-    private static Spanned formatHtml(CharSequence text) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return Html.fromHtml(text.toString(), Html.FROM_HTML_MODE_COMPACT);
-        } else {
-            //noinspection deprecation
-            return Html.fromHtml(text.toString());
+            for (String languageSection: languageSections){
+                String[] separated = languageSection.split("\n=== ");
+                String lang = separated[0].split(" ")[0];
+
+                items.add(new WiktionaryLangHeader(lang));
+
+                List<String> langSubHeaders = new ArrayList<>(Arrays.asList(separated));
+                langSubHeaders.remove(0);
+
+                for (String langSubHeader: langSubHeaders){
+                    String[] subHeaders = langSubHeader.split(" ===\n");
+                    String subHeader = subHeaders[0];
+
+                    if(subHeaders.length > 1) {
+                        String subHeaderContent = subHeaders[1];
+
+                        // We remove undesirable equals
+                        String firstFilter = subHeaderContent.replace("=====", "");
+                        String itemBodyText = firstFilter.replace("====", "");
+
+                        items.add(new WiktionaryItem(itemBodyText, subHeader));
+                    } else { // Because some headers don't have text body
+                        items.add(new WiktionaryItem("", subHeader.replace("===", "")));
+                    }
+                }
+            }
+
+            return items;
+        }
+
+        public static List<String> getLanguages(String extract){
+            String[] separated = extract.split("\n== ");
+            List<String> langs = new ArrayList<>(Arrays.asList(separated));
+            langs.remove(0);
+            return langs;
         }
     }
 }

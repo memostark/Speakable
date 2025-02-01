@@ -7,6 +7,7 @@ import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.Words;
+import com.guillermonegrete.tts.utils.EspressoIdlingResource;
 
 import java.util.concurrent.ExecutorService;
 
@@ -43,18 +44,21 @@ public class MainTTSPresenter extends AbstractPresenter implements MainTTSContra
             view.showLoadingTTS();
             this.text = text;
 
-            // TODO this request should be done in a background thread
             if(lang == null) {
+                EspressoIdlingResource.increment();
                 executorService.submit(() -> wordRepository.getLanguageAndTranslation(text, new WordRepositorySource.GetTranslationCallback() {
                     @Override
                     public void onTranslationAndLanguage(Words word) {
                         String language = word.lang;
                         tts.initializeTTS(language, ttsListener);
                         mMainThread.post(() -> view.showDetectedLanguage(language));
+                        EspressoIdlingResource.decrement();
                     }
 
                     @Override
-                    public void onDataNotAvailable() {}
+                    public void onDataNotAvailable() {
+                        EspressoIdlingResource.decrement();
+                    }
                 }));
             } else {
                 tts.initializeTTS(lang, ttsListener);

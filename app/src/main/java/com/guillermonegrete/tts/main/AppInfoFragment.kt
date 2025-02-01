@@ -7,11 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.BuildConfig
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.FragmentAppInfoBinding
-import java.util.*
 
 /**
  * A simple [DialogFragment] for showing information about the application.
@@ -41,7 +39,7 @@ class AppInfoFragment : AppCompatDialogFragment() {
     }
 
     private fun getVersion(): String {
-        val buildType = if (BuildConfig.BUILD_TYPE == "release") "" else " (${BuildConfig.VERSION_CODE}) ${BuildConfig.BUILD_TYPE.toUpperCase(Locale.getDefault())}"
+        val buildType = if (BuildConfig.DEBUG) " (${BuildConfig.VERSION_CODE}) ${BuildConfig.BUILD_TYPE.uppercase()}" else ""
         val fullText = BuildConfig.VERSION_NAME + buildType
         return getString(R.string.app_version, fullText)
     }

@@ -27,6 +27,8 @@ import com.guillermonegrete.tts.main.TranslatorType
 import com.guillermonegrete.tts.threading.MainThreadImpl
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.utils.isNightMode
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import javax.inject.Qualifier
@@ -127,11 +129,11 @@ object ApplicationModule {
 
     @Singleton
     @Provides
-    fun provideExternalLinksSource(app: Application): ExternalLinksDataSource = AssetsExternalLinksSource(app)
+    fun provideExternalLinksSource(app: Application, moshi: Moshi): ExternalLinksDataSource = AssetsExternalLinksSource(app, moshi)
 
     @Singleton
     @Provides
-    fun provideWiktionarySource(): DictionaryDataSource = WiktionarySource()
+    fun provideWiktionarySource(client: OkHttpClient, moshi: Moshi): DictionaryDataSource = WiktionarySource(client, moshi)
 
     @Provides
     fun provideTextDetectorSource(
@@ -164,12 +166,17 @@ object ApplicationModule {
         return clientBuilder.build()
     }
 
+    @Provides
+    fun provideMoshi() = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
+
     @Singleton
     @Provides
-    fun provideRetrofit(client: OkHttpClient, baseUrl: String): Retrofit = Retrofit.Builder()
+    fun provideRetrofit(client: OkHttpClient, baseUrl: String, moshi: Moshi): Retrofit = Retrofit.Builder()
         .baseUrl(baseUrl)
         .client(client)
-        .addConverterFactory(MoshiConverterFactory.create().asLenient())
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 
     @Singleton

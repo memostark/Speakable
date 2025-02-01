@@ -18,9 +18,11 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -42,6 +44,7 @@ import com.guillermonegrete.tts.databinding.FragmentMainTtsBinding
 import com.guillermonegrete.tts.services.ScreenTextService
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
+import com.guillermonegrete.tts.utils.createBackPressedCallback
 import dagger.hilt.android.AndroidEntryPoint
 import tourguide.tourguide.TourGuide
 import javax.inject.Inject
@@ -57,6 +60,8 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     private lateinit var requestOverlayPermission: ActivityResultLauncher<Intent>
     private lateinit var requestScreenCapture: ActivityResultLauncher<Intent>
+
+    private var backPressedCallback: OnBackPressedCallback? = null
 
     private var screenCaptureIntent: Intent? = null
     private val requestNotificationPermission =
@@ -104,6 +109,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     override fun onResume() {
         super.onResume()
+        (activity as? AppCompatActivity)?.supportActionBar?.show()
         presenter.setView(this)
     }
 
@@ -128,11 +134,9 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        (activity as? AppCompatActivity)?.supportActionBar?.show()
         _binding = FragmentMainTtsBinding.bind(view)
 
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        val bottomSheetBehavior = setupBottomSheet()
 
         with(binding.main){
 
@@ -200,6 +204,8 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     override fun onDestroyView() {
         _binding = null
+        backPressedCallback?.remove()
+        backPressedCallback = null
         super.onDestroyView()
     }
 
@@ -337,6 +343,28 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         inputMethodManager.hideSoftInputFromWindow(focusedView.windowToken, 0)
     }
 
+    private fun setupBottomSheet(): BottomSheetBehavior<LinearLayout> {
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottom.root)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        // Setup predictive back
+        val callback = createBackPressedCallback(bottomSheetBehavior)
+        requireActivity().onBackPressedDispatcher.addCallback(this, callback)
+        backPressedCallback = callback
+        bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_HIDDEN -> backPressedCallback?.isEnabled = false
+                    BottomSheetBehavior.STATE_EXPANDED -> backPressedCallback?.isEnabled = true
+                    else -> {}
+                }
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+        })
+
+        return bottomSheetBehavior
+    }
+
     private fun playTutorial(){
         activity?.let {
 
@@ -376,9 +404,9 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     }
 
     private inner class HelloWebViewClient : WebViewClient() {
-        override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
-            view.loadUrl(url)
-            return true
+
+        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+            return super.shouldOverrideUrlLoading(view, request)
         }
     }
 }

@@ -41,7 +41,6 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        (activity as? AppCompatActivity)?.supportActionBar?.show()
         _binding = FragmentImportTextBinding.bind(view)
 
         lifecycleScope.launch {
@@ -63,6 +62,12 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
                 else -> ""
             }
         }.attach()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Only show bar when this fragment is fully visible, showing the bar earlier causes problems with nav animations
+        (requireActivity() as AppCompatActivity).supportActionBar?.show()
     }
 
     override fun onPause() {
