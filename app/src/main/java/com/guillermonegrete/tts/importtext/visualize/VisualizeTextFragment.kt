@@ -298,6 +298,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         val view = window.decorView
         val initialMargin = resources.getDimensionPixelSize(R.dimen.visualize_default_margin)
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
+            // Most likely there was a switch to full screen, no need to handle insets in this mode
+            if (viewModel.fullScreen) return@setOnApplyWindowInsetsListener insets
+
             with(binding) {
 
                 val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -792,7 +795,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 val fullScreen = viewModel.fullScreen
 
-                if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
+                if((detector.scaleFactor > PINCH_UPPER_LIMIT || newScale >= invRatio) && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
                     scale = invRatio
