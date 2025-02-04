@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             var mlp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
             mlp.topMargin = insets.top;
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), insets.right, v.getPaddingBottom());
 
             // Return CONSUMED if you don't want want the window insets to keep passing
             // down to descendant views.
