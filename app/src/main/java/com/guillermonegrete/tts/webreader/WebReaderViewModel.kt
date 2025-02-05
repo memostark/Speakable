@@ -68,20 +68,20 @@ class WebReaderViewModel @Inject constructor(
     private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
     val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
 
-    private val _textInfo = MutableLiveData<LoadResult<WordResult>>()
-    val textInfo: LiveData<LoadResult<WordResult>> = _textInfo
+    private val _textInfo = MutableSharedFlow<LoadResult<WordResult>>()
+    val textInfo: SharedFlow<LoadResult<WordResult>> = _textInfo
 
-    private val _wordInfo = MutableLiveData<LoadResult<WordResult>>()
-    val wordInfo: LiveData<LoadResult<WordResult>> = _wordInfo
+    private val _wordInfo = MutableSharedFlow<LoadResult<WordResult>>()
+    val wordInfo: SharedFlow<LoadResult<WordResult>> = _wordInfo
 
-    private val _linksForWord = MutableLiveData<WordAndLinks>()
-    val linksForWord: LiveData<WordAndLinks> = _linksForWord
+    private val _linksForWord = MutableSharedFlow<WordAndLinks>()
+    val linksForWord: SharedFlow<WordAndLinks> = _linksForWord
 
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
 
-    private val _updatedWord = MutableLiveData<ResultType>()
-    val updatedWord: LiveData<ResultType> = _updatedWord
+    private val _updatedWord = MutableSharedFlow<ResultType>()
+    val updatedWord: SharedFlow<ResultType> = _updatedWord
 
     private val _pageSavedWords = MutableSharedFlow<SavedWordsSection>()
     val pageSavedWords: SharedFlow<SavedWordsSection> = _pageSavedWords
@@ -290,7 +290,7 @@ class WebReaderViewModel @Inject constructor(
                     .asFlow()
             }.collectLatest {
                 if (it != null) {
-                    _updatedWord.value = ResultType.Update(it)
+                    _updatedWord.emit(ResultType.Update(it))
                 } else {
                     if (!showWords) {
                         val data = _savedWord.first()
@@ -301,13 +301,15 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    private fun translateText(text: String, observer: MutableLiveData<LoadResult<WordResult>>) {
-        observer.value = LoadResult.Loading
-
+    private fun translateText(text: String, observer: MutableSharedFlow<LoadResult<WordResult>>) {
         viewModelScope.launch {
+            observer.emit(LoadResult.Loading)
+
             getTranslation(text) { translation ->
                 val word = Words(text, translation.src, translation.translatedText)
-                observer.value = LoadResult.Success(WordResult(word, false))
+                viewModelScope.launch {
+                    observer.emit(LoadResult.Success(WordResult(word, false)))
+                }
             }
         }
     }
@@ -315,7 +317,9 @@ class WebReaderViewModel @Inject constructor(
     private suspend fun getTranslationInfo(text: String) {
         getTranslation(text) { translation ->
             val word = Words(text, translation.src, translation.translatedText)
-            _textInfo.value = LoadResult.Success(WordResult(word, false))
+            viewModelScope.launch {
+                _textInfo.emit(LoadResult.Success(WordResult(word, false)))
+            }
         }
     }
 
@@ -326,7 +330,7 @@ class WebReaderViewModel @Inject constructor(
 
         when(result){
             is Result.Success -> onResult(result.data)
-            is Result.Error -> _textInfo.value = LoadResult.Error(result.exception)
+            is Result.Error -> viewModelScope.launch { _textInfo.emit(LoadResult.Error(result.exception)) }
         }
     }
 
@@ -368,7 +372,7 @@ class WebReaderViewModel @Inject constructor(
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
             val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-            _linksForWord.value = WordAndLinks(word, links)
+            _linksForWord.emit(WordAndLinks(word, links))
         }
     }
 
@@ -415,22 +419,24 @@ class WebReaderViewModel @Inject constructor(
         val paragraphs = cachedParagraphs ?: return
         val sentence = paragraphs[paragraphIndex].sentences[sentenceIndex]
 
-        val language = cacheWebLink?.language
-        if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
-            val word = Words(sentence.original, sentence.sourceLang, sentence.translation)
-            _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
-            return
-        }
-
-        _textInfo.value = LoadResult.Loading
-
         viewModelScope.launch {
+            val language = cacheWebLink?.language
+            if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
+                val word = Words(sentence.original, sentence.sourceLang, sentence.translation)
+                _textInfo.emit(LoadResult.Success(WordResult(word, isSaved = false, isSentence = true)))
+                return@launch
+            }
+
+            _textInfo.emit(LoadResult.Loading)
+
             wrapEspressoIdlingResource {
                 getTranslation(sentence.original) { translation ->
                     sentence.translation = translation.translatedText
                     sentence.sourceLang = translation.src
                     val word = Words(sentence.original, translation.src, translation.translatedText)
-                    _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+                    viewModelScope.launch {
+                        _textInfo.emit(LoadResult.Success(WordResult(word, isSaved = false, isSentence = true)))
+                    }
                 }
             }
         }
@@ -592,7 +598,7 @@ class WebReaderViewModel @Inject constructor(
             val resultId = withContext(ioDispatcher) { wordRepository.upsert(word) }
             if(resultId != -1L) {
                 word.id = resultId.toInt()
-                _updatedWord.value = ResultType.Insert(word)
+                _updatedWord.emit(ResultType.Insert(word))
             }
         }
     }
@@ -600,7 +606,7 @@ class WebReaderViewModel @Inject constructor(
     fun deleteWord(word: Words) {
         viewModelScope.launch {
             withContext(ioDispatcher) { wordRepository.deleteWord(word) }
-            _updatedWord.value = ResultType.Delete(word.id)
+            _updatedWord.emit(ResultType.Delete(word.id))
         }
     }
 
