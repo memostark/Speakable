@@ -158,7 +158,7 @@ class ParagraphAdapter(
     }
 
     fun updateTranslation(translation: String){
-        items[expandedItemPos].translation = translation
+        items.getOrNull(expandedItemPos)?.let { it.translation = translation }
     }
 
     fun updateExpanded(){
@@ -484,14 +484,14 @@ class ParagraphAdapter(
                     val span = note.span
                     isOverlappingNotes = span.start < selEnd && span.end > selStart
                     if (isOverlappingNotes) {
-                        menu.findItem(R.id.add_new_note_action)?.setVisible(false)
+                        menu.findItem(R.id.add_new_note_action)?.isVisible = false
                         break
                     }
                 }
 
                 val isWord = highlightedTextView?.getSelectedText().toString().isWord()
                 if (!isWord) {
-                    menu.findItem(R.id.add_saved_word_action)?.setVisible(false)
+                    menu.findItem(R.id.add_saved_word_action)?.isVisible = false
                     return true
                 }
 
@@ -501,7 +501,7 @@ class ParagraphAdapter(
                     if (span != null) {
                         isOverlappingSavedWord = span.start < selEnd && span.end > selStart
                         if (isOverlappingSavedWord) {
-                            menu.findItem(R.id.add_saved_word_action)?.setVisible(false)
+                            menu.findItem(R.id.add_saved_word_action)?.isVisible = false
                             break
                         }
                     }
@@ -783,14 +783,14 @@ class ParagraphAdapter(
                 while (Character.isLetterOrDigit(str[startIndex])) {
                     startIndex--
                 }
-            } catch (e: StringIndexOutOfBoundsException) {
+            } catch (_: StringIndexOutOfBoundsException) {
                 startIndex = 0
             }
             try {
                 while (Character.isLetterOrDigit(str[endIndex])) {
                     endIndex++
                 }
-            } catch (e: StringIndexOutOfBoundsException) {
+            } catch (_: StringIndexOutOfBoundsException) {
                 endIndex = str.length
             }
 
