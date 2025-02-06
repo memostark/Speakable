@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import app.cash.turbine.test
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
 import com.guillermonegrete.tts.common.models.Span
@@ -247,13 +248,13 @@ class WebReaderViewModelTest {
     fun `Given two paragraphs, when translate sentence 1 paragraph 0, then load and success`() = runTest {
         setSentences()
 
-        viewModel.translateSentence(0, 1)
+        viewModel.textInfo.test {
+            viewModel.translateSentence(0, 1)
+            assertEquals(LoadResult.Loading, awaitItem())
 
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
-        advanceUntilIdle()
-
-        val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
-        assertTextInfoSuccess(expected)
+            val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
+            assertTextInfoSuccess(awaitItem(), expected)
+        }
     }
 
     @Test
@@ -261,16 +262,17 @@ class WebReaderViewModelTest {
         loadLocalPage() // need the language set for the cache to work
         setSentences()
 
-        viewModel.translateSentence(0, 1)
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
+        viewModel.textInfo.test {
+            viewModel.translateSentence(0, 1)
+            assertEquals(LoadResult.Loading, awaitItem())
 
-        advanceUntilIdle()
-        val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
-        assertTextInfoSuccess(expected)
+            val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
+            assertTextInfoSuccess(awaitItem(), expected)
 
-        // translate again with cache
-        viewModel.translateSentence(0, 1)
-        assertTextInfoSuccess(expected)
+            // translate again with cache
+            viewModel.translateSentence(0, 1)
+            assertTextInfoSuccess(awaitItem(), expected)
+        }
     }
 
     @Test
@@ -321,10 +323,10 @@ class WebReaderViewModelTest {
         val word = Words("Hola", "es", "Hello").apply { id = 3 }
         wordRepository.addWords(word)
 
-        viewModel.setSavedWord("Hola", "es")
-
-        advanceUntilIdle()
-        assertEquals(ResultType.Update(word), viewModel.updatedWord.value)
+        viewModel.updatedWord.test {
+            viewModel.setSavedWord("Hola", "es")
+            assertEquals(ResultType.Update(word), awaitItem())
+        }
     }
 
     @Test
@@ -333,24 +335,26 @@ class WebReaderViewModelTest {
         val expectedTranslation = Translation(listOf(Segment(word.definition, word.word)), word.lang)
         wordRepository.addTranslation(expectedTranslation)
 
-        viewModel.translateText("Hola")
+        viewModel.textInfo.test {
+            viewModel.translateText("Hola")
 
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
-        advanceUntilIdle()
-        val result = (viewModel.textInfo.value as LoadResult.Success).data
-        assertFalse(result.isSaved)
-        assertFalse(result.isSentence)
-        assertWords(word, result.word)
+            assertEquals(LoadResult.Loading, awaitItem())
+            val result = (awaitItem() as LoadResult.Success).data
+            assertFalse(result.isSaved)
+            assertFalse(result.isSentence)
+            assertWords(word, result.word)
+        }
     }
 
     @Test
     fun `Given no saved words and translation, when translate text, then error`() = runTest {
-        viewModel.translateText("Hola")
+        viewModel.textInfo.test {
+            viewModel.translateText("Hola")
 
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
-        advanceUntilIdle()
-        val result = (viewModel.textInfo.value as LoadResult.Error).exception
-        assertEquals("Translation not found for: Hola", result.message)
+            assertEquals(LoadResult.Loading, awaitItem())
+            val result = (awaitItem() as LoadResult.Error).exception
+            assertEquals("Translation not found for: Hola", result.message)
+        }
     }
 
     @Test
@@ -358,14 +362,15 @@ class WebReaderViewModelTest {
         val translation = Translation("Hola", "es", "Hello")
         wordRepository.addTranslation(translation)
 
-        viewModel.translateWordInSentence("Hola")
+        viewModel.wordInfo.test {
+            viewModel.translateWordInSentence("Hola")
 
-        assertEquals(LoadResult.Loading, viewModel.wordInfo.value)
-        advanceUntilIdle()
-        val result = (viewModel.wordInfo.value as LoadResult.Success).data
-        assertEquals(translation.toWordUI(), result.word.toUI())
-        assertEquals(false, result.isSaved)
-        assertEquals(false, result.isSentence)
+            assertEquals(LoadResult.Loading, awaitItem())
+            val result = (awaitItem() as LoadResult.Success).data
+            assertEquals(translation.toWordUI(), result.word.toUI())
+            assertEquals(false, result.isSaved)
+            assertEquals(false, result.isSentence)
+        }
     }
 
     // endregion
@@ -380,10 +385,10 @@ class WebReaderViewModelTest {
         loadLocalPage()
         viewModel.setLanguage("es")
 
-        viewModel.onWordClicked("hola", 0)
-        advanceUntilIdle()
-
-        assertEquals(WordAndLinks("hola", links), viewModel.linksForWord.getOrAwaitValue())
+        viewModel.linksForWord.test {
+            viewModel.onWordClicked("hola", 0)
+            assertEquals(WordAndLinks("hola", links), awaitItem())
+        }
     }
 
 
@@ -500,8 +505,11 @@ class WebReaderViewModelTest {
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
 
-    private fun assertTextInfoSuccess(expected: WebReaderViewModel.WordResult) {
-        val result = (viewModel.textInfo.value as LoadResult.Success).data
+    private fun assertTextInfoSuccess(
+        actual: LoadResult<WebReaderViewModel.WordResult>,
+        expected: WebReaderViewModel.WordResult
+    ) = runTest {
+        val result = (actual as LoadResult.Success).data
         assertEquals(expected.isSaved, result.isSaved)
         assertEquals(expected.isSentence, result.isSentence)
         assertWords(expected.word, result.word)
