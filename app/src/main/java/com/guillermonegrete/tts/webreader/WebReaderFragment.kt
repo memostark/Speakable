@@ -315,7 +315,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val extra = if (barShown) initialBarSize else 0
             binding.composeBar.updatePadding(bottom = insets.bottom + extra)
             appBarSize = initialBarSize + insets.bottom
-            binding.paragraphsList.updatePadding(left = insets.left, right = insets.right)
             updateListBottomPadding(0)
             WindowInsetsCompat.CONSUMED
         }

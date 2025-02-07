@@ -15,11 +15,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.BottomNavigationViewKt;
 import androidx.navigation.ui.NavigationUI;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.common.views.NestedHideViewOnScrollBehavior;
 import com.guillermonegrete.tts.databinding.ActivityMainBinding;
@@ -58,10 +59,12 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
         addMenuProvider(this);
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar, (v, windowInsets) -> {
-            var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             var mlp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
             mlp.topMargin = insets.top;
             v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), insets.right, v.getPaddingBottom());
+            var nv = binding.landscapeLayout;
+            if (nv != null) nv.setPadding(insets.left, nv.getPaddingTop(), insets.right, nv.getPaddingBottom());
 
             // Return CONSUMED if you don't want want the window insets to keep passing
             // down to descendant views.
@@ -73,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
         setSupportActionBar(binding.toolbar);
     }
 
-    private void setupNavController(){
+    private void setupNavController() {
         var navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_fragment_container);
         if(navHostFragment == null) return;
         navController = navHostFragment.getNavController();
@@ -81,17 +84,30 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
         var bundle = new Bundle();
         bundle.putInt(MARGIN_OFFSET_NAME, offset);
 
-        var navView = binding.bottomNavView;
-        BottomNavigationViewKt.setupWithNavController(navView, navController);
-        navView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.importtext) {
-                navController.navigate(id, bundle);
+        var navView = binding.mainNavView;
+        if (navView instanceof NavigationBarView nv) {
+            NavigationUI.setupWithNavController(nv, navController);
+            nv.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.importtext) {
+                    navController.navigate(id, bundle);
+                    return true;
+                }
+                navController.navigate(id);
                 return true;
-            }
-            navController.navigate(id);
-            return true;
-        });
+            });
+        } else if (navView instanceof NavigationView nv) {
+            NavigationUI.setupWithNavController(nv, navController);
+            nv.setNavigationItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.importtext) {
+                    navController.navigate(id, bundle);
+                    return true;
+                }
+                navController.navigate(id);
+                return true;
+            });
+        }
 
         navController.addOnDestinationChangedListener((nController, destination, arguments) -> {
 
@@ -131,16 +147,16 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
     }
 
     public void showBottomBar() {
-        var navView = binding.bottomNavView;
+        var navView = binding.mainNavView;
         var layoutParams = navView.getLayoutParams();
         if (layoutParams instanceof CoordinatorLayout.LayoutParams) {
             var coordinatorLayoutBehavior =
                     ((CoordinatorLayout.LayoutParams) layoutParams).getBehavior();
-            if (coordinatorLayoutBehavior instanceof NestedHideViewOnScrollBehavior) {
+            if (coordinatorLayoutBehavior instanceof NestedHideViewOnScrollBehavior && navView instanceof BottomNavigationView nv) {
                 @SuppressWarnings("unchecked")
                 var behavior =
                         (NestedHideViewOnScrollBehavior<BottomNavigationView>) coordinatorLayoutBehavior;
-                behavior.slideUp(navView);
+                behavior.slideUp(nv);
             }
         }
     }
