@@ -131,9 +131,8 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                 fabContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     // Also adding the inset top because it was added to the TopBar and this also pushed the FAB down
                     bottomMargin = insets.bottom + insets.top + fabBottomMargin
-                    marginEnd = insets.right
                 }
-                recentFilesList.updatePadding(left = insets.left, right = insets.right, bottom = insets.bottom)
+                recentFilesList.updatePadding(bottom = insets.bottom)
 
                 viewInsets
             }

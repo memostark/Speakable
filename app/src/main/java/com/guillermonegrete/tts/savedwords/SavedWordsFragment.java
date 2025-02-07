@@ -107,7 +107,7 @@ public class SavedWordsFragment extends Fragment implements SavedWordListAdapter
     private void setInsetListener() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.recyclerviewSavedWords, (v, windowInsets) -> {
             var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(insets.left, v.getPaddingTop(), insets.right, insets.bottom);
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), insets.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
     }
