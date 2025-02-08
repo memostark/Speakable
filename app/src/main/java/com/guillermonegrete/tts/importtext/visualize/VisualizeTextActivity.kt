@@ -9,6 +9,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
@@ -40,6 +43,12 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         // Set content view after the fragment was committed to make sure the fragment's theme is applied correctly
         setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
+            var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            if (fragment is WebReaderFragment) v.updatePadding(left = insets.left, right = insets.right)
+            windowInsets
+        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
