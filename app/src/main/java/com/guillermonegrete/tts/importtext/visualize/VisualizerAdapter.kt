@@ -23,7 +23,6 @@ import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
-import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
@@ -115,7 +114,6 @@ class VisualizerAdapter(
         init {
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
-            Timber.d("Creating item: $adapterPosition, pad: $horizontalPadding")
             horizontalPadding?.let { pageTextView.updatePadding(left = it, right = it) }
             val detector = GestureDetector(itemView.context, PageGestureListener())
             pageTextView.setOnTouchListener { _, event ->
@@ -161,12 +159,12 @@ class VisualizerAdapter(
                 val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (savedWord != null && clickedNote != null) {
-                    val word = savedWord.word?.word ?: ""
+                    val word = savedWord.word.word
                     val note = createNote(clickedNote, item)
                     onTextClick(TextClick.Overlap(note, word))
                     return true
                 } else if (savedWord != null) {
-                    onTextClick(TextClick.SavedWord(savedWord.word?.word ?: ""))
+                    onTextClick(TextClick.SavedWord(savedWord.word.word))
                     return true
                 } else if (clickedNote != null) {
                     onTextClick(TextClick.Note(createNote(clickedNote, item)))
