@@ -9,6 +9,7 @@ import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.updatePadding
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
@@ -22,6 +23,7 @@ import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
+import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
@@ -40,6 +42,8 @@ class VisualizerAdapter(
     private var pageMarginsSize = 0
     private var lineSpacingExtra = 0f
     private var largeText = 0
+
+    var horizontalPadding: Int? = null
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
@@ -111,6 +115,8 @@ class VisualizerAdapter(
         init {
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
+            Timber.d("Creating item: $adapterPosition, pad: $horizontalPadding")
+            horizontalPadding?.let { pageTextView.updatePadding(left = it, right = it) }
             val detector = GestureDetector(itemView.context, PageGestureListener())
             pageTextView.setOnTouchListener { _, event ->
                 detector.onTouchEvent(event)
