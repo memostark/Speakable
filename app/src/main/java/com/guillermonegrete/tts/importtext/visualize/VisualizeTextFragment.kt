@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.IntentCompat
 import androidx.core.content.edit
+import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -192,7 +193,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
      *  Changes the dimensions of the card to have the same aspect ratio as the screen
      *  and smaller size given by the defined ratio.
      */
-    private fun setUpCardViewDimensions() {
+    private fun setUpCardViewDimensions(insets: WindowInsetsCompat) {
         val screenSizes = requireContext().getScreenSizes()
         // Remove cutout height because it's not used
         val screenHeight = screenSizes.height - screenSizes.statusHeight
@@ -203,6 +204,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         cardYOffset = (screenHeight / 2 + screenSizes.statusHeight) - cardCenterY
         ratio = cardHeight / screenHeight.toFloat()
         cardWidth = (screenSizes.width * ratio).toInt()
+
+        val cutoutInsets = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+        setPagePadding(cutoutInsets)
 
         val cardParams = textCardView.layoutParams
         cardParams.width = cardWidth
@@ -217,6 +221,11 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.pageSplitter = null
     }
 
     private fun setPageTransformListener() {
@@ -321,7 +330,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 }
 
                 textReaderCardView.post {
-                    setUpCardViewDimensions()
+                    setUpCardViewDimensions(insets)
                     setPageTransformListener()
                 }
 
@@ -679,6 +688,17 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             viewModel.pageSplitter = PageSplitter(pageTextView, focusedView.width, splitter)
             initParse(fileReader)
             splitterCreated = true
+        }
+    }
+
+    private fun setPagePadding(insets: Insets) {
+        val defaultPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_padding)
+
+        // Get the biggest horizontal inset, calculate how much padding the cards needs to not overlap it.
+        // If it's bigger than the default padding then update it.
+        val requiredPadding = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
+        if (requiredPadding > defaultPadding) {
+            pagesAdapter.horizontalPadding = requiredPadding
         }
     }
 

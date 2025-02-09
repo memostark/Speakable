@@ -38,7 +38,7 @@ class SettingsFragment : PreferenceFragmentCompat(), MenuProvider {
         val layout = super.onCreateView(inflater, container, savedInstanceState)
         ViewCompat.setOnApplyWindowInsetsListener(layout) { v, rootInsets ->
             val insets = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            listView.updatePadding(left = insets.left, right = insets.right, bottom = insets.bottom)
+            listView.updatePadding(bottom = insets.bottom)
             rootInsets
         }
 
