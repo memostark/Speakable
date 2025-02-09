@@ -490,6 +490,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     }
 
     private fun setUpPagerAndIndexLabel(chapter: BookChapter){
+        val padding = pagesAdapter.horizontalPadding
         pagesAdapter = VisualizerAdapter(
             createPageItems(chapter),
             onCreateNote = {
@@ -513,6 +514,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             },
             getPageCharPos = viewModel::getCharPos
         )
+        pagesAdapter.horizontalPadding = padding
         pagesAdapter.hasBottomSheet = viewModel.hasBottomSheet
         pagesAdapter.isPageSplit = viewModel.isSheetExpanded
         viewPager.adapter = pagesAdapter
@@ -697,8 +699,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         // Get the biggest horizontal inset, calculate how much padding the cards needs to not overlap it.
         // If it's bigger than the default padding then update it.
         val requiredPadding = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
-        if (requiredPadding > defaultPadding) {
+        if (requiredPadding > defaultPadding && requiredPadding != pagesAdapter.horizontalPadding) {
             pagesAdapter.horizontalPadding = requiredPadding
+            binding.textReaderViewpager.adapter = pagesAdapter // Adapter remakes the items
         }
     }
 

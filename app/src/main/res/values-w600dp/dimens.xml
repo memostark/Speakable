@@ -3,5 +3,5 @@
     <!-- For this size the bottom nav bar gets changed for a navigation rail, the height is only the top bar's 64dp-->
     <dimen name="main_act_bars_height">64dp</dimen>
 
-    <dimen name="visualize_page_horizontal_padding">10dp</dimen>
+    <dimen name="visualize_page_horizontal_padding">30dp</dimen>
 </resources>
