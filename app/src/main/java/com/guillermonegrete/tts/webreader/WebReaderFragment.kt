@@ -32,6 +32,7 @@ import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.common.models.toUI
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.db.Words
@@ -210,6 +211,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 isPageSaved.value = it.uuid != null
             }
 
+            val bottomSheetBehavior = BottomSheetBehavior.from(transSheet.root)
+
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     launch {
@@ -245,6 +248,30 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 }
                             }
                             editWordDialogVisible.value = false
+                        }
+                    }
+
+                    launch {
+                        viewModel.dialogState.collect { result ->
+                            if (result.isLoading) {
+                                transSheet.barLoading.isVisible = true
+                                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                                return@collect
+                            } else {
+                                transSheet.barLoading.isVisible = false
+                                val state = result.dialogState
+                                when(state) {
+                                    is DialogType.Note -> showSheetWithNote(state.item)
+                                    is DialogType.SavedWord -> {
+                                        val word = state.word
+                                        val newState = WordState(word.toUI(), word.id, wordState.value?.span)
+                                        showSavedWord(newState)
+                                    }
+                                    is DialogType.Translation -> {}
+                                    null -> if(result.sentence == null) bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                                }
+                                binding.composeBar.isVisible = state == null
+                            }
                         }
                     }
                 }
@@ -416,7 +443,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     adapter.updateWordInSentence()
                                 }
                             }
-                            is ParagraphAdapter.TextClick.Note -> showSheetWithNote(result.item)
+                            is ParagraphAdapter.TextClick.Note -> viewModel.setNoteData(result.item)
                             is ParagraphAdapter.TextClick.Overlap -> {
                                 noteInfo = result.note
                                 wordState.value = result.word
@@ -582,7 +609,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             wordTranslation.setHorizontallyScrolling(true)
 
             val bottomSheetBehavior = BottomSheetBehavior.from(root)
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
             val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
 
@@ -595,6 +621,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         adapter.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
+                        viewModel.clearTextInfo()
                         updateListBottomPadding(0)
                     } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
                         backPressedCallback.isEnabled = true
@@ -708,12 +735,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
-    private fun handleTextInfoEvent(result: LoadResult<WebReaderViewModel.WordResult>) {
+    private fun handleTextInfoEvent(result: DialogState<WebReaderViewModel.WordResult>) {
         with(binding.transSheet) {
             val bottomSheetBehavior = BottomSheetBehavior.from(root)
 
-            barLoading.isInvisible = when(result) {
-                is LoadResult.Success -> {
+            barLoading.isVisible = result is DialogState.Loading
+            when(result) {
+                is DialogState.Success -> {
                     val wordResult = result.data
                     val word = wordResult.word
                     translatedText.text = word.definition
@@ -754,14 +782,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             updateListBottomPadding(root.height)
                         }
                     }
-                    true
+                    binding.composeBar.isVisible = false
                 }
-                is LoadResult.Error -> {
+                is DialogState.Error -> {
                     Toast.makeText(context, "Couldn't translate text", Toast.LENGTH_SHORT).show()
                     Timber.e(result.exception, "Error translating selected text")
-                    true
                 }
-                LoadResult.Loading -> {
+                DialogState.Loading -> {
                     translatedText.text = ""
                     translatedText.scrollTo(0, 0)
                     notesText.text = ""
@@ -769,16 +796,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     addNoteBtn.isVisible = false
                     setWordSheetViews(false)
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                    false
                 }
+                is DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             }
         }
     }
 
-    private fun handleWordInfoEvent(result: LoadResult<WebReaderViewModel.WordResult>) {
+    private fun handleWordInfoEvent(result: DialogState<WebReaderViewModel.WordResult>) {
         with(binding.transSheet) {
-            barLoading.isInvisible = when(result){
-                is LoadResult.Success -> {
+            barLoading.isVisible = result is DialogState.Loading
+            when(result){
+                is DialogState.Success -> {
                     val word = result.data.word
                     wordTranslation.text = word.definition
                     moreInfoWordBtn.setOnClickListener {
@@ -797,19 +825,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
 
                     addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
-                    true
                 }
-                is LoadResult.Error -> {
+                is DialogState.Error -> {
                     Toast.makeText(context, "Couldn't translate word", Toast.LENGTH_SHORT).show()
                     Timber.e(result.exception,"Error translating word in selected text")
-                    true
                 }
-                LoadResult.Loading -> {
+                DialogState.Loading -> {
                     wordTranslation.text = ""
                     moreInfoWordBtn.isInvisible = true
                     addWordNoteBtn.isInvisible = true
-                    false
                 }
+                DialogState.Empty -> setWordSheetViews(false)
             }
         }
     }
