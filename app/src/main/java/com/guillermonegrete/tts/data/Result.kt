@@ -23,6 +23,17 @@ sealed class LoadResult<out T>{
 }
 
 /**
+ * Similar to [LoadResult] but specific for dialogs with an additional state for then the dialog is hidden/empty.
+ */
+sealed class DialogState<out T>{
+
+    data object Empty: DialogState<Nothing>()
+    data class Success<out T>(val data: T): DialogState<T>()
+    data class Error<out T>(val exception: Exception): DialogState<T>()
+    data object Loading : DialogState<Nothing>()
+}
+
+/**
  * Represents the state when audio is being played (e.g. TTS)
  */
 sealed class PlayAudioState {
