@@ -269,7 +269,7 @@ class WebReaderViewModel @Inject constructor(
     fun translateText(text: String) {
         if (showWords) {
             // This text is not a saved word, so skip directly to translation
-            translateText(text, _textInfo)
+            fetchTranslation(text)
         } else {
             // The text might be a saved word, query the database first to check
             setSavedWord(text, null)
@@ -277,12 +277,17 @@ class WebReaderViewModel @Inject constructor(
     }
 
     fun translateWordInSentence(text: String) {
-        translateText(text, _wordInfo)
+        _dialogState.update { it.copy(isWordLoading = true) }
+        viewModelScope.launch {
+            getTranslation(text) { translation ->
+                viewModelScope.launch {
+                    _dialogState.update { it.copy(dialogState = DialogType.Translation(text, translation.translatedText, translation.src), isWordLoading = false) }
+                }
+            }
+        }
     }
 
     fun clearTextInfo() {
-        _textInfo.value = DialogState.Empty
-        _wordInfo.value = DialogState.Empty
         _dialogState.update { it.copy(dialogState = null, sentence = null) }
     }
 
@@ -320,14 +325,13 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    private fun translateText(text: String, observer: MutableSharedFlow<DialogState<WordResult>>) {
+    private fun fetchTranslation(text: String) {
         viewModelScope.launch {
-            observer.emit(DialogState.Loading)
+            _dialogState.update { it.copy(isLoading = true, sentence = null) }
 
             getTranslation(text) { translation ->
-                val word = Words(text, translation.src, translation.translatedText)
                 viewModelScope.launch {
-                    observer.emit(DialogState.Success(WordResult(word, false)))
+                    _dialogState.update { it.copy(dialogState = DialogType.Translation(text, translation.translatedText, translation.src), isLoading = false) }
                 }
             }
         }
@@ -335,10 +339,8 @@ class WebReaderViewModel @Inject constructor(
 
     private suspend fun getTranslationInfo(text: String) {
         getTranslation(text) { translation ->
-            val word = Words(text, translation.src, translation.translatedText)
             viewModelScope.launch {
-                _textInfo.emit(DialogState.Success(WordResult(word, false)))
-                _dialogState.update { it.copy(sentence = translation.src) }
+                _dialogState.update { it.copy(dialogState = DialogType.Translation(text, translation.translatedText, translation.src)) }
             }
         }
     }
@@ -442,22 +444,18 @@ class WebReaderViewModel @Inject constructor(
         viewModelScope.launch {
             val language = cacheWebLink?.language
             if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
-                val word = Words(sentence.original, sentence.sourceLang, sentence.translation)
-                _textInfo.emit(DialogState.Success(WordResult(word, isSaved = false, isSentence = true)))
-                _dialogState.update { it.copy(sentence = sentence.translation) }
+                _dialogState.update { it.copy(sentence = sentence.translation, dialogState = null) }
                 return@launch
             }
 
-            _textInfo.emit(DialogState.Loading)
+            _dialogState.update { it.copy(isLoading = true) }
 
             wrapEspressoIdlingResource {
                 getTranslation(sentence.original) { translation ->
                     sentence.translation = translation.translatedText
                     sentence.sourceLang = translation.src
-                    val word = Words(sentence.original, translation.src, translation.translatedText)
                     viewModelScope.launch {
-                        _textInfo.emit(DialogState.Success(WordResult(word, isSaved = false, isSentence = true)))
-                        _dialogState.update { it.copy(sentence = translation.src) }
+                        _dialogState.update { it.copy(sentence = translation.translatedText, dialogState = null, isLoading = false) }
                     }
                 }
             }
@@ -654,6 +652,7 @@ class WebReaderViewModel @Inject constructor(
 
     data class UiDialogState(
         val isLoading: Boolean = false,
+        val isWordLoading: Boolean = false,
         val isPageSaved: Boolean = false,
         val dialogState: DialogType? = null,
         val sentence: String? = null,
