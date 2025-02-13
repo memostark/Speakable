@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -32,6 +31,7 @@ import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.common.models.toUI
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.db.Words
@@ -65,8 +65,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private var languageFrom: String? = null
 
     private lateinit var adapter: ParagraphAdapter
-
-    private var bottomSheetBackCallback: OnBackPressedCallback? = null
 
     private val loadingDialogVisible = mutableStateOf(false)
     private val deleteDialogVisible = mutableStateOf(false)
@@ -581,8 +579,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     else getLinksForWord(info.word)
                 }
 
-                val bottomSheetBehavior = BottomSheetBehavior.from(root)
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                 adapter.unselectSentence()
             }
         }
@@ -608,8 +604,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     override fun onDestroyView() {
         _binding = null
-        bottomSheetBackCallback?.remove()
-        bottomSheetBackCallback = null
         super.onDestroyView()
     }
 
@@ -629,7 +623,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding) {
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
             requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, bottomSheetBackCallback)
@@ -639,6 +632,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     when (newState) {
                         BottomSheetBehavior.STATE_HIDDEN -> {
                             bottomSheetBackCallback.isEnabled = false
+                            viewModel.hideWordLinks()
                             if (translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
                         }
                         BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBackCallback.isEnabled = true
@@ -663,30 +657,38 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val decor = DividerItemDecoration(context, (linksList.layoutManager as LinearLayoutManager).orientation)
             linksList.addItemDecoration(decor)
 
-            var selectedPos = 0
-
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    viewModel.linksForWord.collect {
-                        val links = it.links
-                        links.forEach { link -> link.link = link.link.replace("{q}", it.word) }
+                    viewModel.linksForWord.collect { state ->
+                        when(state) {
+                            DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                            is DialogState.Error -> Timber.e(state.exception, "Error retrieving links for word")
+                            DialogState.Loading -> {}
+                            is DialogState.Success -> {
+                                val links = state.data.links
+                                links.forEach { link -> link.link = link.link.replace("{q}", state.data.word) }
 
-                        // if out of index, default to the first item (zero index)
-                        if(selectedPos >= links.size) selectedPos = 0
+                                val adapter = ExternalLinksAdapter(links) { index ->
+                                    viewModel.setWordLink(index)
+                                }
 
-                        val link = links.getOrNull(selectedPos)
-                        if (link != null) infoWebview.loadUrl(link.link)
-                        val adapter = ExternalLinksAdapter(it.links) { index ->
-                            selectedPos = index
-                            infoWebview.loadUrl(links[index].link)
-                            linksList.scrollToPosition(index)
+                                adapter.setFlatButton(true)
+                                val selectedPos = viewModel.selectedLink.value
+                                adapter.setSelectedPos(selectedPos)
+                                linksList.scrollToPosition(selectedPos)
+                                linksList.adapter = adapter
+
+                                launch {
+                                    viewModel.selectedLink.collect {
+                                        infoWebview.loadUrl(links[it].link)
+                                        linksList.scrollToPosition(it)
+                                    }
+                                }
+
+                                composeBar.isVisible = false
+                                root.post { bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED }
+                            }
                         }
-                        adapter.setFlatButton(true)
-                        adapter.setSelectedPos(selectedPos)
-                        linksList.scrollToPosition(selectedPos)
-                        linksList.adapter = adapter
-                        composeBar.isVisible = false
-                        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                     }
                 }
             }
@@ -703,19 +705,18 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
             requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, backPressedCallback)
-            bottomSheetBackCallback = backPressedCallback
 
             bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
-                        bottomSheetBackCallback?.isEnabled = false
+                        backPressedCallback.isEnabled = false
                         adapter.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
                         viewModel.clearTextInfo()
                         updateListBottomPadding(0)
                     } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                        bottomSheetBackCallback?.isEnabled = true
+                        backPressedCallback.isEnabled = true
                         binding.composeBar.isVisible = false
                         updateListBottomPadding(root.height)
                     }
@@ -917,6 +918,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
                         null -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
                     }
+                }
+
+                root.post {
+                    if (state != null || result.sentence != null) bottomSheetBehavior.state =  BottomSheetBehavior.STATE_EXPANDED
                 }
 
                 binding.composeBar.isVisible = state == null && result.sentence == null

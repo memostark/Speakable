@@ -82,8 +82,11 @@ class WebReaderViewModel @Inject constructor(
     private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
     val dialogState: StateFlow<UiDialogState> = _dialogState
 
-    private val _linksForWord = MutableSharedFlow<WordAndLinks>()
-    val linksForWord: SharedFlow<WordAndLinks> = _linksForWord
+    private val _linksForWord = MutableStateFlow<DialogState<WordAndLinks>>(DialogState.Empty)
+    val linksForWord: StateFlow<DialogState<WordAndLinks>> = _linksForWord
+
+    private val _selectedLink = MutableStateFlow<Int>(0)
+    val selectedLink: StateFlow<Int> = _selectedLink
 
     private val _updatedNote = MutableLiveData<ModifiedNote>()
     val updatedNote: LiveData<ModifiedNote> = _updatedNote
@@ -394,13 +397,23 @@ class WebReaderViewModel @Inject constructor(
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
             val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-            _linksForWord.emit(WordAndLinks(word, links))
+            _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
+            // if out of index, default to the first item (zero index)
+            if(_selectedLink.value >= links.size) _selectedLink.value = 0
         }
     }
 
     fun getLinksForWord(word: String) {
         val lang = cacheWebLink?.language ?: return
         getLinksForWord(word, lang)
+    }
+
+    fun hideWordLinks() {
+        _linksForWord.value = DialogState.Empty
+    }
+
+    fun setWordLink(position: Int) {
+        _selectedLink.value = position
     }
 
     fun setLanguage(langShort: String?) {
@@ -627,6 +640,7 @@ class WebReaderViewModel @Inject constructor(
         viewModelScope.launch {
             withContext(ioDispatcher) { wordRepository.deleteWord(word) }
             _updatedWord.emit(ResultType.Delete(word.id))
+//            _dialogState.update { it.copy(dialogState = null)}
         }
     }
 
