@@ -1,8 +1,10 @@
 package com.guillermonegrete.tts.webreader
 
+import android.graphics.Color
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.hasInside
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.LoadResult
@@ -152,6 +154,7 @@ class WebReaderViewModel @Inject constructor(
                     }
 
                     _page.value = LoadResult.Success(pageInfo)
+                    _dialogState.update { it.copy(isPageSaved = pageInfo.isLocalPage) }
                     cacheWebLink = webLink
                     // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
                     // Bug report: https://issuetracker.google.com/issues/198313895
@@ -176,6 +179,7 @@ class WebReaderViewModel @Inject constructor(
                     val notes = noteDAO.getNotes(webLink.id)
                     val content = readContentFile(uuid)
                     _page.value = LoadResult.Success(PageInfo(content, notes, true))
+                    _dialogState.update { it.copy(isPageSaved = true) }
                 } catch (ex: IOException){
                     _page.value = LoadResult.Error(ex)
                 }
@@ -191,6 +195,7 @@ class WebReaderViewModel @Inject constructor(
             try {
                 val page = getPage(webLink.url)
                 _page.value = LoadResult.Success(PageInfo(page.content, emptyList(), false))
+                _dialogState.update { it.copy(isPageSaved = false) }
             } catch (ex: IOException){
                 _page.value = LoadResult.Error(ex)
             }
@@ -269,22 +274,23 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun translateText(text: String) {
+    fun translateText(text: String, span: Span) {
         if (showWords) {
             // This text is not a saved word, so skip directly to translation
-            fetchTranslation(text)
+            fetchTranslation(text, span)
         } else {
             // The text might be a saved word, query the database first to check
-            setSavedWord(text, null)
+            setSavedWord(text, null, span, null)
         }
     }
 
-    fun translateWordInSentence(text: String) {
+    fun translateWordInSentence(text: String, span: Span) {
         _dialogState.update { it.copy(isWordLoading = true) }
         viewModelScope.launch {
             getTranslation(text) { translation ->
                 viewModelScope.launch {
-                    _dialogState.update { it.copy(dialogState = DialogType.Translation(text, translation.translatedText, translation.src), isWordLoading = false) }
+                    val translation = SimpleTranslation(text, translation.translatedText, translation.src)
+                    _dialogState.update { it.copy(dialogState = DialogType.Translation(translation, span), isWordLoading = false) }
                 }
             }
         }
@@ -295,20 +301,29 @@ class WebReaderViewModel @Inject constructor(
     }
 
     fun setNoteData(note: EditNote) {
+//        val webLink = cacheWebLink ?: return
+//        val dbNote = Note(note.noteText, note.text, note.span.start, note.span.end - note.span.start, "#${note.color.toHexString()}", webLink.id, null, note.id)
         _dialogState.update { it.copy(dialogState = DialogType.Note(note)) }
     }
 
-    fun setSavedWord(word: String, lang: String?) {
+    fun setSavedWord(word: String, lang: String?, wordSpan: Span, sentenceSpan: Span?) {
         viewModelScope.launch {
             _savedWord.emit(WordLang(word, lang))
         }
+
+        if (sentenceSpan != null && sentenceSpan.hasInside(wordSpan)) {
+            _dialogState.update { it.copy(isWordLoading = true) }
+        } else {
+            _dialogState.update { it.copy(isLoading = true, sentence = null) }
+        }
+
         if (job == null) {
-            launchWordJob()
+            launchWordJob(wordSpan)
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun launchWordJob() {
+    private fun launchWordJob(span: Span) {
         job = viewModelScope.launch {
             _savedWord.flatMapLatest { data ->
                 wordRepository.getLocalWord(data.word, data.lang ?: cacheWebLink?.language)
@@ -316,34 +331,35 @@ class WebReaderViewModel @Inject constructor(
                     .asFlow()
             }.collectLatest { dbWord ->
                 if (dbWord != null) {
-//                    _updatedWord.emit(ResultType.Update(dbWord))
-                    _dialogState.update { it.copy(dialogState = DialogType.SavedWord(dbWord)) }
+                    _dialogState.update { it.copy(dialogState = DialogType.SavedWord(dbWord), isLoading = false, isWordLoading = false) }
                 } else {
                     if (!showWords) {
                         val data = _savedWord.first()
-                        getTranslationInfo(data.word)
+                        getTranslationInfo(data.word, span)
                     }
                 }
             }
         }
     }
 
-    private fun fetchTranslation(text: String) {
+    private fun fetchTranslation(text: String, span: Span) {
         viewModelScope.launch {
             _dialogState.update { it.copy(isLoading = true, sentence = null) }
 
             getTranslation(text) { translation ->
                 viewModelScope.launch {
-                    _dialogState.update { it.copy(dialogState = DialogType.Translation(text, translation.translatedText, translation.src), isLoading = false) }
+                    val translation = SimpleTranslation(text, translation.translatedText, translation.src)
+                    _dialogState.update { it.copy(dialogState = DialogType.Translation(translation, span), isLoading = false) }
                 }
             }
         }
     }
 
-    private suspend fun getTranslationInfo(text: String) {
+    private suspend fun getTranslationInfo(text: String, span: Span) {
         getTranslation(text) { translation ->
             viewModelScope.launch {
-                _dialogState.update { it.copy(dialogState = DialogType.Translation(text, translation.translatedText, translation.src)) }
+                val translation = SimpleTranslation(text, translation.translatedText, translation.src)
+                _dialogState.update { it.copy(dialogState = DialogType.Translation(translation, span)) }
             }
         }
     }
@@ -457,7 +473,8 @@ class WebReaderViewModel @Inject constructor(
         viewModelScope.launch {
             val language = cacheWebLink?.language
             if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
-                _dialogState.update { it.copy(sentence = sentence.translation, dialogState = null) }
+                val sentence = Sentence(sentence.translation, paragraphIndex, sentenceIndex)
+                _dialogState.update { it.copy(sentence = sentence, dialogState = null) }
                 return@launch
             }
 
@@ -468,7 +485,8 @@ class WebReaderViewModel @Inject constructor(
                     sentence.translation = translation.translatedText
                     sentence.sourceLang = translation.src
                     viewModelScope.launch {
-                        _dialogState.update { it.copy(sentence = translation.translatedText, dialogState = null, isLoading = false) }
+                        val sentence = Sentence(translation.translatedText, paragraphIndex, sentenceIndex)
+                        _dialogState.update { it.copy(sentence = sentence, dialogState = null, isLoading = false) }
                     }
                 }
             }
@@ -516,8 +534,10 @@ class WebReaderViewModel @Inject constructor(
                 val resultId = noteDAO.upsert(newNote)
                 // Upsert returns -1 when the operation was an update, use the parameter ID.
                 val finalId = if(resultId == -1L) id else resultId
-                val result = ModifiedNote.Update(newNote.copy(id = finalId))
-                _updatedNote.value = result
+                val updatedNote = newNote.copy(id = finalId)
+                _updatedNote.value = ModifiedNote.Update(updatedNote)
+                val editNote = EditNote(text, noteText, selection, Color.parseColor(color), true, finalId)
+                _dialogState.update { it.copy(dialogState = DialogType.Note(editNote)) }
             }
         }
     }
@@ -626,11 +646,12 @@ class WebReaderViewModel @Inject constructor(
 
     fun getWordIndexes(id: Int) = wordIdToIndexes[id] ?: emptySet()
 
-    fun upsert(word: Words) {
+    fun upsert(word: Words, wordSpan: Span, sentenceSpan: Span?) {
         viewModelScope.launch {
             val resultId = withContext(ioDispatcher) { wordRepository.upsert(word) }
             if(resultId != -1L) {
                 word.id = resultId.toInt()
+                setSavedWord(word.word, word.lang, wordSpan, sentenceSpan)
                 _updatedWord.emit(ResultType.Insert(word))
             }
         }
@@ -652,8 +673,6 @@ class WebReaderViewModel @Inject constructor(
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
 
-    data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
-
     data class Page(val title: String, val content: String)
 
     data class WordSpans(val words: List<String>, val spans: List<Span>)
@@ -669,14 +688,18 @@ class WebReaderViewModel @Inject constructor(
         val isWordLoading: Boolean = false,
         val isPageSaved: Boolean = false,
         val dialogState: DialogType? = null,
-        val sentence: String? = null,
+        val sentence: Sentence? = null,
     )
 }
+
+data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
+
+data class Sentence(val text: String, val paragraphIndex: Int, val sentenceIndex: Int)
 
 sealed interface DialogType {
     data class SavedWord(val word: Words): DialogType
     data class Note(val item: EditNote): DialogType
-    data class Translation(val original: String, var translation: String = "", var sourceLang: String = ""): DialogType
+    data class Translation(val translation: SimpleTranslation, val span: Span): DialogType
 }
 
 /**

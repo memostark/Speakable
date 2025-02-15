@@ -324,7 +324,7 @@ class WebReaderViewModelTest {
         wordRepository.addWords(word)
 
         viewModel.updatedWord.test {
-            viewModel.setSavedWord("Hola", "es")
+            viewModel.setSavedWord("Hola", "es", state.span)
             assertEquals(ResultType.Update(word), awaitItem())
         }
     }
@@ -336,7 +336,7 @@ class WebReaderViewModelTest {
         wordRepository.addTranslation(expectedTranslation)
 
         viewModel.textInfo.test {
-            viewModel.translateText("Hola")
+            viewModel.translateText("Hola", wordSpan)
 
             assertEquals(LoadResult.Loading, awaitItem())
             val result = (awaitItem() as LoadResult.Success).data
@@ -349,7 +349,7 @@ class WebReaderViewModelTest {
     @Test
     fun `Given no saved words and translation, when translate text, then error`() = runTest {
         viewModel.textInfo.test {
-            viewModel.translateText("Hola")
+            viewModel.translateText("Hola", wordSpan)
 
             assertEquals(LoadResult.Loading, awaitItem())
             val result = (awaitItem() as LoadResult.Error).exception
@@ -363,7 +363,7 @@ class WebReaderViewModelTest {
         wordRepository.addTranslation(translation)
 
         viewModel.wordInfo.test {
-            viewModel.translateWordInSentence("Hola")
+            viewModel.translateWordInSentence("Hola", wordSpan)
 
             assertEquals(LoadResult.Loading, awaitItem())
             val result = (awaitItem() as LoadResult.Success).data
