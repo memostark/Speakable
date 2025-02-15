@@ -35,6 +35,7 @@ import com.guillermonegrete.tts.utils.isWord
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -43,7 +44,7 @@ class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: () -> Unit,
     val onTextHighlighted: () -> Unit = {},
-    val onTranslateHighlightedText: (String) -> Unit = {},
+    val onTranslateHighlightedText: (text: String, span: Span) -> Unit = { _, _ -> },
     val loadDatabaseWord: (text: CharSequence, pos: Int) -> Unit = { _, _ -> },
     val scanParagraph: (dbWords: List<Words>, text: String, position: Int) -> List<WordState> = { _, _, _ -> emptyList() },
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -80,6 +81,10 @@ class ParagraphAdapter(
      * The position of the paragraph in the list that contains the selected word.
      */
     private var selectedWordPos = -1
+    /**
+     * Used to restore the selected word if the items are reloaded (e.g. during config change)
+     */
+    private var selectedWordSpan: Span? = null
 
     private var highlightedTextPos = -1
 
@@ -154,6 +159,19 @@ class ParagraphAdapter(
     @SuppressLint("NotifyDataSetChanged")
     fun updateItems(items: List<ParagraphItem>) {
         this.items = items
+        selectedWordSpan?.let {
+            val pos = getCharListIndex(it.start)
+            if (pos == -1) return
+            val item = items[pos]
+            item.selectedWord = item.toLocal(it)
+            selectedWordPos = pos
+        }
+
+        // Restore sentence
+        if (selectedSentence.paragraphIndex != -1 && selectedSentence.sentenceIndex != -1) {
+            val item = items[selectedSentence.paragraphIndex]
+            item.selectedIndex = selectedSentence.sentenceIndex
+        }
         notifyDataSetChanged()
     }
 
@@ -207,10 +225,17 @@ class ParagraphAdapter(
                 val span = item.indexes[item.selectedIndex]
                 selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
                 val wordSpan = item.selectedWord
-                if(wordSpan != null) spannable.addHighlightedText(wordSpan.start, wordSpan.end)
+                if(wordSpan != null) {
+                    Timber.d("Setting word inside selected sentence for span: $wordSpan")
+                    spannable.addHighlightedText(wordSpan.start, wordSpan.end)
+                }
             } else {
                 val span = item.selectedWord
-                if(span != null) spannable.addHighlightedText(span.start, span.end)
+                if(span != null) {
+                    val word = item.original.substring(span.start, span.end)
+                    Timber.d("Setting word ($word) for span: $span")
+                    selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
+                }
             }
 
             item.notes.forEach {
@@ -271,12 +296,12 @@ class ParagraphAdapter(
                         item.selectedWord = wordSpan
                         selectedSentence.wordSelected = true
                         _textClicked.tryEmit(TextClick.Sentence(clickedWord))
-                        return super.onSingleTapConfirmed(e)
+                        return true
                     }
                 }
 
                 if(clickedWord.isNotEmpty()) {
-                    viewModel.translateText(clickedWord)
+                    viewModel.translateText(clickedWord, item.toAbsolute(wordSpan)) // pass span
                     unselectSentence()
                     unselectWord()
 
@@ -512,10 +537,10 @@ class ParagraphAdapter(
 
             override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
                 item ?: return false
+                val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
 
                 return when(item.itemId) {
                     R.id.add_new_note_action -> {
-                        val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
                         // New note so the text and color are empty and id is zero
                         val text = highlightedTextView?.getSelectedText().toString()
                         _addNoteClicked.tryEmit(EditNote(text, "", span, 0, false, 0))
@@ -523,7 +548,6 @@ class ParagraphAdapter(
                         true
                     }
                     R.id.add_saved_word_action -> {
-                        val span = Span(firstCharIndex + binding.paragraph.selectionStart, firstCharIndex + binding.paragraph.selectionEnd)
                         val text = highlightedTextView?.getSelectedText().toString()
                         _addWordClicked.tryEmit(WordState(WordUI(text, "", ""), span = span))
                         mode?.finish()
@@ -531,7 +555,7 @@ class ParagraphAdapter(
                     }
                     TRANSLATE_MENU_ITEM_ID -> {
                         val text = getHighlightedText() ?: return false
-                        onTranslateHighlightedText(text.toString())
+                        onTranslateHighlightedText(text.toString(), span)
                         mode?.finish()
                         true
                     }
@@ -603,16 +627,6 @@ class ParagraphAdapter(
         selectedSentence.wordSelected = false
     }
 
-    private fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
-        val item = items[paragraphIndex]
-        item.selectedIndex = sentenceIndex
-
-        notifyItemChanged(paragraphIndex, sentenceIndex)
-
-        selectedSentence.paragraphIndex = paragraphIndex
-        selectedSentence.sentenceIndex = sentenceIndex
-    }
-
     fun unselectWord() {
         // unselect independent word
         if(selectedWordPos != -1) {
@@ -620,6 +634,7 @@ class ParagraphAdapter(
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, -1)
             selectedWordPos = -1
+            selectedWordSpan = null
             isOverlappingNotes = false
             isOverlappingSavedWord = false
         }
@@ -632,6 +647,26 @@ class ParagraphAdapter(
             notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
             selectedSentence.wordSelected = false
         }
+    }
+
+    fun selectWord(absSpan: Span) {
+        selectedWordSpan = absSpan
+        val pos = getCharListIndex(absSpan.start)
+        if (pos == -1 || pos == selectedWordPos) return
+        val item = items[pos]
+        item.selectedWord = item.toLocal(absSpan)
+        selectedWordPos = pos
+        notifyItemChanged(pos, PAYLOAD_WORD)
+    }
+
+    fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
+        selectedSentence.paragraphIndex = paragraphIndex
+        selectedSentence.sentenceIndex = sentenceIndex
+
+        val item = items.getOrNull(paragraphIndex) ?: return
+        item.selectedIndex = sentenceIndex
+
+        notifyItemChanged(paragraphIndex, sentenceIndex)
     }
 
     fun nextSentence(){
@@ -694,6 +729,11 @@ class ParagraphAdapter(
             return item.toAbsolute(span)
         }
         return null
+    }
+
+    fun getSelectedSentenceSpan(): Span? {
+        val sel = selectedSentence
+        return items.getOrNull(sel.paragraphIndex)?.indexes?.getOrNull(sel.sentenceIndex)
     }
 
     /**
@@ -825,7 +865,7 @@ class ParagraphAdapter(
     }
 
     fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {
-        val pos = items.indexOfFirst { it.firstCharIndex + it.original.length > selection.start }
+        val pos = getCharListIndex(selection.start)
         if (pos == -1) return
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
@@ -878,6 +918,8 @@ class ParagraphAdapter(
         fun toAbsolute(span: Span) : Span {
             return Span(firstCharIndex + span.start, firstCharIndex + span.end)
         }
+
+        fun toLocal(absSpan: Span) = Span(absSpan.start - firstCharIndex, absSpan.end - firstCharIndex)
     }
 
     data class SelectedSentence(
@@ -962,6 +1004,8 @@ class ParagraphAdapter(
         }
         initialWordsLoaded = false
     }
+
+    private fun getCharListIndex(charPos: Int) = items.indexOfFirst { it.firstCharIndex + it.original.length > charPos }
 
     data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
 
