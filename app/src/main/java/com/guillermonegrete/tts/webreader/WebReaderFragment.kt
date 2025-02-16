@@ -158,33 +158,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 adapter.updateExpanded()
             }
 
-            viewModel.updatedNote.observe(viewLifecycleOwner) { result ->
-                val sheet = binding.transSheet
-                when(result){
-                    is ModifiedNote.Update -> {
-                        val note = result.note
-                        val dialogResult = AddNoteResult(note.text, note.color)
-                        val span = Span(note.position, note.position + note.length)
-                        adapter.updateNote(span, note.id, dialogResult)
-                    }
-                    is ModifiedNote.Delete -> {
-                        if (binding.transSheet.wordTranslation.isVisible) {
-                            // Note info is visible, because the note was deleted hide the word/note views
-                            setWordSheetViews(false)
-                        } else {
-                            // Otherwise just hide the regular sheet
-                            val behavior = BottomSheetBehavior.from(binding.transSheet.root)
-                            behavior.state = BottomSheetBehavior.STATE_HIDDEN
-                        }
-
-                        adapter.unselectWord()
-                        adapter.deleteNote(result.noteId)
-                        sheet.addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
-                    }
-                }
-
-            }
-
             val langSelection = mutableIntStateOf(-1)
             val langShortNames = resources.getStringArray(R.array.googleTranslateLangsWithAutoValue)
 
@@ -216,18 +189,29 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     if (viewModel.showWords) highlightSavedWord(word, getVisibleListItems())
                                 }
                                 is ResultType.Delete -> {
-                                    val span = wordState.value?.span
-                                    if (span != null && adapter.isInsideSelectedSentence(span)) {
-                                        setWordSheetViews(false)
-                                    } else {
-                                        hideTranslationSheet()
-                                    }
                                     adapter.removeWord(viewModel.getWordIndexes(result.id), result.id)
                                     wordState.value = null
                                     deleteWordDialogShown.value = false
                                 }
                             }
                             editWordDialogVisible.value = false
+                        }
+                    }
+
+                    launch {
+                        viewModel.updatedNote.collect { result ->
+                            when(result){
+                                is ModifiedNote.Update -> {
+                                    val note = result.note
+                                    val dialogResult = AddNoteResult(note.text, note.color)
+                                    val span = Span(note.position, note.position + note.length)
+                                    adapter.updateNote(span, note.id, dialogResult)
+                                }
+                                is ModifiedNote.Delete -> {
+                                    adapter.unselectWord()
+                                    adapter.deleteNote(result.noteId)
+                                }
+                            }
                         }
                     }
                 }
@@ -403,7 +387,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     }
                                 }
                             }
-                            is ParagraphAdapter.TextClick.Note -> viewModel.setNoteData(result.item)
+                            is ParagraphAdapter.TextClick.Note -> viewModel.setNoteData(result.item, adapter.getSelectedSentenceSpan())
                             is ParagraphAdapter.TextClick.Overlap -> {
                                 noteInfo = result.note
                                 wordState.value = result.word
@@ -732,6 +716,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val sentence = result.sentence
                 if (sentence != null) {
                     translatedText.text = sentence.text
+                    notesText.isVisible = false
                     adapter.selectSentence(sentence.paragraphIndex, sentence.sentenceIndex)
                     when(state) {
                         is DialogType.Note -> {
@@ -742,7 +727,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             val info = WordUI(note.text, "", note.noteText)
                             showWordInfo(info, note.text.isWord())
                         }
-                        is DialogType.SavedWord -> showWordInfo(state.word.toUI(), true)
+                        is DialogType.SavedWord -> {
+                            val word = state.word
+                            val newState = WordState(word.toUI(), word.id, wordState.value?.span)
+                            wordState.value = newState
+                            sheetInfo = Sheet.Word(newState)
+                            showWordInfo(newState.word, true)
+                        }
                         is DialogType.Translation -> {
                             val translation = state.translation
                             wordTranslation.text = translation.translation
@@ -759,6 +750,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             val noteUnavailable = !result.isPageSaved
                             sheetInfo = if (noteUnavailable) Sheet.Word(word) else Sheet.Multiple
                             noteInfo = EditNote(translation.original, translation.translation, span, 0, false, 0)
+
+                            adapter.selectWordInSentence(sentence.paragraphIndex, span)
 
                             addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                         }
@@ -816,7 +809,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
 
                 root.post {
-                    if (state != null || result.sentence != null) bottomSheetBehavior.state =  BottomSheetBehavior.STATE_EXPANDED
+                    if (state != null || result.sentence != null) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                 }
 
                 binding.composeBar.isVisible = state == null && result.sentence == null
@@ -835,8 +828,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     updateListBottomPadding(root.height)
                 }
             }
-            val padding = if (isVisible) 0 else resources.getDimensionPixelSize(R.dimen.default_dialog_padding)
-            constraintLayout.updatePadding(bottom = padding)
         }
     }
 
@@ -963,7 +954,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 title = resources.getString(R.string.pick_info_dialog_title),
                 onItemSelected = { index, _ ->
                     when (index) {
-                        0 -> noteInfo?.let { showSheetWithNote(it) }
+                        0 -> noteInfo?.let { viewModel.setNoteData(it, adapter.getSelectedSentenceSpan()) }
                         1 -> {
                             val state = wordState.value
                             if (state != null) {
