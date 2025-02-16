@@ -35,7 +35,6 @@ import com.guillermonegrete.tts.utils.isWord
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -159,18 +158,24 @@ class ParagraphAdapter(
     @SuppressLint("NotifyDataSetChanged")
     fun updateItems(items: List<ParagraphItem>) {
         this.items = items
-        selectedWordSpan?.let {
-            val pos = getCharListIndex(it.start)
-            if (pos == -1) return
-            val item = items[pos]
-            item.selectedWord = item.toLocal(it)
-            selectedWordPos = pos
-        }
 
-        // Restore sentence
         if (selectedSentence.paragraphIndex != -1 && selectedSentence.sentenceIndex != -1) {
+            // Restore sentence
             val item = items[selectedSentence.paragraphIndex]
             item.selectedIndex = selectedSentence.sentenceIndex
+
+            selectedWordSpan?.let {
+                item.selectedWord = item.toLocal(it)
+            }
+        } else {
+            // Restore word
+            selectedWordSpan?.let {
+                val pos = getCharListIndex(it.start)
+                if (pos == -1) return
+                val item = items[pos]
+                item.selectedWord = item.toLocal(it)
+                selectedWordPos = pos
+            }
         }
         notifyDataSetChanged()
     }
@@ -225,17 +230,10 @@ class ParagraphAdapter(
                 val span = item.indexes[item.selectedIndex]
                 selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
                 val wordSpan = item.selectedWord
-                if(wordSpan != null) {
-                    Timber.d("Setting word inside selected sentence for span: $wordSpan")
-                    spannable.addHighlightedText(wordSpan.start, wordSpan.end)
-                }
+                if(wordSpan != null) wordInsideSpan = spannable.addHighlightedText(wordSpan.start, wordSpan.end)
             } else {
                 val span = item.selectedWord
-                if(span != null) {
-                    val word = item.original.substring(span.start, span.end)
-                    Timber.d("Setting word ($word) for span: $span")
-                    selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
-                }
+                if(span != null) selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
             }
 
             item.notes.forEach {
@@ -669,6 +667,15 @@ class ParagraphAdapter(
         notifyItemChanged(paragraphIndex, sentenceIndex)
     }
 
+    fun selectWordInSentence(paragraphIndex: Int, absSpan: Span) {
+        selectedSentence.wordSelected = true
+        selectedWordSpan = absSpan
+
+        val item = items.getOrNull(paragraphIndex) ?: return
+        item.selectedWord = item.toLocal(absSpan)
+        updateWordInSentence()
+    }
+
     fun nextSentence(){
         changeSentence(selectedSentence.sentenceIndex + 1)
     }
@@ -733,7 +740,12 @@ class ParagraphAdapter(
 
     fun getSelectedSentenceSpan(): Span? {
         val sel = selectedSentence
-        return items.getOrNull(sel.paragraphIndex)?.indexes?.getOrNull(sel.sentenceIndex)
+        val item = items.getOrNull(sel.paragraphIndex)
+        if (item != null) {
+            val localSpan = item.indexes.getOrNull(sel.sentenceIndex)
+            if (localSpan != null) return item.toAbsolute(localSpan)
+        }
+        return null
     }
 
     /**
@@ -860,8 +872,7 @@ class ParagraphAdapter(
     private fun createNote(clickedNote: NoteItem, item: ParagraphItem): EditNote {
         val span = clickedNote.span
         val text = item.original.substring(span.start, span.end)
-        val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
-        return EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id)
+        return EditNote(text, clickedNote.text, item.toAbsolute(span), clickedNote.color, true, clickedNote.id)
     }
 
     fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {

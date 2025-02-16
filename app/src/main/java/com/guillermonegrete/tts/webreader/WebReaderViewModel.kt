@@ -90,8 +90,8 @@ class WebReaderViewModel @Inject constructor(
     private val _selectedLink = MutableStateFlow<Int>(0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
-    private val _updatedNote = MutableLiveData<ModifiedNote>()
-    val updatedNote: LiveData<ModifiedNote> = _updatedNote
+    private val _updatedNote = MutableSharedFlow<ModifiedNote>()
+    val updatedNote: SharedFlow<ModifiedNote> = _updatedNote
 
     private val _updatedWord = MutableSharedFlow<ResultType>()
     val updatedWord: SharedFlow<ResultType> = _updatedWord
@@ -300,10 +300,11 @@ class WebReaderViewModel @Inject constructor(
         _dialogState.update { it.copy(dialogState = null, sentence = null) }
     }
 
-    fun setNoteData(note: EditNote) {
-//        val webLink = cacheWebLink ?: return
-//        val dbNote = Note(note.noteText, note.text, note.span.start, note.span.end - note.span.start, "#${note.color.toHexString()}", webLink.id, null, note.id)
-        _dialogState.update { it.copy(dialogState = DialogType.Note(note)) }
+    fun setNoteData(note: EditNote, sentenceSpan: Span?) {
+        val noteSpan = note.span
+        val sentence = if (sentenceSpan != null && sentenceSpan.hasInside(noteSpan)) _dialogState.value.sentence else null
+
+        _dialogState.update { it.copy(dialogState = DialogType.Note(note), sentence = sentence) }
     }
 
     fun setSavedWord(word: String, lang: String?, wordSpan: Span, sentenceSpan: Span?) {
@@ -535,7 +536,7 @@ class WebReaderViewModel @Inject constructor(
                 // Upsert returns -1 when the operation was an update, use the parameter ID.
                 val finalId = if(resultId == -1L) id else resultId
                 val updatedNote = newNote.copy(id = finalId)
-                _updatedNote.value = ModifiedNote.Update(updatedNote)
+                _updatedNote.emit(ModifiedNote.Update(updatedNote))
                 val editNote = EditNote(text, noteText, selection, Color.parseColor(color), true, finalId)
                 _dialogState.update { it.copy(dialogState = DialogType.Note(editNote)) }
             }
@@ -546,7 +547,8 @@ class WebReaderViewModel @Inject constructor(
         viewModelScope.launch {
             wrapEspressoIdlingResource {
                 noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
-                _updatedNote.value = ModifiedNote.Delete(id)
+                _updatedNote.emit(ModifiedNote.Delete(id))
+                _dialogState.update { it.copy(dialogState = null) }
             }
         }
     }
@@ -661,7 +663,7 @@ class WebReaderViewModel @Inject constructor(
         viewModelScope.launch {
             withContext(ioDispatcher) { wordRepository.deleteWord(word) }
             _updatedWord.emit(ResultType.Delete(word.id))
-//            _dialogState.update { it.copy(dialogState = null)}
+            _dialogState.update { it.copy(dialogState = null)}
         }
     }
 
