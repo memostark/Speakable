@@ -942,3 +942,52 @@ fun EditDeleteWordDialogs(
         )
     }
 }
+
+data class EditDeleteDialogUI(
+    val word: WordState,
+    val isDeleteShown: Boolean,
+    val languages: LanguagesList
+)
+
+@Composable
+fun EditDeleteWordDialogs(
+    state: EditDeleteDialogUI?,
+    onSave: (word: WordUI) -> Unit = { _ -> },
+    onDismiss: () -> Unit = {},
+    deleteDialogChange: (Boolean) -> Unit = {},
+    onDelete: () -> Unit = {},
+) {
+    if (state == null) return
+    val wordState = state.word
+    val word = wordState.word
+
+    var deleteShown by remember { mutableStateOf(state.isDeleteShown) }
+
+    EditWordDialog(
+        isShown = true,
+        word = word.word,
+        language = word.lang,
+        translation = word.definition,
+        notes = word.notes,
+        languages = state.languages,
+        isSaved = wordState.isSaved,
+        onSave = onSave,
+        onDelete = {
+            deleteDialogChange(true)
+            deleteShown = true
+        },
+        onDismiss = onDismiss,
+    )
+
+    if (deleteShown) {
+        YesNoDialog(
+            onDismissRequest = {
+                deleteDialogChange(false)
+                deleteShown = false
+            },
+            onConfirmation = onDelete,
+            dialogTitle = LocalContext.current.getString(R.string.delete_word_message),
+            dialogText = LocalContext.current.getString(R.string.delete_word_message),
+        )
+    }
+}

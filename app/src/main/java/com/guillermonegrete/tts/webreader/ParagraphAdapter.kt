@@ -17,6 +17,7 @@ import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
@@ -87,6 +88,8 @@ class ParagraphAdapter(
 
     private var highlightedTextPos = -1
 
+    private var wordInsideColor = NESTED_HIGHLIGHT_COLOR
+
     private val _textClicked = MutableSharedFlow<TextClick>(
         replay = 0,
         extraBufferCapacity = 1,
@@ -109,6 +112,13 @@ class ParagraphAdapter(
     val addWordClicked = _addWordClicked.asSharedFlow()
 
     val newWords = mutableSetOf<Words>()
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        var color = MaterialColors.getColor(recyclerView.context, android.R.attr.textColorHighlight, NESTED_HIGHLIGHT_COLOR)
+        color = ColorUtils.setAlphaComponent(color, 255)
+        wordInsideColor = ColorUtils.blendARGB(HIGHLIGHT_COLOR, color, 0.6f)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -230,7 +240,7 @@ class ParagraphAdapter(
                 val span = item.indexes[item.selectedIndex]
                 selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
                 val wordSpan = item.selectedWord
-                if(wordSpan != null) wordInsideSpan = spannable.addHighlightedText(wordSpan.start, wordSpan.end)
+                if(wordSpan != null) wordInsideSpan = spannable.addHighlightedText(wordSpan.start, wordSpan.end, wordInsideColor)
             } else {
                 val span = item.selectedWord
                 if(span != null) selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
@@ -451,7 +461,7 @@ class ParagraphAdapter(
                 return
             }
 
-            wordInsideSpan = BackgroundColorSpan(Color.argb(128, 255, 0, 0))
+            wordInsideSpan = BackgroundColorSpan(wordInsideColor)
             text.setSpan(wordInsideSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
 
@@ -1038,5 +1048,6 @@ class ParagraphAdapter(
         private const val PAYLOAD_INITIAL_DB_WORDS = "initial_db_words"
 
         private const val HIGHLIGHT_COLOR = 0x6633B5E5
+        private const val NESTED_HIGHLIGHT_COLOR = 0xd0bcff
     }
 }

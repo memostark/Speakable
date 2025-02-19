@@ -323,6 +323,16 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
+    fun setSavedWord(word: String, lang: String?, wordSpan: Span) {
+        viewModelScope.launch {
+            _savedWord.emit(WordLang(word, lang))
+        }
+
+        if (job == null) {
+            launchWordJob(wordSpan)
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun launchWordJob(span: Span) {
         job = viewModelScope.launch {
@@ -332,7 +342,7 @@ class WebReaderViewModel @Inject constructor(
                     .asFlow()
             }.collectLatest { dbWord ->
                 if (dbWord != null) {
-                    _dialogState.update { it.copy(dialogState = DialogType.SavedWord(dbWord), isLoading = false, isWordLoading = false) }
+                    _dialogState.update { it.copy(dialogState = DialogType.SavedWord(dbWord, span), isLoading = false, isWordLoading = false) }
                 } else {
                     if (!showWords) {
                         val data = _savedWord.first()
@@ -538,7 +548,7 @@ class WebReaderViewModel @Inject constructor(
                 val updatedNote = newNote.copy(id = finalId)
                 _updatedNote.emit(ModifiedNote.Update(updatedNote))
                 val editNote = EditNote(text, noteText, selection, Color.parseColor(color), true, finalId)
-                _dialogState.update { it.copy(dialogState = DialogType.Note(editNote)) }
+                _dialogState.update { it.copy(dialogState = DialogType.Note(editNote), isEditingType = null) }
             }
         }
     }
@@ -548,7 +558,7 @@ class WebReaderViewModel @Inject constructor(
             wrapEspressoIdlingResource {
                 noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
                 _updatedNote.emit(ModifiedNote.Delete(id))
-                _dialogState.update { it.copy(dialogState = null) }
+                _dialogState.update { it.copy(dialogState = null, isEditingType = null, isDeleteDialogShown = false) }
             }
         }
     }
@@ -648,14 +658,15 @@ class WebReaderViewModel @Inject constructor(
 
     fun getWordIndexes(id: Int) = wordIdToIndexes[id] ?: emptySet()
 
-    fun upsert(word: Words, wordSpan: Span, sentenceSpan: Span?) {
+    fun upsert(word: Words, wordSpan: Span) {
         viewModelScope.launch {
             val resultId = withContext(ioDispatcher) { wordRepository.upsert(word) }
             if(resultId != -1L) {
                 word.id = resultId.toInt()
-                setSavedWord(word.word, word.lang, wordSpan, sentenceSpan)
+                setSavedWord(word.word, word.lang, wordSpan)
                 _updatedWord.emit(ResultType.Insert(word))
             }
+            _dialogState.update { it.copy(isEditingType = null) }
         }
     }
 
@@ -663,12 +674,32 @@ class WebReaderViewModel @Inject constructor(
         viewModelScope.launch {
             withContext(ioDispatcher) { wordRepository.deleteWord(word) }
             _updatedWord.emit(ResultType.Delete(word.id))
-            _dialogState.update { it.copy(dialogState = null)}
+            _dialogState.update { it.copy(dialogState = null, isEditingType = null, isDeleteDialogShown = false)}
         }
     }
 
     fun resetWordData() {
         wordIdToIndexes.clear()
+    }
+
+    fun startEditing(type: DialogType) {
+        _dialogState.update { it.copy(isEditingType = type) }
+    }
+
+    fun stopEditing() {
+        _dialogState.update { it.copy(isEditingType = null) }
+    }
+
+    fun setDeleteSate(isShown: Boolean) {
+        _dialogState.update { it.copy(isDeleteDialogShown = isShown) }
+    }
+
+    fun setPickInfoType(word: DialogType.SavedWord, note: DialogType.Note) {
+        _dialogState.update { it.copy(isPickingType = InfoType(word, note)) }
+    }
+
+    fun stopPickingInfo() {
+        _dialogState.update { it.copy(isPickingType = null) }
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
@@ -690,6 +721,9 @@ class WebReaderViewModel @Inject constructor(
         val isWordLoading: Boolean = false,
         val isPageSaved: Boolean = false,
         val dialogState: DialogType? = null,
+        val isEditingType: DialogType? = null,
+        val isDeleteDialogShown: Boolean = false,
+        val isPickingType: InfoType? = null,
         val sentence: Sentence? = null,
     )
 }
@@ -699,10 +733,12 @@ data class SimpleTranslation(val original: String, var translation: String = "",
 data class Sentence(val text: String, val paragraphIndex: Int, val sentenceIndex: Int)
 
 sealed interface DialogType {
-    data class SavedWord(val word: Words): DialogType
+    data class SavedWord(val word: Words, val span: Span): DialogType
     data class Note(val item: EditNote): DialogType
     data class Translation(val translation: SimpleTranslation, val span: Span): DialogType
 }
+
+data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note)
 
 /**
  * Return class for the UI, used to display the paragraph with the notes

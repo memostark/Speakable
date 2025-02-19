@@ -282,6 +282,25 @@ fun AddNoteDialog(
 }
 
 @Composable
+fun AddNoteDialog(
+    state: AddNoteDialogUI?,
+    onDismiss: () -> Unit = {},
+    onDelete: () -> Unit = {},
+    onSaveClicked: (result: AddNoteResult) -> Unit = {},
+) {
+
+    if (state == null) return
+
+    AddNoteDialog(true, state.noteText, state.noteColor, state.noteSaved, onDismiss, onDelete, onSaveClicked)
+}
+
+data class AddNoteDialogUI(
+    val noteText: String,
+    @ColorInt val noteColor: Int,
+    val noteSaved: Boolean = false,
+)
+
+@Composable
 fun NoteText(noteText: String, onValueChange: (String) -> Unit) {
     val focusRequester = remember { FocusRequester() }
     var textFieldLoaded by remember { mutableStateOf(false) }
