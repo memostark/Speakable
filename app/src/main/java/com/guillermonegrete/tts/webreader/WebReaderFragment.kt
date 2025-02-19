@@ -36,6 +36,7 @@ import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.savedwords.ResultType
+import com.guillermonegrete.tts.textprocessing.EditDeleteDialogUI
 import com.guillermonegrete.tts.textprocessing.EditDeleteWordDialogs
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.WordState
@@ -68,12 +69,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private val loadingDialogVisible = mutableStateOf(false)
     private val deleteDialogVisible = mutableStateOf(false)
-    private val addNoteDialogVisible = mutableStateOf(false)
-    private val editWordDialogVisible = mutableStateOf(false)
-    private val deleteWordDialogShown = mutableStateOf(false)
-    private val pickNewTypeDialogVisible = mutableStateOf(false)
+    private val addNoteDialogVisible = mutableStateOf<AddNoteDialogUI?>(null)
+    private val editWordDialogVisible = mutableStateOf<EditDeleteDialogUI?>(null)
+    private val pickNewTypeDialogVisible = mutableStateOf<SimpleTranslation?>(null)
     private val pickInfoDialogVisible = mutableStateOf(false)
-    private val wordState = mutableStateOf<WordState?>(null)
     private val isPageSaved = mutableStateOf(false)
 
     private val languagesFull: List<String> by lazy { resources.getStringArray(R.array.googleTranslateLanguagesArray).toList() }
@@ -84,10 +83,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var pageText = ""
 
-    /**
-     * Contains information used to update/create/delete a note.
-     */
-    private var noteInfo: EditNote? = null
     private var sheetInfo: Sheet? = null
 
     private var appBarSize = 0
@@ -104,10 +99,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         adapter = ParagraphAdapter(viewModel,
             onSentenceSelected = { hideBottomSheets() },
             onTextHighlighted = {
-                val highlightSpan = adapter.getHighlightedTextSpan()
-                val sheetSpan = noteInfo?.span
-                if(highlightSpan != sheetSpan) {
-                    hideBottomSheets()
+                val dialogType = viewModel.dialogState.value.dialogState
+                if (dialogType is DialogType.Note) {
+                    val highlightSpan = adapter.getHighlightedTextSpan()
+                    val sheetSpan = dialogType.item.span
+                    if(highlightSpan != sheetSpan) {
+                        hideBottomSheets()
+                    }
                 }
             },
             onTranslateHighlightedText = { text, span ->
@@ -179,22 +177,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     launch {
                         viewModel.updatedWord.collect { result ->
                             when (result) {
-                                is ResultType.Update -> {
-                                    val word = result.word
-                                    val newState = WordState(word.toUI(), word.id, wordState.value?.span)
-                                    showSavedWord(newState)
-                                }
+                                is ResultType.Update -> {}
                                 is ResultType.Insert -> {
                                     val word = result.word
                                     if (viewModel.showWords) highlightSavedWord(word, getVisibleListItems())
                                 }
-                                is ResultType.Delete -> {
-                                    adapter.removeWord(viewModel.getWordIndexes(result.id), result.id)
-                                    wordState.value = null
-                                    deleteWordDialogShown.value = false
-                                }
+                                is ResultType.Delete -> adapter.removeWord(viewModel.getWordIndexes(result.id), result.id)
                             }
-                            editWordDialogVisible.value = false
                         }
                     }
 
@@ -370,7 +359,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         when(result) {
                             is ParagraphAdapter.TextClick.SavedWord -> {
                                 val state = result.word
-                                wordState.value = state
                                 val word = state.word
                                 sheetInfo = Sheet.Word(state)
                                 val sentenceSpan = adapter.getSelectedSentenceSpan()
@@ -389,9 +377,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             }
                             is ParagraphAdapter.TextClick.Note -> viewModel.setNoteData(result.item, adapter.getSelectedSentenceSpan())
                             is ParagraphAdapter.TextClick.Overlap -> {
-                                noteInfo = result.note
-                                wordState.value = result.word
-                                pickInfoDialogVisible.value = true
+                                if (result.word.span != null) viewModel.setPickInfoType(DialogType.SavedWord(result.word.word.toWord(), result.word.span), DialogType.Note(result.note))
                             }
                         }
                     }
@@ -399,16 +385,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 launch {
                     adapter.addNoteClicked.collect { note ->
-                        noteInfo = note
-                        addNoteDialogVisible.value = true
+                        viewModel.startEditing(DialogType.Note(note))
                     }
                 }
+
                 launch {
                     adapter.addWordClicked.collect { state ->
                         val lang = viewModel.getLanguage()
                         val newState = if (lang == null) state else state.copy(word = state.word.copy(lang = lang))
-                        wordState.value = newState
-                        editWordDialogVisible.value = true
+                        if (newState.span != null) viewModel.startEditing(DialogType.SavedWord(newState.word.toWord(), newState.span))
                     }
                 }
             }
@@ -416,7 +401,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun showSavedWord(state: WordState) {
-        wordState.value = state
         sheetInfo = Sheet.Word(state)
         val word = state.word
         val wordSpan = state.span ?: Span(0, 0)
@@ -602,14 +586,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addNoteBtn.setOnClickListener {
                 when (val sheet = sheetInfo) {
-                    Sheet.Multiple -> pickNewTypeDialogVisible.value = true
-                    is Sheet.Note -> {
-                        noteInfo = sheet.info
-                        addNoteDialogVisible.value = true
+                    Sheet.Multiple -> {
+                        val state = viewModel.dialogState.value.dialogState
+                        if (state is DialogType.Translation) viewModel.startEditing(DialogType.Translation(state.translation, state.span))
                     }
+                    is Sheet.Note -> viewModel.startEditing(DialogType.Note(sheet.info))
                     is Sheet.Word -> {
-                        wordState.value = sheet.state
-                        editWordDialogVisible.value = true
+                        if (sheet.state.span != null) viewModel.startEditing(DialogType.SavedWord(sheet.state.word.toWord(), sheet.state.span))
                     }
                     null -> Timber.e("Sheet info is missing")
                 }
@@ -617,14 +600,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addWordNoteBtn.setOnClickListener {
                 when (val sheet = sheetInfo) {
-                    Sheet.Multiple -> pickNewTypeDialogVisible.value = true
-                    is Sheet.Note -> {
-                        noteInfo = sheet.info
-                        addNoteDialogVisible.value = true
+                    Sheet.Multiple -> {
+                        val state = viewModel.dialogState.value.dialogState
+                        if (state is DialogType.Translation) viewModel.startEditing(DialogType.Translation(state.translation, state.span))
                     }
+                    is Sheet.Note -> viewModel.startEditing(DialogType.Note(sheet.info))
                     is Sheet.Word -> {
-                        wordState.value = sheet.state
-                        editWordDialogVisible.value = true
+                        if (sheet.state.span != null) viewModel.startEditing(DialogType.SavedWord(sheet.state.word.toWord(), sheet.state.span))
                     }
                     null -> Timber.e("Sheet info is missing")
                 }
@@ -663,7 +645,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun showSheetWithNote(note: EditNote) {
-        noteInfo = note
         sheetInfo = Sheet.Note(note)
         val info = WordUI(note.text, "", note.noteText)
         updateSheet(info, note.span, note.text.isWord())
@@ -721,7 +702,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     when(state) {
                         is DialogType.Note -> {
                             val note = state.item
-                            noteInfo = note
                             sheetInfo = Sheet.Note(note)
 
                             val info = WordUI(note.text, "", note.noteText)
@@ -729,8 +709,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
                         is DialogType.SavedWord -> {
                             val word = state.word
-                            val newState = WordState(word.toUI(), word.id, wordState.value?.span)
-                            wordState.value = newState
+                            val newState = WordState(word.toUI(), word.id, state.span)
                             sheetInfo = Sheet.Word(newState)
                             showWordInfo(newState.word, true)
                         }
@@ -746,10 +725,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             val span = state.span
                             val wordUI = WordUI(translation.original, translation.sourceLang, translation.translation)
                             val word = WordState(wordUI, span = span)
-                            wordState.value = word
                             val noteUnavailable = !result.isPageSaved
                             sheetInfo = if (noteUnavailable) Sheet.Word(word) else Sheet.Multiple
-                            noteInfo = EditNote(translation.original, translation.translation, span, 0, false, 0)
 
                             adapter.selectWordInSentence(sentence.paragraphIndex, span)
 
@@ -762,9 +739,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         is DialogType.Note -> showSheetWithNote(state.item)
                         is DialogType.SavedWord -> {
                             val word = state.word
-                            val newState = WordState(word.toUI(), word.id, wordState.value?.span)
+                            val newState = WordState(word.toUI(), word.id, state.span)
                             showSavedWord(newState)
-                            editWordDialogVisible.value = false
                         }
                         is DialogType.Translation -> {
                             val translation = state.translation
@@ -782,12 +758,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             sheetInfo = when {
                                 isWord && !adapter.isOverlappingSavedWord -> {
                                     val state = WordState(WordUI(translation.original, translation.sourceLang, translation.translation), span = span)
-                                    wordState.value = state
                                     if (noteUnavailable) Sheet.Word(state) else Sheet.Multiple
                                 }
                                 else -> Sheet.Note(note)
                             }
-                            noteInfo = note
 
                             adapter.selectWord(span)
 
@@ -802,11 +776,37 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
                         null -> {
                             deleteDialogVisible.value = false
-                            editWordDialogVisible.value = false
                             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
                         }
                     }
                 }
+
+                when(val type = result.isEditingType) {
+                    is DialogType.Note -> {
+                        addNoteDialogVisible.value = AddNoteDialogUI(type.item.noteText, type.item.color, type.item.noteSaved)
+                        pickNewTypeDialogVisible.value = null
+                    }
+                    is DialogType.SavedWord -> {
+                        val word = type.word
+                        val newState = if (result.dialogState is DialogType.SavedWord) {
+                            WordState(word.toUI(), result.dialogState.word.id, span = type.span)
+                        } else {
+                            WordState(word.toUI(), span = type.span)
+                        }
+                        editWordDialogVisible.value = EditDeleteDialogUI(newState, result.isDeleteDialogShown, LanguagesList(languagesFull, languagesISO))
+                        pickNewTypeDialogVisible.value = null
+                    }
+                    is DialogType.Translation -> {
+                        pickNewTypeDialogVisible.value = type.translation
+                    }
+                    null -> {
+                        editWordDialogVisible.value = null
+                        addNoteDialogVisible.value = null
+                        pickNewTypeDialogVisible.value = null
+                    }
+                }
+
+                pickInfoDialogVisible.value = result.isPickingType != null
 
                 root.post {
                     if (state != null || result.sentence != null) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
@@ -897,54 +897,64 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
         AddNoteDialog(
             addNoteVisible,
-            noteInfo?.noteText ?: "",
-            noteInfo?.color ?: 0,
-            noteInfo?.noteSaved == true,
-            onDismiss = { addNoteVisible = false },
+            onDismiss = viewModel::stopEditing,
             onDelete = {
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.deleteNote(noteItem.id)
-                noteInfo = null
-                addNoteVisible = false
+                val type = viewModel.dialogState.value.isEditingType
+                if (type is DialogType.Note) viewModel.deleteNote(type.item.id)
             },
             onSaveClicked = { newNote ->
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
-                addNoteVisible = false
+                val type = viewModel.dialogState.value.isEditingType
+                if (type is DialogType.Note) {
+                    val noteItem = type.item
+                    viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
+                }
             },
         )
     }
 
     @Composable
     fun Dialogs() {
-        val state = wordState.value ?: return
-        val languages = LanguagesList(languagesFull, languagesISO)
 
         EditDeleteWordDialogs(
-            state,
-            editWordDialogVisible,
-            deleteWordDialogShown,
-            languages,
+            editWordDialogVisible.value,
             onSave = {
                 val resultWord = it.toWord()
+                val state = editWordDialogVisible.value?.word ?: return@EditDeleteWordDialogs
                 resultWord.id = state.dbId
-                if (state.span != null) viewModel.upsert(resultWord, state.span, adapter.getSelectedSentenceSpan())
+                if (state.span != null) viewModel.upsert(resultWord, state.span)
             },
-            onDelete = { viewModel.deleteWord(state.toWord()) },
+            onDismiss =  viewModel::stopEditing,
+            deleteDialogChange = viewModel::setDeleteSate,
+            onDelete = {
+                val state = editWordDialogVisible.value?.word ?: return@EditDeleteWordDialogs
+                viewModel.deleteWord(state.toWord())
+            },
         )
 
-        if (pickNewTypeDialogVisible.value) {
+        val newType = pickNewTypeDialogVisible.value
+        if (newType != null) {
             DialogList(
                 list = listOf(resources.getString(R.string.note), resources.getString(R.string.saved_word)),
                 title = resources.getString(R.string.create_db_item_dialog_title),
                 onItemSelected = { index, _ ->
+                    val type = viewModel.dialogState.value.isEditingType
                     when (index) {
-                        0 -> addNoteDialogVisible.value = true
-                        1 -> editWordDialogVisible.value = true
+                        0 -> {
+                            if (type is DialogType.Translation) {
+                                val note = EditNote(newType.original, newType.translation, type.span, 0, false, 0)
+                                viewModel.startEditing(DialogType.Note(note))
+                            }
+                        }
+                        1 -> {
+                            if (type is DialogType.Translation) {
+                                val trans = type.translation
+                                val word = Words(trans.original, trans.sourceLang, trans.translation)
+                                viewModel.startEditing(DialogType.SavedWord(word, type.span))
+                            }
+                        }
                     }
-                    pickNewTypeDialogVisible.value = false
                 },
-                onDismiss = { pickNewTypeDialogVisible.value = false }
+                onDismiss = viewModel::stopEditing
             )
         }
 
@@ -953,20 +963,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 list = listOf(resources.getString(R.string.note), resources.getString(R.string.saved_word)),
                 title = resources.getString(R.string.pick_info_dialog_title),
                 onItemSelected = { index, _ ->
+                    val info = viewModel.dialogState.value.isPickingType ?: return@DialogList
                     when (index) {
-                        0 -> noteInfo?.let { viewModel.setNoteData(it, adapter.getSelectedSentenceSpan()) }
+                        0 -> viewModel.setNoteData(info.note.item, adapter.getSelectedSentenceSpan())
                         1 -> {
-                            val state = wordState.value
-                            if (state != null) {
-                                val span = state.span
-                                if (span != null)
-                                    viewModel.setSavedWord(state.word.word, state.word.lang, span, adapter.getSelectedSentenceSpan())
-                            }
+                            val state = info.word
+                            viewModel.setSavedWord(state.word.word, state.word.lang, state.span, adapter.getSelectedSentenceSpan())
                         }
                     }
-                    pickInfoDialogVisible.value = false
+                    viewModel.stopPickingInfo()
                 },
-                onDismiss = { pickInfoDialogVisible.value = false }
+                onDismiss = viewModel::stopPickingInfo
             )
         }
     }
