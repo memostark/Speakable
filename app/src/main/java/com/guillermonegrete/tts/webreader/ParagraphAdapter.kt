@@ -309,7 +309,7 @@ class ParagraphAdapter(
                 }
 
                 if(clickedWord.isNotEmpty()) {
-                    viewModel.translateText(clickedWord, item.toAbsolute(wordSpan)) // pass span
+                    viewModel.translateWord(clickedWord, item.toAbsolute(wordSpan))
                     unselectSentence()
                     unselectWord()
 

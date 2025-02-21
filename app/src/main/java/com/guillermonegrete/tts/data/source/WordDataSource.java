@@ -43,5 +43,7 @@ public interface WordDataSource {
 
     LiveData<Words> loadWord(String word, String language);
 
+    LiveData<Words> loadWord(@NonNull Integer id);
+
     int update(@NonNull Words word);
 }
