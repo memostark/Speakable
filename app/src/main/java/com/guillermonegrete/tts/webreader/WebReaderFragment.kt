@@ -207,6 +207,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             iconsVisible,
                             isPageSaved,
                             viewModel.showWords,
+                            ::getPageVersion,
                             ::onTranslateClicked,
                             ::onArrowClicked,
                             ::onBarMenuItemClicked,
@@ -283,8 +284,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
             is WebReaderMenuAction.PageVersion -> {
                 when(action.version) {
-                    "Local" -> viewModel.loadLocalPage()
-                    "Web" -> viewModel.loadPageFromWeb()
+                    "Local" -> viewModel.setPageVersion(PageVersion.LOCAL)
+                    "Web" -> viewModel.setPageVersion(PageVersion.WEB)
                 }
             }
             is WebReaderMenuAction.ShowWords -> {
@@ -617,6 +618,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val pos = adapter.selectedSentence.paragraphIndex
         if(pos != -1) binding.paragraphsList.smoothScrollToPosition(pos)
 
+    }
+
+    private fun getPageVersion() = when(viewModel.pageVersion) {
+        PageVersion.LOCAL -> "Local"
+        PageVersion.WEB -> "Web"
     }
 
     private fun onTranslateClicked(){

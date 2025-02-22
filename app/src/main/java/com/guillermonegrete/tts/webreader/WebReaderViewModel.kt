@@ -121,6 +121,9 @@ class WebReaderViewModel @Inject constructor(
             runBlocking { settings.setShowSavedWords(value) }
         }
 
+    var pageVersion: PageVersion = PageVersion.LOCAL
+        private set
+
     // Path of the app's external storage folder
     var folderPath = ""
 
@@ -143,14 +146,13 @@ class WebReaderViewModel @Inject constructor(
                     if (linkAndNotes != null) {
                         webLink = linkAndNotes.webLink
                         val uuid = webLink.uuid
-                        val pageContent = if (uuid != null) {
-                            readContentFile(uuid)
+
+                        val isLocalPage = uuid != null && pageVersion == PageVersion.LOCAL
+                        pageInfo = if (isLocalPage) {
+                            PageInfo(readContentFile(uuid), linkAndNotes.notes, true)
                         } else {
-                            val page = getPage(url)
-                            page.content
+                            PageInfo(getPage(url).content, emptyList(), false)
                         }
-                        val isPageSaved = uuid != null
-                        pageInfo = PageInfo(pageContent, linkAndNotes.notes, isPageSaved)
                     } else {
                         val page = getPage(url)
                         webLink = link ?: WebLink(url, page.title)
@@ -570,6 +572,7 @@ class WebReaderViewModel @Inject constructor(
                 it.lastRead = Calendar.getInstance()
                 webLinkDAO.upsert(it)
                 cacheWebLink = webLinkDAO.getLink(link.url)
+                _dialogState.update { it.copy(isPageSaved = true) }
             }
         }
     }
@@ -830,6 +833,15 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
+    fun setPageVersion(version: PageVersion) {
+        when (version) {
+            PageVersion.LOCAL -> loadLocalPage()
+            PageVersion.WEB -> loadPageFromWeb()
+        }
+
+        pageVersion = version
+    }
+
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
@@ -877,3 +889,8 @@ data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note)
 data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)
 
 data class SavedWordsSection(val words: List<List<WordState>>, val start: Int)
+
+enum class PageVersion {
+    LOCAL,
+    WEB
+}

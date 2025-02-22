@@ -61,6 +61,7 @@ fun WebReaderBottomBar(
     iconsEnabled: MutableState<Boolean> = mutableStateOf(true),
     isPageSaved: MutableState<Boolean> = mutableStateOf(false),
     wordsShown: Boolean = false,
+    getPageVersion: () -> String = {""},
     onTranslateClicked: () -> Unit = {},
     onArrowClicked: (isLeft: Boolean) -> Unit = {},
     onMenuItemClick: (action: WebReaderMenuAction) -> Unit = {},
@@ -110,7 +111,7 @@ fun WebReaderBottomBar(
 
         Spinner(languages, langSelection.value, onItemSelected = onLangSelected)
 
-        WebReaderBarMenu(isPageSaved, wordsShown, onMenuItemClick)
+        WebReaderBarMenu(isPageSaved, wordsShown, getPageVersion, onMenuItemClick)
     }
 }
 
@@ -118,12 +119,12 @@ fun WebReaderBottomBar(
 fun WebReaderBarMenu(
     isPageSaved: MutableState<Boolean>,
     wordsShown: Boolean,
+    getPageVersion: () -> String,
     onMenuItemClick: (action: WebReaderMenuAction) -> Unit,
 ) {
     Box {
         var menuExpanded by remember { mutableStateOf(false) }
         val pageVersionStates = listOf("Local", "Web")
-        var pageVersionSelection by remember { mutableStateOf(pageVersionStates.first()) }
         var checked by remember { mutableStateOf(wordsShown) }
 
         IconButton(onClick = { menuExpanded = true }) {
@@ -153,10 +154,9 @@ fun WebReaderBarMenu(
             if (isSaved) {
                 DropdownMenuItem(
                     text = {
-                        MultiToggleButton(pageVersionSelection, StringList(pageVersionStates)) {
-                            pageVersionSelection = it
+                        MultiToggleButton(getPageVersion(), StringList(pageVersionStates)) {
                             menuExpanded = false
-                            onMenuItemClick(WebReaderMenuAction.PageVersion(pageVersionSelection))
+                            onMenuItemClick(WebReaderMenuAction.PageVersion(it))
                         }
                     },
                     onClick = {},
