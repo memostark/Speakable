@@ -42,7 +42,7 @@ import kotlin.math.min
 
 class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
-    val onSentenceSelected: () -> Unit,
+    val onSentenceSelected: (paragraph: Int, sentence: Int) -> Unit,
     val onTextHighlighted: () -> Unit = {},
     val onTranslateHighlightedText: (text: String, span: Span) -> Unit = { _, _ -> },
     val loadDatabaseWord: (text: CharSequence, pos: Int) -> Unit = { _, _ -> },
@@ -310,7 +310,6 @@ class ParagraphAdapter(
 
                 if(clickedWord.isNotEmpty()) {
                     viewModel.translateWord(clickedWord, item.toAbsolute(wordSpan))
-                    unselectSentence()
                     unselectWord()
 
                     // Select new word
@@ -354,7 +353,7 @@ class ParagraphAdapter(
             val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
             val index = findSentence(offset)
             selectSentence(adapterPosition, index)
-            onSentenceSelected()
+            onSentenceSelected(adapterPosition, index)
         }
 
         fun setExpanded(){
@@ -613,28 +612,6 @@ class ParagraphAdapter(
         }
     }
 
-    private fun replaceSentenceSelection(paragraphIndex: Int, sentenceIndex: Int) {
-        // unselect sentence
-        val previousIndex = selectedSentence.paragraphIndex
-        if(previousIndex != -1) {
-            val previousItem = items[previousIndex]
-            previousItem.selectedIndex = -1
-            previousItem.selectedWord = null
-
-            notifyItemChanged(previousIndex, -1)
-        }
-
-        val item = items[paragraphIndex]
-        item.selectedIndex = sentenceIndex
-
-        // Update the paragraph item, the payload indicates which sentence to highlight
-        notifyItemChanged(paragraphIndex, sentenceIndex)
-
-        selectedSentence.paragraphIndex = paragraphIndex
-        selectedSentence.sentenceIndex = sentenceIndex
-        selectedSentence.wordSelected = false
-    }
-
     fun unselectWord() {
         // unselect independent word
         if(selectedWordPos != -1) {
@@ -668,6 +645,8 @@ class ParagraphAdapter(
     }
 
     fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
+        unselectSentence()
+
         selectedSentence.paragraphIndex = paragraphIndex
         selectedSentence.sentenceIndex = sentenceIndex
 
@@ -711,7 +690,7 @@ class ParagraphAdapter(
             }
 
             if(paragraphIndex in items.indices) {
-                replaceSentenceSelection(paragraphIndex, newIndex)
+                onSentenceSelected(paragraphIndex, newIndex)
             }
         }
     }
