@@ -95,8 +95,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
         adapter = ParagraphAdapter(viewModel,
-            onSentenceSelected = { hideBottomSheets() },
-            onTextHighlighted = viewModel::clearTextInfo,
+            onSentenceSelected = viewModel::sentenceSelected,
+            onTextHighlighted =  {
+                viewModel.unselectSentence()
+                viewModel.clearTextInfo()
+            },
             onTranslateHighlightedText = { text, span ->
                 viewModel.translateText(text, span, adapter.isOverlappingNotes, adapter.isOverlappingSavedWord)
                 adapter.selectHighlightedText()
@@ -189,6 +192,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     adapter.unselectWord()
                                     adapter.deleteNote(result.noteId)
                                 }
+                            }
+                        }
+                    }
+
+                    launch {
+                        viewModel.paragraphState.collect { result ->
+                            if (result.paragraphIndex != null && result.sentenceIndex != null) {
+                                adapter.selectSentence(result.paragraphIndex, result.sentenceIndex)
+                            } else {
+                                adapter.unselectSentence()
                             }
                         }
                     }
@@ -355,7 +368,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             is ParagraphAdapter.TextClick.Sentence -> {
                                 val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
                                 if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
-                                    adapter.unselectSentence()
+                                    viewModel.unselectSentence()
                                 } else {
                                     adapter.getSelectedWordSpan()?.let {
                                         viewModel.translateWordInSentence(result.word, it)
@@ -439,8 +452,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 else getLinksForWord(info.word)
             }
         }
-
-        adapter.unselectSentence()
     }
 
     override fun onDestroyView() {
@@ -660,17 +671,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun hideBottomSheets() {
-        val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
-        webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-        hideTranslationSheet()
-    }
-
-    private fun hideTranslationSheet() {
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-    }
-
     private fun handleUiDialogState(result: WebReaderViewModel.UiDialogState) {
         with(binding.transSheet) {
             val bottomSheetBehavior = BottomSheetBehavior.from(root)
@@ -697,7 +697,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 if (sentence != null) {
                     translatedText.text = sentence.text
                     notesText.isVisible = false
-                    adapter.selectSentence(sentence.paragraphIndex, sentence.sentenceIndex)
                     when(state) {
                         is DialogType.Note -> {
                             val note = state.item
@@ -708,6 +707,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             val word = state.word
                             val newState = WordState(word.toUI(), word.id, state.span)
                             showWordInfo(newState.word, true)
+                            if (!viewModel.showWords) adapter.selectWordInSentence(sentence.paragraphIndex, state.span)
                         }
                         is DialogType.Translation -> {
                             val translation = state.translation
@@ -730,6 +730,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             val word = state.word
                             val newState = WordState(word.toUI(), word.id, state.span)
                             showSavedWord(newState)
+                            if (!viewModel.showWords) adapter.selectWord(state.span)
                         }
                         is DialogType.Translation -> {
                             val translation = state.translation

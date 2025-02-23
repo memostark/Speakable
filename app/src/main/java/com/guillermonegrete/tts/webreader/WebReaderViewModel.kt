@@ -82,6 +82,9 @@ class WebReaderViewModel @Inject constructor(
     private val _wordInfo = MutableStateFlow<DialogState<WordResult>>(DialogState.Empty)
     val wordInfo: StateFlow<DialogState<WordResult>> = _wordInfo
 
+    private val _paragraphState = MutableStateFlow<ParagraphUiState>(ParagraphUiState())
+    val paragraphState: StateFlow<ParagraphUiState> = _paragraphState
+
     private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
     val dialogState: StateFlow<UiDialogState> = _dialogState
 
@@ -334,7 +337,12 @@ class WebReaderViewModel @Inject constructor(
 
     fun setNoteData(note: EditNote, sentenceSpan: Span?) {
         val noteSpan = note.span
-        val sentence = if (sentenceSpan != null && sentenceSpan.hasInside(noteSpan)) _dialogState.value.sentence else null
+        val sentence = if (sentenceSpan != null && sentenceSpan.hasInside(noteSpan))
+            _dialogState.value.sentence
+        else {
+            unselectSentence()
+            null
+        }
 
         _dialogState.update { it.copy(dialogState = DialogType.Note(note), sentence = sentence) }
     }
@@ -354,6 +362,7 @@ class WebReaderViewModel @Inject constructor(
             _dialogState.update { it.copy(isWordLoading = true) }
         } else {
             _dialogState.update { it.copy(isLoading = true, sentence = null) }
+            unselectSentence()
         }
 
         launchWordJob(id, wordSpan)
@@ -406,9 +415,10 @@ class WebReaderViewModel @Inject constructor(
     }
 
     private fun fetchTranslation(text: String, span: Span, overlapsNote: Boolean, overlapsWord: Boolean) {
-        viewModelScope.launch {
-            _dialogState.update { it.copy(isLoading = true, sentence = null) }
+        _dialogState.update { it.copy(isLoading = true, sentence = null) }
+        unselectSentence()
 
+        viewModelScope.launch {
             getTranslation(text) { translation ->
                 viewModelScope.launch {
                     val translation = SimpleTranslation(text, translation.translatedText, translation.src)
@@ -536,7 +546,7 @@ class WebReaderViewModel @Inject constructor(
         viewModelScope.launch {
             val language = cacheWebLink?.language
             if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
-                val sentence = Sentence(sentence.translation, paragraphIndex, sentenceIndex)
+                val sentence = Sentence(sentence.translation, paragraphIndex)
                 _dialogState.update { it.copy(sentence = sentence, dialogState = null) }
                 return@launch
             }
@@ -548,7 +558,7 @@ class WebReaderViewModel @Inject constructor(
                     sentence.translation = translation.translatedText
                     sentence.sourceLang = translation.src
                     viewModelScope.launch {
-                        val sentence = Sentence(translation.translatedText, paragraphIndex, sentenceIndex)
+                        val sentence = Sentence(translation.translatedText, paragraphIndex)
                         _dialogState.update { it.copy(sentence = sentence, dialogState = null, isLoading = false) }
                     }
                 }
@@ -842,6 +852,15 @@ class WebReaderViewModel @Inject constructor(
         pageVersion = version
     }
 
+    fun sentenceSelected(paragraphIndex: Int, sentenceIndex: Int) {
+        _paragraphState.update { it.copy(paragraphIndex = paragraphIndex, sentenceIndex = sentenceIndex) }
+        _dialogState.update { it.copy(sentence = null, dialogState = null) }
+    }
+
+    fun unselectSentence() {
+        _paragraphState.update { it.copy(paragraphIndex = null, sentenceIndex = null) }
+    }
+
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
@@ -869,11 +888,16 @@ class WebReaderViewModel @Inject constructor(
         val isDeleteDialogShown: Boolean = false,
         val isPickingType: InfoType? = null,
     )
+
+    data class ParagraphUiState(
+        val paragraphIndex: Int? = null,
+        val sentenceIndex: Int? = null,
+    )
 }
 
 data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
 
-data class Sentence(val text: String, val paragraphIndex: Int, val sentenceIndex: Int)
+data class Sentence(val text: String, val paragraphIndex: Int)
 
 sealed interface DialogType {
     data class SavedWord(val word: Words, val span: Span): DialogType
