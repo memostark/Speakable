@@ -269,10 +269,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val initialBarSize = appBarSize
         ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            val barShown = false
-            if (!barShown) v.updatePadding(top = insets.top)
-            val extra = if (barShown) initialBarSize else 0
-            binding.composeBar.updatePadding(bottom = insets.bottom + extra)
+            v.updatePadding(top = insets.top)
+            binding.composeBar.updatePadding(bottom = insets.bottom)
+            binding.composeRoot.updatePadding(top = insets.top)
             appBarSize = initialBarSize + insets.bottom
             updateListBottomPadding(0)
             WindowInsetsCompat.CONSUMED
