@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
@@ -62,19 +63,25 @@ class ImportTextFragment: Fragment(R.layout.fragment_import_text) {
                 else -> ""
             }
         }.attach()
+
+        binding.importTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                tab ?: return
+                lifecycleScope.launch {
+                    settings.setImportTabPosition(tab.position)
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
     }
 
     override fun onResume() {
         super.onResume()
         // Only show bar when this fragment is fully visible, showing the bar earlier causes problems with nav animations
         (requireActivity() as AppCompatActivity).supportActionBar?.show()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        lifecycleScope.launch {
-            settings.setImportTabPosition(binding.importTextPager.currentItem)
-        }
     }
 
     override fun onDestroyView() {

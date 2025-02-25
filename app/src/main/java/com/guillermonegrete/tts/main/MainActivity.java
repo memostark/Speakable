@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.main;
 
 import static com.guillermonegrete.tts.importtext.ImportTextFragment.MARGIN_OFFSET_NAME;
+import static com.guillermonegrete.tts.importtext.tabs.FilesFragment.MARGIN_OFFSET_KEY;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -8,10 +9,12 @@ import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.MenuProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.navigation.NavArgument;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -48,6 +51,12 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
         EdgeToEdge.enable(this,
                 SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
                 SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)); // Using this removes the navigation scrim for some reason, even though it says light it works ok with light mode
+
+        if (savedInstanceState != null) {
+            // On configuration change, the fragments args may be saved. Update the args to avoid using the old ones.
+            updateMarginArguments(savedInstanceState);
+        }
+
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -81,32 +90,14 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
         if(navHostFragment == null) return;
         navController = navHostFragment.getNavController();
         var offset = getResources().getDimensionPixelSize(R.dimen.main_act_bars_height);
-        var bundle = new Bundle();
-        bundle.putInt(MARGIN_OFFSET_NAME, offset);
+        var walletGraph = navController.getGraph().findNode(R.id.importtext);
+        if (walletGraph != null) walletGraph.addArgument(MARGIN_OFFSET_NAME, new NavArgument.Builder().setDefaultValue(offset).build());
 
         var navView = binding.mainNavView;
         if (navView instanceof NavigationBarView nv) {
             NavigationUI.setupWithNavController(nv, navController);
-            nv.setOnItemSelectedListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.importtext) {
-                    navController.navigate(id, bundle);
-                    return true;
-                }
-                navController.navigate(id);
-                return true;
-            });
         } else if (navView instanceof NavigationView nv) {
             NavigationUI.setupWithNavController(nv, navController);
-            nv.setNavigationItemSelectedListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.importtext) {
-                    navController.navigate(id, bundle);
-                    return true;
-                }
-                navController.navigate(id);
-                return true;
-            });
         }
 
         navController.addOnDestinationChangedListener((nController, destination, arguments) -> {
@@ -159,5 +150,58 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
                 behavior.slideUp(nv);
             }
         }
+    }
+
+    private void updateMarginArguments(Bundle savedInstanceState) {
+        var bundlableSavedStateRegistry = savedInstanceState.getBundle("androidx.lifecycle.BundlableSavedStateRegistry.key");
+        if (bundlableSavedStateRegistry == null) return;
+
+        var fragments = bundlableSavedStateRegistry.getBundle("android:support:fragments");
+        if (fragments == null) return;
+
+        var importFragment = getImportFragmentBundle(fragments);
+        if (importFragment == null) return;
+
+        var args = importFragment.getBundle("arguments");
+        if (args == null) return;
+
+        var newMargin = getResources().getDimensionPixelSize(R.dimen.main_act_bars_height);
+        var diff = newMargin - args.getInt(MARGIN_OFFSET_NAME);
+        args.putInt(MARGIN_OFFSET_NAME, newMargin);
+
+        // Update child fragments of import text
+        var importFragmentManager = importFragment.getBundle("childFragmentManager");
+        if (importFragmentManager == null) return;
+        for (String key : importFragmentManager.keySet()) {
+            if (!key.startsWith("fragment_")) continue;
+            var fragment = importFragmentManager.getBundle(key);
+            if (fragment == null) continue;
+            args = fragment.getBundle("arguments");
+            if (args != null && args.containsKey(MARGIN_OFFSET_KEY)) {
+                args.putInt(MARGIN_OFFSET_KEY, args.getInt(MARGIN_OFFSET_KEY) + diff);
+            }
+        }
+    }
+
+    private @Nullable Bundle getImportFragmentBundle(Bundle fragments) {
+        Bundle importFragment = null;
+        for (String key: fragments.keySet()) {
+            if (!key.startsWith("fragment_")) continue;
+            var navHostFragment = fragments.getBundle(key);
+            if (navHostFragment == null) continue;
+            var childFragmentManager = navHostFragment.getBundle("childFragmentManager");
+            if (childFragmentManager == null) continue;
+            for (String childKey : childFragmentManager.keySet()) {
+                if (!childKey.startsWith("fragment_")) continue;
+                var frag = childFragmentManager.getBundle(childKey);
+                if (frag == null) continue;
+                var args = frag.getBundle("arguments");
+                if (args != null && args.containsKey(MARGIN_OFFSET_NAME)) {
+                    importFragment = frag;
+                }
+            }
+        }
+
+        return importFragment;
     }
 }
