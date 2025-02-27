@@ -31,6 +31,9 @@ import com.guillermonegrete.tts.webreader.db.NoteDAO
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -48,10 +51,10 @@ import java.io.IOException
 import java.lang.Exception
 import java.text.BreakIterator
 import java.util.*
-import javax.inject.Inject
 
-@HiltViewModel
-class WebReaderViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = WebReaderViewModel.Factory::class)
+class WebReaderViewModel @AssistedInject constructor(
+    @Assisted private val url: String,
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
     private val wordRepository: WordRepositorySource,
@@ -129,6 +132,10 @@ class WebReaderViewModel @Inject constructor(
 
     // Path of the app's external storage folder
     var folderPath = ""
+
+    init {
+        loadDoc(url)
+    }
 
     /**
      * Loads the [url] as a string and loads (or creates if it doesn't exist) a database entry for the [url].
@@ -893,6 +900,11 @@ class WebReaderViewModel @Inject constructor(
         val paragraphIndex: Int? = null,
         val sentenceIndex: Int? = null,
     )
+
+    @AssistedFactory
+    interface Factory {
+        fun create(url: String): WebReaderViewModel
+    }
 }
 
 data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
