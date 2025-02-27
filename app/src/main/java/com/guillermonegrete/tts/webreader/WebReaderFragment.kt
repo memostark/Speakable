@@ -47,6 +47,7 @@ import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.isWord
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.lifecycle.withCreationCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -56,7 +57,11 @@ import kotlin.text.isNotEmpty
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
-    private val viewModel: WebReaderViewModel by viewModels()
+    private val viewModel: WebReaderViewModel by viewModels(extrasProducer = {
+        defaultViewModelCreationExtras.withCreationCallback<WebReaderViewModel.Factory> { factory ->
+            factory.create(args.link)
+        }
+    })
 
     private  var _binding: FragmentWebReaderBinding? = null
     private val binding get() = _binding!!
@@ -257,7 +262,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
 
         viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
-        viewModel.loadDoc(args.link)
     }
 
     override fun onResume() {
