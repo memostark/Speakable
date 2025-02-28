@@ -76,9 +76,6 @@ class WebReaderViewModel @AssistedInject constructor(
     val translatedParagraphs: List<Translation?>
         get() = _translatedParagraphs
 
-    private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
-    val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
-
     private val _textInfo = MutableStateFlow<DialogState<WordResult>>(DialogState.Empty)
     val textInfo: StateFlow<DialogState<WordResult>> = _textInfo
 
@@ -184,10 +181,10 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 
     fun loadLocalPage() {
-
         val webLink = cacheWebLink ?: return
 
         webLink.uuid?.let { uuid ->
+            _translatedParagraphs = mutableListOf()
             _page.value = LoadResult.Loading
 
             viewModelScope.launch {
@@ -205,6 +202,7 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun loadPageFromWeb(){
         val webLink = cacheWebLink ?: return
+        _translatedParagraphs = mutableListOf()
 
         viewModelScope.launch {
             _page.value = LoadResult.Loading
@@ -256,7 +254,8 @@ class WebReaderViewModel @AssistedInject constructor(
         if(splitParagraphs == null) {
 
             splitParagraphs = splitBySentence(paragraphs)
-            _translatedParagraphs = arrayOfNulls<Translation>(splitParagraphs.size).toMutableList()
+            if (_translatedParagraphs.isEmpty())
+                _translatedParagraphs = arrayOfNulls<Translation>(splitParagraphs.size).toMutableList()
         }
         return splitParagraphs
     }
@@ -268,7 +267,8 @@ class WebReaderViewModel @AssistedInject constructor(
         val language = cacheWebLink?.language
         if(paragraph.translation.isNotBlank() && paragraph.sourceLang == language) return
 
-        _translatedParagraph.value = LoadResult.Loading
+        val currentParagraph = _paragraphState.value.paragraph
+        _paragraphState.update { it.copy(paragraph = currentParagraph?.copy(isLoading = true)) }
 
         viewModelScope.launch {
             wrapEspressoIdlingResource {
@@ -282,9 +282,9 @@ class WebReaderViewModel @AssistedInject constructor(
                         paragraph.translation = translation.translatedText
                         paragraph.sourceLang = translation.src
                         _translatedParagraphs[pos] = translation
-                        _translatedParagraph.value = LoadResult.Success(pos)
+                        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false, translation = translation)) }
                     }
-                    is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
+                    is Result.Error -> _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false)) }
                 }
             }
         }
@@ -860,12 +860,26 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 
     fun sentenceSelected(paragraphIndex: Int, sentenceIndex: Int) {
-        _paragraphState.update { it.copy(paragraphIndex = paragraphIndex, sentenceIndex = sentenceIndex) }
+        _paragraphState.update { it.copy(paragraphIndex = paragraphIndex, sentenceIndex = sentenceIndex, paragraph = null) }
         _dialogState.update { it.copy(sentence = null, dialogState = null) }
     }
 
     fun unselectSentence() {
         _paragraphState.update { it.copy(paragraphIndex = null, sentenceIndex = null) }
+    }
+
+    fun paragraphSelected(index: Int?) {
+        if (index == null) {
+            _paragraphState.update { it.copy(paragraph = null) }
+            return
+        }
+
+        val paragraph = _paragraphState.value.paragraph
+        if (paragraph?.index == index) {
+            _paragraphState.update { it.copy(paragraph = null) }
+        } else {
+            _paragraphState.update { it.copy(paragraph = SelectedParagraph(index), paragraphIndex = null, sentenceIndex = null) }
+        }
     }
 
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
@@ -897,6 +911,7 @@ class WebReaderViewModel @AssistedInject constructor(
     )
 
     data class ParagraphUiState(
+        val paragraph: SelectedParagraph? = null,
         val paragraphIndex: Int? = null,
         val sentenceIndex: Int? = null,
     )
@@ -910,6 +925,12 @@ class WebReaderViewModel @AssistedInject constructor(
 data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
 
 data class Sentence(val text: String, val paragraphIndex: Int)
+
+data class SelectedParagraph(
+    val index: Int,
+    val isLoading: Boolean = false,
+    val translation: Translation? = null,
+)
 
 sealed interface DialogType {
     data class SavedWord(val word: Words, val span: Span): DialogType

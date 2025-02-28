@@ -101,6 +101,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         _binding = FragmentWebReaderBinding.bind(view)
         adapter = ParagraphAdapter(viewModel,
             onSentenceSelected = viewModel::sentenceSelected,
+            onParagraphSelected = viewModel::paragraphSelected,
             onTextHighlighted =  {
                 viewModel.unselectSentence()
                 viewModel.clearTextInfo()
@@ -138,19 +139,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 errorText.isVisible = isError
 
                 loadingIcon.isVisible = isLoading
-            }
-
-            viewModel.translatedParagraph.observe(viewLifecycleOwner) { result ->
-                adapter.isLoading = when (result) {
-                    LoadResult.Loading -> true
-                    is LoadResult.Error -> false
-                    is LoadResult.Success -> {
-                        val translation = viewModel.translatedParagraphs[result.data]?.translatedText
-                        if(translation != null) adapter.updateTranslation(translation)
-                        false
-                    }
-                }
-                adapter.updateExpanded()
             }
 
             val langSelection = mutableIntStateOf(-1)
@@ -207,6 +195,20 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 adapter.selectSentence(result.paragraphIndex, result.sentenceIndex)
                             } else {
                                 adapter.unselectSentence()
+                            }
+
+                            val paragraph = result.paragraph
+                            if (paragraph != null) {
+                                if (paragraph.isLoading) {
+                                    adapter.isLoading = true
+                                } else {
+                                    adapter.isLoading = false
+                                    adapter.selectParagraph(paragraph.index)
+                                    if (paragraph.translation != null) adapter.updateTranslation(paragraph.translation.translatedText)
+                                }
+                                adapter.updateExpanded()
+                            } else {
+                                adapter.unselectParagraph()
                             }
                         }
                     }

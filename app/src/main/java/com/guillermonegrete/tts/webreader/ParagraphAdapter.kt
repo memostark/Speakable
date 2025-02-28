@@ -43,6 +43,7 @@ import kotlin.math.min
 class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: (paragraph: Int, sentence: Int) -> Unit,
+    val onParagraphSelected: (paragraph: Int?) -> Unit,
     val onTextHighlighted: () -> Unit = {},
     val onTranslateHighlightedText: (text: String, span: Span) -> Unit = { _, _ -> },
     val loadDatabaseWord: (text: CharSequence, pos: Int) -> Unit = { _, _ -> },
@@ -337,8 +338,7 @@ class ParagraphAdapter(
                 // Detects horizontal swipes in any direction
                 if (abs(diffX) > abs(diffY)) {
                     if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                        unselectSentence()
-                        setExpanded()
+                        onParagraphSelected(adapterPosition)
                     }
                 }
                 return true
@@ -348,20 +348,11 @@ class ParagraphAdapter(
         private fun setSentenceSelected(e: MotionEvent) {
             unselectSentence()
             unselectWord()
-            removeExpanded()
 
             val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
             val index = findSentence(offset)
             selectSentence(adapterPosition, index)
             onSentenceSelected(adapterPosition, index)
-        }
-
-        fun setExpanded(){
-            val previousExpandedPos = expandedItemPos
-            val isExpanded = adapterPosition == expandedItemPos
-            expandedItemPos = if(isExpanded) -1 else adapterPosition
-            notifyItemChanged(previousExpandedPos)
-            notifyItemChanged(adapterPosition)
         }
 
         /**
@@ -634,6 +625,10 @@ class ParagraphAdapter(
         }
     }
 
+    fun unselectParagraph(){
+        selectParagraph(-1)
+    }
+
     fun selectWord(absSpan: Span) {
         selectedWordSpan = absSpan
         val pos = getCharListIndex(absSpan.start)
@@ -654,6 +649,14 @@ class ParagraphAdapter(
         item.selectedIndex = sentenceIndex
 
         notifyItemChanged(paragraphIndex, sentenceIndex)
+    }
+
+    fun selectParagraph(position: Int) {
+        val previousExpandedPos = expandedItemPos
+        expandedItemPos = position
+        if (position == previousExpandedPos) return
+        if (previousExpandedPos != -1) notifyItemChanged(previousExpandedPos)
+        notifyItemChanged(position)
     }
 
     fun selectWordInSentence(paragraphIndex: Int, absSpan: Span) {
@@ -766,7 +769,7 @@ class ParagraphAdapter(
             with(binding){
 
                 toggleParagraph.setOnClickListener {
-                    removeExpanded()
+                    onParagraphSelected(null)
                 }
 
                 var clickedWord: String? = null
@@ -775,8 +778,8 @@ class ParagraphAdapter(
                 paragraph.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = paragraph.getOffsetForPosition(event.x, event.y)
-                        val possibleWord = findWordForRightHanded(paragraph.text.toString(), offset)
-                        clickedWord = possibleWord.ifBlank { null }
+                        val wordSpan = paragraph.findWordForRightHanded(offset)
+                        clickedWord = paragraph.text.substring(wordSpan.start, wordSpan.end)
                     }
                     return@setOnTouchListener false
                 }
@@ -806,44 +809,6 @@ class ParagraphAdapter(
             binding.loadingParagraph.isVisible = isLoading
             binding.translatedParagraph.text = item.translation.ifBlank { noTranslationText }
         }
-
-        private fun findWordForRightHanded(
-            str: String,
-            offset: Int
-        ): String { // when you touch ' ', this method returns left word.
-            var newOffset = offset
-            if (str.length == newOffset) {
-                newOffset-- // without this code, you will get exception when touching end of the text
-            }
-            if (str[newOffset] == ' ') {
-                newOffset--
-            }
-            var startIndex = newOffset
-            var endIndex = newOffset
-            try {
-                while (Character.isLetterOrDigit(str[startIndex])) {
-                    startIndex--
-                }
-            } catch (_: StringIndexOutOfBoundsException) {
-                startIndex = 0
-            }
-            try {
-                while (Character.isLetterOrDigit(str[endIndex])) {
-                    endIndex++
-                }
-            } catch (_: StringIndexOutOfBoundsException) {
-                endIndex = str.length
-            }
-
-            return str.substring(startIndex, endIndex)
-        }
-
-    }
-
-    private fun removeExpanded(){
-        val previousExpandedPos = expandedItemPos
-        expandedItemPos = -1
-        notifyItemChanged(previousExpandedPos)
     }
 
     private fun TextView.setHighlightedText(start: Int, end: Int): BackgroundColorSpan{
