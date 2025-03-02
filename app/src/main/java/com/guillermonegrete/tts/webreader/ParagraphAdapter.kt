@@ -23,9 +23,11 @@ import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
+import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.ParagraphExpandedItemBinding
 import com.guillermonegrete.tts.databinding.ParagraphItemBinding
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
@@ -44,6 +46,7 @@ class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
     val onSentenceSelected: (paragraph: Int, sentence: Int) -> Unit,
     val onParagraphSelected: (paragraph: Int?) -> Unit,
+    val onParagraphEvent: (event: ParagraphEvent) -> Unit = {},
     val onTextHighlighted: () -> Unit = {},
     val onTranslateHighlightedText: (text: String, span: Span) -> Unit = { _, _ -> },
     val loadDatabaseWord: (text: CharSequence, pos: Int) -> Unit = { _, _ -> },
@@ -53,8 +56,7 @@ class ParagraphAdapter(
     private var items = emptyList<ParagraphItem>()
     var isPageSaved: Boolean = false
 
-    var expandedItemPos = -1
-        private set
+    private var expandedItem: SelectedParagraph? = null
 
     var isLoading = false
 
@@ -158,13 +160,21 @@ class ParagraphAdapter(
                         }
                     }
                 }
+            } else if (holder is ExpandedViewHolder) {
+                for (payload in payloads) {
+                    when (payload) {
+                        PAYLOAD_PARAGRAPH_HIGHLIGHTS -> holder.highlightSentences()
+                        is LoadResult<*> -> holder.onLoadingTranslation(payload)
+                    }
+                }
             }
         }
     }
 
     override fun getItemCount() = items.size
 
-    override fun getItemViewType(position: Int) = if(expandedItemPos == position) R.layout.paragraph_expanded_item else R.layout.paragraph_item
+    override fun getItemViewType(position: Int) =
+        if (expandedItem?.index == position) R.layout.paragraph_expanded_item else R.layout.paragraph_item
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateItems(items: List<ParagraphItem>) {
@@ -189,14 +199,6 @@ class ParagraphAdapter(
             }
         }
         notifyDataSetChanged()
-    }
-
-    fun updateTranslation(translation: String){
-        items.getOrNull(expandedItemPos)?.let { it.translation = translation }
-    }
-
-    fun updateExpanded(){
-        notifyItemChanged(expandedItemPos)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -652,10 +654,10 @@ class ParagraphAdapter(
     }
 
     fun selectParagraph(position: Int) {
-        val previousExpandedPos = expandedItemPos
-        expandedItemPos = position
+        val previousExpandedPos = expandedItem?.index
+        expandedItem = SelectedParagraph(position)
         if (position == previousExpandedPos) return
-        if (previousExpandedPos != -1) notifyItemChanged(previousExpandedPos)
+        if (previousExpandedPos != null) notifyItemChanged(previousExpandedPos)
         notifyItemChanged(position)
     }
 
@@ -769,7 +771,7 @@ class ParagraphAdapter(
             with(binding){
 
                 toggleParagraph.setOnClickListener {
-                    onParagraphSelected(null)
+                    onParagraphEvent(ParagraphEvent.ToggleClick())
                 }
 
                 var clickedWord: String? = null
@@ -785,7 +787,7 @@ class ParagraphAdapter(
                 }
 
                 paragraph.setOnClickListener {
-                    clickedWord?.let { word -> viewModel.onWordClicked(word, adapterPosition) }
+                    clickedWord?.let { word -> onParagraphEvent(ParagraphEvent.TopClick(word, adapterPosition)) }
                     clickedWord = null
                 }
 
@@ -794,33 +796,54 @@ class ParagraphAdapter(
 
                     if(event.action == MotionEvent.ACTION_UP && duration < 300){
                         val index = translatedParagraph.getOffsetForPosition(event.x, event.y)
-                        val spans = viewModel.findSelectedSentence(adapterPosition, index) ?: return@setOnTouchListener false
-
-                        paragraph.setHighlightedText(spans.topSpan.start, spans.topSpan.end)
-                        translatedParagraph.setHighlightedText(spans.bottomSpan.start, spans.bottomSpan.end)
+                        onParagraphEvent(ParagraphEvent.BottomClick(adapterPosition, index))
                     }
                     true
                 }
             }
         }
 
-        fun bind(item: ParagraphItem){
-            binding.paragraph.text = item.original
+        fun bind(item: ParagraphItem) {
+            binding.paragraph.setText(item.original, TextView.BufferType.SPANNABLE)
             binding.loadingParagraph.isVisible = isLoading
-            binding.translatedParagraph.text = item.translation.ifBlank { noTranslationText }
+
+            setTranslation()
+            highlightSentences()
+        }
+
+        fun setTranslation() {
+            val translation = expandedItem?.translation
+            val text = if (translation.isNullOrBlank()) noTranslationText else translation
+            binding.translatedParagraph.setText(text, TextView.BufferType.SPANNABLE)
+        }
+
+        fun highlightSentences() {
+            val spans = expandedItem?.highlights ?: return
+            binding.paragraph.setHighlightedText(spans.topSpan.start, spans.topSpan.end)
+            binding.translatedParagraph.setHighlightedText(spans.bottomSpan.start, spans.bottomSpan.end)
+        }
+
+        fun onLoadingTranslation(result: LoadResult<*>) {
+            val loadIcon = binding.loadingParagraph
+            when (result) {
+                is LoadResult.Error -> loadIcon.isVisible = false
+                LoadResult.Loading -> loadIcon.isVisible = true
+                is LoadResult.Success -> {
+                    setTranslation()
+                    loadIcon.isVisible = false
+                }
+            }
         }
     }
 
-    private fun TextView.setHighlightedText(start: Int, end: Int): BackgroundColorSpan{
-        val text = SpannableString(this.text)
+    private fun TextView.setHighlightedText(start: Int, end: Int) {
+        val text = this.text as Spannable
 
         //Remove previous
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
         val selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
         text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-        this.setText(text, TextView.BufferType.SPANNABLE)
-        return selectionSpan
     }
 
     private fun createNote(clickedNote: NoteItem, item: ParagraphItem): EditNote {
@@ -876,7 +899,6 @@ class ParagraphAdapter(
         val savedWords: MutableSet<WordState> = mutableSetOf(),
         var selectedIndex: Int = -1,
         var selectedWord: Span? = null,
-        var translation: String = "",
         var databaseWordsLoaded: Boolean = false,
         var scanNewWords: Boolean = false,
     ) {
@@ -894,6 +916,12 @@ class ParagraphAdapter(
          * Indicates whether the sentence has a selected word within.
          */
         var wordSelected: Boolean = false
+    )
+
+    data class SelectedParagraph(
+        val index: Int,
+        val translation: String? = null,
+        val highlights: SplitPageSpan? = null,
     )
 
     private fun Span.toLocal(paragraphItem: ParagraphItem): Span {
@@ -972,6 +1000,21 @@ class ParagraphAdapter(
 
     private fun getCharListIndex(charPos: Int) = items.indexOfFirst { it.firstCharIndex + it.original.length > charPos }
 
+    fun setParagraphLoading() {
+        isLoading = true
+        expandedItem?.let { notifyItemChanged(it.index, LoadResult.Loading) }
+    }
+
+    fun displayParagraph(paragraph: SelectedParagraph) {
+        isLoading = false
+        selectParagraph(paragraph.index)
+        expandedItem = paragraph
+        if (paragraph.translation != null) {
+            notifyItemChanged(paragraph.index, LoadResult.Success(null))
+            if (paragraph.highlights != null) notifyItemChanged(paragraph.index, PAYLOAD_PARAGRAPH_HIGHLIGHTS)
+        }
+    }
+
     data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
 
     sealed interface TextClick {
@@ -979,6 +1022,12 @@ class ParagraphAdapter(
         data class Sentence(val word: String): TextClick
         data class Note(val item: EditNote): TextClick
         data class Overlap(val word: WordState, val note: EditNote): TextClick
+    }
+
+    sealed interface ParagraphEvent {
+        class ToggleClick(): ParagraphEvent
+        data class TopClick(val word: String, val position: Int): ParagraphEvent
+        data class BottomClick(val itemIndex: Int, val charPos: Int): ParagraphEvent
     }
 
     companion object {
@@ -990,6 +1039,7 @@ class ParagraphAdapter(
         private const val PAYLOAD_WORD = "update_word"
         private const val PAYLOAD_WORD_SENTENCE = "word_sentence"
         private const val PAYLOAD_INITIAL_DB_WORDS = "initial_db_words"
+        private const val PAYLOAD_PARAGRAPH_HIGHLIGHTS = "paragraph_highlights"
 
         private const val HIGHLIGHT_COLOR = 0x6633B5E5
         private const val NESTED_HIGHLIGHT_COLOR = 0xd0bcff

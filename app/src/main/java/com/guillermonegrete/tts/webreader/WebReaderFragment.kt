@@ -102,6 +102,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         adapter = ParagraphAdapter(viewModel,
             onSentenceSelected = viewModel::sentenceSelected,
             onParagraphSelected = viewModel::paragraphSelected,
+            onParagraphEvent = {
+                when (it) {
+                    is ParagraphAdapter.ParagraphEvent.BottomClick -> viewModel.setSentenceInParagraph(it.itemIndex, it.charPos)
+                    is ParagraphAdapter.ParagraphEvent.ToggleClick -> viewModel.paragraphSelected(null)
+                    is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onWordClicked(it.word, it.position)
+                }
+            },
             onTextHighlighted =  {
                 viewModel.unselectSentence()
                 viewModel.clearTextInfo()
@@ -200,13 +207,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             val paragraph = result.paragraph
                             if (paragraph != null) {
                                 if (paragraph.isLoading) {
-                                    adapter.isLoading = true
+                                    adapter.setParagraphLoading()
                                 } else {
-                                    adapter.isLoading = false
-                                    adapter.selectParagraph(paragraph.index)
-                                    if (paragraph.translation != null) adapter.updateTranslation(paragraph.translation.translatedText)
+                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
+                                    adapter.displayParagraph(paragraphUi)
                                 }
-                                adapter.updateExpanded()
                             } else {
                                 adapter.unselectParagraph()
                             }
@@ -641,12 +646,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         PageVersion.WEB -> "Web"
     }
 
-    private fun onTranslateClicked(){
-        val expandedItemPos = adapter.expandedItemPos
-        if (expandedItemPos != -1) {
-            viewModel.translateParagraph(expandedItemPos)
-            return
-        }
+    private fun onTranslateClicked() {
+        if (viewModel.translateParagraph()) return
 
         val selected = adapter.selectedSentence
         if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
