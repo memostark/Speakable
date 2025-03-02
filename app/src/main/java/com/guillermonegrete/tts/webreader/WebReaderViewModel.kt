@@ -260,15 +260,20 @@ class WebReaderViewModel @AssistedInject constructor(
         return splitParagraphs
     }
 
-    fun translateParagraph(pos: Int) {
-        val paragraphs = cachedParagraphs ?: return
+    fun translateParagraph() : Boolean {
+        val currentParagraph = _paragraphState.value.paragraph
+        val pos = currentParagraph?.index ?: return false
+        val paragraphs = cachedParagraphs ?: return false
         val paragraph = paragraphs[pos].translation
 
         val language = cacheWebLink?.language
-        if(paragraph.translation.isNotBlank() && paragraph.sourceLang == language) return
+        if(paragraph.translation.isNotBlank() && paragraph.sourceLang == language) {
+            val state = currentParagraph.copy(translation = _translatedParagraphs[pos])
+            _paragraphState.update { it.copy(paragraph = state) }
+            return true
+        }
 
-        val currentParagraph = _paragraphState.value.paragraph
-        _paragraphState.update { it.copy(paragraph = currentParagraph?.copy(isLoading = true)) }
+        _paragraphState.update { it.copy(paragraph = currentParagraph.copy(isLoading = true)) }
 
         viewModelScope.launch {
             wrapEspressoIdlingResource {
@@ -288,6 +293,8 @@ class WebReaderViewModel @AssistedInject constructor(
                 }
             }
         }
+
+        return true
     }
 
     fun translateWord(word: String, span: Span) {
@@ -453,6 +460,11 @@ class WebReaderViewModel @AssistedInject constructor(
             is Result.Success -> onResult(result.data)
             is Result.Error -> viewModelScope.launch { _textInfo.emit(DialogState.Error(result.exception)) }
         }
+    }
+
+    fun setSentenceInParagraph(paragraphPos: Int, charIndex: Int) {
+        val span = findSelectedSentence(paragraphPos, charIndex)
+        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(highlights = span)) }
     }
 
     fun findSelectedSentence(paragraphPos: Int, charIndex: Int): SplitPageSpan? {
@@ -930,6 +942,7 @@ data class SelectedParagraph(
     val index: Int,
     val isLoading: Boolean = false,
     val translation: Translation? = null,
+    val highlights: SplitPageSpan? = null,
 )
 
 sealed interface DialogType {
