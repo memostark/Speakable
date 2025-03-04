@@ -158,6 +158,12 @@ class ParagraphAdapter(
                             val spannable = holder.getSpannable()
                             if (spannable != null) holder.addSavedWords(items[position], spannable)
                         }
+                        is Payload -> {
+                            when (payload) {
+                                is Payload.AddNote -> holder.highlightNote(items[position], payload.id)
+                                is Payload.DeleteNote -> holder.removeNote(payload.id)
+                            }
+                        }
                     }
                 }
             } else if (holder is ExpandedViewHolder) {
@@ -251,7 +257,7 @@ class ParagraphAdapter(
 
             item.notes.forEach {
                 val span = it.span
-                spannable.addHighlightedText(span.start, span.end, it.color)
+                spannable.addHighlightedText(span.start, span.end, Highlight.Note(it.color, it.id))
             }
 
             if (item.scanNewWords) {
@@ -374,60 +380,61 @@ class ParagraphAdapter(
                 }
             } else {
                 val span = item.indexes[sentencePos]
-                // remove overlapping notes
+                // remove overlapping notes/words
                 text.getSpans(span.start, span.end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
 
                 // add highlight
                 selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
                 text.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-                val overlaps = mutableSetOf<BgColorSpan>()
+                val overlaps = mutableSetOf<OverlapSpan>()
                 // reapply notes and words so they are still in front of the selection
                 item.notes.forEach { note ->
                     val noteSpan = note.span
-                    if (span.start < noteSpan.end && span.end > noteSpan.start) {
+                    if (span.intersects(noteSpan)) {
                         item.savedWords.forEach {
-                            val wordSpan = it.span
-                            if (wordSpan != null) {
-                                val overlap = getOverlap(note, wordSpan)
-                                if (overlap != null) {
-                                    val overlapSpan = text.getBgColorSpan(overlap.start, overlap.end, overlap.color)
-                                    if (overlapSpan != null) text.removeSpan(overlapSpan)
-                                    overlaps.add(overlap)
-                                }
-                            }
-                        }
-                        text.addHighlightedText(noteSpan.start, noteSpan.end, note.color)
-                    }
-                }
-
-                item.savedWords.forEach { word ->
-                    val wordSpan = word.span
-                    if (wordSpan != null && span.start < wordSpan.end && span.end > wordSpan.start) {
-                        item.notes.forEach {
-                            val overlap = getOverlap(it, wordSpan)
+                            val overlap = getOverlap(note, it)
                             if (overlap != null) {
                                 val overlapSpan = text.getBgColorSpan(overlap.start, overlap.end, overlap.color)
                                 if (overlapSpan != null) text.removeSpan(overlapSpan)
                                 overlaps.add(overlap)
                             }
                         }
-                        text.addHighlightedText(wordSpan.start, wordSpan.end)
+                        text.addHighlightedText(noteSpan.start, noteSpan.end, Highlight.Note(note.color, note.id))
+                    }
+                }
+
+                // why are we doing this twice? Because we need to remove the intersections and reapply them
+                item.savedWords.forEach { word ->
+                    val wordSpan = word.span
+                    if (wordSpan != null && span.intersects(wordSpan)) {
+                        item.notes.forEach {
+                            val overlap = getOverlap(it, word)
+                            if (overlap != null) {
+                                val overlapSpan = text.getBgColorSpan(overlap.start, overlap.end, overlap.color)
+                                if (overlapSpan != null) text.removeSpan(overlapSpan)
+                                overlaps.add(overlap)
+                            }
+                        }
+                        text.addHighlightedText(wordSpan.start, wordSpan.end, Highlight.SavedWord(HighlightColorInt, word.dbId))
                     }
                 }
 
                 // Reapply overlaps
-                overlaps.map { text.addHighlightedText(it.start, it.end, it.color) }
+                overlaps.map {
+                    text.addHighlightedText(it.start, it.end, Highlight.Overlap(it.color, it.noteId, it.wordId))
+                }
             }
         }
 
-        private fun getOverlap(note: NoteItem, wordSpan: Span): BgColorSpan? {
+        private fun getOverlap(note: NoteItem, word: WordState): OverlapSpan? {
             val noteSpan = note.span
-            if (noteSpan.intersects(wordSpan)) {
+            val wordSpan = word.span
+            if (wordSpan != null && noteSpan.intersects(wordSpan)) {
                 val start = max(wordSpan.start, noteSpan.start)
                 val end = min(wordSpan.end, noteSpan.end)
                 val color = ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f)
-                return BgColorSpan(start, end, color)
+                return OverlapSpan(start, end, color, note.id, word.dbId)
             }
             return null
         }
@@ -457,22 +464,51 @@ class ParagraphAdapter(
             text.setSpan(wordInsideSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
 
+        fun highlightNote(item: ParagraphItem, id: Long) {
+            // added note
+            val spannable = getSpannable() ?: return
+            val note = item.notes.find { it.id == id } ?: return
+            val span = note.span
+            spannable.addHighlightedText(span.start, span.end, Highlight.Note(note.color, id))
+
+            // add overlaps
+            item.savedWords.forEach { word ->
+                val wordSpan = word.span
+                if (wordSpan != null && span.intersects(wordSpan)) {
+                    val overlap = getOverlap(note, word)
+                    if (overlap != null)
+                        spannable.addHighlightedText(overlap.start, overlap.end, Highlight.Overlap(overlap.color, id, word.dbId))
+                }
+            }
+        }
+
+        fun removeNote(id: Long) {
+            val spannable = getSpannable() ?: return
+
+            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).map {
+                when (it) {
+                    is Highlight.Note -> if(it.id == id) spannable.removeSpan(it)
+                    is Highlight.Overlap -> if(it.noteId == id) spannable.removeSpan(it)
+                }
+            }
+        }
+
         fun getSpannable() = binding.paragraph.text as? Spannable
 
         fun addSavedWords(item: ParagraphItem, spannable: Spannable) {
-            item.savedWords.forEach {
-                val span = it.span
-                if (span != null) spannable.addHighlightedText(span.start, span.end)
-            }
-
-            // When a note and saved word overlap add a blend of their colors
             item.savedWords.forEach { word ->
+                val span = word.span
+                if (span != null)
+                    spannable.addHighlightedText(span.start, span.end, Highlight.SavedWord(HighlightColorInt, word.dbId))
+
+                // When a note and saved word overlap add a blend of their colors
                 item.notes.forEach { note ->
                     val span = word.span
                     if (span != null && note.span.intersects(word.span)) {
                         val start = max(span.start, note.span.start)
                         val end = min(span.end, note.span.end)
-                        spannable.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
+                        val color = ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f)
+                        spannable.addHighlightedText(start, end, Highlight.Overlap(color, note.id, word.dbId))
                     }
                 }
             }
@@ -856,10 +892,10 @@ class ParagraphAdapter(
         val pos = getCharListIndex(selection.start)
         if (pos == -1) return
         val paragraphItem = items[pos]
-        paragraphItem.notes.removeAll { noteId == it.id }
+        val removed = paragraphItem.notes.removeAll { noteId == it.id }
         val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
         paragraphItem.notes.add(NoteItem(result.text, span, Color.parseColor(result.colorHex), noteId))
-        notifyItemChanged(pos)
+        if (!removed) notifyItemChanged(pos, Payload.AddNote(noteId)) // use payload
     }
 
     fun deleteNote(noteId: Long) {
@@ -870,7 +906,7 @@ class ParagraphAdapter(
         if (pos == -1) return
         val paragraphItem = items[pos]
         paragraphItem.notes.removeAll { noteId == it.id }
-        notifyItemChanged(pos)
+        notifyItemChanged(pos, Payload.DeleteNote(noteId)) // use payload
     }
 
     fun updateWordInSentence() {
@@ -1015,7 +1051,7 @@ class ParagraphAdapter(
         }
     }
 
-    data class BgColorSpan(val start: Int, val end: Int, @ColorInt val color: Int)
+    data class OverlapSpan(val start: Int, val end: Int, @ColorInt val color: Int, val noteId: Long, val wordId: Int)
 
     sealed interface TextClick {
         data class SavedWord(val word: WordState): TextClick
@@ -1028,6 +1064,17 @@ class ParagraphAdapter(
         class ToggleClick(): ParagraphEvent
         data class TopClick(val word: String, val position: Int): ParagraphEvent
         data class BottomClick(val itemIndex: Int, val charPos: Int): ParagraphEvent
+    }
+
+    sealed interface Payload {
+        data class AddNote(val id: Long): Payload
+        data class DeleteNote(val id: Long): Payload
+    }
+
+    sealed interface Highlight {
+        class Note(@ColorInt color: Int, val id: Long): BackgroundColorSpan(color), Highlight
+        class SavedWord(@ColorInt color: Int, val id: Int): BackgroundColorSpan(color), Highlight
+        class Overlap(@ColorInt color: Int, val noteId: Long, val wordId: Int): BackgroundColorSpan(color), Highlight
     }
 
     companion object {
