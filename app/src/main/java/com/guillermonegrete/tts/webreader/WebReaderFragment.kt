@@ -794,16 +794,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         adapter.setScanNewWords()
         val paragraphWords = findWordsInItems(listOf(dbWord), range)
         adapter.newWords.add(dbWord)
-        adapter.addSavedWords(paragraphWords, range.first)
+        adapter.addSavedWords(dbWord.id, paragraphWords, range.first)
     }
 
     private fun findWordsInItems(dbWords: List<Words>, range: IntRange): List<List<WordState>> {
-        val paragraphWords = arrayListOf<List<WordState>>()
-        range.forEach { pos ->
-            val words = viewModel.findWordsInParagraph(dbWords,  adapter.getText(pos), pos)
-            paragraphWords.add(words)
+        return range.map { pos ->
+            viewModel.findWordsInParagraph(dbWords,  adapter.getText(pos), pos)
         }
-        return paragraphWords
     }
 
     private fun updateListBottomPadding(pixels: Int) {

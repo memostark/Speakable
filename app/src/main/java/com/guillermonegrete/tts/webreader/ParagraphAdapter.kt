@@ -32,7 +32,6 @@ import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
-import com.guillermonegrete.tts.utils.getBgColorSpan
 import com.guillermonegrete.tts.utils.getSelectedText
 import com.guillermonegrete.tts.utils.isWord
 import kotlinx.coroutines.channels.BufferOverflow
@@ -150,27 +149,30 @@ class ParagraphAdapter(
         } else {
             if(holder is ViewHolder) {
                 for (payload in payloads) {
-                    when (payload) {
-                        is Int -> holder.setHighlightedText(items[position], payload)
-                        PAYLOAD_WORD -> holder.highlightWord(items[position])
-                        PAYLOAD_WORD_SENTENCE -> holder.highlightInsideWord(items[position])
-                        PAYLOAD_INITIAL_DB_WORDS ->  {
-                            val spannable = holder.getSpannable()
-                            if (spannable != null) holder.addSavedWords(items[position], spannable)
-                        }
-                        is Payload -> {
-                            when (payload) {
-                                is Payload.AddNote -> holder.highlightNote(items[position], payload.id)
-                                is Payload.DeleteNote -> holder.removeNote(payload.id)
+                    if (payload is Payload) {
+                        when (payload) {
+                            Payload.Text -> holder.highlightWord(items[position])
+                            is Payload.Sentence -> holder.setHighlightedText(position, payload.index)
+                            Payload.WordInSentence -> holder.highlightInsideWord(items[position])
+                            is Payload.AddNote -> holder.highlightNote(items[position], payload.id)
+                            is Payload.DeleteNote -> holder.removeNote(payload.id)
+                            is Payload.AddWord -> holder.highlightSavedWord(items[position], payload.id)
+                            is Payload.DeleteWord -> holder.removeWord(payload.id)
+                            Payload.AddWords -> {
+                                val spannable = holder.getSpannable()
+                                if (spannable != null) holder.addSavedWords(items[position], spannable)
                             }
+                            Payload.DeleteWords -> holder.removeWords()
                         }
                     }
                 }
             } else if (holder is ExpandedViewHolder) {
                 for (payload in payloads) {
-                    when (payload) {
-                        PAYLOAD_PARAGRAPH_HIGHLIGHTS -> holder.highlightSentences()
-                        is LoadResult<*> -> holder.onLoadingTranslation(payload)
+                    if (payload is PayloadParagraph) {
+                        when (payload) {
+                            PayloadParagraph.Highlights -> holder.highlightSentences()
+                            is PayloadParagraph.Translation -> holder.onLoadingTranslation(payload.result)
+                        }
                     }
                 }
             }
@@ -324,7 +326,7 @@ class ParagraphAdapter(
                     // Select new word
                     item.selectedWord = wordSpan
                     selectedWordPos = adapterPosition
-                    notifyItemChanged(adapterPosition, PAYLOAD_WORD)
+                    notifyItemChanged(adapterPosition, Payload.Text)
                 }
                 return super.onSingleTapConfirmed(e)
             }
@@ -366,7 +368,7 @@ class ParagraphAdapter(
         /**
          * Set the highlighted span without reassigning the text to the TextView.
          */
-        fun setHighlightedText(item: ParagraphItem, sentencePos: Int) {
+        fun setHighlightedText(itemPos: Int, sentencePos: Int) {
             val text = binding.paragraph.text as? Spannable ?: return
 
             if(sentencePos == -1) { // delete selected word or sentence
@@ -379,7 +381,8 @@ class ParagraphAdapter(
                     }
                 }
             } else {
-                val span = item.indexes[sentencePos]
+                val item = items[itemPos]
+                val span = item.indexes[selectedSentence.sentenceIndex]
                 // remove overlapping notes/words
                 text.getSpans(span.start, span.end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
 
@@ -395,7 +398,7 @@ class ParagraphAdapter(
                         item.savedWords.forEach {
                             val overlap = getOverlap(note, it)
                             if (overlap != null) {
-                                val overlapSpan = text.getBgColorSpan(overlap.start, overlap.end, overlap.color)
+                                val overlapSpan = text.getOverlapSpan(overlap)
                                 if (overlapSpan != null) text.removeSpan(overlapSpan)
                                 overlaps.add(overlap)
                             }
@@ -411,12 +414,12 @@ class ParagraphAdapter(
                         item.notes.forEach {
                             val overlap = getOverlap(it, word)
                             if (overlap != null) {
-                                val overlapSpan = text.getBgColorSpan(overlap.start, overlap.end, overlap.color)
+                                val overlapSpan = text.getOverlapSpan(overlap)
                                 if (overlapSpan != null) text.removeSpan(overlapSpan)
                                 overlaps.add(overlap)
                             }
                         }
-                        text.addHighlightedText(wordSpan.start, wordSpan.end, Highlight.SavedWord(HighlightColorInt, word.dbId))
+                        text.addHighlightedText(wordSpan.start, wordSpan.end, Highlight.SavedWord(word.dbId))
                     }
                 }
 
@@ -425,6 +428,16 @@ class ParagraphAdapter(
                     text.addHighlightedText(it.start, it.end, Highlight.Overlap(it.color, it.noteId, it.wordId))
                 }
             }
+        }
+
+        fun Spannable.getOverlapSpan(overlap: OverlapSpan): BackgroundColorSpan? {
+            getSpans(overlap.start, overlap.end, BackgroundColorSpan::class.java).map { bgSpan ->
+                if (bgSpan is Highlight.Overlap &&
+                    bgSpan.noteId == overlap.noteId && bgSpan.wordId == overlap.wordId) {
+                    return bgSpan
+                }
+            }
+            return null
         }
 
         private fun getOverlap(note: NoteItem, word: WordState): OverlapSpan? {
@@ -443,10 +456,16 @@ class ParagraphAdapter(
          * Set the highlighted span without reassigning the text to the TextView.
          */
         fun highlightWord(item: ParagraphItem) {
-            selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
             val text = binding.paragraph.text as? Spannable
+            selectionSpan?.let { text?.removeSpan(it) }
+
             val span = item.selectedWord
-            if (span != null) text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (span != null) {
+                selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
+                text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else {
+                selectionSpan = null
+            }
         }
 
         fun highlightInsideWord(item: ParagraphItem) {
@@ -498,18 +517,58 @@ class ParagraphAdapter(
         fun addSavedWords(item: ParagraphItem, spannable: Spannable) {
             item.savedWords.forEach { word ->
                 val span = word.span
-                if (span != null)
-                    spannable.addHighlightedText(span.start, span.end, Highlight.SavedWord(HighlightColorInt, word.dbId))
+                if (span != null) {
+                    spannable.addHighlightedText(span.start, span.end, Highlight.SavedWord(word.dbId))
 
-                // When a note and saved word overlap add a blend of their colors
-                item.notes.forEach { note ->
-                    val span = word.span
-                    if (span != null && note.span.intersects(word.span)) {
-                        val start = max(span.start, note.span.start)
-                        val end = min(span.end, note.span.end)
-                        val color = ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f)
-                        spannable.addHighlightedText(start, end, Highlight.Overlap(color, note.id, word.dbId))
+                    // When a note and saved word overlap add a blend of their colors
+                    item.notes.forEach { note ->
+                        if (note.span.intersects(word.span)) {
+                            val start = max(span.start, note.span.start)
+                            val end = min(span.end, note.span.end)
+                            val color = ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f)
+                            spannable.addHighlightedText(start, end, Highlight.Overlap(color, note.id, word.dbId))
+                        }
                     }
+                }
+            }
+        }
+
+        fun highlightSavedWord(item: ParagraphItem, id: Int) {
+            // added note
+            val spannable = getSpannable() ?: return
+            for (word in item.savedWords) {
+                if (word.dbId != id) continue
+                val span = word.span ?: continue
+                spannable.addHighlightedText(span.start, span.end, Highlight.SavedWord(id))
+
+                // add overlaps
+                item.notes.forEach { note ->
+                    if (span.intersects(note.span)) {
+                        val overlap = getOverlap(note, word)
+                        if (overlap != null)
+                            spannable.addHighlightedText(overlap.start, overlap.end, Highlight.Overlap(overlap.color, note.id, id))
+                    }
+                }
+            }
+        }
+
+        fun removeWord(id: Int) {
+            val spannable = getSpannable() ?: return
+
+            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).map {
+                when (it) {
+                    is Highlight.SavedWord -> if(it.id == id) spannable.removeSpan(it)
+                    is Highlight.Overlap -> if(it.wordId == id) spannable.removeSpan(it)
+                }
+            }
+        }
+
+        fun removeWords() {
+            val spannable = getSpannable() ?: return
+
+            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).map {
+                when (it) {
+                    is Highlight.SavedWord, is Highlight.Overlap -> spannable.removeSpan(it)
                 }
             }
         }
@@ -634,10 +693,10 @@ class ParagraphAdapter(
             val previousItem = items[previousIndex]
             previousItem.selectedIndex = -1
             previousItem.selectedWord = null
-            notifyItemChanged(previousIndex, -1)
             selectedSentence.paragraphIndex = -1
             selectedSentence.sentenceIndex = -1
             selectedSentence.wordSelected = false
+            notifyItemChanged(previousIndex, Payload.Sentence(-1))
         }
     }
 
@@ -646,7 +705,7 @@ class ParagraphAdapter(
         if(selectedWordPos != -1) {
             val previousItem = items[selectedWordPos]
             previousItem.selectedWord = null
-            notifyItemChanged(selectedWordPos, -1)
+            notifyItemChanged(selectedWordPos, Payload.Text)
             selectedWordPos = -1
             selectedWordSpan = null
             isOverlappingNotes = false
@@ -658,8 +717,8 @@ class ParagraphAdapter(
             val index = selectedSentence.paragraphIndex
             val item = items[index]
             item.selectedWord = null
-            notifyItemChanged(index, PAYLOAD_WORD_SENTENCE)
             selectedSentence.wordSelected = false
+            notifyItemChanged(index, Payload.WordInSentence)
         }
     }
 
@@ -674,7 +733,7 @@ class ParagraphAdapter(
         val item = items[pos]
         item.selectedWord = item.toLocal(absSpan)
         selectedWordPos = pos
-        notifyItemChanged(pos, PAYLOAD_WORD)
+        notifyItemChanged(pos, Payload.Text)
     }
 
     fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
@@ -686,7 +745,7 @@ class ParagraphAdapter(
         val item = items.getOrNull(paragraphIndex) ?: return
         item.selectedIndex = sentenceIndex
 
-        notifyItemChanged(paragraphIndex, sentenceIndex)
+        notifyItemChanged(paragraphIndex, Payload.Sentence(sentenceIndex))
     }
 
     fun selectParagraph(position: Int) {
@@ -859,7 +918,7 @@ class ParagraphAdapter(
             binding.translatedParagraph.setHighlightedText(spans.bottomSpan.start, spans.bottomSpan.end)
         }
 
-        fun onLoadingTranslation(result: LoadResult<*>) {
+        fun onLoadingTranslation(result: LoadResult<Unit>) {
             val loadIcon = binding.loadingParagraph
             when (result) {
                 is LoadResult.Error -> loadIcon.isVisible = false
@@ -911,7 +970,7 @@ class ParagraphAdapter(
 
     fun updateWordInSentence() {
         val itemIndex = selectedSentence.paragraphIndex
-        notifyItemChanged(itemIndex, PAYLOAD_WORD_SENTENCE)
+        notifyItemChanged(itemIndex, Payload.WordInSentence)
     }
 
     data class ParagraphItem(
@@ -972,7 +1031,7 @@ class ParagraphAdapter(
         item.selectedWord = span
         selectedWordPos = pos
         textView.clearFocus()
-        notifyItemChanged(pos, PAYLOAD_WORD)
+        notifyItemChanged(pos, Payload.Text)
     }
 
     fun getText(pos: Int): String {
@@ -991,17 +1050,17 @@ class ParagraphAdapter(
             pageItem.savedWords.addAll(paragraphWords[i - start])
             pageItem.databaseWordsLoaded = true
         }
-        notifyItemRangeChanged(start, paragraphWords.size, PAYLOAD_INITIAL_DB_WORDS)
+        notifyItemRangeChanged(start, paragraphWords.size, Payload.AddWords)
     }
 
-    fun addSavedWords(paragraphWords: List<List<WordState>>, start: Int) {
+    fun addSavedWords(wordId: Int, paragraphWords: List<List<WordState>>, start: Int) {
         val end = start + paragraphWords.size
         for (i in start..< end) {
             val pageItem = items[i]
             pageItem.databaseWordsLoaded = true
             pageItem.scanNewWords = false
             val modified = pageItem.savedWords.addAll(paragraphWords[i - start])
-            if (modified) notifyItemChanged(i)
+            if (modified) notifyItemChanged(i, Payload.AddWord(wordId))
         }
     }
 
@@ -1010,7 +1069,7 @@ class ParagraphAdapter(
         wordIndexes.map { pos ->
             val item = items[pos]
             val removed = item.savedWords.removeAll { it.dbId == id }
-            if (removed) notifyItemChanged(pos)
+            if (removed) notifyItemChanged(pos, Payload.DeleteWord(id)) // use payload
         }
     }
 
@@ -1024,7 +1083,7 @@ class ParagraphAdapter(
             val words = items[it].savedWords
             if (words.isNotEmpty()) {
                 words.clear()
-                notifyItemChanged(it)
+                notifyItemChanged(it, Payload.DeleteWords)
             }
         }
         items.forEach {
@@ -1038,7 +1097,7 @@ class ParagraphAdapter(
 
     fun setParagraphLoading() {
         isLoading = true
-        expandedItem?.let { notifyItemChanged(it.index, LoadResult.Loading) }
+        expandedItem?.let { notifyItemChanged(it.index, PayloadParagraph.Translation(LoadResult.Loading)) }
     }
 
     fun displayParagraph(paragraph: SelectedParagraph) {
@@ -1046,8 +1105,8 @@ class ParagraphAdapter(
         selectParagraph(paragraph.index)
         expandedItem = paragraph
         if (paragraph.translation != null) {
-            notifyItemChanged(paragraph.index, LoadResult.Success(null))
-            if (paragraph.highlights != null) notifyItemChanged(paragraph.index, PAYLOAD_PARAGRAPH_HIGHLIGHTS)
+            notifyItemChanged(paragraph.index, PayloadParagraph.Translation(LoadResult.Success(Unit)))
+            if (paragraph.highlights != null) notifyItemChanged(paragraph.index, PayloadParagraph.Highlights)
         }
     }
 
@@ -1067,13 +1126,25 @@ class ParagraphAdapter(
     }
 
     sealed interface Payload {
+        data object Text: Payload
+        data class Sentence(val index: Int): Payload
+        data object WordInSentence: Payload
         data class AddNote(val id: Long): Payload
         data class DeleteNote(val id: Long): Payload
+        data class AddWord(val id: Int): Payload
+        data class DeleteWord(val id: Int): Payload
+        data object AddWords: Payload
+        data object DeleteWords: Payload
+    }
+
+    sealed interface PayloadParagraph {
+        data object Highlights: PayloadParagraph
+        data class Translation(val result: LoadResult<Unit>): PayloadParagraph
     }
 
     sealed interface Highlight {
         class Note(@ColorInt color: Int, val id: Long): BackgroundColorSpan(color), Highlight
-        class SavedWord(@ColorInt color: Int, val id: Int): BackgroundColorSpan(color), Highlight
+        class SavedWord(val id: Int, @ColorInt color: Int = HighlightColorInt): BackgroundColorSpan(color), Highlight
         class Overlap(@ColorInt color: Int, val noteId: Long, val wordId: Int): BackgroundColorSpan(color), Highlight
     }
 
@@ -1082,11 +1153,6 @@ class ParagraphAdapter(
 
         private const val SWIPE_THRESHOLD = 0.8
         private const val SWIPE_VELOCITY_THRESHOLD = 0.8
-
-        private const val PAYLOAD_WORD = "update_word"
-        private const val PAYLOAD_WORD_SENTENCE = "word_sentence"
-        private const val PAYLOAD_INITIAL_DB_WORDS = "initial_db_words"
-        private const val PAYLOAD_PARAGRAPH_HIGHLIGHTS = "paragraph_highlights"
 
         private const val HIGHLIGHT_COLOR = 0x6633B5E5
         private const val NESTED_HIGHLIGHT_COLOR = 0xd0bcff

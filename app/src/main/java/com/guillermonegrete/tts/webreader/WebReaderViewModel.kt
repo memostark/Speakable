@@ -682,12 +682,9 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 
     private fun findWordsInSections(dbWords: List<Words>, sections: List<WordSpans>, position: Int): List<List<WordState>> {
-        val paragraphWords = arrayListOf<List<WordState>>()
-        sections.forEachIndexed { index, wordSpans ->
-            val words = findWordsInSection(dbWords, wordSpans, position + index)
-            paragraphWords.add(words)
+        return sections.mapIndexed { index, wordSpans ->
+            findWordsInSection(dbWords, wordSpans, position + index)
         }
-        return paragraphWords
     }
 
     private fun findWordsInSection(dbWords: List<Words>, section: WordSpans, position: Int): List<WordState> {
