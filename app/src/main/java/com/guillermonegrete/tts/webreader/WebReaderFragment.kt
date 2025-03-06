@@ -688,13 +688,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 moreInfoBtn.isVisible = false
                 addNoteBtn.isVisible = false
                 setWordSheetViews(false)
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-            } else if (result.isWordLoading) {
-                barLoading.isVisible = true
-                wordTranslation.text = ""
-                moreInfoWordBtn.isInvisible = true
-                addWordNoteBtn.isInvisible = true
             } else {
+                if (result.error != null) {
+                    Timber.e("Error when translating: ${result.error}")
+                    sbScope?.launch {
+                        snackbarHostState.value.showSnackbar(getString(R.string.error_translation))
+                        viewModel.errorShown()
+                    }
+                }
+
                 barLoading.isVisible = false
                 moreInfoBtn.isVisible = false
                 addNoteBtn.isVisible = false
@@ -727,7 +729,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             adapter.selectWordInSentence(sentence.paragraphIndex, state.span)
                             addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
                         }
-                        else -> setWordSheetViews(false)
+                        else -> {
+                            adapter.unselectWord()
+                            setWordSheetViews(false)
+                        }
+                    }
+
+                    if (result.isWordLoading) {
+                        barLoading.isVisible = true
+                        wordTranslation.text = ""
+                        moreInfoWordBtn.isInvisible = true
+                        addWordNoteBtn.isInvisible = true
                     }
                 } else {
                     when(state) {
@@ -766,14 +778,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         }
                     }
                 }
-
-                root.post {
-                    if (state != null || result.sentence != null) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                }
-
-                binding.composeBar.isVisible = state == null && result.sentence == null
             }
-    }
+            val dialogVisible = result.dialogState != null || result.sentence != null || result.isLoading || result.isWordLoading
+            root.post {
+                if (dialogVisible) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+            binding.composeBar.isGone = dialogVisible
+        }
     }
 
     private fun setWordSheetViews(isVisible: Boolean){

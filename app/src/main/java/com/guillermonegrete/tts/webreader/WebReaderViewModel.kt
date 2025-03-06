@@ -76,12 +76,6 @@ class WebReaderViewModel @AssistedInject constructor(
     val translatedParagraphs: List<Translation?>
         get() = _translatedParagraphs
 
-    private val _textInfo = MutableStateFlow<DialogState<WordResult>>(DialogState.Empty)
-    val textInfo: StateFlow<DialogState<WordResult>> = _textInfo
-
-    private val _wordInfo = MutableStateFlow<DialogState<WordResult>>(DialogState.Empty)
-    val wordInfo: StateFlow<DialogState<WordResult>> = _wordInfo
-
     private val _paragraphState = MutableStateFlow<ParagraphUiState>(ParagraphUiState())
     val paragraphState: StateFlow<ParagraphUiState> = _paragraphState
 
@@ -346,7 +340,7 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 
     fun clearTextInfo() {
-        _dialogState.update { it.copy(dialogState = null, sentence = null) }
+        _dialogState.update { it.copy(dialogState = null, sentence = null, isLoading = false, isWordLoading = false) }
     }
 
     fun setNoteData(note: EditNote, sentenceSpan: Span?) {
@@ -458,7 +452,7 @@ class WebReaderViewModel @AssistedInject constructor(
 
         when(result){
             is Result.Success -> onResult(result.data)
-            is Result.Error -> viewModelScope.launch { _textInfo.emit(DialogState.Error(result.exception)) }
+            is Result.Error -> _dialogState.update { it.copy(error = result.exception.message, isLoading = false, isWordLoading = false) }
         }
     }
 
@@ -891,6 +885,10 @@ class WebReaderViewModel @AssistedInject constructor(
         }
     }
 
+    fun errorShown() {
+        _dialogState.update { it.copy(error = null) }
+    }
+
     data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
@@ -911,6 +909,7 @@ class WebReaderViewModel @AssistedInject constructor(
         val isPageSaved: Boolean = false,
         val dialogState: DialogType? = null,
         val sentence: Sentence? = null,
+        val error: String? = null,
     )
 
     data class UiEditDialogsState(
