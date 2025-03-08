@@ -140,10 +140,7 @@ class ImportTextFragmentTest{
 
         onView(withId(R.id.import_tab_layout)).perform(selectTabAtPosition(ImportTextFragment.ENTER_TEXT_INDEX))
 
-        // This can cause the tab to suddenly change, making the test fail
-        // A fix hasn't been found yet
-//        onView(withId(R.id.import_text_edit)).perform(typeText("New text to import"), closeSoftKeyboard())
-        Thread.sleep(500)
+        onView(withId(R.id.import_text_edit)).perform(typeText("New text to import"), closeSoftKeyboard())
         onView(withId(R.id.visualize_btn)).check(matches(isDisplayed())).perform(click())
 
         intended(hasComponent(VisualizeTextActivity::class.java.name))

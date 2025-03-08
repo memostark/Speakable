@@ -489,6 +489,7 @@ class ParagraphAdapter(
             val spannable = getSpannable() ?: return
             val note = item.notes.find { it.id == id } ?: return
             val span = note.span
+            removeNote(id) // remove previous note
             spannable.addHighlightedText(span.start, span.end, Highlight.Note(note.color, id))
 
             // add overlaps
@@ -952,10 +953,11 @@ class ParagraphAdapter(
         val pos = getCharListIndex(selection.start)
         if (pos == -1) return
         val paragraphItem = items[pos]
-        val removed = paragraphItem.notes.removeAll { noteId == it.id }
-        val span = Span(selection.start - paragraphItem.firstCharIndex, selection.end - paragraphItem.firstCharIndex)
-        paragraphItem.notes.add(NoteItem(result.text, span, Color.parseColor(result.colorHex), noteId))
-        if (!removed) notifyItemChanged(pos, Payload.AddNote(noteId)) // use payload
+        val oldNote = paragraphItem.notes.find { noteId == it.id }
+        paragraphItem.notes.removeAll { noteId == it.id }
+        val newNote = NoteItem(result.text, paragraphItem.toLocal(selection), Color.parseColor(result.colorHex), noteId)
+        paragraphItem.notes.add(newNote)
+        if (oldNote == null || oldNote.color != newNote.color) notifyItemChanged(pos, Payload.AddNote(noteId))
     }
 
     fun deleteNote(noteId: Long) {
