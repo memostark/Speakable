@@ -35,6 +35,10 @@ class FakeWordRepository @Inject constructor(): WordRepositorySource {
         return  liveData { wordsServiceData[word]?.let { emit(it) } }
     }
 
+    override fun getLocalWord(id: Int): LiveData<Words?>? {
+        TODO("Not yet implemented")
+    }
+
     override fun getLanguagesISO(): MutableList<String> {
         return languagesData.toMutableList()
     }

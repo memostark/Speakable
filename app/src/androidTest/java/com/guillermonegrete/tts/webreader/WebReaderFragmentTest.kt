@@ -413,6 +413,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.translated_text)).check(matches(withText(expectedTranslation)))
 
         Espresso.pressBack()
+        Thread.sleep(100)
 
         onView(withId(R.id.translated_text)).check(matches(not(isDisplayed())))
     }
