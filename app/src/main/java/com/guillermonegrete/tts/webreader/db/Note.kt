@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.WebLink
 
@@ -56,6 +57,9 @@ data class Note(
      */
     fun getPosInChapter() = position and 0xFFFFFF
 }
+
+val Note.span: Span
+    get() = Span(position, position + length)
 
 data class LinkWithNotes(
     @Embedded val webLink: WebLink,

@@ -30,6 +30,7 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
+import com.guillermonegrete.tts.ui.theme.YellowNoteHighlightInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
@@ -638,7 +639,7 @@ class ParagraphAdapter(
                     R.id.add_new_note_action -> {
                         // New note so the text and color are empty and id is zero
                         val text = highlightedTextView?.getSelectedText().toString()
-                        _addNoteClicked.tryEmit(EditNote(text, "", span, 0, false, 0))
+                        _addNoteClicked.tryEmit(EditNote(text, "", span, YellowNoteHighlightInt, false, 0))
                         mode?.finish()
                         true
                     }
