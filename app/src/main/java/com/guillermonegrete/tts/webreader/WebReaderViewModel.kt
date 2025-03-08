@@ -1,8 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
-import android.graphics.Color
 import androidx.lifecycle.*
-import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.hasInside
 import com.guillermonegrete.tts.common.models.toUI
@@ -28,6 +26,7 @@ import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.utils.writeToFile
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.webreader.db.span
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
@@ -343,7 +342,7 @@ class WebReaderViewModel @AssistedInject constructor(
         _dialogState.update { it.copy(dialogState = null, sentence = null, isLoading = false, isWordLoading = false) }
     }
 
-    fun setNoteData(note: EditNote, sentenceSpan: Span?) {
+    fun setNoteData(note: Note, sentenceSpan: Span?) {
         val noteSpan = note.span
         val sentence = if (sentenceSpan != null && sentenceSpan.hasInside(noteSpan))
             _dialogState.value.sentence
@@ -556,13 +555,14 @@ class WebReaderViewModel @AssistedInject constructor(
         val paragraphs = cachedParagraphs ?: return
         val sentence = paragraphs[paragraphIndex].sentences[sentenceIndex]
 
+        val language = cacheWebLink?.language
+        if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
+            val sentence = Sentence(sentence.translation, paragraphIndex)
+            _dialogState.update { it.copy(sentence = sentence, dialogState = null) }
+            return
+        }
+
         viewModelScope.launch {
-            val language = cacheWebLink?.language
-            if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
-                val sentence = Sentence(sentence.translation, paragraphIndex)
-                _dialogState.update { it.copy(sentence = sentence, dialogState = null) }
-                return@launch
-            }
 
             _dialogState.update { it.copy(isLoading = true) }
 
@@ -617,11 +617,11 @@ class WebReaderViewModel @AssistedInject constructor(
         val type = _editDialogs.value.isEditingType
         if (type is DialogType.Note) {
             val noteItem = type.item
-            saveNote(noteItem.text, noteText, noteItem.span, noteItem.id, color)
+            saveNote(noteItem.originalText, noteText, noteItem.span, noteItem.id, color)
         }
     }
 
-    fun saveNote(text:String, noteText: String, selection: Span, id: Long, color: String) {
+    fun saveNote(text: String, noteText: String, selection: Span, id: Long, color: String) {
         val webLink = cacheWebLink ?: return
         viewModelScope.launch {
             wrapEspressoIdlingResource {
@@ -631,9 +631,8 @@ class WebReaderViewModel @AssistedInject constructor(
                 val finalId = if(resultId == -1L) id else resultId
                 val updatedNote = newNote.copy(id = finalId)
                 _updatedNote.emit(ModifiedNote.Update(updatedNote))
-                val editNote = EditNote(text, noteText, selection, Color.parseColor(color), true, finalId)
                 _editDialogs.update { it.copy(isEditingType = null) }
-                _dialogState.update { it.copy(dialogState = DialogType.Note(editNote)) }
+                _dialogState.update { it.copy(dialogState = DialogType.Note(updatedNote)) }
             }
         }
     }
@@ -794,9 +793,7 @@ class WebReaderViewModel @AssistedInject constructor(
                     }
                 } else {
                     if (state.isPageSaved && !type.overlapsNote) {
-                        val trans = type.translation
-                        val note = EditNote(trans.original, trans.translation, type.span, 0, false, 0)
-                        _editDialogs.update { it.copy(isEditingType = DialogType.Note(note)) }
+                        _editDialogs.update { it.copy(isEditingType = DialogType.Note(type.toNote())) }
                     }
                 }
             }
@@ -835,9 +832,7 @@ class WebReaderViewModel @AssistedInject constructor(
     fun newNote() {
         val type = dialogState.value.dialogState
         if (type is DialogType.Translation) {
-            val trans = type.translation
-            val note = EditNote(trans.original, trans.translation, type.span, 0, false, 0)
-            _editDialogs.update { it.copy(isEditingType = DialogType.Note(note)) }
+            _editDialogs.update { it.copy(isEditingType = DialogType.Note(type.toNote())) }
         }
     }
 
@@ -943,9 +938,11 @@ data class SelectedParagraph(
 
 sealed interface DialogType {
     data class SavedWord(val word: Words, val span: Span): DialogType
-    data class Note(val item: EditNote): DialogType
+    data class Note(val item: com.guillermonegrete.tts.webreader.db.Note): DialogType
     data class Translation(val translation: SimpleTranslation, val span: Span, val overlapsNote: Boolean, val overlapsWord: Boolean): DialogType
 }
+
+fun DialogType.Translation.toNote() = Note(translation.translation, translation.original, span.start, span.end - span.start, "")
 
 data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note)
 

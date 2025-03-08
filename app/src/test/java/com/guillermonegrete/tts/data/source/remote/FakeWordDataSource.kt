@@ -61,6 +61,10 @@ class FakeWordDataSource: WordDataSource {
         TODO("Not yet implemented")
     }
 
+    override fun loadWord(id: Int): LiveData<Words?>? {
+        TODO("Not yet implemented")
+    }
+
     override fun update(word: Words): Int {
         if (translationsData.containsKey(word.id)){
             translationsData[word.id] = word

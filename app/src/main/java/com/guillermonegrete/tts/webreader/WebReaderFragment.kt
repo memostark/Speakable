@@ -30,6 +30,8 @@ import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
+import com.guillermonegrete.tts.common.models.toEditNote
+import com.guillermonegrete.tts.common.models.toNote
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.LoadResult
@@ -45,6 +47,7 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.createBackPressedCallback
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.isWord
+import com.guillermonegrete.tts.webreader.db.span
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.withCreationCallback
@@ -185,8 +188,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 is ModifiedNote.Update -> {
                                     val note = result.note
                                     val dialogResult = AddNoteResult(note.text, note.color)
-                                    val span = Span(note.position, note.position + note.length)
-                                    adapter.updateNote(span, note.id, dialogResult)
+                                    adapter.updateNote(note.span, note.id, dialogResult)
                                 }
                                 is ModifiedNote.Delete -> {
                                     adapter.unselectWord()
@@ -386,10 +388,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     }
                                 }
                             }
-                            is ParagraphAdapter.TextClick.Note -> viewModel.setNoteData(result.item, adapter.getSelectedSentenceSpan())
+                            is ParagraphAdapter.TextClick.Note -> viewModel.setNoteData(result.item.toNote(), adapter.getSelectedSentenceSpan())
                             is ParagraphAdapter.TextClick.Overlap -> {
                                 if (result.word.span != null)
-                                    viewModel.setPickInfoType(DialogType.SavedWord(result.word.toWord(), result.word.span), DialogType.Note(result.note))
+                                    viewModel.setPickInfoType(DialogType.SavedWord(result.word.toWord(), result.word.span), DialogType.Note(result.note.toNote()))
                             }
                         }
                     }
@@ -397,7 +399,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 launch {
                     adapter.addNoteClicked.collect { note ->
-                        viewModel.startEditing(DialogType.Note(note))
+                        viewModel.startEditing(DialogType.Note(note.toNote()))
                     }
                 }
 
@@ -597,7 +599,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         viewModel.editDialogs.collect { result ->
                             when(val type = result.isEditingType) {
                                 is DialogType.Note -> {
-                                    addNoteDialogVisible.value = AddNoteDialogUI(type.item.noteText, type.item.color, type.item.noteSaved)
+                                    val item = type.item.toEditNote()
+                                    addNoteDialogVisible.value = AddNoteDialogUI(item.noteText, item.color, item.noteSaved)
                                     pickNewTypeDialogVisible.value = false
                                 }
                                 is DialogType.SavedWord -> {
@@ -708,8 +711,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     when(state) {
                         is DialogType.Note -> {
                             val note = state.item
-                            val info = WordUI(note.text, "", note.noteText)
-                            showWordInfo(info, note.text.isWord())
+                            val info = WordUI(note.originalText, "", note.text)
+                            showWordInfo(info, note.originalText.isWord())
                         }
                         is DialogType.SavedWord -> {
                             val word = state.word
@@ -743,7 +746,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
                 } else {
                     when(state) {
-                        is DialogType.Note -> showSheetWithNote(state.item)
+                        is DialogType.Note -> showSheetWithNote(state.item.toEditNote())
                         is DialogType.SavedWord -> {
                             val word = state.word
                             val newState = WordState(word.toUI(), word.id, state.span)

@@ -14,5 +14,7 @@ val RedNoteHighlight = Color(0xAAFF0000)
 val GreenNoteHighlight = Color(0xAA00FF00)
 val BlueNoteHighlight = Color(0xAA0093FF)
 
+val YellowNoteHighlightInt = YellowNoteHighlight.toArgb()
+
 val HighlightColor = Color( 255, 0, 0, 128)
 val HighlightColorInt = HighlightColor.toArgb()
