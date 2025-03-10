@@ -44,7 +44,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.room.util.TableInfo
 import androidx.window.core.layout.WindowWidthSizeClass
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.Spinner
@@ -55,7 +54,6 @@ import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
 import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
 import com.guillermonegrete.tts.ui.theme.RedNoteHighlight
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
-import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import okhttp3.internal.toHexString
 
 
@@ -259,7 +257,7 @@ fun AddNoteDialog(
                 val indexColor = if (index == -1) 0 else index
                 val colorSel = remember { mutableIntStateOf(indexColor) }
 
-                ColorsRow(colorSel)
+                ColorsRow(colorSel, Modifier.fillMaxWidth().padding(vertical = 8.dp))
 
                 Row {
                     if(noteSaved) {
@@ -271,9 +269,8 @@ fun AddNoteDialog(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                     }
-                    Button(onClick = {
-                        onSaveClicked(AddNoteResult(text.value, COLORS[colorSel.intValue].toHex()))
-                    },
+                    Button(
+                        onClick = { onSaveClicked(AddNoteResult(text.value, COLORS[colorSel.intValue].toHex())) },
                         Modifier
                             .weight(1f)
                             .testTag(ACCEPT_BTN_TAG)
@@ -299,36 +296,46 @@ fun AddNoteDialogMedium(
 
     if (!isVisible) return
 
-    Dialog(onDismissRequest = { onDismiss() }, DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(
+        onDismissRequest = { onDismiss() },
+        DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Surface {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
 
                 val text = remember { mutableStateOf(noteText) }
                 NoteText(noteText, modifier = Modifier.width(200.dp)) { text.value = it }
 
-                val index = COLORS.indexOfFirst { noteColor == it.toArgb() }
-                val indexColor = if (index == -1) 0 else index
-                val colorSel = remember { mutableIntStateOf(indexColor) }
+                Spacer(Modifier.width(8.dp))
 
-                ColorsCol(colorSel)
+                Column(Modifier.width(IntrinsicSize.Min)) {
+                    val index = COLORS.indexOfFirst { noteColor == it.toArgb() }
+                    val indexColor = if (index == -1) 0 else index
+                    val colorSel = remember { mutableIntStateOf(indexColor) }
 
-                Column {
-                    if(noteSaved) {
-                        Button(onClick = { onDelete() },
-                            Modifier
-                                .testTag(DELETE_BTN_TAG)) {
-                            Text(stringResource(id = R.string.delete))
+                    ColorsRow(colorSel, Modifier)
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Row {
+                        if(noteSaved) {
+                            Button(
+                                onClick = onDelete,
+                                Modifier.weight(1f).testTag(DELETE_BTN_TAG)
+                            ) {
+                                Text(stringResource(id = R.string.delete))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                    Button(
-                        onClick = { onSaveClicked(AddNoteResult(text.value, COLORS[colorSel.intValue].toHex())) },
-                        Modifier.testTag(ACCEPT_BTN_TAG)
-                    ) {
-                        Text(stringResource(R.string.save))
+                        Button(
+                            onClick = { onSaveClicked(AddNoteResult(text.value, COLORS[colorSel.intValue].toHex())) },
+                            Modifier.weight(1f).testTag(ACCEPT_BTN_TAG)
+                        ) {
+                            Text(stringResource(R.string.save))
+                        }
                     }
                 }
             }
@@ -389,25 +396,10 @@ fun NoteText(noteText: String, modifier: Modifier = Modifier, onValueChange: (St
 }
 
 @Composable
-fun ColorsRow(colorSel: MutableIntState) {
+fun ColorsRow(colorSel: MutableIntState, modifier: Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        COLORS.forEachIndexed { index, color ->
-            CircleColorButton(color, index, colorSel)
-        }
-    }
-}
-
-@Composable
-fun ColorsCol(colorSel: MutableIntState) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(horizontal = 8.dp)
+        modifier = modifier
     ) {
         COLORS.forEachIndexed { index, color ->
             CircleColorButton(color, index, colorSel)
@@ -523,7 +515,7 @@ fun AddNoteDialogPreview() {
     }
 }
 
-@Preview()
+@Preview
 @Composable
 fun AddNoteDialogMediumPreview() {
     AppTheme {
