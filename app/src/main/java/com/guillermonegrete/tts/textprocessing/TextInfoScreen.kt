@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -53,9 +55,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -63,7 +67,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
@@ -378,18 +385,25 @@ fun EditWordDialog(
     var wordText by remember { mutableStateOf(word) }
     val isoIndex = languages.iso.indexOf(language)
     var indexLang by remember { mutableIntStateOf(isoIndex) }
-    var translationText by remember { mutableStateOf(translation) }
-    var notesText by remember { mutableStateOf(notes) }
+    var translationText by remember { mutableStateOf(TextFieldValue(translation, TextRange(translation.length))) }
+    val initialNotes = notes ?: ""
+    var notesText by remember { mutableStateOf(TextFieldValue(initialNotes, TextRange(initialNotes.length))) }
 
     var expanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(Modifier.testTag(EDIT_WORD_DIALOG_TAG)) {
             Column(Modifier.padding(16.dp)) {
+                val focusManager = LocalFocusManager.current
+
                 TextField(
                     value = wordText,
                     onValueChange = { wordText = it },
                     label = { Text(stringResource(R.string.word_edit_text)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
@@ -399,13 +413,17 @@ fun EditWordDialog(
                     onExpandedChange = { expanded = !expanded },
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    val lang = languages.fullNames.getOrNull(indexLang) ?: ""
                     TextField(
-                        readOnly = true,
-                        value = languages.fullNames.getOrNull(indexLang) ?: "",
+                        value = TextFieldValue(lang, TextRange(lang.length)),
                         onValueChange = { },
                         label = { Text(stringResource(R.string.language_edit_text)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
                         modifier = Modifier.menuAnchor(PrimaryNotEditable).fillMaxWidth()
                     )
                     ExposedDropdownMenu(
@@ -429,13 +447,18 @@ fun EditWordDialog(
                     value = translationText,
                     onValueChange = { translationText = it },
                     label = { Text(stringResource(R.string.translation_edit_text)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 TextField(
-                    value = notesText ?: "",
+                    value = notesText,
                     onValueChange = { notesText = it },
                     label = { Text(stringResource(id = R.string.notes_edit_text)) },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -453,7 +476,7 @@ fun EditWordDialog(
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onDismiss) { Text(text = stringResource(android.R.string.cancel)) }
                     Button(onClick = {
-                        onSave(WordUI(wordText, languages.iso[indexLang], translationText, notesText))
+                        onSave(WordUI(wordText, languages.iso[indexLang], translationText.text, notesText.text))
                     }) {
                         Text(text = stringResource(android.R.string.ok))
                     }

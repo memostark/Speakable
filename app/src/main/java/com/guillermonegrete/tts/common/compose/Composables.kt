@@ -234,7 +234,6 @@ fun DialogList(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Card(Modifier.padding(horizontal = 16.dp)) {
             Column {
