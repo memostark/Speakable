@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.room.util.TableInfo
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.Spinner
 import com.guillermonegrete.tts.common.compose.StringList
@@ -51,6 +55,7 @@ import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
 import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
 import com.guillermonegrete.tts.ui.theme.RedNoteHighlight
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
+import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import okhttp3.internal.toHexString
 
 
@@ -248,7 +253,7 @@ fun AddNoteDialog(
             ) {
 
                 val text = remember { mutableStateOf(noteText) }
-                NoteText(noteText) { text.value = it }
+                NoteText(noteText, modifier = Modifier.fillMaxWidth()) { text.value = it }
 
                 val index = COLORS.indexOfFirst { noteColor == it.toArgb() }
                 val indexColor = if (index == -1) 0 else index
@@ -282,6 +287,56 @@ fun AddNoteDialog(
 }
 
 @Composable
+fun AddNoteDialogMedium(
+    isVisible: Boolean,
+    noteText: String,
+    @ColorInt noteColor: Int,
+    noteSaved: Boolean = false,
+    onDismiss: () -> Unit = {},
+    onDelete: () -> Unit = {},
+    onSaveClicked: (result: AddNoteResult) -> Unit = {},
+) {
+
+    if (!isVisible) return
+
+    Dialog(onDismissRequest = { onDismiss() }, DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            ) {
+
+                val text = remember { mutableStateOf(noteText) }
+                NoteText(noteText, modifier = Modifier.width(200.dp)) { text.value = it }
+
+                val index = COLORS.indexOfFirst { noteColor == it.toArgb() }
+                val indexColor = if (index == -1) 0 else index
+                val colorSel = remember { mutableIntStateOf(indexColor) }
+
+                ColorsCol(colorSel)
+
+                Column {
+                    if(noteSaved) {
+                        Button(onClick = { onDelete() },
+                            Modifier
+                                .testTag(DELETE_BTN_TAG)) {
+                            Text(stringResource(id = R.string.delete))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    Button(
+                        onClick = { onSaveClicked(AddNoteResult(text.value, COLORS[colorSel.intValue].toHex())) },
+                        Modifier.testTag(ACCEPT_BTN_TAG)
+                    ) {
+                        Text(stringResource(R.string.save))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun AddNoteDialog(
     state: AddNoteDialogUI?,
     onDismiss: () -> Unit = {},
@@ -291,7 +346,13 @@ fun AddNoteDialog(
 
     if (state == null) return
 
-    AddNoteDialog(true, state.noteText, state.noteColor, state.noteSaved, onDismiss, onDelete, onSaveClicked)
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    
+    if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) {
+        AddNoteDialog(true, state.noteText, state.noteColor, state.noteSaved, onDismiss, onDelete, onSaveClicked)
+    } else {
+        AddNoteDialogMedium(true, state.noteText, state.noteColor, state.noteSaved, onDismiss, onDelete, onSaveClicked)
+    }
 }
 
 data class AddNoteDialogUI(
@@ -301,7 +362,7 @@ data class AddNoteDialogUI(
 )
 
 @Composable
-fun NoteText(noteText: String, onValueChange: (String) -> Unit) {
+fun NoteText(noteText: String, modifier: Modifier = Modifier, onValueChange: (String) -> Unit) {
     val focusRequester = remember { FocusRequester() }
     var textFieldLoaded by remember { mutableStateOf(false) }
     var textFieldValue by remember { mutableStateOf(TextFieldValue(noteText, TextRange(noteText.length))) }
@@ -315,7 +376,7 @@ fun NoteText(noteText: String, onValueChange: (String) -> Unit) {
         placeholder = { Text(stringResource(R.string.add_note_placeholder)) },
         minLines = 4,
         maxLines = 4,
-        modifier = Modifier
+        modifier = modifier
             .focusRequester(focusRequester)
             .onGloballyPositioned {
                 if (!textFieldLoaded) {
@@ -323,7 +384,6 @@ fun NoteText(noteText: String, onValueChange: (String) -> Unit) {
                     textFieldLoaded = true // stop cyclic recompositions
                 }
             }
-            .fillMaxWidth()
             .testTag(NOTE_TEXT_TAG)
     )
 }
@@ -337,25 +397,43 @@ fun ColorsRow(colorSel: MutableIntState) {
             .padding(vertical = 8.dp)
     ) {
         COLORS.forEachIndexed { index, color ->
-            val isSelected = index == colorSel.intValue
-            val modifier = if (isSelected) Modifier
-                .padding(3.dp) // margin
-                .border(3.dp, color, shape = CircleShape)
-                .padding(6.dp) // space between circle and ring, real size is this value minus the border size. 6dp - 3dp = 3dp
-                .size(36.dp) else Modifier
-                .padding(12.dp)
-                .size(36.dp)
-
-            // use a box with constant size, otherwise the items move when changing selections
-            Box(Modifier.size(48.dp)) {
-                OutlinedButton(
-                    onClick = { colorSel.intValue = index },
-                    modifier = modifier.testTag(index.toString()),
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = color)
-                ) {}
-            }
+            CircleColorButton(color, index, colorSel)
         }
+    }
+}
+
+@Composable
+fun ColorsCol(colorSel: MutableIntState) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(horizontal = 8.dp)
+    ) {
+        COLORS.forEachIndexed { index, color ->
+            CircleColorButton(color, index, colorSel)
+        }
+    }
+}
+
+@Composable
+fun CircleColorButton(color: Color, index: Int, colorSel: MutableIntState) {
+    val isSelected = index == colorSel.intValue
+    val modifier = if (isSelected) Modifier
+        .padding(3.dp) // margin
+        .border(3.dp, color, shape = CircleShape)
+        .padding(6.dp) // space between circle and ring, real size is this value minus the border size. 6dp - 3dp = 3dp
+        .size(36.dp) else Modifier
+        .padding(12.dp)
+        .size(36.dp)
+
+    // use a box with constant size, otherwise the items move when changing selections
+    Box(Modifier.size(48.dp)) {
+        OutlinedButton(
+            onClick = { colorSel.intValue = index },
+            modifier = modifier.testTag(index.toString()),
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(containerColor = color)
+        ) {}
     }
 }
 
@@ -442,6 +520,14 @@ fun DeletePageDialogPreview() {
 fun AddNoteDialogPreview() {
     AppTheme {
         AddNoteDialog(true, "", 0, true)
+    }
+}
+
+@Preview()
+@Composable
+fun AddNoteDialogMediumPreview() {
+    AppTheme {
+        AddNoteDialogMedium(true, "", 0, true)
     }
 }
 
