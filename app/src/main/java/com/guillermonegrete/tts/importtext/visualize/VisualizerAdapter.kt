@@ -20,6 +20,7 @@ import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
 import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
+import com.guillermonegrete.tts.ui.theme.YellowNoteHighlightInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
@@ -27,11 +28,11 @@ import kotlin.math.max
 import kotlin.math.min
 
 class VisualizerAdapter(
-    private val pages: List<PageItem>,
+    private var pages: List<PageItem>,
     private val onCreateNote: (EditNote) -> Unit,
     private val onTextClick: (TextClick) -> Unit = {},
     private val getPageCharPos: () -> Int = {0},
-    private val measuringPage: Boolean = false
+    var measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var hasBottomSheet = false
@@ -99,6 +100,10 @@ class VisualizerAdapter(
     override fun getItemViewType(position: Int): Int {
         if(hasBottomSheet && !measuringPage) return R.layout.visualizer_split_page_item
         return R.layout.visualizer_page_item
+    }
+
+    fun updateItems(pages: List<PageItem>) {
+        this.pages = pages
     }
 
     fun getPageText(position: Int) = pages.getOrNull(position)?.text
@@ -295,7 +300,7 @@ class VisualizerAdapter(
                     val firstCharIndex = getPageCharPos()
                     val span = Span(firstCharIndex + pageTextView.selectionStart, firstCharIndex + pageTextView.selectionEnd)
                     val text = pageTextView.getSelectedText().toString()
-                    onCreateNote(EditNote(text, "", span, 0, false, 0))
+                    onCreateNote(EditNote(text, "", span, YellowNoteHighlightInt, false, 0))
                     mode.finish()
                     true
                 }

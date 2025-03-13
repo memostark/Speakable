@@ -6,12 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.ExternalLink
+import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.db.WordsDAO
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import com.guillermonegrete.tts.importtext.epub.Book
@@ -20,14 +22,21 @@ import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
-import com.guillermonegrete.tts.webreader.AddNoteResult
+import com.guillermonegrete.tts.webreader.DialogType
+import com.guillermonegrete.tts.webreader.InfoType
+import com.guillermonegrete.tts.webreader.WebReaderViewModel.UiEditDialogsState
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.webreader.db.span
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import timber.log.Timber
 import java.io.File
 import java.util.*
@@ -99,11 +108,20 @@ class VisualizeTextViewModel @Inject constructor(
     private val _translationError = MutableLiveData<Event<String>>()
     val translationError: LiveData<Event<String>> = _translationError
 
-    private val _updatedNote = MutableLiveData<ModifiedNote>()
-    val updatedNote: LiveData<ModifiedNote> = _updatedNote
+    private val _updatedNote = MutableSharedFlow<ModifiedNote>()
+    val updatedNote: SharedFlow<ModifiedNote> = _updatedNote
 
-    private val _linksForWord = MutableLiveData<List<ExternalLink>>()
-    val linksForWord: LiveData<List<ExternalLink>> = _linksForWord
+    private val _linksForWord = MutableStateFlow<DialogState<List<ExternalLink>>>(DialogState.Empty)
+    val linksForWord: StateFlow<DialogState<List<ExternalLink>>> = _linksForWord
+
+    private val _selectedLink = MutableStateFlow<Int>(0)
+    val selectedLink: StateFlow<Int> = _selectedLink
+
+    private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
+    val dialogState: StateFlow<UiDialogState> = _dialogState
+
+    private val _editDialogs = MutableStateFlow<UiEditDialogsState>(UiEditDialogsState())
+    val editDialogs: StateFlow<UiEditDialogsState> = _editDialogs
 
     // Settings
     var hasBottomSheet = false
@@ -465,29 +483,47 @@ class VisualizeTextViewModel @Inject constructor(
         return null
     }
 
-    fun saveNote(newNote: AddNoteResult, originalText: String, position: Int, length: Int, id: Long) {
+    fun saveCurrentNote(noteText: String, color: String) {
+        val type = _editDialogs.value.isEditingType
+        if (type is DialogType.Note) {
+            val noteItem = type.item
+            saveNote(noteText, noteItem.originalText, noteItem.span, noteItem.id, color)
+        }
+    }
+
+    fun saveNote(noteText: String, originalText: String, span: Span, id: Long, color: String) {
         val bookId = databaseBookFile?.id ?: return
 
         viewModelScope.launch {
             wrapEspressoIdlingResource {
                 val chapter = currentChapter
                 // java int is 32 bits
-                val chapterAndPage = (chapter shl 24) or (position and 0x00ffffff)
-                val newDbNote = Note(newNote.text, originalText, chapterAndPage, length, newNote.colorHex, null, bookId, id)
+                val chapterAndPage = (chapter shl 24) or (span.start and 0x00ffffff)
+                val newDbNote = Note(noteText, originalText, chapterAndPage, span.end - span.start, color, null, bookId, id)
                 val resultId = noteDAO.upsert(newDbNote)
                 // Upsert returns -1 when the operation was an update, use the parameter ID.
                 val finalId = if(resultId == -1L) id else resultId
-                val result = ModifiedNote.Update(newDbNote.copy(id = finalId))
-                _updatedNote.value = result
+                val updatedNote = newDbNote.copy(id = finalId)
+                val result = ModifiedNote.Update(updatedNote)
+                _updatedNote.emit(result)
+                _editDialogs.update { it.copy(isEditingType = null) }
+                _dialogState.update { it.copy(dialogState = DialogType.Note(updatedNote)) }
             }
         }
+    }
+
+    fun deleteCurrentNote() {
+        val type = _editDialogs.value.isEditingType
+        if (type is DialogType.Note) deleteNote(type.item.id)
     }
 
     fun deleteNote(id: Long) {
         viewModelScope.launch {
             wrapEspressoIdlingResource {
                 noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
-                _updatedNote.value = ModifiedNote.Delete(id)
+                _updatedNote.emit(ModifiedNote.Delete(id))
+                _editDialogs.update { it.copy(isEditingType = null, isDeleteDialogShown = false) }
+                _dialogState.update { it.copy(dialogState = null) }
             }
         }
     }
@@ -495,12 +531,69 @@ class VisualizeTextViewModel @Inject constructor(
     fun getExternalLinks(word: String) {
         viewModelScope.launch {
             val links = getExternalLinksInteractor(languageFrom, word)
-            _linksForWord.value = links
+            // If out of index, default to the first item
+            if(_selectedLink.value >= links.size) _selectedLink.value = 0
+            _linksForWord.value = DialogState.Success(links)
         }
+    }
+
+    fun hideWordLinks() {
+        _linksForWord.value = DialogState.Empty
+    }
+
+    fun setWordLink(position: Int) {
+        _selectedLink.value = position
     }
 
     fun loadLocalWords(words: List<String>) {
         pageWords.value = words
     }
+
+    fun setNoteData(note: Note) {
+        _dialogState.update { it.copy(dialogState = DialogType.Note(note)) }
+    }
+
+    fun hideDialog() {
+        _dialogState.update { it.copy(dialogState = null) }
+    }
+
+    fun startEditing() {
+        val state = dialogState.value
+        val type = state.dialogState ?: return
+        when(type) {
+            is DialogType.Note -> _editDialogs.update { it.copy(isEditingType = type) }
+            is DialogType.SavedWord -> {}
+            is DialogType.Translation -> {}
+        }
+    }
+
+    fun startEditing(type: DialogType) {
+        _editDialogs.update { it.copy(isEditingType = type) }
+    }
+
+    fun stopEditing() {
+        _editDialogs.update { it.copy(isEditingType = null) }
+    }
+
+    fun setPickInfoType(word: Words, wordSpan: Span, note: Note) {
+        _editDialogs.update { it.copy(isPickingType = InfoType(DialogType.SavedWord(word, wordSpan), DialogType.Note(note))) }
+    }
+
+    fun stopPickingInfo() {
+        _editDialogs.update { it.copy(isPickingType = null) }
+    }
+
+    fun pickItem(isNote: Boolean) {
+        val info = _editDialogs.value.isPickingType ?: return
+        if (isNote) {
+            setNoteData(info.note.item)
+        }
+    }
+
+    data class UiDialogState(
+        val isLoading: Boolean = false,
+        val dialogState: DialogType? = null,
+        val error: String? = null,
+    )
 
 }
