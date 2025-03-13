@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/visualize_text">
+
+    <fragment
+        android:id="@+id/visualizeFragmentDest"
+        android:name="com.guillermonegrete.tts.importtext.visualize.VisualizeTextFragment"
+        android:label="Visualizer"
+        tools:layout="@layout/fragment_visualize_text" >
+    </fragment>
+
+    <fragment
+        android:id="@+id/webReaderFragmentDest"
+        android:name="com.guillermonegrete.tts.webreader.WebReaderFragment"
+        android:label="Reader"
+        tools:layout="@layout/fragment_web_reader" >
+        <argument
+            android:name="link"
+            app:argType="string" />
+    </fragment>
+</navigation>

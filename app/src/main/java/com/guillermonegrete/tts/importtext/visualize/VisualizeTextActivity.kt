@@ -8,14 +8,13 @@ import android.webkit.URLUtil
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.fragment.app.Fragment
+import androidx.navigation.NavArgument
+import androidx.navigation.fragment.NavHostFragment
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
-import com.guillermonegrete.tts.webreader.WebReaderFragment
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -27,26 +26,25 @@ class VisualizeTextActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
-        val text = getSharedText()
         val binding = ActivityVisualizeTextBinding.inflate(layoutInflater)
-        val fragment: Fragment
+        setContentView(binding.root)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.visualizer_fragment_container) as NavHostFragment
+        val navController = navHostFragment.navController
+
+        val graph = navController.navInflater.inflate(R.navigation.visualize_text)
+        val text = getSharedText()
         if (URLUtil.isValidUrl(text)) {
-            fragment = WebReaderFragment()
-            fragment.arguments = bundleOf("link" to text)
+            graph.setStartDestination(R.id.webReaderFragmentDest)
+            graph.addArgument("link", NavArgument.Builder().setDefaultValue(text).build())
         } else {
-            fragment = VisualizeTextFragment()
-            visualizerFragment = fragment
+            graph.setStartDestination(R.id.visualizeFragmentDest)
         }
 
-        supportFragmentManager.beginTransaction()
-            .add(R.id.main_fragment_container, fragment).commitNow()
-
-        // Set content view after the fragment was committed to make sure the fragment's theme is applied correctly
-        setContentView(binding.root)
+        navController.graph = graph
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
             var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            if (fragment is WebReaderFragment) v.updatePadding(left = insets.left, right = insets.right)
+            if (navController.currentDestination?.id == R.id.webReaderFragmentDest) v.updatePadding(left = insets.left, right = insets.right)
             windowInsets
         }
     }
@@ -60,7 +58,6 @@ class VisualizeTextActivity: AppCompatActivity() {
         super.onWindowFocusChanged(hasFocus)
         val fragment = visualizerFragment
         if(hasFocus && fragment != null) {
-
             fragment.onWindowFocusChanged(true)
         }
     }
