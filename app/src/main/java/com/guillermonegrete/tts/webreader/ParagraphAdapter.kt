@@ -1157,7 +1157,7 @@ class ParagraphAdapter(
         private const val SWIPE_THRESHOLD = 0.8
         private const val SWIPE_VELOCITY_THRESHOLD = 0.8
 
-        private const val HIGHLIGHT_COLOR = 0x6633B5E5
+        const val HIGHLIGHT_COLOR = 0x6633B5E5
         private const val NESTED_HIGHLIGHT_COLOR = 0xd0bcff
     }
 }

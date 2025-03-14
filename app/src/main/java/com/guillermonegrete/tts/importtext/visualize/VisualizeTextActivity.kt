@@ -13,6 +13,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.navigation.NavArgument
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.get
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.ActivityVisualizeTextBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -44,7 +45,8 @@ class VisualizeTextActivity: AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
             var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            if (navController.currentDestination?.id == R.id.webReaderFragmentDest) v.updatePadding(left = insets.left, right = insets.right)
+            val readerId = navController.graph[R.id.webReaderFragmentDest].id
+            if (navController.currentDestination?.id == readerId) v.updatePadding(left = insets.left, right = insets.right)
             windowInsets
         }
     }

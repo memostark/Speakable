@@ -24,6 +24,7 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLin
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.webreader.DialogType
 import com.guillermonegrete.tts.webreader.InfoType
+import com.guillermonegrete.tts.webreader.SimpleTranslation
 import com.guillermonegrete.tts.webreader.WebReaderViewModel.UiEditDialogsState
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
@@ -551,6 +552,14 @@ class VisualizeTextViewModel @Inject constructor(
 
     fun setNoteData(note: Note) {
         _dialogState.update { it.copy(dialogState = DialogType.Note(note)) }
+    }
+
+    fun setSavedWord(words: Words, wordSpan: Span) {
+        _dialogState.update { it.copy(dialogState = DialogType.SavedWord(words, wordSpan)) }
+    }
+
+    fun translateWord(word: String, span: Span) {
+        _dialogState.update { it.copy(dialogState = DialogType.Translation(SimpleTranslation(word), span, false, false)) }
     }
 
     fun hideDialog() {

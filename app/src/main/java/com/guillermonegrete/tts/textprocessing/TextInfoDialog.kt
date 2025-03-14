@@ -315,7 +315,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         super.onDismiss(dialog)
         presenter.destroy()
         val parent = activity
-        if(parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
+        if (parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
+        val fragment = parentFragment
+        if (fragment is DialogInterface.OnDismissListener) fragment.onDismiss(dialog)
     }
 
     override fun onDestroyView() {
