@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.importtext.visualize
 
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -68,6 +69,7 @@ import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.textprocessing.WordState
+import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.theme.VisualizerTheme
 import com.guillermonegrete.tts.utils.getScreenSizes
@@ -83,7 +85,7 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 @AndroidEntryPoint
-class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
+class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogInterface.OnDismissListener {
 
     private val viewModel: VisualizeTextViewModel by viewModels()
 
@@ -172,15 +174,22 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             onTextClick = { result ->
                 when(result) {
                     is VisualizerAdapter.TextClick.Note -> viewModel.setNoteData(result.note.toNote())
-                    is VisualizerAdapter.TextClick.SavedWord -> showTextDialog(result.word)
+                    is VisualizerAdapter.TextClick.SavedWord -> {
+                        val word = result.state.toWord()
+                        val span = result.state.span
+                        if (span != null) viewModel.setSavedWord(word, span)
+                        showTextDialog(word.word)
+                    }
                     is VisualizerAdapter.TextClick.Overlap -> {
                         clickedWord = result.word
                         viewModel.setPickInfoType(Words(result.word, "", ""), Span(0, 0), result.note.toNote())
                     }
-                    is VisualizerAdapter.TextClick.Word -> showTextDialog(result.word)
+                    is VisualizerAdapter.TextClick.Word -> {
+                        viewModel.translateWord(result.word, result.span)
+                        showTextDialog(result.word)
+                    }
                 }
             },
-            getPageCharPos = viewModel::getCharPos,
             measuringPage = true)
         viewPager.adapter = pagesAdapter
 
@@ -248,6 +257,10 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onDestroy() {
         super.onDestroy()
         viewModel.pageSplitter = null
+    }
+
+    override fun onDismiss(dialog: DialogInterface?) {
+        viewModel.hideDialog()
     }
 
     private fun setPageTransformListener() {
@@ -684,6 +697,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 if (previousPage != -1) {
                     // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
+                    viewModel.hideDialog()
                     viewPager.post { pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE) }
                 }
 
@@ -798,9 +812,15 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                     noteInfo.value = state.item.toEditNote()
                     noteSheetVisible.value = true
                 }
-                is DialogType.SavedWord -> {}
-                is DialogType.Translation -> {}
-                null -> noteSheetVisible.value = false
+                is DialogType.SavedWord -> noteSheetVisible.value = false
+                is DialogType.Translation -> {
+                    noteSheetVisible.value = false
+                    pagesAdapter.selectText(state.span)
+                }
+                null -> {
+                    noteSheetVisible.value = false
+                    pagesAdapter.unselectText()
+                }
             }
         }
     }
