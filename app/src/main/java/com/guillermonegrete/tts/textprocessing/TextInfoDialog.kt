@@ -183,7 +183,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             onMoreInfoClicked = { onMoreInfoClicked() },
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
-                            onDismiss = { dismiss() },
+                            onDismiss = { dialog?.cancel() },
                         )
 
                         Dialogs()
@@ -311,13 +311,18 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         presenter.stop()
     }
 
+    override fun onCancel(dialog: DialogInterface) {
+        super.onCancel(dialog)
+        // Unlike onDismiss(), this method does not get called when there is a configuration change
+        val fragment = parentFragment
+        if (fragment is DialogInterface.OnCancelListener) fragment.onCancel(dialog)
+    }
+
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         presenter.destroy()
         val parent = activity
         if (parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
-        val fragment = parentFragment
-        if (fragment is DialogInterface.OnDismissListener) fragment.onDismiss(dialog)
     }
 
     override fun onDestroyView() {

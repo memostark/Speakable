@@ -94,7 +94,8 @@ class VisualizerAdapter(
                     is Int -> {
                         if (payload == UNSELECT_SENTENCE) holder.removeHighlight()
                     }
-                    else -> holder.updateLayoutParams(payload as Boolean)
+                    is Boolean -> holder.updateLayoutParams(payload)
+                    Payload.Text -> holder.setHighlightedText()
                 }
             } else if (holder is PageViewHolder) {
                 for (payload in payloads) {
@@ -153,7 +154,8 @@ class VisualizerAdapter(
         protected fun addHighlightItems(pageItem: PageItem, text: Spannable) {
             pageItem.notes.forEach {
                 val span = it.span
-                text.addHighlightedText(span.start, span.end, it.color)
+                val end = span.end.coerceAtMost(text.length)
+                text.addHighlightedText(span.start, end, it.color)
             }
 
             pageItem.savedWords.forEach {
@@ -171,6 +173,19 @@ class VisualizerAdapter(
                         text.addHighlightedText(start, end, ColorUtils.blendARGB(HighlightColorInt, note.color, 0.5f))
                     }
                 }
+            }
+        }
+
+        fun setHighlightedText() {
+            val text = pageTextView.text as? Spannable
+            selectionSpan?.let { text?.removeSpan(it) }
+
+            val sel = selectedText
+            if (sel != null && sel.index == adapterPosition) {
+                selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
+                text?.setSpan(selectionSpan, sel.span.start, sel.span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else {
+                selectionSpan = null
             }
         }
 
@@ -290,19 +305,6 @@ class VisualizerAdapter(
             pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
             setHighlightedText()
         }
-
-        fun setHighlightedText() {
-            val text = binding.pageTextView.text as? Spannable
-            selectionSpan?.let { text?.removeSpan(it) }
-
-            val span = selectedText?.span
-            if (span != null) {
-                selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
-                text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            } else {
-                selectionSpan = null
-            }
-        }
     }
 
     inner class SplitPageViewHolder(private val binding: VisualizerSplitPageItemBinding): ViewHolder(binding.root){
@@ -325,6 +327,7 @@ class VisualizerAdapter(
 
             addHighlightItems(pageItem, spannable)
             pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
+            setHighlightedText()
         }
 
         fun updateLayoutParams(splitPage: Boolean){

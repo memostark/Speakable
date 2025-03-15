@@ -85,7 +85,7 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 @AndroidEntryPoint
-class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogInterface.OnDismissListener {
+class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogInterface.OnCancelListener {
 
     private val viewModel: VisualizeTextViewModel by viewModels()
 
@@ -259,7 +259,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         viewModel.pageSplitter = null
     }
 
-    override fun onDismiss(dialog: DialogInterface?) {
+    override fun onCancel(dialog: DialogInterface?) {
         viewModel.hideDialog()
     }
 
@@ -697,8 +697,10 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
                 if (previousPage != -1) {
                     // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
-                    viewModel.hideDialog()
-                    viewPager.post { pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE) }
+                    viewPager.post {
+                        viewModel.hideDialog()
+                        pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+                    }
                 }
 
                 // Load saved words when reaching new áge

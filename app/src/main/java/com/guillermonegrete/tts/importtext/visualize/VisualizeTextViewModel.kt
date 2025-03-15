@@ -225,7 +225,7 @@ class VisualizeTextViewModel @Inject constructor(
         currentPage = if(firstLoad) {
             firstLoad = false
             val lastChar = databaseBookFile?.lastChar ?: 0
-            val initialPage = if(currentPage == -1) getPageIndex(lastChar) else currentPage
+            val initialPage = getPageIndex(lastChar)
             if (initialPage >= pagesSize) pagesSize - 1 else initialPage
         } else if(leftSwipe) pagesSize - 1 else 0
 
