@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -77,6 +78,7 @@ import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.LanguagesList
@@ -114,11 +116,13 @@ fun SentenceDialog(
 ) {
     if (!isVisible) return
 
-    Dialog(onDismissRequest = { onDismiss() }) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
 
         val dialogWindowProvider = LocalView.current.parent as DialogWindowProvider
         val window = dialogWindowProvider.window
-        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val wlp = window.attributes
         val initialY = wlp.y
@@ -161,6 +165,7 @@ fun SentenceDialog(
                         }
                     )
                 }
+                .widthIn(0.dp, 700.dp)
                 .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
                 .testTag("sentence_dialog"),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)

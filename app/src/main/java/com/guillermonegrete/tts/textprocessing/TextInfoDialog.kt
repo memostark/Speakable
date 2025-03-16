@@ -27,6 +27,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import androidx.window.layout.WindowMetricsCalculator
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
@@ -139,7 +140,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         window = dialog.window
         window?.requestFeature(Window.FEATURE_NO_TITLE)
         val back = ColorDrawable(Color.TRANSPARENT)
-        val inset = InsetDrawable(back, requireContext().dpToPixel(20))
+        val margin = requireContext().dpToPixel(20)
+        val inset = InsetDrawable(back, margin, 0, margin, 0)
         window?.setBackgroundDrawable(inset)
         return dialog
     }
@@ -202,7 +204,10 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         setPlayButton(text)
         bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
 
-        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val metrics = WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(requireContext())
+        val maxWidth = resources.getDimensionPixelSize(R.dimen.dialog_max_width)
+        val width = if (metrics.bounds.width() > maxWidth) maxWidth else ViewGroup.LayoutParams.MATCH_PARENT
+        window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         return bindingWord.root
     }
@@ -696,7 +701,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             val wlp = it.attributes
             wlp.dimAmount = 0f
             wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-            wlp.y = requireContext().dpToPixel(40)
+            wlp.y = requireContext().dpToPixel(8)
             wlp.gravity = Gravity.BOTTOM
             it.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             it.attributes = wlp
