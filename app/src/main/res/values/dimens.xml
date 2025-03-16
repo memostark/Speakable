@@ -20,6 +20,8 @@
 
     <dimen name="default_dialog_padding">16dp</dimen>
 
+    <dimen name="dialog_max_width">700dp</dimen>
+
     <!--80 + 64 = bottom bar + top bar-->
     <dimen name="main_act_bars_height">144dp</dimen>
 </resources>

@@ -166,7 +166,7 @@ fun ExternalLinksDialog(
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(12.dp))
         ) {
-            Column {
+            Column(Modifier.height(400.dp)) {
                 AndroidView(
                     factory = { context ->
                         WebView(context).apply {
@@ -181,7 +181,7 @@ fun ExternalLinksDialog(
                         if (externalLink != null) webView.loadUrl(externalLink.link)
                     },
                     modifier = Modifier
-                        .height(350.dp)
+                        .weight(1f)
                         .fillMaxWidth()
                 )
 

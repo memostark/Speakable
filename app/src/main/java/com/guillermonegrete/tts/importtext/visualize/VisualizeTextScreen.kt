@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -113,6 +114,7 @@ fun NoteSheet(
                 .anchoredDraggable(swipeableState, Orientation.Vertical)
                 .offset { IntOffset(0, swipeableState.requireOffset().roundToInt()) }
                 .nestedScroll(connection)
+                .widthIn(0.dp, 700.dp)
         ) {
             Row(Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
 
