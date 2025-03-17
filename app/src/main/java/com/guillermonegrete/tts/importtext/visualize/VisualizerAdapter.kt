@@ -8,10 +8,12 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.updatePadding
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
@@ -20,11 +22,12 @@ import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
 import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
+import com.guillermonegrete.tts.ui.theme.NestedHighlightColor
+import com.guillermonegrete.tts.ui.theme.TextHighlightColor
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlightInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
-import com.guillermonegrete.tts.webreader.ParagraphAdapter.Companion.HIGHLIGHT_COLOR
 import kotlin.math.max
 import kotlin.math.min
 
@@ -48,12 +51,18 @@ class VisualizerAdapter(
 
     var horizontalPadding: Int? = null
 
+    private val textHighlightColor = TextHighlightColor.toArgb()
+    private var wordInsideColor = NestedHighlightColor.toArgb()
+
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
         with(recyclerView.context){
             lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
             pageMarginsSize = resources.getDimensionPixelSize(R.dimen.visualize_sheet_bar_height)
             largeText = resources.getDimensionPixelSize(R.dimen.text_size_large)
+            var color = MaterialColors.getColor(this, android.R.attr.textColorHighlight, wordInsideColor)
+            color = ColorUtils.setAlphaComponent(color, 255)
+            wordInsideColor = ColorUtils.blendARGB(textHighlightColor, color, 0.6f)
         }
     }
 
@@ -176,13 +185,13 @@ class VisualizerAdapter(
             }
         }
 
-        fun setHighlightedText() {
+        open fun setHighlightedText() {
             val text = pageTextView.text as? Spannable
             selectionSpan?.let { text?.removeSpan(it) }
 
             val sel = selectedText
             if (sel != null && sel.index == adapterPosition) {
-                selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
+                selectionSpan = BackgroundColorSpan(textHighlightColor)
                 text?.setSpan(selectionSpan, sel.span.start, sel.span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             } else {
                 selectionSpan = null
@@ -367,6 +376,21 @@ class VisualizerAdapter(
             }
 
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
+        }
+
+        override fun setHighlightedText() {
+            val text = pageTextView.text as? Spannable
+            selectionSpan?.let { text?.removeSpan(it) }
+
+            val sel = selectedText
+            if (sel != null && sel.index == adapterPosition) {
+                val sentenceSpan = sentenceHighlight?.pos
+                val color = if (sentenceSpan != null && sentenceSpan.intersects(sel.span)) wordInsideColor else textHighlightColor
+                selectionSpan = BackgroundColorSpan(color)
+                text?.setSpan(selectionSpan, sel.span.start, sel.span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else {
+                selectionSpan = null
+            }
         }
 
         fun removeHighlight() {

@@ -242,6 +242,14 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val cardParams = textCardView.layoutParams
         cardParams.width = cardWidth
         textCardView.layoutParams = cardParams
+        if (viewModel.fullScreen) {
+            val invRatio = 1f / ratio
+            textCardView.post {
+                textCardView.scaleX = invRatio
+                textCardView.scaleY = invRatio
+                textCardView.translationY = cardYOffset
+            }
+        }
     }
 
     override fun onPause() {
@@ -342,12 +350,13 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val view = window.decorView
         val initialMargin = resources.getDimensionPixelSize(R.dimen.visualize_default_margin)
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
-            // Most likely there was a switch to full screen, no need to handle insets in this mode
-            if (viewModel.fullScreen) return@setOnApplyWindowInsetsListener insets
+            val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            // Only setup the layout when the bars are visible in order to have accurate measurements for the card size.
+            if (!insets.isVisible(WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.statusBars()))
+                return@setOnApplyWindowInsetsListener insets
 
             with(binding) {
-
-                val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
                 if (readerCurrentChapter.isVisible) {
                     readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
@@ -368,9 +377,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                     setUpCardViewDimensions(insets)
                     setPageTransformListener()
                 }
-
-                insets
             }
+            insets
         }
     }
 
@@ -847,6 +855,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             viewPager.isUserInputEnabled = false
             pinchDetected = false
             invRatio = 1f / ratio
+            scale = textCardView.scaleX
             constantTerm = (cardYOffset / (invRatio - minScale))
             return true
         }

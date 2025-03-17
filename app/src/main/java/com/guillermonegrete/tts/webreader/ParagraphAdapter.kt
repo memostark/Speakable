@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.ColorInt
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -30,6 +31,8 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
+import com.guillermonegrete.tts.ui.theme.NestedHighlightColor
+import com.guillermonegrete.tts.ui.theme.TextHighlightColor
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlightInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
@@ -91,7 +94,8 @@ class ParagraphAdapter(
 
     private var highlightedTextPos = -1
 
-    private var wordInsideColor = NESTED_HIGHLIGHT_COLOR
+    private var wordInsideColor = NestedHighlightColor.toArgb()
+    private val textHighlightColor = TextHighlightColor.toArgb()
 
     private val _textClicked = MutableSharedFlow<TextClick>(
         replay = 0,
@@ -118,9 +122,9 @@ class ParagraphAdapter(
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
-        var color = MaterialColors.getColor(recyclerView.context, android.R.attr.textColorHighlight, NESTED_HIGHLIGHT_COLOR)
+        var color = MaterialColors.getColor(recyclerView.context, android.R.attr.textColorHighlight, wordInsideColor)
         color = ColorUtils.setAlphaComponent(color, 255)
-        wordInsideColor = ColorUtils.blendARGB(HIGHLIGHT_COLOR, color, 0.6f)
+        wordInsideColor = ColorUtils.blendARGB(textHighlightColor, color, 0.6f)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -250,12 +254,12 @@ class ParagraphAdapter(
             val spannable = SpannableString(item.original)
             if(item.selectedIndex != -1){
                 val span = item.indexes[item.selectedIndex]
-                selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
+                selectionSpan = spannable.addHighlightedText(span.start, span.end, textHighlightColor)
                 val wordSpan = item.selectedWord
                 if(wordSpan != null) wordInsideSpan = spannable.addHighlightedText(wordSpan.start, wordSpan.end, wordInsideColor)
             } else {
                 val span = item.selectedWord
-                if(span != null) selectionSpan = spannable.addHighlightedText(span.start, span.end, HIGHLIGHT_COLOR)
+                if(span != null) selectionSpan = spannable.addHighlightedText(span.start, span.end, textHighlightColor)
             }
 
             item.notes.forEach {
@@ -388,7 +392,7 @@ class ParagraphAdapter(
                 text.getSpans(span.start, span.end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
 
                 // add highlight
-                selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
+                selectionSpan = BackgroundColorSpan(textHighlightColor)
                 text.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
                 val overlaps = mutableSetOf<OverlapSpan>()
@@ -462,7 +466,7 @@ class ParagraphAdapter(
 
             val span = item.selectedWord
             if (span != null) {
-                selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
+                selectionSpan = BackgroundColorSpan(textHighlightColor)
                 text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             } else {
                 selectionSpan = null
@@ -939,7 +943,7 @@ class ParagraphAdapter(
         //Remove previous
         text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
 
-        val selectionSpan = BackgroundColorSpan(HIGHLIGHT_COLOR)
+        val selectionSpan = BackgroundColorSpan(textHighlightColor)
         text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
 
@@ -1156,8 +1160,5 @@ class ParagraphAdapter(
 
         private const val SWIPE_THRESHOLD = 0.8
         private const val SWIPE_VELOCITY_THRESHOLD = 0.8
-
-        const val HIGHLIGHT_COLOR = 0x6633B5E5
-        private const val NESTED_HIGHLIGHT_COLOR = 0xd0bcff
     }
 }
