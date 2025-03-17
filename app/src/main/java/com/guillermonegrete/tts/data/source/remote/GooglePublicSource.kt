@@ -37,21 +37,7 @@ class GooglePublicSource @Inject constructor(private val googlePublicAPI: Google
      * The translate API removes the space between the sentences which leads to mismatches with the input text, so it has to be re added
      */
     private fun toTranslation(response: GoogleTranslateResponse): Translation{
-        val sentences = response.sentences
-        val segments = mutableListOf<Segment>()
-
-        for(i in 0 until sentences.size - 1){
-            val sentence = sentences[i]
-            // If the original line ended with a new line the translate API doesn't change it
-            // Then it's not necessary to add a white space
-            val space = if(sentence.orig.endsWith("\n")) "" else " "
-            val segment = Segment(sentence.trans, sentence.orig + space)
-            segments.add(segment)
-        }
-
-        // The final line is unaffected by the api, so don't modify it.
-        segments.add(Segment(sentences.last().trans, sentences.last().orig))
-
+        val segments = response.sentences.map { Segment(it.trans, it.orig) }
         val language = if(response.src == "iw") "he" else response.src
         return Translation(segments, language)
     }
