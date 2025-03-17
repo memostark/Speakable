@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.View
 import android.webkit.URLUtil
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -11,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavArgument
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.get
@@ -42,6 +45,13 @@ class VisualizeTextActivity: AppCompatActivity() {
         }
 
         navController.graph = graph
+
+        navHostFragment.childFragmentManager.registerFragmentLifecycleCallbacks(object: FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: Bundle?) {
+                super.onFragmentViewCreated(fm, f, v, savedInstanceState)
+                if (f is VisualizeTextFragment) visualizerFragment = f
+            }
+        }, true)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
             var insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
