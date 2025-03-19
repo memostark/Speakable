@@ -26,10 +26,11 @@ import android.provider.Settings;
 import android.view.Window;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import timber.log.Timber;
 
 
 @AndroidEntryPoint
-public class ProcessTextActivity extends AppCompatActivity implements DialogInterface.OnDismissListener {
+public class ProcessTextActivity extends AppCompatActivity implements DialogInterface.OnCancelListener {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -46,7 +47,10 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
         return selected_text != null ? selected_text.toString() : "";
     }
 
-    private void showDialog(){
+    private void showDialog() {
+        var manager = getSupportFragmentManager();
+        if (manager.findFragmentByTag("Text_info") != null) return;
+
         var selectedText = getSelectedText();
 
         var dialog = TextInfoDialog.newInstance(
@@ -54,7 +58,7 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
                 getIntent().getAction(),
                 getIntent().getParcelableExtra("Word")
         );
-        dialog.show(getSupportFragmentManager(), "Text_info");
+        dialog.show(manager, "Text_info");
     }
 
     private void hideSystemUI() {
@@ -116,7 +120,7 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
     }
 
     @Override
-    public void onDismiss(DialogInterface dialog) {
+    public void onCancel(DialogInterface dialog) {
         finish();
     }
 }

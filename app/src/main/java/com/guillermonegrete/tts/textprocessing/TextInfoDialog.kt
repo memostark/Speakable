@@ -321,13 +321,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         // Unlike onDismiss(), this method does not get called when there is a configuration change
         val fragment = parentFragment
         if (fragment is DialogInterface.OnCancelListener) fragment.onCancel(dialog)
+        val parent = activity
+        if (parent is DialogInterface.OnCancelListener) parent.onCancel(dialog)
     }
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         presenter.destroy()
-        val parent = activity
-        if (parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
     }
 
     override fun onDestroyView() {
@@ -444,18 +444,37 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     override fun setExternalDictionary(links: List<ExternalLink>) {
         if(!isAdded) return
 
+        // Check if fragments ware already added (e.g. saved instances for configuration change)
+        val fragments = arrayOfNulls<Fragment>(3)
+        for (frag in childFragmentManager.fragments) {
+            when (frag) {
+                is DefinitionFragment -> fragments[0] = frag
+                is TranslationFragment -> fragments[1] = frag
+                is ExternalLinksFragment -> fragments[2] = frag
+            }
+        }
+
         val pagerAdapter = MyPageAdapter(this)
-        if (dictionaryAdapter != null) pagerAdapter.addFragment(
-            DefinitionFragment.newInstance(dictionaryAdapter)
-        )
+        dictionaryAdapter?.let {
+            val previous = fragments[0]
+            val fragment = if (previous is DefinitionFragment) {
+                previous.updateData(it.items)
+                previous
+            } else {
+                DefinitionFragment.newInstance(dictionaryAdapter)
+            }
+            pagerAdapter.addFragment(fragment)
+        }
+
         val word = dbWord ?: mFoundWords
         if (word != null) {
-            val translationFragment = TranslationFragment.newInstance(word, languagePreferenceIndex)
-            translationFragment.setListener(translationFragListener)
-            pagerAdapter.addFragment(translationFragment)
+            val fragment = (fragments[1] as? TranslationFragment) ?: TranslationFragment.newInstance(word, languagePreferenceIndex)
+            fragment.setListener(translationFragListener)
+            pagerAdapter.addFragment(fragment)
         }
+
         pagerAdapter.addFragment(
-            ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
+            fragments[2] ?: ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
         )
 
         pager?.let {
@@ -569,7 +588,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
         if (pager != null) {
-            bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
+            val detectLang = languageFrom == "auto"
+            bindingWord.textLanguageCode.visibility = if (detectLang) View.VISIBLE else  View.GONE
+            if (detectLang) bindingWord.textLanguageCode.text = translation.src
             val fragIndex = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
 
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
@@ -760,12 +781,15 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             R.array.googleTranslateLangsWithAutoArray,
             android.R.layout.simple_spinner_dropdown_item
         )
-        spinner.setAdapter(adapter)
-        val item = spinner.adapter.getItem(languageFromIndex)
+        val item = adapter.getItem(languageFromIndex)
         if (item != null) spinner.setText(item.toString(), false)
         spinner.setOnItemClickListener { _, _, position, _ -> updateLanguageFrom(position) }
         spinner.setOnClickListener { spinner.showDropDown() }
-        spinner.post { spinner.dropDownVerticalOffset = -spinner.height }
+        spinner.post {
+            // There is a bug after a config change the adapter contains only one element, setting in post() fixes that problem
+            spinner.setAdapter(adapter)
+            spinner.dropDownVerticalOffset = -spinner.height
+        }
     }
 
     /**

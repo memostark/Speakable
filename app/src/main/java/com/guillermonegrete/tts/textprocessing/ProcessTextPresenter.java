@@ -272,12 +272,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
         EspressoIdlingResource.increment();
         hasTranslation = true;
+        var detectedLang = languageFrom.equals("auto");
 
         getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo,
                 translation -> {
                     currentTranslation = translation;
                     customTTS.initializeTTS(translation.getSrc(), ttsListener);
                     mView.updateTranslation(translation);
+                    if (detectedLang) getExternalLink.invoke(translation.getSrc(), links -> mView.updateExternalLinks(links));
                     EspressoIdlingResource.decrement();
                     return Unit.INSTANCE;
                 },
@@ -288,7 +290,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                     return Unit.INSTANCE;
                 });
 
-        getExternalLink.invoke(languageFrom, links -> mView.updateExternalLinks(links));
+        if (!detectedLang) getExternalLink.invoke(languageFrom, links -> mView.updateExternalLinks(links));
     }
 
     @Override

@@ -24,7 +24,7 @@
             android:dropDownWidth="200dp"
             android:inputType="none"
             android:dropDownHeight="200dp"
-            app:simpleItems="@array/googleTranslateLanguagesArray"
+            tools:simpleItems="@array/googleTranslateLanguagesArray"
             tools:text="All" />
     </com.google.android.material.textfield.TextInputLayout>
 
