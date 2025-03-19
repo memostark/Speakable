@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class WiktionaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<WikiItem> items;
+    private final List<WikiItem> items;
 
     public WiktionaryAdapter(List<WikiItem> items){
         this.items = items;
@@ -58,7 +58,11 @@ public class WiktionaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         return items.size();
     }
 
-    class HeaderViewHolder extends RecyclerView.ViewHolder{
+    public List<WikiItem> getItems() {
+        return items;
+    }
+
+    static class HeaderViewHolder extends RecyclerView.ViewHolder{
         TextView headerText;
 
         HeaderViewHolder(@NonNull View itemView) {
@@ -71,7 +75,7 @@ public class WiktionaryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
     }
 
-    class ItemViewHolder extends RecyclerView.ViewHolder{
+    static class ItemViewHolder extends RecyclerView.ViewHolder{
         TextView subHeaderText;
         TextView definitionText;
 
