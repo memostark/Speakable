@@ -78,8 +78,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private var mFoundWords: Words? = null
     private var dbWord: Words? = null
 
-    @Inject
-    internal lateinit var presenter: ProcessTextContract.Presenter
+    private val presenter: ProcessTextViewModel by viewModels()
     private val saveWordViewModel: SaveWordDialogViewModel by viewModels()
 
     private  var _bindingWord: DialogFragmentWordBinding? = null
@@ -179,8 +178,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             highlightedSpanState = selectedSpans,
                             wordState = wordState,
                             onPlayButtonClick = { onPlayButtonClick(text) },
-                            onTopTextClick = { findWord(it) },
-                            onBottomTextClick = { findSelectedSentence(it) },
+                            onTopTextClick = ::findWord,
+                            onBottomTextClick = presenter::findSelectedSentence,
                             onBookmarkClicked = { editDialogShown.value = true },
                             onMoreInfoClicked = { onMoreInfoClicked() },
                             onSourceLangChanged = { updateLanguageFrom(it) },
@@ -214,44 +213,40 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     private fun onMoreInfoClicked() {
         val wordUI = wordState.value?.word ?: return
-        (presenter as ProcessTextPresenter).getExternalLinks(wordUI.toWord())
+        presenter.getExternalLinks(wordUI.toWord())
     }
 
     private fun findWord(offset: Int) {
-        // If true the selected word was tapped, unselect
-        if (selectedWordSpan.inside(offset)) {
-            selectedWordSpan = Span(0, 0)
-            wordState.value = null
-            return
-        }
-
         val text = inputText ?: return
-
-        val span = text.findWord(offset)
-        selectedWordSpan = span
-        val word = text.substring(span.start, span.end)
         val detectedIndex = detectedLanguage.intValue
         val language = if (languageFromIndex == 0 && detectedIndex != -1) {
             languagesISO.getOrNull(detectedIndex) ?: languageFrom
         } else languageFrom
-        (presenter as ProcessTextPresenter).setSelectedWord(word, language, languageToISO)
+
+        presenter.findWord(offset, text.findWord(offset), language, languageToISO)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (_bindingWord != null) setSwipeListener()
 
-        val presenterImp = (presenter as ProcessTextPresenter)
-        presenterImp.layoutResult.observe(viewLifecycleOwner){
-            onLayoutResult(it)
-        }
-
-        presenterImp.statusTTS.observe(viewLifecycleOwner){
-            val available = when(it) {
-                StatusTTS.LanguageReady -> true
-                StatusTTS.Unavailable -> false
+        with(presenter) {
+            layoutResult.observe(viewLifecycleOwner){
+                onLayoutResult(it)
             }
-            playIconState.value = playIconState.value.copy(isLoading = false, isTTSAvailable = available)
+
+            statusTTS.observe(viewLifecycleOwner){
+                val available = when(it) {
+                    StatusTTS.LanguageReady -> true
+                    StatusTTS.Unavailable -> false
+                }
+                playIconState.value = playIconState.value.copy(isLoading = false, isTTSAvailable = available)
+            }
+
+            sentenceUIState.observe(viewLifecycleOwner) { state ->
+                selectedSpans.value = state.highlights
+                wordState.value = state.selectedWord
+            }
         }
 
         val extraWord = BundleCompat.getParcelable(requireArguments(), WORD_KEY, Words::class.java)
@@ -267,7 +262,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             }
         }
 
-        presenterImp.wordInfo().observe(this) {result ->
+        presenter.wordInfo().observe(this) { result ->
             when(result) {
                 is WordResult.Local -> wordState.value = WordState(result.word.toUI(), result.word.id, selectedWordSpan)
                 is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), span = selectedWordSpan)
@@ -278,7 +273,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             }
         }
 
-        presenterImp.wordLinks.observe(this) { links ->
+        presenter.wordLinks.observe(this) { links ->
             wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
             // If out of index, default to the first item
             if(selectedLink >= links.size) selectedLink = 0
@@ -616,7 +611,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     override fun setPresenter(presenter: ProcessTextContract.Presenter) {
-        this.presenter = presenter
+        // No longer used, the presenter is obtained with DI
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -825,26 +820,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         editor.putInt(LANGUAGE_PREFERENCE, position)
         editor.apply()
         presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
-    }
-
-    private fun findSelectedSentence(charIndex: Int) {
-        val translation = (presenter as ProcessTextPresenter).currentTranslation ?: return
-
-        var start = 0
-        var originStart = 0
-
-        for(sentence in translation.sentences){
-            val end = start + sentence.trans.length
-            val originalEnd = originStart + sentence.orig.length
-            if(charIndex < end) {
-                // indicate UI to highlight this sentence
-                val spans = SplitPageSpan(Span(originStart, originalEnd), Span(start, end))
-                selectedSpans.value = if (selectedSpans.value == spans) null else spans
-                return
-            }
-            start = end
-            originStart = originalEnd
-        }
     }
 
     private fun updateDatabaseWord(id: Int) {
