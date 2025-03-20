@@ -47,7 +47,7 @@ import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
 import kotlinx.coroutines.Dispatchers;
 
-public class ProcessTextPresenterTest {
+public class ProcessTextViewModelTest {
 
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
@@ -79,7 +79,7 @@ public class ProcessTextPresenterTest {
     @Captor
     private ArgumentCaptor<CustomTTS.Listener> ttsListenerCaptor;
 
-    private ProcessTextPresenter presenter;
+    private ProcessTextViewModel presenter;
 
     private final List<WikiItem> defaultDictionaryItems = Arrays.asList(
             new WiktionaryItem("First", "First header"),
@@ -99,11 +99,11 @@ public class ProcessTextPresenterTest {
         presenter = givenPresenter();
     }
 
-    private ProcessTextPresenter givenPresenter(){
+    private ProcessTextViewModel givenPresenter(){
         var mainThread = new TestMainThread();
         var executor = new TestThreadExecutor();
         getExternalLink = new GetExternalLink(executor, mainThread, linksRepository, Dispatchers.getUnconfined());
-        var presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink);
+        var presenter = new ProcessTextViewModel(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink);
         presenter.setView(view);
         return presenter;
     }

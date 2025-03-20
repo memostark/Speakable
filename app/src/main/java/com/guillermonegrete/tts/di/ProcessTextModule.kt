@@ -1,7 +1,7 @@
 package com.guillermonegrete.tts.di
 
 import com.guillermonegrete.tts.textprocessing.ProcessTextContract
-import com.guillermonegrete.tts.textprocessing.ProcessTextPresenter
+import com.guillermonegrete.tts.textprocessing.ProcessTextViewModel
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -14,5 +14,5 @@ abstract class ProcessTextModuleBinds {
 
     @FragmentScoped
     @Binds
-    abstract fun bindPresenter(presenter: ProcessTextPresenter): ProcessTextContract.Presenter
+    abstract fun bindPresenter(presenter: ProcessTextViewModel): ProcessTextContract.Presenter
 }
