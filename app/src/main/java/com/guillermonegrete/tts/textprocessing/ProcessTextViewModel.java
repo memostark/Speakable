@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.guillermonegrete.tts.common.models.Span;
 import com.guillermonegrete.tts.common.models.UIKt;
+import com.guillermonegrete.tts.common.models.WordUI;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.MainThread;
@@ -77,6 +78,7 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
     private final MutableLiveData<GetLayoutResult> layoutResult = new MutableLiveData<>();
     private final MutableLiveData<StatusTTS> ttsStatus = new MutableLiveData<>();
     private final MutableLiveData<SentenceDialogUIState> sentenceState = new MutableLiveData<>();
+    private final MutableLiveData<SentenceEditingUIState> editDialogs = new MutableLiveData<>();
 
     @Inject
     ProcessTextViewModel(
@@ -266,6 +268,15 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
     public void onClickDeleteWord(String word) {
         var interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
         interactor.execute();
+        var state = getSentenceState();
+        var wordState = state.getSelectedWord();
+        if (wordState != null) {
+            var previous = wordState.getWord();
+            var newWord = new WordUI(previous.getWord(), previous.getLang(), previous.getDefinition(), null);
+            var newState = new WordState(newWord, NOT_SAVED_ID, wordState.getSpan());
+            updateSelectedWord(newState);
+        }
+        stopEditing();
         mView.showWordDeleted();
     }
 
@@ -430,6 +441,10 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
         return sentenceState;
     }
 
+    public @NonNull MutableLiveData<SentenceEditingUIState> getEditDialogs() {
+        return editDialogs;
+    }
+
     public void findSelectedSentence(int charIndex) {
         var translation = currentTranslation;
         if (translation == null) return;
@@ -472,6 +487,22 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
 
         var newWord = text.substring(newSpan.getStart(), newSpan.getEnd());
         setSelectedWord(newWord, languageFrom, languageTo, newSpan);
+    }
+
+    public void startEditing() {
+        editDialogs.setValue(new SentenceEditingUIState(true));
+    }
+
+    public void stopEditing() {
+        editDialogs.setValue(new SentenceEditingUIState(false));
+    }
+
+    public void  setDeleteSate(Boolean isShown) {
+        editDialogs.setValue(new SentenceEditingUIState(true, isShown));
+    }
+
+    public void updateSelectedWord(WordState state) {
+        sentenceState.setValue(new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(state).build());
     }
 
     private @NonNull SentenceDialogUIState getSentenceState() {
