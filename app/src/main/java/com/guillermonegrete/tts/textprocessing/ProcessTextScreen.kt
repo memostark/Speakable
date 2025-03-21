@@ -24,3 +24,8 @@ data class SentenceDialogUIState(
         fun build() = SentenceDialogUIState(isLoading, translation, highlights, selectedWord)
     }
 }
+
+data class SentenceEditingUIState @JvmOverloads constructor(
+    val isEditing: Boolean = false,
+    val isDeleteDialogShown: Boolean = false,
+)

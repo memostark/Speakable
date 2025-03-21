@@ -11,7 +11,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.LanguagesList
-import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.data.source.WordDataSource
 import com.guillermonegrete.tts.db.Words
@@ -21,6 +20,8 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -34,6 +35,9 @@ class SaveWordDialogViewModel @Inject constructor(
     private val _update = MutableLiveData<ResultType>()
     val update: LiveData<ResultType> = _update
 
+    private val _updateFlow = MutableSharedFlow<ResultType>()
+    val updateFlow: SharedFlow<ResultType> = _updateFlow
+
     fun save(word: Words){
 
         if (word.word.isEmpty() || word.lang.isEmpty() || word.definition.isEmpty())
@@ -43,13 +47,17 @@ class SaveWordDialogViewModel @Inject constructor(
             val id = withContext(ioDispatcher) { wordSource.insertWord(word) }
             word.id = id
             _update.value = ResultType.Insert(word)
+            _updateFlow.emit(ResultType.Insert(word))
         }
     }
 
     fun update(newWord: Words){
         viewModelScope.launch {
             val rowsUpdated = withContext(ioDispatcher) { wordSource.update(newWord) }
-            if(rowsUpdated > 0) _update.value = ResultType.Update(newWord)
+            if(rowsUpdated > 0) {
+                _update.value = ResultType.Update(newWord)
+                _updateFlow.emit(ResultType.Update(newWord))
+            }
         }
     }
 }
