@@ -37,12 +37,11 @@ import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
 import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
-import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.customviews.ButtonsPreference
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.Translation
-import com.guillermonegrete.tts.data.WordResult
 import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
@@ -101,11 +100,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private val editWordDialogVisible = mutableStateOf<EditDeleteDialogUI?>(null)
 
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
-    private var selectedLink = 0
+    private var selectedLink = mutableIntStateOf(0)
 
     private var linksDialogShown = mutableStateOf(false)
-
-    private var selectedWordSpan = Span(0, 0)
 
     @Inject
     internal lateinit var preferences: SharedPreferences
@@ -246,6 +243,11 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             }
 
             sentenceUIState.observe(viewLifecycleOwner) { state ->
+                if (state.hasError != null) {
+                    Toast.makeText(context, "Couldn't load selected word", Toast.LENGTH_SHORT).show()
+                    Timber.e("Couldn't load selected word info: ${state.hasError}")
+                    presenter.errorShown()
+                }
                 selectedSpans.value = state.highlights
                 wordState.value = state.selectedWord
             }
@@ -272,23 +274,24 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             }
         }
 
-        presenter.wordInfo().observe(this) { result ->
-            when(result) {
-                is WordResult.Local -> wordState.value = WordState(result.word.toUI(), result.word.id, selectedWordSpan)
-                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), span = selectedWordSpan)
-                is WordResult.Error -> {
-                    Toast.makeText(context, "Couldn't load selected word", Toast.LENGTH_SHORT).show()
-                    Timber.e(result.exception, "Couldn't load selected word info")
+        presenter.wordLinks.observe(this) { state ->
+            when(state) {
+                DialogState.Empty -> linksDialogShown.value = false
+                is DialogState.Error -> {
+                    Timber.e(state.exception, "Error retrieving links for word")
+                    linksDialogShown.value = false
+                }
+                DialogState.Loading -> {}
+                is DialogState.Success -> {
+                    val links = state.data
+                    wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
+
+                    linksDialogShown.value = true
                 }
             }
         }
 
-        presenter.wordLinks.observe(this) { links ->
-            wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
-            // If out of index, default to the first item
-            if(selectedLink >= links.size) selectedLink = 0
-            linksDialogShown.value = true
-        }
+        presenter.selectedLink.observe(this) { selectedLink.intValue = it }
 
         lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -926,9 +929,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         ExternalLinksDialog(
             isShown = linksDialogShown.value,
             links = wordLinks.value,
-            selection = selectedLink,
-            onItemClick = { selectedLink = it},
-            onDismiss = { linksDialogShown.value = false },
+            selection = selectedLink.intValue,
+            onItemClick = presenter::setWordLink,
+            onDismiss = presenter::hideWordLinks,
         )
     }
 }
