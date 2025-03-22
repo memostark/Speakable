@@ -16,8 +16,8 @@ import com.guillermonegrete.tts.common.models.WordUI;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.MainThread;
+import com.guillermonegrete.tts.data.DialogState;
 import com.guillermonegrete.tts.data.Translation;
-import com.guillermonegrete.tts.data.WordResult;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.ExternalLink;
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan;
@@ -61,9 +61,8 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
     private final GetLangAndTranslation getTranslationInteractor;
     private final GetExternalLink getExternalLink;
 
-    private final MutableLiveData<WordResult> selectedWordResult = new MutableLiveData<>();
-
-    private final MutableLiveData<List<ExternalLink>> wordLinks = new MutableLiveData<>();
+    private final MutableLiveData<DialogState<List<ExternalLink>>> wordLinks = new MutableLiveData<>();
+    private final MutableLiveData<Integer> selectedLink = new MutableLiveData<>();
 
     private Words foundWord;
     @Nullable
@@ -174,10 +173,6 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
         return mRepository.getLocalWord(text, languageFrom);
     }
 
-    public LiveData<WordResult> wordInfo() {
-        return selectedWordResult;
-    }
-
     public void setSelectedWord(String word, String languageFrom, String languageTo, Span span) {
 
         executorService.execute(() ->
@@ -199,8 +194,8 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
 
                 @Override
                 public void onDataNotAvailable(Words emptyWord) {
-                    sentenceState.postValue(new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(null).build());
-                    selectedWordResult.postValue(new WordResult.Error(new Exception()));
+                    var newState = new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(null).hasError(emptyWord.toString()).build();
+                    sentenceState.postValue(newState);
                 }
             })
         );
@@ -260,8 +255,20 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
             for(var link: links) {
                 link.link = link.link.replace("{q}", word.word);
             }
-            wordLinks.postValue(links);
+            // If out of index, default to the first item
+            var selected = selectedLink.getValue();
+            if(selected != null && selected >= links.size()) selectedLink.postValue(0);
+            wordLinks.postValue(new DialogState.Success<>(links));
         });
+    }
+
+    /** @noinspection unchecked*/
+    public void hideWordLinks() {
+        wordLinks.setValue(DialogState.Empty.INSTANCE);
+    }
+
+    public void setWordLink(int position) {
+        selectedLink.setValue(position);
     }
 
     @Override
@@ -433,8 +440,12 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
         return ttsStatus;
     }
 
-    public LiveData<List<ExternalLink>> getWordLinks() {
+    public @NonNull LiveData<DialogState<List<ExternalLink>>> getWordLinks() {
         return wordLinks;
+    }
+
+    public @NonNull LiveData<Integer> getSelectedLink() {
+        return selectedLink;
     }
 
     public LiveData<SentenceDialogUIState> getSentenceUIState() {
@@ -503,6 +514,10 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
 
     public void updateSelectedWord(WordState state) {
         sentenceState.setValue(new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(state).build());
+    }
+
+    public void errorShown() {
+        sentenceState.postValue(new SentenceDialogUIState.Builder(getSentenceState()).hasError(null).build());
     }
 
     private @NonNull SentenceDialogUIState getSentenceState() {
