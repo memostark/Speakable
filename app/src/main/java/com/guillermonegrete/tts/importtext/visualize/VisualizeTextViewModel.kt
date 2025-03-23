@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
+import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.Result
@@ -28,6 +29,7 @@ import com.guillermonegrete.tts.webreader.SimpleTranslation
 import com.guillermonegrete.tts.webreader.WebReaderViewModel.UiEditDialogsState
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.webreader.db.NoteUpdate
 import com.guillermonegrete.tts.webreader.db.span
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -487,8 +489,12 @@ class VisualizeTextViewModel @Inject constructor(
     fun saveCurrentNote(noteText: String, color: String) {
         val type = _editDialogs.value.isEditingType
         if (type is DialogType.Note) {
-            val noteItem = type.item
-            saveNote(noteText, noteItem.originalText, noteItem.span, noteItem.id, color)
+            val note = type.item
+            if (note.id == 0L) {
+                saveNote(noteText, note.originalText, note.span, note.id, color)
+            } else {
+                updateNote(note, noteText, color)
+            }
         }
     }
 
@@ -510,6 +516,17 @@ class VisualizeTextViewModel @Inject constructor(
                 _editDialogs.update { it.copy(isEditingType = null) }
                 _dialogState.update { it.copy(dialogState = DialogType.Note(updatedNote)) }
             }
+        }
+    }
+
+    fun updateNote(noteItem: Note, noteText: String, color: String) {
+        viewModelScope.launch {
+            noteDAO.update(NoteUpdate(noteItem.id, noteText, color))
+            val updatedNote = noteItem.copy(text = noteText, color = color)
+            val result = ModifiedNote.Update(updatedNote)
+            _updatedNote.emit(result)
+            _editDialogs.update { it.copy(isEditingType = null) }
+            _dialogState.update { it.copy(dialogState = DialogType.Note(updatedNote)) }
         }
     }
 
