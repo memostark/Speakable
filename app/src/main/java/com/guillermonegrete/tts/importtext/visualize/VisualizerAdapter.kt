@@ -163,8 +163,9 @@ class VisualizerAdapter(
         protected fun addHighlightItems(pageItem: PageItem, text: Spannable) {
             pageItem.notes.forEach {
                 val span = it.span
+                val start = span.start.coerceAtLeast(0)
                 val end = span.end.coerceAtMost(text.length)
-                text.addHighlightedText(span.start, end, it.color)
+                text.addHighlightedText(start, end, it.color)
             }
 
             pageItem.savedWords.forEach {
@@ -186,13 +187,15 @@ class VisualizerAdapter(
         }
 
         open fun setHighlightedText() {
-            val text = pageTextView.text as? Spannable
-            selectionSpan?.let { text?.removeSpan(it) }
+            val text = pageTextView.text as? Spannable ?: return
+            selectionSpan?.let { text.removeSpan(it) }
 
             val sel = selectedText
             if (sel != null && sel.index == adapterPosition) {
                 selectionSpan = BackgroundColorSpan(textHighlightColor)
-                text?.setSpan(selectionSpan, sel.span.start, sel.span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                val start = sel.span.start.coerceAtLeast(0)
+                val end = sel.span.end.coerceAtMost(text.length)
+                text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             } else {
                 selectionSpan = null
             }
@@ -209,14 +212,15 @@ class VisualizerAdapter(
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (savedWord != null && clickedNote != null) {
                     val word = savedWord.word.word
-                    val note = createNote(clickedNote, item)
+                    val note = EditNote("", clickedNote.text, item.toAbsolute(clickedNote.span), clickedNote.color, true, clickedNote.id)
                     onTextClick(TextClick.Overlap(note, word))
                     return true
                 } else if (savedWord != null) {
                     onTextClick(TextClick.SavedWord(savedWord))
                     return true
                 } else if (clickedNote != null) {
-                    onTextClick(TextClick.Note(createNote(clickedNote, item)))
+                    val note = EditNote("", clickedNote.text, item.toAbsolute(clickedNote.span), clickedNote.color, true, clickedNote.id)
+                    onTextClick(TextClick.Note(note))
                     return true
                 }
 
@@ -402,12 +406,15 @@ class VisualizerAdapter(
 
     }
 
-    fun updateNote(position: Int, note: NoteItem) {
-        val page = pages[position]
-        page.notes.removeAll { note.id == it.id }
-        val localSpan = Span(note.span.start - page.firstCharIndex, note.span.end - page.firstCharIndex)
-        page.notes.add(note.copy(span = localSpan))
-        notifyItemChanged(position)
+    fun updateNote(note: NoteItem) {
+        val positions = getCharListIndex(note.span)
+        positions.forEach { pos ->
+            val page = pages[pos]
+            page.notes.removeAll { note.id == it.id }
+            val localSpan = Span(note.span.start - page.firstCharIndex, note.span.end - page.firstCharIndex)
+            page.notes.add(note.copy(span = localSpan))
+            notifyItemChanged(pos)
+        }
     }
 
     fun deleteNote(noteId: Long) {
@@ -449,14 +456,20 @@ class VisualizerAdapter(
         }
     }
 
-    private fun createNote(clickedNote: NoteItem, item: PageItem): EditNote {
-        val span = clickedNote.span
-        val text = item.text.substring(span.start, span.end)
-        val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
-        return EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id)
-    }
-
     private fun getCharListIndex(charPos: Int) = pages.indexOfFirst { it.firstCharIndex + it.text.length > charPos }
+
+    /**
+     * Returns the indices of all the pages that contain part of the given [span] (the span can be a note for example).
+     */
+    private fun getCharListIndex(span: Span): MutableList<Int> {
+        val indexes = mutableListOf<Int>()
+        for ((i, page) in pages.withIndex()) {
+            if (page.firstCharIndex > span.end) break
+            val pageSpan = Span(page.firstCharIndex, page.firstCharIndex + page.text.length)
+            if (span.intersects(pageSpan)) indexes.add(i)
+        }
+        return indexes
+    }
 
     companion object {
         const val UNSELECT_SENTENCE = 10

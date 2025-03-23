@@ -76,6 +76,7 @@ import com.guillermonegrete.tts.utils.getScreenSizes
 import com.guillermonegrete.tts.webreader.AddNoteDialog
 import com.guillermonegrete.tts.webreader.AddNoteDialogUI
 import com.guillermonegrete.tts.webreader.DialogType
+import com.guillermonegrete.tts.webreader.db.spanBook
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -468,10 +469,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                             when(result) {
                                 is ModifiedNote.Update -> {
                                     val note = result.note
-                                    val position = note.getPosInChapter()
-                                    val span = Span(position, position + note.length)
+                                    val span = note.spanBook
                                     val noteItem = NoteItem(note.text, span, Color.parseColor(note.color), note.id)
-                                    pagesAdapter.updateNote(viewPager.currentItem, noteItem)
+                                    pagesAdapter.updateNote(noteItem)
                                     noteInfo.value = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
                                 }
 
@@ -603,10 +603,10 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
         chapter.pages.forEach { page ->
             val nextIndex = index + page.length
+            val pageSpan = Span(index, nextIndex - 1)
             // Search the notes applied to this paragraph
             val paragraphNotes = dbNotes.filter { dbNote ->
-                // The actual position is in the first 24 bits of a 32 bit int
-                dbNote.getPosInChapter() in index until nextIndex
+                dbNote.spanBook.intersects(pageSpan)
             }.map { it.copy(position = it.getPosInChapter()) }
 
             val noteItems = paragraphNotes.map { note ->

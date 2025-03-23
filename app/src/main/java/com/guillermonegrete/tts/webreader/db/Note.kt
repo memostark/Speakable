@@ -53,13 +53,19 @@ data class Note(
 ) {
 
     /**
-     * For a book note, gets the position in the chapter.
+     * For a book note, gets the position in the chapter. The actual position is in the first 24 bits of a 32 bit int
      */
     fun getPosInChapter() = position and 0xFFFFFF
 }
 
 val Note.span: Span
     get() = Span(position, position + length)
+
+val Note.spanBook: Span
+    get() {
+        val pos = getPosInChapter()
+        return Span(pos, pos + length)
+    }
 
 data class LinkWithNotes(
     @Embedded val webLink: WebLink,
@@ -68,4 +74,10 @@ data class LinkWithNotes(
         entityColumn = "link_id"
     )
     val notes: List<Note>
+)
+
+data class NoteUpdate (
+    val id: Long,
+    val text: String,
+    val color: String
 )
