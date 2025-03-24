@@ -876,6 +876,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
 
+        const val TAG = "Text_Info"
+
         @JvmStatic
         @JvmOverloads
         fun newInstance(

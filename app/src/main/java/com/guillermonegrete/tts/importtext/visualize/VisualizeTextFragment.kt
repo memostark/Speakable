@@ -142,12 +142,16 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     private var sheetBarHeight = 0
 
+    private var dialog: TextInfoDialog? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
         callback = requireActivity().onBackPressedDispatcher.addCallback(this, false) {
             viewModel.hideDialog()
         }
+        val infoDialog = childFragmentManager.findFragmentByTag(TextInfoDialog.TAG)
+        if (infoDialog is TextInfoDialog) dialog = infoDialog
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -601,7 +605,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val paragraphItems = mutableListOf<VisualizerAdapter.PageItem>()
         val dbNotes = chapter.notes.toMutableList()
 
-        chapter.pages.forEach { page ->
+        val currentPage = viewModel.getPage()
+        chapter.pages.forEachIndexed { i, page ->
             val nextIndex = index + page.length
             val pageSpan = Span(index, nextIndex - 1)
             // Search the notes applied to this paragraph
@@ -617,6 +622,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             paragraphItems.add(VisualizerAdapter.PageItem(page, noteItems, index))
             index = nextIndex
             dbNotes.removeAll(paragraphNotes)
+
+            if (i == currentPage) viewModel.verifySpanInPage(pageSpan)
         }
 
         return paragraphItems
@@ -805,13 +812,13 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     }
 
     private fun showTextDialog(text: CharSequence){
-        val dialog = TextInfoDialog.newInstance(
+        dialog = TextInfoDialog.newInstance(
             text.toString(),
             TextInfoDialog.NO_SERVICE,
             null,
             brightnessTheme.value
         )
-        dialog.show(childFragmentManager, "Text_info")
+        dialog?.show(childFragmentManager, TextInfoDialog.TAG)
     }
 
     private fun handleUiDialogState(result: VisualizeTextViewModel.UiDialogState) {
@@ -829,6 +836,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                 }
                 null -> {
                     noteSheetVisible.value = false
+                    dialog?.dismiss()
                     pagesAdapter.unselectText()
                 }
             }
