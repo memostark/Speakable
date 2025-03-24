@@ -31,6 +31,7 @@ import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
 import com.guillermonegrete.tts.webreader.db.NoteUpdate
 import com.guillermonegrete.tts.webreader.db.span
+import com.guillermonegrete.tts.webreader.db.spanBook
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
@@ -613,6 +614,27 @@ class VisualizeTextViewModel @Inject constructor(
         val info = _editDialogs.value.isPickingType ?: return
         if (isNote) {
             setNoteData(info.note.item)
+        }
+    }
+
+    /**
+     * Checks that the current span is within the page span, if not the dialog should be hidden.
+     * This is used when there is a change in the page size and the current span is no longer visible.
+     */
+    fun verifySpanInPage(pageSpan: Span) {
+        val state = _dialogState.value.dialogState
+        when(state) {
+            is DialogType.Note -> {
+                val span = state.item.spanBook
+                if (!pageSpan.intersects(span)) hideDialog()
+            }
+            is DialogType.SavedWord -> {
+                if (!pageSpan.intersects(state.span)) hideDialog()
+            }
+            is DialogType.Translation -> {
+                if (!pageSpan.intersects(state.span)) hideDialog()
+            }
+            null -> {}
         }
     }
 
