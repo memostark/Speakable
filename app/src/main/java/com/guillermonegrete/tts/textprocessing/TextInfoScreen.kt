@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.textprocessing
 
 import android.view.Gravity
-import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.compose.animation.core.FloatExponentialDecaySpec
 import androidx.compose.animation.core.generateDecayAnimationSpec
@@ -16,9 +15,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -45,6 +46,8 @@ import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableIntState
@@ -74,12 +77,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.window.core.layout.WindowHeightSizeClass
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.Spinner
@@ -141,65 +146,82 @@ fun SentenceDialog(
             )
         }
 
-        ElevatedCard(
-            modifier = Modifier
-                .padding(16.dp)
-                .onSizeChanged {
-                    val sizePx = it.width.toFloat()
-                    swipeableState.updateAnchors(
-                        DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
-                    )
+        Row {
+
+            // The spacers make sure the windows is filling the entire space, otherwise the dialog cuts off the swiping horizontally.
+            Spacer(modifier = Modifier.weight(1f))
+
+            ElevatedCard(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .onSizeChanged {
+                        val sizePx = it.width.toFloat()
+                        swipeableState.updateAnchors(
+                            DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
+                        )
+                    }
+                    .anchoredDraggable(swipeableState, Orientation.Horizontal)
+                    .pointerInput(Unit) {
+                        // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { _, dragAmount ->
+                                // Because we are using Bottom gravity the axis sign is inverted
+                                wlp.y -= dragAmount.toInt()
+                                window.attributes = wlp
+                            },
+                            onDragEnd = {
+                                wlp.y = initialY
+                                window.attributes = wlp
+                            }
+                        )
+                    }
+                    .widthIn(0.dp, 700.dp)
+                    .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
+                    .testTag("sentence_dialog"),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column {
+                    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+                    if (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT) {
+                        WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
+
+                        LanguageBar(
+                            languagesFrom, languagesTo, sourceLangIndex, targetLangIndex, detectedLanguageState,
+                            playIconState, onPlayButtonClick, onSourceLangChanged, onTargetLangChanged
+                        )
+
+                        TopText(text, wordState, highlightedSpanState, onTopTextClick)
+
+                        HorizontalDivider()
+
+                        BottomText(translation, highlightedSpanState, onBottomTextClick)
+                    } else {
+                        WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
+
+                        TopText(text, wordState, highlightedSpanState, onTopTextClick)
+
+                        TopTextBar(
+                            languagesFrom, languagesTo, sourceLangIndex, detectedLanguageState,
+                            playIconState, onSourceLangChanged, onPlayButtonClick
+                        )
+
+                        BottomText(translation, highlightedSpanState, onBottomTextClick)
+
+                        BottomTextBar(languagesTo, targetLangIndex, onTargetLangChanged)
+                    }
                 }
-                .anchoredDraggable(swipeableState, Orientation.Horizontal)
-                .pointerInput(Unit) {
-                    // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
-                    detectVerticalDragGestures(
-                        onVerticalDrag = { _, dragAmount ->
-                            // Because we are using Bottom gravity the axis sign is inverted
-                            wlp.y -= dragAmount.toInt()
-                            window.attributes = wlp
-                        },
-                        onDragEnd = {
-                            wlp.y = initialY
-                            window.attributes = wlp
-                        }
-                    )
-                }
-                .widthIn(0.dp, 700.dp)
-                .offset { IntOffset(swipeableState.requireOffset().roundToInt(), 0) }
-                .testTag("sentence_dialog"),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-
-            Column {
-
-                WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
-
-                TopText(text, wordState, highlightedSpanState, onTopTextClick)
-
-                TopTextBar(
-                    languagesFrom,
-                    languagesTo,
-                    sourceLangIndex,
-                    detectedLanguageState,
-                    playIconState,
-                    onSourceLangChanged,
-                    onPlayButtonClick
-                )
-
-                BottomText(translation, highlightedSpanState, onBottomTextClick)
-
-                BottomTextBar(languagesTo, targetLangIndex, onTargetLangChanged)
             }
-        }
 
-        // Handle swipeable events
-        if (swipeableState.isAnimationRunning) {
-            DisposableEffect(Unit) {
-                onDispose {
-                    when (swipeableState.currentValue) {
-                        SwipeDirection.Right, SwipeDirection.Left -> onDismiss()
-                        else -> return@onDispose
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Handle swipeable events
+            if (swipeableState.isAnimationRunning) {
+                DisposableEffect(Unit) {
+                    onDispose {
+                        when (swipeableState.currentValue) {
+                            SwipeDirection.Right, SwipeDirection.Left -> onDismiss()
+                            else -> return@onDispose
+                        }
                     }
                 }
             }
@@ -341,6 +363,56 @@ fun BottomTextBar(languagesTo: StringList, langIndex: Int, onTargetLangChanged: 
         Text(text = "To:", Modifier.padding(horizontal = 8.dp))
         Spinner(languagesTo, langIndex) { index, _ ->
             onTargetLangChanged(index)
+        }
+    }
+}
+
+@Composable
+fun LanguageBar(
+    languagesFrom: StringList,
+    languagesTo: StringList,
+    sourceLangIndex: Int,
+    targetLangIndex: Int,
+    detectedLanguageState: MutableIntState,
+    playIconState: MutableState<PlayIconState>,
+    onPlayButtonClick: () -> Unit,
+    onSourceLangChanged: (Int) -> Unit,
+    onTargetLangChanged: (Int) -> Unit,
+) {
+    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.primary)
+                .weight(1f)
+        ) {
+            Text(text = "From:", Modifier.padding(horizontal = 8.dp))
+
+            var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
+            val detectedLanguageIndex = detectedLanguageState.intValue
+            val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
+                "Auto detect (${languagesTo.items.getOrNull(detectedLanguageIndex)})" else null
+            Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+                onSourceLangChanged(index)
+                sourcePos = index
+            }
+            Spacer(Modifier.weight(1f))
+
+            PlayButton(playIconState, onPlayButtonClick)
+        }
+
+        VerticalDivider()
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.primary)
+                .weight(1f)
+        ) {
+            Text(text = "To:", Modifier.padding(horizontal = 8.dp))
+            Spinner(languagesTo, targetLangIndex) { index, _ ->
+                onTargetLangChanged(index)
+            }
         }
     }
 }
@@ -541,7 +613,7 @@ enum class SwipeDirection(val state: Int) {
 
 private val languages = StringList(listOf("Auto detect", "English", "Spanish", "German"))
 
-@Preview
+@PreviewScreenSizes
 @Composable
 fun SentenceDialogPreview(@PreviewParameter(LoremIpsum::class) text: String) {
     AppTheme {
