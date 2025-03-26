@@ -59,7 +59,6 @@ public class ProcessTextViewModelTest {
     @Mock private SharedPreferences sharedPreferences;
     @Mock private CustomTTS customTTS;
     @Mock private GetLangAndTranslation getTranslationInteractor;
-    private GetExternalLink getExternalLink;
 
     @Captor
     private ArgumentCaptor<WordRepositorySource.GetWordRepositoryCallback> getWordCallbackCaptor;
@@ -102,7 +101,7 @@ public class ProcessTextViewModelTest {
     private ProcessTextViewModel givenPresenter(){
         var mainThread = new TestMainThread();
         var executor = new TestThreadExecutor();
-        getExternalLink = new GetExternalLink(executor, mainThread, linksRepository, Dispatchers.getUnconfined());
+        var getExternalLink = new GetExternalLink(executor, mainThread, linksRepository, Dispatchers.getUnconfined());
         var presenter = new ProcessTextViewModel(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink);
         presenter.setView(view);
         return presenter;
@@ -376,6 +375,7 @@ public class ProcessTextViewModelTest {
         presenter.pause();
         presenter.stop();
         presenter.destroy();
+        presenter.onCleared();
 
         ttsListener.onSpeakDone();
 

@@ -303,6 +303,7 @@ class VisualizeTextViewModelTest {
 
         splitPages(5)
         viewModel.fileId = bookFile.id
+        viewModel.fileUri = "default_uri"
         parse_book(DEFAULT_BOOK)
         viewModel.getPage()
 
@@ -310,7 +311,8 @@ class VisualizeTextViewModelTest {
         viewModel.swipeChapterRight()
         viewModel.currentPage = initialPage + 1
 
-        // On config change book is parsed again
+        // Simulate configuration change, db data is updated and epub is parsed again
+        viewModel.saveBookData()
         parse_book(DEFAULT_BOOK)
 
         assertEquals(4, viewModel.currentChapter)
