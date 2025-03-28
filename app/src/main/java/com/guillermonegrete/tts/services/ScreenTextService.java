@@ -78,6 +78,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import timber.log.Timber;
 
 @AndroidEntryPoint
 public class ScreenTextService extends Service {
@@ -191,6 +192,12 @@ public class ScreenTextService extends Service {
         eightDp = ContextExtKt.dpToPixel(this, 8);
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        windowManager.getDefaultDisplay().getRealSize(screenSize);
+    }
+
     private void destroyLayouts() {
         if (binding != null)
             windowManager.removeView(binding.getRoot());
@@ -221,6 +228,7 @@ public class ScreenTextService extends Service {
                 playButton.setVisibility(View.INVISIBLE);
 
             } else if (state instanceof PlayAudioState.Error error) {
+                Timber.e(error.getException(), "Error playing audio");
                 String message = error.getException().getMessage();
                 if (message == null) message = "Unknown error";
                 Snackbar.make(binding.iconContainer, message, Snackbar.LENGTH_SHORT).show();
@@ -381,6 +389,7 @@ public class ScreenTextService extends Service {
 
     private void setFloatingIconView(){
         binding.snipView.setVisibility(View.GONE);
+        binding.snipView.removeInsetsListener();
         var frameLayoutParams = (ViewGroup.MarginLayoutParams) binding.iconContainer.getLayoutParams();
         frameLayoutParams.setMargins(0,0,0,0);
         var bubbleParams = (ViewGroup.MarginLayoutParams) binding.imageBubble.getLayoutParams();
