@@ -11,7 +11,6 @@ import android.graphics.*
 import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.view.Surface
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
@@ -90,6 +89,16 @@ class SnippingView : View {
             updateRight()
         }
         Timber.d(snipRectangle.toString())
+
+        // The insets and system UI listeners don't work for older devices, update here for rotations and other config changes.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && hasInitialState) {
+            val statusBarHeight = sizes.statusHeight
+            snipTop = statusBarHeight
+            snipRight = wParent
+            snipBottom = hParent
+
+            setBitmaps(Insets.of(0, statusBarHeight, 0, 0))
+        }
     }
 
     private fun setBitmaps(insets: Insets) {
@@ -116,38 +125,16 @@ class SnippingView : View {
 
     fun prepareLayout() {
 
-        if (colorBalls.isNotEmpty()) {
-            // The usable window height may have shrunk, if that's the case adjust the bottom
-            if (snipBottom > hParent) {
-                updateBottom()
-                invalidate()
-            }
-            return
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
+                // Recalculate snip view dimensions because the bars might have changed visibility
+                getWindowSize()
+                updateBottom()
+                updateRight()
                 if (!hasInitialState) return@setOnApplyWindowInsetsListener insets
-                val sizes = getWindowSize()
-                // Recalculate height because nav size might have changed
-                // Don't use the nav height from the insets because it always return 0 when using an overlay layout
+                // If it's the initial state set snipping view fully expanded
                 val sysInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-                Timber.d("All insets: $sysInsets")
-                val navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-                val navBarVisible = insets.isVisible(WindowInsetsCompat.Type.navigationBars())
-                Timber.d("Nav (vis: $navBarVisible) insets: $navInsets, orientation: ${context.display.rotation}")
-                when (context.display.rotation) {
-                    Surface.ROTATION_90, Surface.ROTATION_180 -> wParent = sizes.width - if (navBarVisible) sizes.navHeight else 0
-                    else -> hParent = sizes.height - if (navBarVisible) sizes.navHeight else 0
-                }
-//                val navSize = if (navBarVisible) sizes.navHeight else 0
-//                hParent = sizes.height - navSize
 
-                val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-                val statusBarHeight = statusBarInsets.top
-
-                val statusBarVisible = insets.isVisible(WindowInsetsCompat.Type.statusBars())
-                Timber.d("Status bar (vis: $statusBarVisible) insets: $statusBarInsets")
                 snipTop = sysInsets.top
                 snipRight = wParent - sysInsets.right
                 snipBottom = hParent
@@ -157,7 +144,11 @@ class SnippingView : View {
                 insets
             }
         } else {
+            // When using an overlay service with older devices, setOnApplyWindowInsetsListener only returns empty values and setOnSystemUiVisibilityChangeListener is not called when set
+            // So neither is reliable for this case, assume the bars are always visible.
             val sizes = getWindowSize()
+            if (!hasInitialState) return
+
             val statusBarHeight = sizes.statusHeight
 
             snipTop = statusBarHeight
@@ -172,6 +163,7 @@ class SnippingView : View {
         ViewCompat.setOnApplyWindowInsetsListener(this, null)
     }
 
+    @SuppressLint("InternalInsetResource", "DiscouragedApi")
     private fun getWindowSize(): Sizes {
 
         val sizes: Sizes
@@ -183,12 +175,10 @@ class SnippingView : View {
 
             val insets = windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
             val navBar = windowInsets.getInsets(WindowInsets.Type.navigationBars())
-            Timber.d("Nav bar only: $navBar")
-            val insetsHeight = insets.bottom // Ignore top inset because the app draws over it
 
             val b = windowMetrics.bounds
-            wParent = b.width()
-            hParent = b.height() - insetsHeight
+            wParent = b.width() - navBar.left - navBar.right
+            hParent = b.height() - navBar.bottom
 
             sizes = Sizes(b.width(), b.height(), insets.top, insets.bottom)
         } else {
@@ -308,16 +298,20 @@ class SnippingView : View {
 
                     if (groupId == 1) {
 
-                        colorBalls[1].left = colorBalls[0].left
-                        colorBalls[1].top = colorBalls[2].top
-                        colorBalls[3].left = colorBalls[2].left
-                        colorBalls[3].top = colorBalls[0].top
+                        val ball1 = colorBalls[1]
+                        ball1.left = colorBalls[0].left
+                        ball1.top = colorBalls[2].top
+                        val ball3 = colorBalls[3]
+                        ball3.left = colorBalls[2].left
+                        ball3.top = colorBalls[0].top
                     } else {
 
-                        colorBalls[0].left = colorBalls[1].left
-                        colorBalls[0].top = colorBalls[3].top
-                        colorBalls[2].left = colorBalls[3].left
-                        colorBalls[2].top = colorBalls[1].top
+                        val ball0 = colorBalls[0]
+                        ball0.left = colorBalls[1].left
+                        ball0.top = colorBalls[3].top
+                        val ball2 = colorBalls[2]
+                        ball2.left = colorBalls[3].left
+                        ball2.top = colorBalls[1].top
                     }
 
                     invalidate()
