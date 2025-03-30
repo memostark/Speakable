@@ -232,12 +232,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private fun setUpCardViewDimensions(insets: WindowInsetsCompat) {
         val screenSizes = requireContext().getScreenSizes()
         // Remove cutout height because it's not used
-        val screenHeight = screenSizes.height - screenSizes.statusHeight
+        val screenHeight = screenSizes.height - screenSizes.insets.top
 
         val textCardView = binding.textReaderCardView
         val cardHeight = textCardView.height
         val cardCenterY = textCardView.y + cardHeight / 2
-        cardYOffset = (screenHeight / 2 + screenSizes.statusHeight) - cardCenterY
+        cardYOffset = (screenHeight / 2 + screenSizes.insets.top) - cardCenterY
         ratio = cardHeight / screenHeight.toFloat()
         cardWidth = (screenSizes.width * ratio).toInt()
 
