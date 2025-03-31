@@ -111,7 +111,7 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url, link)
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", emptyList(), false)
+        val expected = PageInfo("My document", false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
@@ -126,7 +126,7 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url)
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", emptyList(), false)
+        val expected = PageInfo("My document", false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
@@ -162,7 +162,7 @@ class WebReaderViewModelTest {
         viewModel.loadPageFromWeb()
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", emptyList(), false)
+        val expected = PageInfo("My document", false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
 
         // Finally test loading local page
@@ -170,7 +170,7 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            LoadResult.Success(PageInfo(localContent, emptyList(), true)),
+            LoadResult.Success(PageInfo(localContent, true)),
             viewModel.page.getOrAwaitValue()
         )
     }
@@ -528,7 +528,7 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url)
         advanceUntilIdle()
 
-        val expected = PageInfo(localContent, emptyList(), true)
+        val expected = PageInfo(localContent, true)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
         viewModel.dialogState.test {

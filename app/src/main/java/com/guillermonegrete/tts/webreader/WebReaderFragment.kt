@@ -334,34 +334,43 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val splitParagraphs = viewModel.createParagraphs(newParagraphs)
             var index = 0
             val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
-            val dbNotes = page.notes.toMutableList()
 
-            splitParagraphs.forEach {
-                val nextIndex = index + it.paragraph.length
-                // Search the notes applied to this paragraph
-                val paragraphNotes = dbNotes.filter { dbNote ->
-                    dbNote.position in index until nextIndex
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                    viewModel.notes.collect {
+                        val dbNotes = it.toMutableList()
+
+                        splitParagraphs.forEach {
+                            val nextIndex = index + it.paragraph.length
+                            // Search the notes applied to this paragraph
+                            val paragraphNotes = dbNotes.filter { dbNote ->
+                                dbNote.position in index until nextIndex
+                            }
+
+                            val noteItems = paragraphNotes.map { note ->
+                                val itemStart = note.position - index
+                                NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
+                            }
+
+                            paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
+                            index = nextIndex
+                            dbNotes.removeAll(paragraphNotes)
+                        }
+
+                        adapter.isPageSaved = page.isLocalPage
+                        adapter.updateItems(paragraphItems)
+                        paragraphsList.adapter = adapter
+                        paragraphsList.post {
+                            loadWordsForVisibleItems()
+                        }
+
+                        iconsVisible.value = true
+                        setAdapterListeners()
+                    }
                 }
-
-                val noteItems = paragraphNotes.map { note ->
-                    val itemStart = note.position - index
-                    NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
-                }
-
-                paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
-                index = nextIndex
-                dbNotes.removeAll(paragraphNotes)
             }
-
-            adapter.isPageSaved = page.isLocalPage
-            adapter.updateItems(paragraphItems)
-            paragraphsList.adapter = adapter
-            paragraphsList.post {
-                loadWordsForVisibleItems()
-            }
-
-            iconsVisible.value = true
-            setAdapterListeners()
+            viewModel.getNotes()
         }
     }
 

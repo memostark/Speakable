@@ -837,6 +837,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                 null -> {
                     noteSheetVisible.value = false
                     dialog?.dismiss()
+                    dialog = null
                     pagesAdapter.unselectText()
                 }
             }
