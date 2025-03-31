@@ -90,6 +90,9 @@ class WebReaderViewModel @AssistedInject constructor(
     private val _selectedLink = MutableStateFlow<Int>(0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
+    private val _notes = MutableSharedFlow<List<Note>>()
+    val notes: SharedFlow<List<Note>> = _notes
+
     private val _updatedNote = MutableSharedFlow<ModifiedNote>()
     val updatedNote: SharedFlow<ModifiedNote> = _updatedNote
 
@@ -149,19 +152,19 @@ class WebReaderViewModel @AssistedInject constructor(
 
                         val isLocalPage = uuid != null && pageVersion == PageVersion.LOCAL
                         pageInfo = if (isLocalPage) {
-                            PageInfo(readContentFile(uuid), linkAndNotes.notes, true)
+                            PageInfo(readContentFile(uuid), true)
                         } else {
-                            PageInfo(getPage(url).content, emptyList(), false)
+                            PageInfo(getPage(url).content, false)
                         }
                     } else {
                         val page = getPage(url)
                         webLink = link ?: WebLink(url, page.title)
-                        pageInfo = PageInfo(page.content, emptyList(), false)
+                        pageInfo = PageInfo(page.content, false)
                     }
 
+                    cacheWebLink = webLink
                     _page.value = LoadResult.Success(pageInfo)
                     _dialogState.update { it.copy(isPageSaved = pageInfo.isLocalPage) }
-                    cacheWebLink = webLink
                     // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
                     // Bug report: https://issuetracker.google.com/issues/198313895
                     val safeLink: WebLink = webLink
@@ -182,9 +185,8 @@ class WebReaderViewModel @AssistedInject constructor(
 
             viewModelScope.launch {
                 try {
-                    val notes = noteDAO.getNotes(webLink.id)
                     val content = readContentFile(uuid)
-                    _page.value = LoadResult.Success(PageInfo(content, notes, true))
+                    _page.value = LoadResult.Success(PageInfo(content, true))
                     _dialogState.update { it.copy(isPageSaved = true) }
                 } catch (ex: IOException){
                     _page.value = LoadResult.Error(ex)
@@ -201,7 +203,7 @@ class WebReaderViewModel @AssistedInject constructor(
             _page.value = LoadResult.Loading
             try {
                 val page = getPage(webLink.url)
-                _page.value = LoadResult.Success(PageInfo(page.content, emptyList(), false))
+                _page.value = LoadResult.Success(PageInfo(page.content, false))
                 _dialogState.update { it.copy(isPageSaved = false) }
             } catch (ex: IOException){
                 _page.value = LoadResult.Error(ex)
@@ -884,7 +886,19 @@ class WebReaderViewModel @AssistedInject constructor(
         _dialogState.update { it.copy(error = null) }
     }
 
-    data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
+    fun getNotes() {
+        val page = _page.value
+        if (page is LoadResult.Success<PageInfo>) {
+            viewModelScope.launch {
+                if (page.data.isLocalPage) {
+                    val webLink = cacheWebLink ?: return@launch
+                    _notes.emit(noteDAO.getNotes(webLink.id))
+                } else {
+                    _notes.emit(emptyList())
+                }
+            }
+        }
+    }
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
 
@@ -949,7 +963,7 @@ data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note)
 /**
  * Return class for the UI, used to display the paragraph with the notes
  */
-data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)
+data class PageInfo(val text: String, val isLocalPage: Boolean)
 
 data class SavedWordsSection(val words: List<List<WordState>>, val start: Int)
 
