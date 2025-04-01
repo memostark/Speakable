@@ -152,6 +152,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         }
         val infoDialog = childFragmentManager.findFragmentByTag(TextInfoDialog.TAG)
         if (infoDialog is TextInfoDialog) dialog = infoDialog
+        if (viewModel.fullScreen) hideSystemUi()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -232,12 +233,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private fun setUpCardViewDimensions(insets: WindowInsetsCompat) {
         val screenSizes = requireContext().getScreenSizes()
         // Remove cutout height because it's not used
-        val screenHeight = screenSizes.height - screenSizes.insets.top
+        val screenHeight = screenSizes.height
 
         val textCardView = binding.textReaderCardView
         val cardHeight = textCardView.height
         val cardCenterY = textCardView.y + cardHeight / 2
-        cardYOffset = (screenHeight / 2 + screenSizes.insets.top) - cardCenterY
+        cardYOffset = (screenHeight / 2) - cardCenterY
         ratio = cardHeight / screenHeight.toFloat()
         cardWidth = (screenSizes.width * ratio).toInt()
 
@@ -342,11 +343,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
      * This is for older devices because newer devices re-hide the UI automatically.
      */
     fun onWindowFocusChanged(hasFocus: Boolean) {
-        if(hasFocus && viewModel.fullScreen) {
-
-            // Only hide the UI when page splitter has been created to avoid incorrect size measuring
-            if(splitterCreated) hideSystemUi()
-        }
+        if(hasFocus && viewModel.fullScreen) hideSystemUi()
     }
 
     private fun setUIChangesListener() {
@@ -355,11 +352,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val view = window.decorView
         val initialMargin = resources.getDimensionPixelSize(R.dimen.visualize_default_margin)
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
-            val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-            // Only setup the layout when the bars are visible in order to have accurate measurements for the card size.
-            if (!insets.isVisible(WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.statusBars()))
-                return@setOnApplyWindowInsetsListener insets
+            val systemBarInsets = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.statusBars())
 
             with(binding) {
 
@@ -378,9 +371,11 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                     bottomMargin = initialMargin + systemBarInsets.bottom
                 }
 
-                textReaderCardView.post {
-                    setUpCardViewDimensions(insets)
-                    setPageTransformListener()
+                if (!splitterCreated) {
+                    textReaderCardView.post {
+                        setUpCardViewDimensions(insets)
+                        setPageTransformListener()
+                    }
                 }
             }
             insets
@@ -765,15 +760,25 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     }
 
     private fun setPagePadding(insets: Insets) {
-        val defaultPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_padding)
+        var shouldUpdate = false
 
+        val defaultPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_padding)
         // Get the biggest horizontal inset, calculate how much padding the cards needs to not overlap it.
         // If it's bigger than the default padding then update it.
         val requiredPadding = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
         if (requiredPadding > defaultPadding && requiredPadding != pagesAdapter.horizontalPadding) {
             pagesAdapter.horizontalPadding = requiredPadding
-            binding.textReaderViewpager.adapter = pagesAdapter // Adapter remakes the items
+            shouldUpdate = true
         }
+
+        val defaultVertPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_top_padding)
+        val requiredVertPadding = (ratio * insets.top.coerceAtLeast(insets.bottom)).toInt()
+        if (requiredVertPadding > defaultVertPadding && requiredVertPadding != pagesAdapter.verticalPadding) {
+            pagesAdapter.verticalPadding = requiredVertPadding
+            shouldUpdate = true
+        }
+
+        if (shouldUpdate) binding.textReaderViewpager.adapter = pagesAdapter // Adapter remakes the items
     }
 
     private fun createFileReader(): DefaultZipFileReader? {
@@ -954,7 +959,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val controllerCompat = WindowCompat.getInsetsController(window, window.decorView)
         controllerCompat.hide(WindowInsetsCompat.Type.systemBars())
         controllerCompat.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        activity?.actionBar?.show()
+        activity?.actionBar?.hide()
     }
 
     @SuppressLint("ClickableViewAccessibility")

@@ -50,6 +50,7 @@ class VisualizerAdapter(
     private var largeText = 0
 
     var horizontalPadding: Int? = null
+    var verticalPadding: Int? = null
 
     private val textHighlightColor = TextHighlightColor.toArgb()
     private var wordInsideColor = NestedHighlightColor.toArgb()
@@ -148,7 +149,7 @@ class VisualizerAdapter(
         init {
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
-            horizontalPadding?.let { pageTextView.updatePadding(left = it, right = it) }
+            updateCardPadding()
             val detector = GestureDetector(itemView.context, PageGestureListener())
             pageTextView.setOnTouchListener { _, event ->
                 detector.onTouchEvent(event)
@@ -198,6 +199,14 @@ class VisualizerAdapter(
                 text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             } else {
                 selectionSpan = null
+            }
+        }
+
+        private fun updateCardPadding() {
+            if (horizontalPadding != null || verticalPadding != null) {
+                val newHorizontal = horizontalPadding ?: pageTextView.paddingLeft
+                val newVertical = verticalPadding ?: pageTextView.paddingTop
+                pageTextView.updatePadding(left = newHorizontal, right = newHorizontal, top = newVertical, bottom = newVertical)
             }
         }
 

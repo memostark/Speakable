@@ -142,12 +142,10 @@ class WebReaderViewModel @AssistedInject constructor(
             wrapEspressoIdlingResource {
 
                 try {
-                    val linkAndNotes = webLinkDAO.getLinkWithNotes(url)
+                    var webLink = webLinkDAO.getLink(url)
                     val pageInfo: PageInfo
-                    val webLink: WebLink
 
-                    if (linkAndNotes != null) {
-                        webLink = linkAndNotes.webLink
+                    if (webLink != null) {
                         val uuid = webLink.uuid
 
                         val isLocalPage = uuid != null && pageVersion == PageVersion.LOCAL
