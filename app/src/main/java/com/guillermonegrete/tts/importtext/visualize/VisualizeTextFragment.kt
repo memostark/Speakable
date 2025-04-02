@@ -200,8 +200,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         viewPager.adapter = pagesAdapter
 
         viewPager.post{
-            addPagerCallback()
-
             setBottomSheetPeekHeight()
             setBottomSheetCallbacks()
         }
@@ -580,6 +578,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         pagesAdapter.isPageSplit = viewModel.isSheetExpanded
         pagesAdapter.updateItems(createPageItems(chapter))
         viewPager.adapter = pagesAdapter
+        addPagerCallback()
 
         val pages = chapter.pages
         val position = viewModel.getPage()
