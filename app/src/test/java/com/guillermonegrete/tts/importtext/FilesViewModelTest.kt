@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.importtext
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import app.cash.turbine.test
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.source.FakeFileRepository
@@ -47,12 +48,10 @@ class FilesViewModelTest {
 
     @Test
     fun `When load files, then loading and success`() = runTest {
-        viewModel.loadFiles()
-        assertEquals(LoadResult.Loading, viewModel.files.value)
-
-        advanceUntilIdle()
-
-        assertEquals(LoadResult.Success(files), viewModel.files.value)
+        viewModel.files.test {
+            assertEquals(LoadResult.Loading, awaitItem())
+            assertEquals(LoadResult.Success(files), awaitItem())
+        }
     }
 
     @Test

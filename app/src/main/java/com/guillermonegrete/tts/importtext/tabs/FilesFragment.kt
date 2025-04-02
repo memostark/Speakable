@@ -181,8 +181,6 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                     }
                 }
             }
-
-            loadFiles()
         }
     }
 

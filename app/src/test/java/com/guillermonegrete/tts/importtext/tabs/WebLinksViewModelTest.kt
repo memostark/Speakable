@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.tabs
 
+import app.cash.turbine.test
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.db.FakeWebLinkDAO
@@ -43,12 +44,10 @@ class WebLinksViewModelTest {
 
     @Test
     fun `When get links, then loading and success`() = runTest {
-        viewModel.getRecentLinks()
-        Assert.assertEquals(LoadResult.Loading, viewModel.uiState.value)
-
-        advanceUntilIdle()
-
-        Assert.assertEquals(LoadResult.Success(files), viewModel.uiState.value)
+        viewModel.uiState.test {
+            Assert.assertEquals(LoadResult.Loading, awaitItem())
+            Assert.assertEquals(LoadResult.Success(files), awaitItem())
+        }
     }
 
     @Test

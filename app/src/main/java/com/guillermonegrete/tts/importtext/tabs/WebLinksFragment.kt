@@ -70,8 +70,9 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                             binding.noLinksMessage.isVisible = uiState.data.isEmpty()
                             adapter.submitList(uiState.data)
                         }
-                        LoadResult.Loading -> println("Loading links...")
+                        LoadResult.Loading -> {}
                     }
+                    binding.webLinksProgressBar.isVisible = uiState is LoadResult.Loading
                 }
             }
         }
@@ -99,8 +100,6 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                 rootInsets
             }
         }
-
-        viewModel.getRecentLinks()
     }
 
     private fun showAddNewDialog() {
