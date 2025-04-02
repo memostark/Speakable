@@ -33,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -116,7 +117,10 @@ class EnterTextFragment: Fragment() {
                 ) {
                     Text(stringResource(id = R.string.paste_icon_description))
                 }
-                Button(onClick = { visualizeText(textProvider().text) }) {
+                Button(
+                    onClick = { visualizeText(textProvider().text) },
+                    modifier = Modifier.testTag(VISUALIZE_BTN_TAG),
+                ) {
                     Text(stringResource(id = R.string.visualize_label))
                 }
             }
@@ -154,7 +158,7 @@ class EnterTextFragment: Fragment() {
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = { visualizeText(textProvider().text) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag(VISUALIZE_BTN_TAG),
                 ) {
                     Text(stringResource(id = R.string.visualize_label))
                 }
@@ -186,7 +190,11 @@ class EnterTextFragment: Fragment() {
                         )
                     }
                 }
-            }
+            },
+            modifier = Modifier.testTag(ENTER_TEXT_TAG)
         )
     }
 }
+
+const val ENTER_TEXT_TAG = "enter_text_field"
+const val VISUALIZE_BTN_TAG = "visualize_btn"
