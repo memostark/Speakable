@@ -175,7 +175,7 @@ class ScreenTextViewModelTest {
 
         assertEquals(1, viewModel.langToPreference.getOrAwaitValue())
         val error = viewModel.textTranslated.getOrAwaitValue() as LoadResult.Error
-        assertTrue(error.exception is RuntimeException)
+        assertTrue(error.throwable is RuntimeException)
     }
 
     @Test

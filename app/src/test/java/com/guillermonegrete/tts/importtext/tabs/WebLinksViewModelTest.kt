@@ -10,7 +10,7 @@ import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,8 +45,19 @@ class WebLinksViewModelTest {
     @Test
     fun `When get links, then loading and success`() = runTest {
         viewModel.uiState.test {
-            Assert.assertEquals(LoadResult.Loading, awaitItem())
-            Assert.assertEquals(LoadResult.Success(files), awaitItem())
+            assertEquals(LoadResult.Loading, awaitItem())
+            assertEquals(LoadResult.Success(files), awaitItem())
+        }
+    }
+
+    @Test
+    fun `When exception on loading files, then error result`() = runTest {
+        val error = Exception("Error loading recent files")
+        webLinkDAO.returnError = error
+
+        viewModel.uiState.test {
+            assertEquals(LoadResult.Loading, awaitItem())
+            assertEquals(error, (awaitItem() as LoadResult.Error).throwable)
         }
     }
 
@@ -56,6 +67,6 @@ class WebLinksViewModelTest {
 
         advanceUntilIdle()
 
-        Assert.assertEquals(1, webLinkDAO.links.size)
+        assertEquals(1, webLinkDAO.links.size)
     }
 }

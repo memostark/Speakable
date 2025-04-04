@@ -142,7 +142,7 @@ class WebReaderViewModelTest {
 
         val result = viewModel.page.getOrAwaitValue()
         assertTrue(result is LoadResult.Error)
-        assertTrue((result as LoadResult.Error).exception is IOException)
+        assertTrue((result as LoadResult.Error).throwable is IOException)
     }
 
     @Test
@@ -185,7 +185,7 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
 
         val result = viewModel.page.getOrAwaitValue() as LoadResult.Error
-        assertTrue(result.exception is IOException)
+        assertTrue(result.throwable is IOException)
     }
 
     @Test
@@ -200,7 +200,7 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
 
         val result = viewModel.page.getOrAwaitValue() as LoadResult.Error
-        assertTrue(result.exception is IOException)
+        assertTrue(result.throwable is IOException)
     }
     // endregion
 

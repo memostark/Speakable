@@ -8,6 +8,7 @@ import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.utils.deleteAllFolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -18,7 +19,8 @@ import javax.inject.Inject
 class WebLinksViewModel @Inject constructor(private val webLinkDAO: WebLinkDAO): ViewModel() {
 
     val uiState = webLinkDAO.getRecentLinks()
-        .map { LoadResult.Success(it) }
+        .map { LoadResult.Success(it) as LoadResult<List<WebLink>> }
+        .catch { emit(LoadResult.Error(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LoadResult.Loading)
 
     fun delete(link: WebLink, rootFolder: String){

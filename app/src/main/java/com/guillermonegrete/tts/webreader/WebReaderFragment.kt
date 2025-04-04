@@ -138,7 +138,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 var isLoading = false
                 when(it){
                     is LoadResult.Error -> {
-                        Timber.e(it.exception,"Error loading page")
+                        Timber.e(it.throwable, "Error loading page")
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true

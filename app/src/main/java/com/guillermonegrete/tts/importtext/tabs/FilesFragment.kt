@@ -168,7 +168,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                         when (uiState) {
                             is LoadResult.Error -> {
                                 Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
-                                Timber.e(uiState.exception, "Failed fetching recent links")
+                                Timber.e(uiState.throwable, "Failed fetching recent links")
                                 binding.recentFilesProgressBar.isVisible = false
                             }
                             is LoadResult.Success -> {

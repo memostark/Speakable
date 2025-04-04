@@ -18,7 +18,7 @@ sealed class Result<out T> {
 sealed class LoadResult<out T>{
 
     data class Success<out T>(val data: T): LoadResult<T>()
-    data class Error<out T>(val exception: Exception): LoadResult<T>()
+    data class Error<out T>(val throwable: Throwable): LoadResult<T>()
     data object Loading : LoadResult<Nothing>()
 }
 
