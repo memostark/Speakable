@@ -3,12 +3,13 @@ package com.guillermonegrete.tts.data.source
 import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.db.BookFile
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import java.util.LinkedHashMap
 
 class FakeFileRepository: FileRepository {
 
     var filesServiceData: LinkedHashMap<Int, BookFile> = LinkedHashMap()
+    var returnError: Throwable? = null
 
     var files = filesServiceData.values
 
@@ -17,7 +18,10 @@ class FakeFileRepository: FileRepository {
     }
 
     override fun getRecentFiles(): Flow<List<BookFile>> {
-        return flowOf(filesServiceData.values.toList().sortedByDescending { it.lastRead })
+        return flow {
+            returnError?.let { throw it }
+            emit(filesServiceData.values.toList().sortedByDescending { it.lastRead })
+        }
     }
 
     override suspend fun getFile(id: Int): BookFile? {

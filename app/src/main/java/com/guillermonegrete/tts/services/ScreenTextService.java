@@ -274,7 +274,7 @@ public class ScreenTextService extends Service {
             if (result instanceof LoadResult.Success<Translation> wordResult) {
                 showPopUpTranslation(wordResult.getData());
             } else if (result instanceof LoadResult.Error<Translation> errorResult) {
-                handleTranslationError(errorResult.getException());
+                handleTranslationError(errorResult.getThrowable());
             } else if (result instanceof LoadResult.Loading) {
                 binding.translateIconButton.setVisibility(View.INVISIBLE);
                 binding.loadingTranslate.setVisibility(View.VISIBLE);
@@ -290,7 +290,7 @@ public class ScreenTextService extends Service {
         binding.languageText.setVisibility(View.INVISIBLE);
     }
 
-    private void handleTranslationError(Exception error) {
+    private void handleTranslationError(Throwable error) {
         String errorText = error.getMessage();
         if (errorText == null) errorText = "Unknown error";
         Snackbar.make(binding.iconContainer, errorText, Snackbar.LENGTH_SHORT).show();

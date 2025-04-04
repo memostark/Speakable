@@ -55,6 +55,17 @@ class FilesViewModelTest {
     }
 
     @Test
+    fun `When exception on loading files, then error result`() = runTest {
+        val error = Exception("Error loading recent files")
+        fileRepository.returnError = error
+
+        viewModel.files.test {
+            assertEquals(LoadResult.Loading, awaitItem())
+            assertEquals(error, (awaitItem() as LoadResult.Error).throwable)
+        }
+    }
+
+    @Test
     fun `Given saved book, then delete`() = runTest {
         viewModel.deleteFile(files.first())
 
