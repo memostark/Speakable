@@ -16,8 +16,8 @@ android {
         applicationId "com.guillermonegrete.tts"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 15
-        versionName "1.21.0"
+        versionCode 16
+        versionName "1.22.0"
         testInstrumentationRunner "com.guillermonegrete.tts.CustomTestRunner"
         vectorDrawables.useSupportLibrary = true
         javaCompileOptions {
