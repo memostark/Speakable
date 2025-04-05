@@ -37,14 +37,14 @@ fun CharSequence.findWord(position: Int): Span {
             } while (Character.isLetterOrDigit(str[startIndex]))
             startIndex++
         }
-    } catch (e: StringIndexOutOfBoundsException) {
+    } catch (_: StringIndexOutOfBoundsException) {
         startIndex = 0
     }
     try {
         while (Character.isLetterOrDigit(str[endIndex])) {
             endIndex++
         }
-    } catch (e: StringIndexOutOfBoundsException) {
+    } catch (_: StringIndexOutOfBoundsException) {
         endIndex = str.length
     }
 
@@ -90,6 +90,15 @@ fun Spannable.addHighlightedText(
     @ColorInt color: Int = HighlightColorInt
 ): BackgroundColorSpan {
     val span = BackgroundColorSpan(color)
+    setSpan(span, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+    return span
+}
+
+fun Spannable.addHighlightedText(
+    start: Int,
+    end: Int,
+    span: BackgroundColorSpan
+): BackgroundColorSpan {
     setSpan(span, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
     return span
 }

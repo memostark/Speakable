@@ -35,6 +35,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.core.app.NotificationCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.lifecycle.Observer;
 import androidx.preference.PreferenceManager;
 
@@ -78,6 +80,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import timber.log.Timber;
 
 @AndroidEntryPoint
 public class ScreenTextService extends Service {
@@ -132,6 +135,7 @@ public class ScreenTextService extends Service {
 
     private Point screenSize;
     private ScreenInfo screenSizes;
+    private Insets navBarInsets;
 
     private ScreenTextViewModel viewModel;
 
@@ -151,6 +155,7 @@ public class ScreenTextService extends Service {
     private Context lightContext;
 
     private int eightDp = 0;
+    private boolean isBubbleMoving = false;
 
     @Nullable
     @Override
@@ -174,7 +179,8 @@ public class ScreenTextService extends Service {
 
         screenSize = new Point();
         windowManager.getDefaultDisplay().getRealSize(screenSize);
-        screenSizes = ContextExtKt.getScreenSizes(this);
+        screenSizes = ContextExtKt.getScreenSizes(this, true);
+        navBarInsets = ContextExtKt.navBarInsets(this);
 
         windowParams = new WindowManager.LayoutParams();
         mParamsTrash = new WindowManager.LayoutParams();
@@ -189,6 +195,28 @@ public class ScreenTextService extends Service {
         lightContext = createNightModeContext(this, false);
 
         eightDp = ContextExtKt.dpToPixel(this, 8);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        windowManager.getDefaultDisplay().getRealSize(screenSize);
+        screenSizes = ContextExtKt.getScreenSizes(this, true);
+        navBarInsets = ContextExtKt.navBarInsets(this);
+
+        int currentY = windowParams.y + screenSizes.getInsets().top; // param Y doesn't include the status bar, so it needs to be added and removed when reassigning to param Y
+        int heightNoNav = screenSizes.getHeight() - screenSizes.getInsets().bottom;
+        int visibleBubbleHeight = 2 * binding.iconContainer.getMeasuredHeight() / 3;
+        if (currentY >= (heightNoNav - visibleBubbleHeight)) {
+            windowParams.y = heightNoNav - screenSizes.getInsets().top - visibleBubbleHeight;
+            windowManager.updateViewLayout(binding.getRoot(), windowParams);
+        }
+
+        if (windowParams.x > 0) {
+            int visibleBubbleWidth = 2 * binding.iconContainer.getMeasuredWidth() / 3;
+            windowParams.x = screenSizes.getWidth() - navBarInsets.right - navBarInsets.left - visibleBubbleWidth;
+            windowManager.updateViewLayout(binding.getRoot(), windowParams);
+        }
     }
 
     private void destroyLayouts() {
@@ -221,6 +249,7 @@ public class ScreenTextService extends Service {
                 playButton.setVisibility(View.INVISIBLE);
 
             } else if (state instanceof PlayAudioState.Error error) {
+                Timber.e(error.getException(), "Error playing audio");
                 String message = error.getException().getMessage();
                 if (message == null) message = "Unknown error";
                 Snackbar.make(binding.iconContainer, message, Snackbar.LENGTH_SHORT).show();
@@ -245,7 +274,7 @@ public class ScreenTextService extends Service {
             if (result instanceof LoadResult.Success<Translation> wordResult) {
                 showPopUpTranslation(wordResult.getData());
             } else if (result instanceof LoadResult.Error<Translation> errorResult) {
-                handleTranslationError(errorResult.getException());
+                handleTranslationError(errorResult.getThrowable());
             } else if (result instanceof LoadResult.Loading) {
                 binding.translateIconButton.setVisibility(View.INVISIBLE);
                 binding.loadingTranslate.setVisibility(View.VISIBLE);
@@ -261,7 +290,7 @@ public class ScreenTextService extends Service {
         binding.languageText.setVisibility(View.INVISIBLE);
     }
 
-    private void handleTranslationError(Exception error) {
+    private void handleTranslationError(Throwable error) {
         String errorText = error.getMessage();
         if (errorText == null) errorText = "Unknown error";
         Snackbar.make(binding.iconContainer, errorText, Snackbar.LENGTH_SHORT).show();
@@ -381,6 +410,7 @@ public class ScreenTextService extends Service {
 
     private void setFloatingIconView(){
         binding.snipView.setVisibility(View.GONE);
+        binding.snipView.removeInsetsListener();
         var frameLayoutParams = (ViewGroup.MarginLayoutParams) binding.iconContainer.getLayoutParams();
         frameLayoutParams.setMargins(0,0,0,0);
         var bubbleParams = (ViewGroup.MarginLayoutParams) binding.imageBubble.getLayoutParams();
@@ -598,7 +628,7 @@ public class ScreenTextService extends Service {
                                 initialY = windowParams.y;
                                 initialTouchX = event.getRawX();
                                 initialTouchY = event.getRawY();
-                                //Log.i(TAG,"X: "+touchX+" Y: "+ touchY+" RawX: "+initialTouchX+" RawY: "+initialTouchY);
+                                isBubbleMoving = true;
                                 return true;
                             }
                             case MotionEvent.ACTION_UP -> {
@@ -609,6 +639,7 @@ public class ScreenTextService extends Service {
                                     windowParams.x = 0;
                                     windowParams.y = 100;
                                 } else animateToEdge();
+                                isBubbleMoving = false;
                                 bubble.mAnimationHandler.removeMessages(BubbleView.FloatingAnimationHandler.ANIMATION_IN_TOUCH);
                                 return true;
                             }
@@ -682,6 +713,22 @@ public class ScreenTextService extends Service {
             });
 
             windowManager.addView(binding.getRoot(), windowParams);
+
+            binding.getRoot().post(() ->
+                ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, windowInsets) -> {
+                    if (!isBubbleMoving) {
+                        var newNavBarInsets = ContextExtKt.navBarInsets(this);
+
+                        if (!newNavBarInsets.equals(navBarInsets)) {
+                            navBarInsets = newNavBarInsets;
+                            windowParams.x = getHorizontalPos(windowParams.x);
+                            windowManager.updateViewLayout(binding.getRoot(), windowParams);
+                        }
+                    }
+
+                    return windowInsets;
+                })
+            );
             // Runs after the view has been drawn
             binding.iconContainer.post(this::animateToEdge);
             windowManager.addView(trash_layout, mParamsTrash);
@@ -708,28 +755,25 @@ public class ScreenTextService extends Service {
             statusBarVisible = true;
         }
         // If the status bar is visible then the Y zero coordinate starts after the bar, above the bar the y is negative
+        var topInset = screenSizes.getInsets().top;
         if (statusBarVisible) {
-            currentY = currentY + screenSizes.getStatusHeight();
+            currentY = currentY + topInset;
         }
-        int bubbleWidth =  binding.iconContainer.getMeasuredWidth();
-        ValueAnimator ani;
-        int toPosition;
-        if (currentX > (mMetrics.widthPixels - bubbleWidth) / 2) toPosition = mMetrics.widthPixels - 2 * bubbleWidth / 3;
-        else toPosition = -bubbleWidth / 3;
+
+        int toPosition = getHorizontalPos(currentX);
 
         // Make sure the bubble doesn't overlap the status or nav bars
-        if (currentY < screenSizes.getStatusHeight()) {
-            windowParams.y = statusBarVisible ? 0 : screenSizes.getStatusHeight();
+        if (currentY < topInset) {
+            windowParams.y = statusBarVisible ? 0 : topInset;
         }
 
-        int heightNoNav = screenSizes.getHeight() - screenSizes.getNavHeight();
-        int bubbleHeight = binding.iconContainer.getMeasuredHeight();
-        int bubbleHeightThird = bubbleHeight / 3; // A tolerance to avoid the bubble ending up almost covered by the navbar
-        if(currentY >= (heightNoNav - bubbleHeightThird)) {
-            int statusBarOffset = statusBarVisible ? screenSizes.getStatusHeight() : 0;
+        int heightNoNav = screenSizes.getHeight() - screenSizes.getInsets().bottom;
+        int bubbleHeightThird = binding.iconContainer.getMeasuredHeight() / 3; // A tolerance to avoid the bubble ending up almost covered by the navbar
+        if (currentY >= (heightNoNav - bubbleHeightThird)) {
+            int statusBarOffset = statusBarVisible ? topInset : 0;
             windowParams.y = heightNoNav - bubbleHeightThird - statusBarOffset;
         }
-        ani = ValueAnimator.ofInt(currentX, toPosition);
+        var ani = ValueAnimator.ofInt(currentX, toPosition);
 
         ani.addUpdateListener(animation -> {
             windowParams.x = (Integer) animation.getAnimatedValue();
@@ -739,6 +783,12 @@ public class ScreenTextService extends Service {
         ani.setInterpolator(new AccelerateDecelerateInterpolator());
         ani.start();
 
+    }
+
+    private int getHorizontalPos(int currentX) {
+        int bubbleWidth =  binding.iconContainer.getMeasuredWidth();
+        return (currentX > (screenSizes.getWidth() - bubbleWidth) / 2)
+                ? screenSizes.getWidth() - navBarInsets.right - navBarInsets.left - 2 * bubbleWidth / 3 : -bubbleWidth / 3;
     }
 
     @Override

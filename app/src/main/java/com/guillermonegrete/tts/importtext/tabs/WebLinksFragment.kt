@@ -13,6 +13,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -69,8 +70,9 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                             binding.noLinksMessage.isVisible = uiState.data.isEmpty()
                             adapter.submitList(uiState.data)
                         }
-                        LoadResult.Loading -> println("Loading links...")
+                        LoadResult.Loading -> {}
                     }
+                    binding.webLinksProgressBar.isVisible = uiState is LoadResult.Loading
                 }
             }
         }
@@ -88,17 +90,16 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
             addBtn.setOnClickListener { showAddNewDialog() }
             (addBtn.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = fabBottomMargin
-            ViewCompat.setOnApplyWindowInsetsListener(addBtn) { v, insets ->
-                val insets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            ViewCompat.setOnApplyWindowInsetsListener(root) { v, rootInsets ->
+                val insets = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
                 addBtn.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     bottomMargin = insets.bottom + insets.top + fabBottomMargin
                 }
+                list.updatePadding(bottom = insets.bottom)
 
-                WindowInsetsCompat.CONSUMED
+                rootInsets
             }
         }
-
-        viewModel.getRecentLinks()
     }
 
     private fun showAddNewDialog() {

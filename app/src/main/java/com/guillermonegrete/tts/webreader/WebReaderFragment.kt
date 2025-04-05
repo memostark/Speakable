@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,11 +30,15 @@ import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
+import com.guillermonegrete.tts.common.models.toEditNote
+import com.guillermonegrete.tts.common.models.toNote
 import com.guillermonegrete.tts.common.models.toUI
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.FragmentWebReaderBinding
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.savedwords.ResultType
+import com.guillermonegrete.tts.textprocessing.EditDeleteDialogUI
 import com.guillermonegrete.tts.textprocessing.EditDeleteWordDialogs
 import com.guillermonegrete.tts.textprocessing.ExternalLinksAdapter
 import com.guillermonegrete.tts.textprocessing.WordState
@@ -44,17 +47,24 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.createBackPressedCallback
 import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.isWord
+import com.guillermonegrete.tts.webreader.db.span
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.lifecycle.withCreationCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
+import kotlin.text.isNotEmpty
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
-    private val viewModel: WebReaderViewModel by viewModels()
+    private val viewModel: WebReaderViewModel by viewModels(extrasProducer = {
+        defaultViewModelCreationExtras.withCreationCallback<WebReaderViewModel.Factory> { factory ->
+            factory.create(args.link)
+        }
+    })
 
     private  var _binding: FragmentWebReaderBinding? = null
     private val binding get() = _binding!!
@@ -67,12 +77,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private val loadingDialogVisible = mutableStateOf(false)
     private val deleteDialogVisible = mutableStateOf(false)
-    private val addNoteDialogVisible = mutableStateOf(false)
-    private val editWordDialogVisible = mutableStateOf(false)
-    private val deleteWordDialogShown = mutableStateOf(false)
+    private val addNoteDialogVisible = mutableStateOf<AddNoteDialogUI?>(null)
+    private val editWordDialogVisible = mutableStateOf<EditDeleteDialogUI?>(null)
     private val pickNewTypeDialogVisible = mutableStateOf(false)
     private val pickInfoDialogVisible = mutableStateOf(false)
-    private val wordState = mutableStateOf<WordState?>(null)
     private val isPageSaved = mutableStateOf(false)
 
     private val languagesFull: List<String> by lazy { resources.getStringArray(R.array.googleTranslateLanguagesArray).toList() }
@@ -82,12 +90,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private val snackbarHostState = mutableStateOf(SnackbarHostState())
 
     private var pageText = ""
-
-    /**
-     * Contains information used to update/create/delete a note.
-     */
-    private var noteInfo: EditNote? = null
-    private var sheetInfo: Sheet? = null
 
     private var appBarSize = 0
 
@@ -101,16 +103,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
         adapter = ParagraphAdapter(viewModel,
-            onSentenceSelected = { hideBottomSheets() },
-            onTextHighlighted = {
-                val highlightSpan = adapter.getHighlightedTextSpan()
-                val sheetSpan = noteInfo?.span
-                if(highlightSpan != sheetSpan) {
-                    hideBottomSheets()
+            onSentenceSelected = viewModel::sentenceSelected,
+            onParagraphSelected = viewModel::paragraphSelected,
+            onParagraphEvent = {
+                when (it) {
+                    is ParagraphAdapter.ParagraphEvent.BottomClick -> viewModel.setSentenceInParagraph(it.itemIndex, it.charPos)
+                    is ParagraphAdapter.ParagraphEvent.ToggleClick -> viewModel.paragraphSelected(null)
+                    is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onWordClicked(it.word, it.position)
                 }
             },
-            onTranslateHighlightedText = {
-                viewModel.translateText(it)
+            onTextHighlighted =  {
+                viewModel.unselectSentence()
+                viewModel.clearTextInfo()
+            },
+            onTranslateHighlightedText = { text, span ->
+                viewModel.translateText(text, span, adapter.isOverlappingNotes, adapter.isOverlappingSavedWord)
                 adapter.selectHighlightedText()
             },
             loadDatabaseWord = { text, pos ->
@@ -131,7 +138,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 var isLoading = false
                 when(it){
                     is LoadResult.Error -> {
-                        Timber.e(it.exception,"Error loading page")
+                        Timber.e(it.throwable, "Error loading page")
                         isError = true
                     }
                     LoadResult.Loading -> isLoading = true
@@ -142,90 +149,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 errorText.isVisible = isError
 
                 loadingIcon.isVisible = isLoading
-            }
-
-            viewModel.translatedParagraph.observe(viewLifecycleOwner) { result ->
-                adapter.isLoading = when (result) {
-                    LoadResult.Loading -> true
-                    is LoadResult.Error -> false
-                    is LoadResult.Success -> {
-                        val translation = viewModel.translatedParagraphs[result.data]?.translatedText
-                        if(translation != null) adapter.updateTranslation(translation)
-                        false
-                    }
-                }
-                adapter.updateExpanded()
-            }
-
-            viewModel.updatedNote.observe(viewLifecycleOwner) { result ->
-                val sheet = binding.transSheet
-                when(result){
-                    is ModifiedNote.Update -> {
-                        val note = result.note
-                        val dialogResult = AddNoteResult(note.text, note.color)
-                        val span = Span(note.position, note.position + note.length)
-                        adapter.updateNote(span, note.id, dialogResult)
-
-                        if(isSheetVisible()) {
-                            if (adapter.selectedSentence.wordSelected ||
-                                adapter.isInsideSelectedSentence(span)) { // if not word selected but still inside the sentence then it must be a note
-                                sheet.wordTranslation.text = note.text
-                                sheet.addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-                            } else {
-                                sheet.translatedText.text = note.text
-                                sheet.addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-                            }
-                            val newNote = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
-                            noteInfo = newNote
-                            sheetInfo = Sheet.Note(newNote)
-                        } else {
-                            // If sheet not visible note was added using the selected text menu, no UI to update
-                            noteInfo = null
-                        }
-                    }
-                    is ModifiedNote.Delete -> {
-                        if (binding.transSheet.wordTranslation.isVisible) {
-                            // Note info is visible, because the note was deleted hide the word/note views
-                            setWordSheetViews(false)
-                        } else {
-                            // Otherwise just hide the regular sheet
-                            val behavior = BottomSheetBehavior.from(binding.transSheet.root)
-                            behavior.state = BottomSheetBehavior.STATE_HIDDEN
-                        }
-
-                        adapter.unselectWord()
-                        adapter.deleteNote(result.noteId)
-                        sheet.addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
-                    }
-                }
-
-            }
-
-            viewModel.updatedWord.observe(viewLifecycleOwner) { result ->
-                when (result) {
-                    is ResultType.Update -> {
-                        val word = result.word
-                        val newState = WordState(word.toUI(), word.id, wordState.value?.span)
-                        showSavedWord(newState)
-                    }
-                    is ResultType.Insert -> {
-                        val word = result.word
-                        if (viewModel.showWords) highlightSavedWord(word, getVisibleListItems())
-                        viewModel.setSavedWord(word.word, word.lang)
-                    }
-                    is ResultType.Delete -> {
-                        val span = wordState.value?.span
-                        if (span != null && adapter.isInsideSelectedSentence(span)) {
-                            setWordSheetViews(false)
-                        } else {
-                            hideTranslationSheet()
-                        }
-                        adapter.removeWord(viewModel.getWordIndexes(result.id), result.id)
-                        wordState.value = null
-                        deleteWordDialogShown.value = false
-                    }
-                }
-                editWordDialogVisible.value = false
             }
 
             val langSelection = mutableIntStateOf(-1)
@@ -239,9 +162,62 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    viewModel.pageSavedWords.collect { result ->
-                        adapter.updateSavedWords(result.words, result.start)
-                        adapter.initialWordsLoaded = true
+                    launch {
+                        viewModel.pageSavedWords.collect { result ->
+                            adapter.updateSavedWords(result.words, result.start)
+                            adapter.initialWordsLoaded = true
+                        }
+                    }
+
+                    launch {
+                        viewModel.updatedWord.collect { result ->
+                            when (result) {
+                                is ResultType.Update -> {}
+                                is ResultType.Insert -> {
+                                    val word = result.word
+                                    if (viewModel.showWords) highlightSavedWord(word, getVisibleListItems())
+                                }
+                                is ResultType.Delete -> adapter.removeWord(viewModel.getWordIndexes(result.id), result.id)
+                            }
+                        }
+                    }
+
+                    launch {
+                        viewModel.updatedNote.collect { result ->
+                            when(result){
+                                is ModifiedNote.Update -> {
+                                    val note = result.note
+                                    val dialogResult = AddNoteResult(note.text, note.color)
+                                    adapter.updateNote(note.span, note.id, dialogResult)
+                                }
+                                is ModifiedNote.Delete -> {
+                                    adapter.unselectWord()
+                                    adapter.deleteNote(result.noteId)
+                                }
+                            }
+                        }
+                    }
+
+                    launch {
+                        viewModel.paragraphState.collect { result ->
+                            if (result.paragraphIndex != null && result.sentenceIndex != null) {
+                                adapter.selectSentence(result.paragraphIndex, result.sentenceIndex)
+                            } else {
+                                adapter.unselectSentence()
+                            }
+
+                            val paragraph = result.paragraph
+                            if (paragraph != null) {
+                                if (paragraph.isLoading) {
+                                    adapter.setParagraphLoading()
+                                } else {
+                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
+                                    adapter.displayParagraph(paragraphUi)
+                                }
+                            } else {
+                                adapter.unselectParagraph()
+                            }
+                        }
                     }
                 }
             }
@@ -258,6 +234,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             iconsVisible,
                             isPageSaved,
                             viewModel.showWords,
+                            ::getPageVersion,
                             ::onTranslateClicked,
                             ::onArrowClicked,
                             ::onBarMenuItemClicked,
@@ -294,7 +271,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
 
         viewModel.folderPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
-        viewModel.loadDoc(args.link)
     }
 
     override fun onResume() {
@@ -305,11 +281,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun setInsetListener() {
         val initialBarSize = appBarSize
         ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val barShown = false
-            if (!barShown) v.updatePadding(top = insets.top)
-            val extra = if (barShown) initialBarSize else 0
-            binding.composeBar.updatePadding(bottom = insets.bottom + extra)
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            v.updatePadding(top = insets.top)
+            binding.composeBar.updatePadding(bottom = insets.bottom)
+            binding.composeRoot.updatePadding(top = insets.top)
             appBarSize = initialBarSize + insets.bottom
             updateListBottomPadding(0)
             WindowInsetsCompat.CONSUMED
@@ -334,8 +309,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
             is WebReaderMenuAction.PageVersion -> {
                 when(action.version) {
-                    "Local" -> viewModel.loadLocalPage()
-                    "Web" -> viewModel.loadPageFromWeb()
+                    "Local" -> viewModel.setPageVersion(PageVersion.LOCAL)
+                    "Web" -> viewModel.setPageVersion(PageVersion.WEB)
                 }
             }
             is WebReaderMenuAction.ShowWords -> {
@@ -359,34 +334,43 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val splitParagraphs = viewModel.createParagraphs(newParagraphs)
             var index = 0
             val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
-            val dbNotes = page.notes.toMutableList()
 
-            splitParagraphs.forEach {
-                val nextIndex = index + it.paragraph.length
-                // Search the notes applied to this paragraph
-                val paragraphNotes = dbNotes.filter { dbNote ->
-                    dbNote.position in index until nextIndex
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                    viewModel.notes.collect {
+                        val dbNotes = it.toMutableList()
+
+                        splitParagraphs.forEach {
+                            val nextIndex = index + it.paragraph.length
+                            // Search the notes applied to this paragraph
+                            val paragraphNotes = dbNotes.filter { dbNote ->
+                                dbNote.position in index until nextIndex
+                            }
+
+                            val noteItems = paragraphNotes.map { note ->
+                                val itemStart = note.position - index
+                                NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
+                            }
+
+                            paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
+                            index = nextIndex
+                            dbNotes.removeAll(paragraphNotes)
+                        }
+
+                        adapter.isPageSaved = page.isLocalPage
+                        adapter.updateItems(paragraphItems)
+                        paragraphsList.adapter = adapter
+                        paragraphsList.post {
+                            loadWordsForVisibleItems()
+                        }
+
+                        iconsVisible.value = true
+                        setAdapterListeners()
+                    }
                 }
-
-                val noteItems = paragraphNotes.map { note ->
-                    val itemStart = note.position - index
-                    NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
-                }
-
-                paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
-                index = nextIndex
-                dbNotes.removeAll(paragraphNotes)
             }
-
-            adapter.isPageSaved = page.isLocalPage
-            adapter.updateItems(paragraphItems)
-            paragraphsList.adapter = adapter
-            paragraphsList.post {
-                loadWordsForVisibleItems()
-            }
-
-            iconsVisible.value = true
-            setAdapterListeners()
+            viewModel.getNotes()
         }
     }
 
@@ -398,25 +382,25 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     adapter.textClicked.collect { result ->
                         when(result) {
                             is ParagraphAdapter.TextClick.SavedWord -> {
-                                wordState.value = result.word
-                                val wordData = result.word.word
-                                sheetInfo = Sheet.Word(result.word)
-                                viewModel.setSavedWord(wordData.word, wordData.lang)
+                                val state = result.word
+                                val sentenceSpan = adapter.getSelectedSentenceSpan()
+                                if (state.span != null) viewModel.setSavedWord(state.dbId, state.span, sentenceSpan)
                             }
                             is ParagraphAdapter.TextClick.Sentence -> {
                                 val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
                                 if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN){
-                                    adapter.unselectSentence()
+                                    viewModel.unselectSentence()
                                 } else {
-                                    viewModel.translateWordInSentence(result.word)
-                                    adapter.updateWordInSentence()
+                                    adapter.getSelectedWordSpan()?.let {
+                                        viewModel.translateWordInSentence(result.word, it)
+                                        adapter.updateWordInSentence()
+                                    }
                                 }
                             }
-                            is ParagraphAdapter.TextClick.Note -> showSheetWithNote(result.item)
+                            is ParagraphAdapter.TextClick.Note -> viewModel.setNoteData(result.item.toNote(), adapter.getSelectedSentenceSpan())
                             is ParagraphAdapter.TextClick.Overlap -> {
-                                noteInfo = result.note
-                                wordState.value = result.word
-                                pickInfoDialogVisible.value = true
+                                if (result.word.span != null)
+                                    viewModel.setPickInfoType(DialogType.SavedWord(result.word.toWord(), result.word.span), DialogType.Note(result.note.toNote()))
                             }
                         }
                     }
@@ -424,16 +408,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                 launch {
                     adapter.addNoteClicked.collect { note ->
-                        noteInfo = note
-                        addNoteDialogVisible.value = true
+                        viewModel.startEditing(DialogType.Note(note.toNote()))
                     }
                 }
+
                 launch {
                     adapter.addWordClicked.collect { state ->
                         val lang = viewModel.getLanguage()
                         val newState = if (lang == null) state else state.copy(word = state.word.copy(lang = lang))
-                        wordState.value = newState
-                        editWordDialogVisible.value = true
+                        if (newState.span != null) viewModel.startEditing(DialogType.SavedWord(newState.toWord(), newState.span))
                     }
                 }
             }
@@ -441,8 +424,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun showSavedWord(state: WordState) {
-        wordState.value = state
-        sheetInfo = Sheet.Word(state)
         val word = state.word
         val wordSpan = state.span ?: Span(0, 0)
         updateSheet(word, wordSpan, true)
@@ -451,39 +432,47 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun updateSheet(info: WordUI, span: Span, isWord: Boolean) {
         with(binding.transSheet) {
             if(isSheetVisible() && adapter.isInsideSelectedSentence(span)){
-                val hasNote = !info.notes.isNullOrBlank()
-                val text = if (hasNote) "${info.definition} (${info.notes})" else info.definition
-                wordTranslation.text = text
-                setWordSheetViews(true)
-                moreInfoWordBtn.isVisible = isWord
-
-                moreInfoWordBtn.setOnClickListener {
-                    if (info.lang.isNotEmpty()) viewModel.getLinksForWord(info.word, info.lang)
-                    else getLinksForWord(info.word)
-                }
-
-                addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+                showWordInfo(info, isWord)
             } else {
-                setWordSheetViews(false)
-                translatedText.text = info.definition
-                notesText.isGone = info.notes.isNullOrEmpty()
-                notesText.text = info.notes
-
-                addNoteBtn.isVisible = true
-                addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
-
-                moreInfoBtn.isVisible = isWord
-                moreInfoBtn.setOnClickListener {
-                    if (info.lang.isNotEmpty()) viewModel.getLinksForWord(info.word, info.lang)
-                    else getLinksForWord(info.word)
-                }
-
-                val bottomSheetBehavior = BottomSheetBehavior.from(root)
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                adapter.unselectSentence()
+                showSheetInfo(info, isWord)
             }
         }
         adapter.unselectWord()
+    }
+
+    private fun showWordInfo(info: WordUI, isWord: Boolean) {
+        with(binding.transSheet) {
+            val hasNote = !info.notes.isNullOrBlank()
+            val text = if (hasNote) "${info.definition} (${info.notes})" else info.definition
+            wordTranslation.text = text
+            setWordSheetViews(true)
+            moreInfoWordBtn.isVisible = isWord
+
+            moreInfoWordBtn.setOnClickListener {
+                if (info.lang.isNotEmpty()) viewModel.getLinksForWord(info.word, info.lang)
+                else getLinksForWord(info.word)
+            }
+
+            addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+        }
+    }
+
+    private fun showSheetInfo(info: WordUI, isWord: Boolean) {
+        with(binding.transSheet) {
+            setWordSheetViews(false)
+            translatedText.text = info.definition
+            notesText.isGone = info.notes.isNullOrEmpty()
+            notesText.text = info.notes
+
+            addNoteBtn.isVisible = true
+            addNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
+
+            moreInfoBtn.isVisible = isWord
+            moreInfoBtn.setOnClickListener {
+                if (info.lang.isNotEmpty()) viewModel.getLinksForWord(info.word, info.lang)
+                else getLinksForWord(info.word)
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -507,7 +496,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding) {
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
             requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, bottomSheetBackCallback)
@@ -517,6 +505,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     when (newState) {
                         BottomSheetBehavior.STATE_HIDDEN -> {
                             bottomSheetBackCallback.isEnabled = false
+                            viewModel.hideWordLinks()
                             if (translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
                         }
                         BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBackCallback.isEnabled = true
@@ -541,27 +530,40 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val decor = DividerItemDecoration(context, (linksList.layoutManager as LinearLayoutManager).orientation)
             linksList.addItemDecoration(decor)
 
-            var selectedPos = 0
-            viewModel.linksForWord.observe(viewLifecycleOwner) {
-                val links = it.links
-                links.forEach { link -> link.link = link.link.replace("{q}", it.word) }
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    viewModel.linksForWord.collect { state ->
+                        when(state) {
+                            DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                            is DialogState.Error -> Timber.e(state.exception, "Error retrieving links for word")
+                            DialogState.Loading -> {}
+                            is DialogState.Success -> {
+                                val links = state.data.links
+                                links.forEach { link -> link.link = link.link.replace("{q}", state.data.word) }
 
-                // if out of index, default to the first item (zero index)
-                if(selectedPos >= links.size) selectedPos = 0
+                                val adapter = ExternalLinksAdapter(links) { index ->
+                                    viewModel.setWordLink(index)
+                                }
 
-                val link = links.getOrNull(selectedPos)
-                if (link != null) infoWebview.loadUrl(link.link)
-                val adapter = ExternalLinksAdapter(it.links) { index ->
-                    selectedPos = index
-                    infoWebview.loadUrl(links[index].link)
-                    linksList.scrollToPosition(index)
+                                adapter.setFlatButton(true)
+                                val selectedPos = viewModel.selectedLink.value
+                                adapter.setSelectedPos(selectedPos)
+                                linksList.scrollToPosition(selectedPos)
+                                linksList.adapter = adapter
+
+                                launch {
+                                    viewModel.selectedLink.collect {
+                                        infoWebview.loadUrl(links[it].link)
+                                        linksList.scrollToPosition(it)
+                                    }
+                                }
+
+                                composeBar.isVisible = false
+                                root.post { bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED }
+                            }
+                        }
+                    }
                 }
-                adapter.setFlatButton(true)
-                adapter.setSelectedPos(selectedPos)
-                linksList.scrollToPosition(selectedPos)
-                linksList.adapter = adapter
-                composeBar.isVisible = false
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
     }
@@ -573,10 +575,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             wordTranslation.setHorizontallyScrolling(true)
 
             val bottomSheetBehavior = BottomSheetBehavior.from(root)
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
             val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
-
             requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, backPressedCallback)
 
             bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
@@ -586,6 +586,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         adapter.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
+                        viewModel.clearTextInfo()
                         updateListBottomPadding(0)
                     } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
                         backPressedCallback.isEnabled = true
@@ -597,134 +598,46 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
             })
 
-            viewModel.textInfo.observe(viewLifecycleOwner) { result ->
-                barLoading.isInvisible = when(result){
-                    is LoadResult.Success -> {
-                        val wordResult = result.data
-                        val word = wordResult.word
-                        translatedText.text = word.definition
-                        notesText.isGone = word.notes.isNullOrEmpty()
-                        notesText.text = word.notes
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    launch {
+                        viewModel.dialogState.collect(::handleUiDialogState)
+                    }
 
-                        // Only show the add note button if selection is not a sentence and doesn't overlap any other note
-                        val text = word.word
-                        val isWord = text.isWord()
-                        val noteUnavailable = adapter.isOverlappingNotes || !adapter.isPageSaved
-                        addNoteBtn.isGone = wordResult.isSentence || (noteUnavailable && !isWord)
-                        addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
-
-                        val span = adapter.getSelectedWordSpan() ?: adapter.getHighlightedTextSpan()
-                        if(span != null) {
-                            val note = EditNote(text, word.definition, span, 0, false, 0)
-                            sheetInfo = when {
-                                isWord && !adapter.isOverlappingSavedWord -> {
-                                    val state = WordState(word.toUI(), span = span)
-                                    wordState.value = state
-                                    if (noteUnavailable) Sheet.Word(state) else Sheet.Multiple
+                    launch {
+                        viewModel.editDialogs.collect { result ->
+                            when(val type = result.isEditingType) {
+                                is DialogType.Note -> {
+                                    val item = type.item.toEditNote()
+                                    addNoteDialogVisible.value = AddNoteDialogUI(item.noteText, item.color, item.noteSaved)
+                                    pickNewTypeDialogVisible.value = false
                                 }
-                                else -> Sheet.Note(note)
+                                is DialogType.SavedWord -> {
+                                    val word = type.word
+                                    val newState = WordState(word.toUI(), word.id, span = type.span)
+                                    editWordDialogVisible.value = EditDeleteDialogUI(newState, result.isDeleteDialogShown, LanguagesList(languagesFull, languagesISO))
+                                    pickNewTypeDialogVisible.value = false
+                                }
+                                is DialogType.Translation -> pickNewTypeDialogVisible.value = true
+                                null -> {
+                                    editWordDialogVisible.value = null
+                                    addNoteDialogVisible.value = null
+                                    pickNewTypeDialogVisible.value = false
+                                }
                             }
-                            noteInfo = note
+
+                            pickInfoDialogVisible.value = result.isPickingType != null
                         }
-
-                        moreInfoBtn.isGone = wordResult.isSentence
-                        moreInfoBtn.setOnClickListener {
-                            viewModel.getLinksForWord(word.word, word.lang)
-                        }
-
-                        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) {
-                            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                        } else {
-                            // Sheet layout modified but the sheet was already expanded, manually update padding
-                            translatedText.post {
-                                updateListBottomPadding(root.height)
-                            }
-                        }
-                        true
-                    }
-                    is LoadResult.Error -> {
-                        Toast.makeText(context, "Couldn't translate text", Toast.LENGTH_SHORT).show()
-                        Timber.e(result.exception, "Error translating selected text")
-                        true
-                    }
-                    LoadResult.Loading -> {
-                        translatedText.text = ""
-                        translatedText.scrollTo(0, 0)
-                        notesText.text = ""
-                        moreInfoBtn.isVisible = false
-                        addNoteBtn.isVisible = false
-                        setWordSheetViews(false)
-                        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                        false
-                    }
-                }
-            }
-
-            viewModel.wordInfo.observe(viewLifecycleOwner) { result ->
-                barLoading.isInvisible = when(result){
-                    is LoadResult.Success -> {
-                        val word = result.data.word
-                        wordTranslation.text = word.definition
-                        moreInfoWordBtn.setOnClickListener {
-                            viewModel.getLinksForWord(word.word, word.lang)
-                        }
-
-                        setWordSheetViews(true)
-
-                        val span = adapter.getSelectedWordSpan()
-                        if (span != null) {
-                            val state = WordState(word.toUI(), span = span)
-                            wordState.value = state
-                            val noteUnavailable = !adapter.isPageSaved
-                            sheetInfo = if (noteUnavailable) Sheet.Word(state) else Sheet.Multiple
-                            noteInfo = EditNote(word.word, word.definition, span, 0, false, 0)
-                        }
-
-                        addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
-                        true
-                    }
-                    is LoadResult.Error -> {
-                        Toast.makeText(context, "Couldn't translate word", Toast.LENGTH_SHORT).show()
-                        Timber.e(result.exception,"Error translating word in selected text")
-                        true
-                    }
-                    LoadResult.Loading -> {
-                        wordTranslation.text = ""
-                        moreInfoWordBtn.isInvisible = true
-                        addWordNoteBtn.isInvisible = true
-                        false
                     }
                 }
             }
 
             addNoteBtn.setOnClickListener {
-                when (val sheet = sheetInfo) {
-                    Sheet.Multiple -> pickNewTypeDialogVisible.value = true
-                    is Sheet.Note -> {
-                        noteInfo = sheet.info
-                        addNoteDialogVisible.value = true
-                    }
-                    is Sheet.Word -> {
-                        wordState.value = sheet.state
-                        editWordDialogVisible.value = true
-                    }
-                    null -> Timber.e("Sheet info is missing")
-                }
+                viewModel.startEditing()
             }
 
             addWordNoteBtn.setOnClickListener {
-                when (val sheet = sheetInfo) {
-                    Sheet.Multiple -> pickNewTypeDialogVisible.value = true
-                    is Sheet.Note -> {
-                        noteInfo = sheet.info
-                        addNoteDialogVisible.value = true
-                    }
-                    is Sheet.Word -> {
-                        wordState.value = sheet.state
-                        editWordDialogVisible.value = true
-                    }
-                    null -> Timber.e("Sheet info is missing")
-                }
+                viewModel.startEditing()
             }
         }
     }
@@ -740,27 +653,27 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     }
 
-    private fun onTranslateClicked(){
-        val expandedItemPos = adapter.expandedItemPos
-        if (expandedItemPos != -1) {
-            viewModel.translateParagraph(expandedItemPos)
-            return
-        }
+    private fun getPageVersion() = when(viewModel.pageVersion) {
+        PageVersion.LOCAL -> "Local"
+        PageVersion.WEB -> "Web"
+    }
+
+    private fun onTranslateClicked() {
+        if (viewModel.translateParagraph()) return
 
         val selected = adapter.selectedSentence
         if(selected.paragraphIndex != -1 && selected.sentenceIndex != -1)
             viewModel.translateSentence(selected.paragraphIndex, selected.sentenceIndex)
 
         val text = adapter.getHighlightedText()
-        if (text != null) {
-            viewModel.translateText(text.toString())
+        val span = adapter.getHighlightedTextSpan()
+        if (text != null && span != null) {
+            viewModel.translateText(text.toString(), span, adapter.isOverlappingNotes, adapter.isOverlappingSavedWord)
             adapter.selectHighlightedText()
         }
     }
 
     private fun showSheetWithNote(note: EditNote) {
-        noteInfo = note
-        sheetInfo = Sheet.Note(note)
         val info = WordUI(note.text, "", note.noteText)
         updateSheet(info, note.span, note.text.isWord())
     }
@@ -776,15 +689,114 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         }
     }
 
-    private fun hideBottomSheets() {
-        val webSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
-        webSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-        hideTranslationSheet()
-    }
+    private fun handleUiDialogState(result: WebReaderViewModel.UiDialogState) {
+        with(binding.transSheet) {
+            val bottomSheetBehavior = BottomSheetBehavior.from(root)
+            if (result.isLoading) {
+                barLoading.isVisible = true
+                translatedText.text = ""
+                translatedText.scrollTo(0, 0)
+                notesText.text = ""
+                moreInfoBtn.isVisible = false
+                addNoteBtn.isVisible = false
+                setWordSheetViews(false)
+            } else {
+                if (result.error != null) {
+                    Timber.e("Error when translating: ${result.error}")
+                    sbScope?.launch {
+                        snackbarHostState.value.showSnackbar(getString(R.string.error_translation))
+                        viewModel.errorShown()
+                    }
+                }
 
-    private fun hideTranslationSheet() {
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.transSheet.root)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                barLoading.isVisible = false
+                moreInfoBtn.isVisible = false
+                addNoteBtn.isVisible = false
+                val state = result.dialogState
+                val sentence = result.sentence
+                if (sentence != null) {
+                    translatedText.text = sentence.text
+                    notesText.isVisible = false
+                    when(state) {
+                        is DialogType.Note -> {
+                            val note = state.item
+                            val info = WordUI(note.originalText, "", note.text)
+                            showWordInfo(info, note.originalText.isWord())
+                        }
+                        is DialogType.SavedWord -> {
+                            val word = state.word
+                            val newState = WordState(word.toUI(), word.id, state.span)
+                            showWordInfo(newState.word, true)
+                            if (!viewModel.showWords) adapter.selectWordInSentence(sentence.paragraphIndex, state.span)
+                        }
+                        is DialogType.Translation -> {
+                            val translation = state.translation
+                            wordTranslation.text = translation.translation
+                            moreInfoWordBtn.setOnClickListener {
+                                viewModel.getLinksForWord(translation.original, translation.sourceLang)
+                            }
+
+                            setWordSheetViews(true)
+
+                            adapter.selectWordInSentence(sentence.paragraphIndex, state.span)
+                            addWordNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
+                        }
+                        else -> {
+                            adapter.unselectWord()
+                            setWordSheetViews(false)
+                        }
+                    }
+
+                    if (result.isWordLoading) {
+                        barLoading.isVisible = true
+                        wordTranslation.text = ""
+                        moreInfoWordBtn.isInvisible = true
+                        addWordNoteBtn.isInvisible = true
+                    }
+                } else {
+                    when(state) {
+                        is DialogType.Note -> showSheetWithNote(state.item.toEditNote())
+                        is DialogType.SavedWord -> {
+                            val word = state.word
+                            val newState = WordState(word.toUI(), word.id, state.span)
+                            showSavedWord(newState)
+                            if (!viewModel.showWords) adapter.selectWord(state.span)
+                        }
+                        is DialogType.Translation -> {
+                            val translation = state.translation
+                            translatedText.text = translation.translation
+
+                            // Only show the add note button if selection is not a sentence and doesn't overlap any other note
+                            val text = translation.original
+                            val isWord = text.isWord()
+                            val noteUnavailable = state.overlapsNote || !result.isPageSaved
+                            addNoteBtn.isGone = noteUnavailable && !isWord
+                            addNoteBtn.setImageResource(R.drawable.baseline_note_add_24)
+
+                            adapter.selectWord(state.span)
+
+                            moreInfoBtn.isVisible = true
+                            moreInfoBtn.setOnClickListener {
+                                viewModel.getLinksForWord(translation.original, translation.sourceLang)
+                            }
+
+                            translatedText.post {
+                                updateListBottomPadding(root.height)
+                            }
+                        }
+                        null -> {
+                            deleteDialogVisible.value = false
+                            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                        }
+                    }
+                }
+            }
+            val dialogVisible = result.dialogState != null || result.sentence != null || result.isLoading || result.isWordLoading
+            root.post {
+                if (dialogVisible) bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+            binding.composeBar.isGone = dialogVisible
+        }
     }
 
     private fun setWordSheetViews(isVisible: Boolean){
@@ -798,8 +810,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     updateListBottomPadding(root.height)
                 }
             }
-            val padding = if (isVisible) 0 else resources.getDimensionPixelSize(R.dimen.default_dialog_padding)
-            constraintLayout.updatePadding(bottom = padding)
         }
     }
 
@@ -807,16 +817,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         adapter.setScanNewWords()
         val paragraphWords = findWordsInItems(listOf(dbWord), range)
         adapter.newWords.add(dbWord)
-        adapter.addSavedWords(paragraphWords, range.first)
+        adapter.addSavedWords(dbWord.id, paragraphWords, range.first)
     }
 
     private fun findWordsInItems(dbWords: List<Words>, range: IntRange): List<List<WordState>> {
-        val paragraphWords = arrayListOf<List<WordState>>()
-        range.forEach { pos ->
-            val words = viewModel.findWordsInParagraph(dbWords,  adapter.getText(pos), pos)
-            paragraphWords.add(words)
+        return range.map { pos ->
+            viewModel.findWordsInParagraph(dbWords,  adapter.getText(pos), pos)
         }
-        return paragraphWords
     }
 
     private fun updateListBottomPadding(pixels: Int) {
@@ -869,40 +876,31 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
         AddNoteDialog(
             addNoteVisible,
-            noteInfo?.noteText ?: "",
-            noteInfo?.color ?: 0,
-            noteInfo?.noteSaved == true,
-            onDismiss = { addNoteVisible = false },
-            onDelete = {
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.deleteNote(noteItem.id)
-                noteInfo = null
-                addNoteVisible = false
-            },
+            onDismiss = viewModel::stopEditing,
+            onDelete = viewModel::deleteCurrentNote,
             onSaveClicked = { newNote ->
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.saveNote(noteItem.text, newNote.text, noteItem.span, noteItem.id, newNote.colorHex)
-                addNoteVisible = false
+                viewModel.saveCurrentNote(newNote.text, newNote.colorHex)
             },
         )
     }
 
     @Composable
     fun Dialogs() {
-        val state = wordState.value ?: return
-        val languages = LanguagesList(languagesFull, languagesISO)
 
         EditDeleteWordDialogs(
-            state,
-            editWordDialogVisible,
-            deleteWordDialogShown,
-            languages,
+            editWordDialogVisible.value,
             onSave = {
                 val resultWord = it.toWord()
+                val state = editWordDialogVisible.value?.word ?: return@EditDeleteWordDialogs
                 resultWord.id = state.dbId
-                viewModel.upsert(resultWord)
+                if (state.span != null) viewModel.upsert(resultWord, state.span)
             },
-            onDelete = { viewModel.deleteWord(state.toWord()) },
+            onDismiss =  viewModel::stopEditing,
+            deleteDialogChange = viewModel::setDeleteSate,
+            onDelete = {
+                val state = editWordDialogVisible.value?.word ?: return@EditDeleteWordDialogs
+                viewModel.deleteWord(state.toWord())
+            },
         )
 
         if (pickNewTypeDialogVisible.value) {
@@ -911,12 +909,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 title = resources.getString(R.string.create_db_item_dialog_title),
                 onItemSelected = { index, _ ->
                     when (index) {
-                        0 -> addNoteDialogVisible.value = true
-                        1 -> editWordDialogVisible.value = true
+                        0 -> viewModel.newNote()
+                        1 -> viewModel.newSavedWord()
                     }
-                    pickNewTypeDialogVisible.value = false
                 },
-                onDismiss = { pickNewTypeDialogVisible.value = false }
+                onDismiss = viewModel::stopEditing
             )
         }
 
@@ -926,22 +923,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 title = resources.getString(R.string.pick_info_dialog_title),
                 onItemSelected = { index, _ ->
                     when (index) {
-                        0 -> noteInfo?.let { showSheetWithNote(it) }
-                        1 -> {
-                            val wordUI = wordState.value?.word
-                            if (wordUI != null) viewModel.setSavedWord(wordUI.word, wordUI.lang)
-                        }
+                        0 -> viewModel.pickItem(isNote = true, adapter.getSelectedSentenceSpan())
+                        1 -> viewModel.pickItem(isNote = false, adapter.getSelectedSentenceSpan())
                     }
-                    pickInfoDialogVisible.value = false
+                    viewModel.stopPickingInfo()
                 },
-                onDismiss = { pickInfoDialogVisible.value = false }
+                onDismiss = viewModel::stopPickingInfo
             )
         }
-    }
-
-    sealed interface Sheet {
-        data class Note(val info: EditNote): Sheet
-        data class Word(val state: WordState): Sheet
-        data object Multiple: Sheet
     }
 }

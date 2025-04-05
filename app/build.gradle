@@ -16,8 +16,8 @@ android {
         applicationId "com.guillermonegrete.tts"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 15
-        versionName "1.21.0"
+        versionCode 16
+        versionName "1.22.0"
         testInstrumentationRunner "com.guillermonegrete.tts.CustomTestRunner"
         vectorDrawables.useSupportLibrary = true
         javaCompileOptions {
@@ -80,12 +80,13 @@ dependencies {
     // Required -- JUnit 4 framework
     testImplementation 'junit:junit:4.12'
     testImplementation "androidx.arch.core:core-testing:2.1.0"
+    testImplementation "app.cash.turbine:turbine:1.2.0"
     //  Mockito framework
-    testImplementation 'org.mockito:mockito-core:5.3.1'
-    testImplementation 'org.mockito.kotlin:mockito-kotlin:4.1.0'
-    testImplementation "io.mockk:mockk:1.12.0"
+    testImplementation 'org.mockito:mockito-core:5.15.2'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.4.0'
+    testImplementation "io.mockk:mockk:1.13.16"
 
-    implementation 'androidx.preference:preference:1.1.0'
+    implementation 'androidx.preference:preference:1.2.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
@@ -94,13 +95,14 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Compose
-    def composeBom = platform('androidx.compose:compose-bom:2024.09.03')
+    def composeBom = platform('androidx.compose:compose-bom:2025.02.00')
     implementation composeBom
     androidTestImplementation composeBom
 
     implementation "androidx.compose.material3:material3"
+    implementation "androidx.compose.material3.adaptive:adaptive"
     implementation 'androidx.compose.ui:ui'
-    implementation 'androidx.activity:activity-compose:1.9.2'
+    implementation 'androidx.activity:activity-compose:1.10.1'
 
     // Android Studio Preview support
     implementation 'androidx.compose.ui:ui-tooling-preview'
@@ -111,9 +113,10 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
     // fragments
-    def fragment_version = "1.8.5"
+    def fragment_version = "1.8.6"
     implementation "androidx.fragment:fragment:$fragment_version"
     implementation "androidx.fragment:fragment-ktx:$fragment_version"
+    implementation "androidx.fragment:fragment-compose:$fragment_version"
 
     // KTX core
     implementation "androidx.core:core-ktx:1.13.1"

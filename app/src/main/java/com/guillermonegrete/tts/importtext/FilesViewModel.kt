@@ -18,20 +18,12 @@ class FilesViewModel @Inject constructor(
     fileManager: EpubFileManager
 ): ViewModel() {
 
-    private val _files = MutableStateFlow<LoadResult<List<BookFile>>>(LoadResult.Success(emptyList()))
-    val files: StateFlow<LoadResult<List<BookFile>>> = _files
+    val files = fileRepository.getRecentFiles()
+        .map { LoadResult.Success(it) as LoadResult<List<BookFile>> }
+        .catch { emit(LoadResult.Error(it)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LoadResult.Loading)
 
     val filesPath = fileManager.filesDir
-
-    fun loadFiles() {
-        _files.value = LoadResult.Loading
-
-        viewModelScope.launch {
-            fileRepository.getRecentFiles().collect {
-                _files.value = LoadResult.Success(it)
-            }
-        }
-    }
 
     fun deleteFile(file: BookFile) {
         viewModelScope.launch {

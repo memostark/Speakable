@@ -47,7 +47,7 @@ import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
 import kotlinx.coroutines.Dispatchers;
 
-public class ProcessTextPresenterTest {
+public class ProcessTextViewModelTest {
 
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
@@ -59,7 +59,6 @@ public class ProcessTextPresenterTest {
     @Mock private SharedPreferences sharedPreferences;
     @Mock private CustomTTS customTTS;
     @Mock private GetLangAndTranslation getTranslationInteractor;
-    private GetExternalLink getExternalLink;
 
     @Captor
     private ArgumentCaptor<WordRepositorySource.GetWordRepositoryCallback> getWordCallbackCaptor;
@@ -79,7 +78,7 @@ public class ProcessTextPresenterTest {
     @Captor
     private ArgumentCaptor<CustomTTS.Listener> ttsListenerCaptor;
 
-    private ProcessTextPresenter presenter;
+    private ProcessTextViewModel presenter;
 
     private final List<WikiItem> defaultDictionaryItems = Arrays.asList(
             new WiktionaryItem("First", "First header"),
@@ -99,11 +98,11 @@ public class ProcessTextPresenterTest {
         presenter = givenPresenter();
     }
 
-    private ProcessTextPresenter givenPresenter(){
+    private ProcessTextViewModel givenPresenter(){
         var mainThread = new TestMainThread();
         var executor = new TestThreadExecutor();
-        getExternalLink = new GetExternalLink(executor, mainThread, linksRepository, Dispatchers.getUnconfined());
-        var presenter = new ProcessTextPresenter(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink);
+        var getExternalLink = new GetExternalLink(executor, mainThread, linksRepository, Dispatchers.getUnconfined());
+        var presenter = new ProcessTextViewModel(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink);
         presenter.setView(view);
         return presenter;
     }
@@ -376,6 +375,7 @@ public class ProcessTextPresenterTest {
         presenter.pause();
         presenter.stop();
         presenter.destroy();
+        presenter.onCleared();
 
         ttsListener.onSpeakDone();
 

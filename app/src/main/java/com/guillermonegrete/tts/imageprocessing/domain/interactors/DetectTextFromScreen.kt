@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.imageprocessing.domain.interactors
 
+import android.graphics.Bitmap
 import android.graphics.Rect
 import com.guillermonegrete.tts.AbstractInteractor
 import com.guillermonegrete.tts.MainThread
@@ -30,9 +31,15 @@ class DetectTextFromScreen @Inject constructor (
     }
 
     override fun run() {
-        screenCaptor?.getImage(areaRect) { image ->
-            imageProcessor.detectText(image, imageProcessorCallback)
-        }
+        screenCaptor?.getImage(areaRect, object: ScreenImageCaptor.Callback {
+            override fun onImageCaptured(image: Bitmap) {
+                imageProcessor.detectText(image, imageProcessorCallback)
+            }
+
+            override fun onError(exception: Exception) {
+                callback?.onError(exception)
+            }
+        })
     }
 
     private val imageProcessorCallback = object: ImageProcessingSource.Callback{

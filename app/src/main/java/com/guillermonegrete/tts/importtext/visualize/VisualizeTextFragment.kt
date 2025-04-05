@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.importtext.visualize
 
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -25,12 +26,14 @@ import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.IntentCompat
 import androidx.core.content.edit
+import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -53,7 +56,10 @@ import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.toEditNote
+import com.guillermonegrete.tts.common.models.toNote
 import com.guillermonegrete.tts.common.models.toUI
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
@@ -63,10 +69,14 @@ import com.guillermonegrete.tts.importtext.visualize.model.BookChapter
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.textprocessing.TextInfoDialog
 import com.guillermonegrete.tts.textprocessing.WordState
+import com.guillermonegrete.tts.textprocessing.toWord
 import com.guillermonegrete.tts.ui.BrightnessTheme
 import com.guillermonegrete.tts.ui.theme.VisualizerTheme
 import com.guillermonegrete.tts.utils.getScreenSizes
 import com.guillermonegrete.tts.webreader.AddNoteDialog
+import com.guillermonegrete.tts.webreader.AddNoteDialogUI
+import com.guillermonegrete.tts.webreader.DialogType
+import com.guillermonegrete.tts.webreader.db.spanBook
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -76,11 +86,11 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 @AndroidEntryPoint
-class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
+class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogInterface.OnCancelListener {
 
     private val viewModel: VisualizeTextViewModel by viewModels()
 
-    private  var _binding: FragmentVisualizeTextBinding? = null
+    private var _binding: FragmentVisualizeTextBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var viewPager: ViewPager2
@@ -102,12 +112,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     @StyleRes
     private var themeRes = R.style.AppMaterialTheme_Black
 
-    private val addNoteDialogVisible = mutableStateOf(false)
+    private val addNoteDialogVisible = mutableStateOf<AddNoteDialogUI?>(null)
     private val noteSheetVisible = mutableStateOf(false)
     private var linksDialogShown = mutableStateOf(false)
     private val pickInfoDialogVisible = mutableStateOf(false)
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
-    private var selectedLink = 0
+    private var selectedLinkPos = mutableIntStateOf(0)
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
     private var clickedWord = ""
@@ -132,12 +142,17 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
     private var sheetBarHeight = 0
 
+    private var dialog: TextInfoDialog? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setPreferenceTheme()
         callback = requireActivity().onBackPressedDispatcher.addCallback(this, false) {
-            noteSheetVisible.value = false
+            viewModel.hideDialog()
         }
+        val infoDialog = childFragmentManager.findFragmentByTag(TextInfoDialog.TAG)
+        if (infoDialog is TextInfoDialog) dialog = infoDialog
+        if (viewModel.fullScreen) hideSystemUi()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -157,13 +172,34 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
-        pagesAdapter = VisualizerAdapter(listOf(VisualizerAdapter.PageItem.EMPTY),
-            {}, {}, measuringPage = true) // Empty callbacks, not necessary at the moment
+        pagesAdapter = VisualizerAdapter(
+            listOf(VisualizerAdapter.PageItem.EMPTY),
+            onCreateNote = {
+                viewModel.startEditing(DialogType.Note(it.toNote()))
+            },
+            onTextClick = { result ->
+                when(result) {
+                    is VisualizerAdapter.TextClick.Note -> viewModel.setNoteData(result.note.toNote())
+                    is VisualizerAdapter.TextClick.SavedWord -> {
+                        val word = result.state.toWord()
+                        val span = result.state.span
+                        if (span != null) viewModel.setSavedWord(word, span)
+                        showTextDialog(word.word)
+                    }
+                    is VisualizerAdapter.TextClick.Overlap -> {
+                        clickedWord = result.word
+                        viewModel.setPickInfoType(Words(result.word, "", ""), Span(0, 0), result.note.toNote())
+                    }
+                    is VisualizerAdapter.TextClick.Word -> {
+                        viewModel.translateWord(result.word, result.span)
+                        showTextDialog(result.word)
+                    }
+                }
+            },
+            measuringPage = true)
         viewPager.adapter = pagesAdapter
 
         viewPager.post{
-            addPagerCallback()
-
             setBottomSheetPeekHeight()
             setBottomSheetCallbacks()
         }
@@ -192,21 +228,32 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
      *  Changes the dimensions of the card to have the same aspect ratio as the screen
      *  and smaller size given by the defined ratio.
      */
-    private fun setUpCardViewDimensions() {
+    private fun setUpCardViewDimensions(insets: WindowInsetsCompat) {
         val screenSizes = requireContext().getScreenSizes()
         // Remove cutout height because it's not used
-        val screenHeight = screenSizes.height - screenSizes.statusHeight
+        val screenHeight = screenSizes.height
 
         val textCardView = binding.textReaderCardView
         val cardHeight = textCardView.height
         val cardCenterY = textCardView.y + cardHeight / 2
-        cardYOffset = (screenHeight / 2 + screenSizes.statusHeight) - cardCenterY
+        cardYOffset = (screenHeight / 2) - cardCenterY
         ratio = cardHeight / screenHeight.toFloat()
         cardWidth = (screenSizes.width * ratio).toInt()
+
+        val cutoutInsets = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+        setPagePadding(cutoutInsets)
 
         val cardParams = textCardView.layoutParams
         cardParams.width = cardWidth
         textCardView.layoutParams = cardParams
+        if (viewModel.fullScreen) {
+            val invRatio = 1f / ratio
+            textCardView.post {
+                textCardView.scaleX = invRatio
+                textCardView.scaleY = invRatio
+                textCardView.translationY = cardYOffset
+            }
+        }
     }
 
     override fun onPause() {
@@ -217,6 +264,15 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.pageSplitter = null
+    }
+
+    override fun onCancel(dialog: DialogInterface?) {
+        viewModel.hideDialog()
     }
 
     private fun setPageTransformListener() {
@@ -285,11 +341,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
      * This is for older devices because newer devices re-hide the UI automatically.
      */
     fun onWindowFocusChanged(hasFocus: Boolean) {
-        if(hasFocus && viewModel.fullScreen) {
-
-            // Only hide the UI when page splitter has been created to avoid incorrect size measuring
-            if(splitterCreated) hideSystemUi()
-        }
+        if(hasFocus && viewModel.fullScreen) hideSystemUi()
     }
 
     private fun setUIChangesListener() {
@@ -298,9 +350,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         val view = window.decorView
         val initialMargin = resources.getDimensionPixelSize(R.dimen.visualize_default_margin)
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
-            with(binding) {
+            val systemBarInsets = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.statusBars())
 
-                val systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            with(binding) {
 
                 if (readerCurrentChapter.isVisible) {
                     readerCurrentChapter.updateLayoutParams<ViewGroup.MarginLayoutParams> {
@@ -317,13 +369,14 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                     bottomMargin = initialMargin + systemBarInsets.bottom
                 }
 
-                textReaderCardView.post {
-                    setUpCardViewDimensions()
-                    setPageTransformListener()
+                if (!splitterCreated) {
+                    textReaderCardView.post {
+                        setUpCardViewDimensions(insets)
+                        setPageTransformListener()
+                    }
                 }
-
-                insets
             }
+            insets
         }
     }
 
@@ -400,35 +453,77 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 bottomText.text = getString(R.string.click_to_translate_msg)
             })
 
-            updatedNote.observe(viewLifecycleOwner) {result ->
-                when(result) {
-                    is ModifiedNote.Update -> {
-                        val note = result.note
-                        val position = note.getPosInChapter()
-                        val span = Span(position, position + note.length)
-                        val noteItem = NoteItem(note.text, span, Color.parseColor(note.color), note.id)
-                        pagesAdapter.updateNote(viewPager.currentItem, noteItem)
-                        noteInfo.value = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
-                    }
-
-                    is ModifiedNote.Delete -> {
-                        pagesAdapter.deleteNote(result.noteId)
-                        noteSheetVisible.value = false
-                    }
-                }
-            }
-
-            linksForWord.observe(viewLifecycleOwner) { links ->
-                wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
-                // If out of index, default to the first item
-                if(selectedLink >= links.size) selectedLink = 0
-                linksDialogShown.value = true
-            }
-
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    pageSavedWords.collect { words ->
-                        highlightSavedWords(words)
+                    launch {
+                        pageSavedWords.collect { words ->
+                            highlightSavedWords(words)
+                        }
+                    }
+
+                    launch {
+                        updatedNote.collect { result ->
+                            when(result) {
+                                is ModifiedNote.Update -> {
+                                    val note = result.note
+                                    val span = note.spanBook
+                                    val noteItem = NoteItem(note.text, span, Color.parseColor(note.color), note.id)
+                                    pagesAdapter.updateNote(noteItem)
+                                    noteInfo.value = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
+                                }
+
+                                is ModifiedNote.Delete -> {
+                                    pagesAdapter.deleteNote(result.noteId)
+                                    noteSheetVisible.value = false
+                                }
+                            }
+                        }
+                    }
+
+                    launch {
+                        dialogState.collect(::handleUiDialogState)
+                    }
+
+                    launch {
+                        editDialogs.collect { result ->
+                            when(val type = result.isEditingType) {
+                                is DialogType.Note -> {
+                                    val item = type.item.toEditNote()
+                                    addNoteDialogVisible.value = AddNoteDialogUI(item.noteText, item.color, item.noteSaved)
+                                }
+                                is DialogType.SavedWord -> {}
+                                is DialogType.Translation -> {}
+                                null -> addNoteDialogVisible.value = null
+                            }
+
+                            result.isPickingType?.let {
+                                clickedWord = it.word.word.word
+                            }
+                            pickInfoDialogVisible.value = result.isPickingType != null
+                        }
+                    }
+
+                    launch {
+                        linksForWord.collect { state ->
+                            when(state) {
+                                DialogState.Empty -> linksDialogShown.value = false
+                                is DialogState.Error -> {
+                                    Timber.e(state.exception, "Error retrieving links for word")
+                                    linksDialogShown.value = false
+                                }
+                                DialogState.Loading -> {}
+                                is DialogState.Success -> {
+                                    val links = state.data
+                                    wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
+
+                                    linksDialogShown.value = true
+                                }
+                            }
+                        }
+                    }
+
+                    launch {
+                        selectedLink.collect { selectedLinkPos.intValue = it }
                     }
                 }
             }
@@ -478,32 +573,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     }
 
     private fun setUpPagerAndIndexLabel(chapter: BookChapter){
-        pagesAdapter = VisualizerAdapter(
-            createPageItems(chapter),
-            onCreateNote = {
-                noteInfo.value = it
-                addNoteDialogVisible.value = true
-            },
-            onTextClick = { result ->
-                when(result) {
-                    is VisualizerAdapter.TextClick.Note -> {
-                        noteInfo.value = result.note
-                        noteSheetVisible.value = true
-                    }
-                    is VisualizerAdapter.TextClick.SavedWord -> showTextDialog(result.word)
-                    is VisualizerAdapter.TextClick.Overlap -> {
-                        noteInfo.value = result.note
-                        clickedWord = result.word
-                        pickInfoDialogVisible.value = true
-                    }
-                    is VisualizerAdapter.TextClick.Word -> showTextDialog(result.word)
-                }
-            },
-            getPageCharPos = viewModel::getCharPos
-        )
+        pagesAdapter.measuringPage = false
         pagesAdapter.hasBottomSheet = viewModel.hasBottomSheet
         pagesAdapter.isPageSplit = viewModel.isSheetExpanded
+        pagesAdapter.updateItems(createPageItems(chapter))
         viewPager.adapter = pagesAdapter
+        addPagerCallback()
 
         val pages = chapter.pages
         val position = viewModel.getPage()
@@ -524,12 +599,13 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         val paragraphItems = mutableListOf<VisualizerAdapter.PageItem>()
         val dbNotes = chapter.notes.toMutableList()
 
-        chapter.pages.forEach { page ->
+        val currentPage = viewModel.getPage()
+        chapter.pages.forEachIndexed { i, page ->
             val nextIndex = index + page.length
+            val pageSpan = Span(index, nextIndex - 1)
             // Search the notes applied to this paragraph
             val paragraphNotes = dbNotes.filter { dbNote ->
-                // The actual position is in the first 24 bits of a 32 bit int
-                dbNote.getPosInChapter() in index until nextIndex
+                dbNote.spanBook.intersects(pageSpan)
             }.map { it.copy(position = it.getPosInChapter()) }
 
             val noteItems = paragraphNotes.map { note ->
@@ -540,6 +616,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             paragraphItems.add(VisualizerAdapter.PageItem(page, noteItems, index))
             index = nextIndex
             dbNotes.removeAll(paragraphNotes)
+
+            if (i == currentPage) viewModel.verifySpanInPage(pageSpan)
         }
 
         return paragraphItems
@@ -619,8 +697,6 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             override fun onPageSelected(position: Int) {
                 viewModel.currentPage = position
 
-                if (noteSheetVisible.value) noteSheetVisible.value = false
-
                 val pageNumber = position + 1
                 binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
                 binding.pagesSeekBar.progress = position
@@ -630,7 +706,10 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 if (previousPage != -1) {
                     // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
-                    viewPager.post { pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE) }
+                    viewPager.post {
+                        viewModel.hideDialog()
+                        pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+                    }
                 }
 
                 // Load saved words when reaching new áge
@@ -679,6 +758,28 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         }
     }
 
+    private fun setPagePadding(insets: Insets) {
+        var shouldUpdate = false
+
+        val defaultPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_padding)
+        // Get the biggest horizontal inset, calculate how much padding the cards needs to not overlap it.
+        // If it's bigger than the default padding then update it.
+        val requiredPadding = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
+        if (requiredPadding > defaultPadding && requiredPadding != pagesAdapter.horizontalPadding) {
+            pagesAdapter.horizontalPadding = requiredPadding
+            shouldUpdate = true
+        }
+
+        val defaultVertPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_top_padding)
+        val requiredVertPadding = (ratio * insets.top.coerceAtLeast(insets.bottom)).toInt()
+        if (requiredVertPadding > defaultVertPadding && requiredVertPadding != pagesAdapter.verticalPadding) {
+            pagesAdapter.verticalPadding = requiredVertPadding
+            shouldUpdate = true
+        }
+
+        if (shouldUpdate) binding.textReaderViewpager.adapter = pagesAdapter // Adapter remakes the items
+    }
+
     private fun createFileReader(): DefaultZipFileReader? {
         val uri = IntentCompat.getParcelableExtra(requireActivity().intent, EPUB_URI, Uri::class.java)
         if (uri != null) {
@@ -715,13 +816,36 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
     }
 
     private fun showTextDialog(text: CharSequence){
-        val dialog = TextInfoDialog.newInstance(
+        dialog = TextInfoDialog.newInstance(
             text.toString(),
             TextInfoDialog.NO_SERVICE,
             null,
             brightnessTheme.value
         )
-        dialog.show(childFragmentManager, "Text_info")
+        dialog?.show(childFragmentManager, TextInfoDialog.TAG)
+    }
+
+    private fun handleUiDialogState(result: VisualizeTextViewModel.UiDialogState) {
+        if (!result.isLoading) {
+            val state = result.dialogState
+            when(state) {
+                is DialogType.Note -> {
+                    noteInfo.value = state.item.toEditNote()
+                    noteSheetVisible.value = true
+                }
+                is DialogType.SavedWord -> noteSheetVisible.value = false
+                is DialogType.Translation -> {
+                    noteSheetVisible.value = false
+                    pagesAdapter.selectText(state.span)
+                }
+                null -> {
+                    noteSheetVisible.value = false
+                    dialog?.dismiss()
+                    dialog = null
+                    pagesAdapter.unselectText()
+                }
+            }
+        }
     }
 
     inner class PinchListener(private val textCardView: View): ScaleGestureDetector.OnScaleGestureListener{
@@ -744,6 +868,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
             viewPager.isUserInputEnabled = false
             pinchDetected = false
             invRatio = 1f / ratio
+            scale = textCardView.scaleX
             constantTerm = (cardYOffset / (invRatio - minScale))
             return true
         }
@@ -792,7 +917,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
 
                 val fullScreen = viewModel.fullScreen
 
-                if(detector.scaleFactor > PINCH_UPPER_LIMIT && !fullScreen){
+                if((detector.scaleFactor > PINCH_UPPER_LIMIT || newScale >= invRatio) && !fullScreen){
                     toggleImmersiveMode()
                     pinchDetected = true
                     scale = invRatio
@@ -833,7 +958,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         val controllerCompat = WindowCompat.getInsetsController(window, window.decorView)
         controllerCompat.hide(WindowInsetsCompat.Type.systemBars())
         controllerCompat.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        activity?.actionBar?.show()
+        activity?.actionBar?.hide()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -967,30 +1092,19 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
         ExternalLinksDialog(
             isShown = linksDialogShown.value,
             links = wordLinks.value,
-            selection = selectedLink,
-            onItemClick = { selectedLink = it },
-            onDismiss = { linksDialogShown.value = false },
+            selection = selectedLinkPos.intValue,
+            onItemClick = viewModel::setWordLink,
+            onDismiss = viewModel::hideWordLinks,
         )
 
         var addNoteVisible by remember { addNoteDialogVisible }
-        var noteInfo by remember { noteInfo }
 
         AddNoteDialog(
             addNoteVisible,
-            noteInfo?.noteText ?: "",
-            noteInfo?.color ?: 0,
-            noteInfo?.noteSaved == true,
-            onDismiss = { addNoteVisible = false },
-            onDelete = {
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.deleteNote(noteItem.id)
-                noteInfo = null
-                addNoteVisible = false
-            },
+            onDismiss =  viewModel::stopEditing,
+            onDelete = viewModel::deleteCurrentNote,
             onSaveClicked = {
-                val noteItem = noteInfo ?: return@AddNoteDialog
-                viewModel.saveNote(it, noteItem.text, noteItem.span.start, noteItem.span.end - noteItem.span.start, noteItem.id)
-                addNoteVisible = false
+                viewModel.saveCurrentNote(it.text, it.colorHex)
             },
         )
         
@@ -1000,12 +1114,12 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 title = resources.getString(R.string.pick_info_dialog_title),
                 onItemSelected = { index, _ ->
                     when (index) {
-                        0 -> noteSheetVisible.value = true
+                        0 -> viewModel.pickItem(true)
                         1 -> showTextDialog(clickedWord)
                     }
-                    pickInfoDialogVisible.value = false
+                    viewModel.stopPickingInfo()
                 },
-                onDismiss = { pickInfoDialogVisible.value = false }
+                onDismiss = viewModel::stopPickingInfo
             )
         }
     }
@@ -1024,12 +1138,14 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text) {
                 val isWord = noteSpanText != null && noteSpanText.split(" ").size == 1
                 return@NoteSheet viewModel.languageFrom != "auto" && isWord
             },
-            onEditClicked = { addNoteDialogVisible.value = true },
+            onEditClicked = viewModel::startEditing,
             onInfoClicked = {
                 val word = noteInfo?.text ?: return@NoteSheet
                 viewModel.getExternalLinks(word)
             },
-            onDismiss = { noteSheetVisible = false }
+            onDismiss = {
+                // Not used, the dismiss is made by the back pressed dispatcher
+            }
         )
     }
 

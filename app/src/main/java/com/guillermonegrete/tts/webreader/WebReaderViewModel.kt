@@ -2,7 +2,9 @@ package com.guillermonegrete.tts.webreader
 
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.Span
+import com.guillermonegrete.tts.common.models.hasInside
 import com.guillermonegrete.tts.common.models.toUI
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
@@ -18,21 +20,29 @@ import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.utils.deleteAllFolder
+import com.guillermonegrete.tts.utils.isWord
 import com.guillermonegrete.tts.utils.makeDir
 import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.utils.writeToFile
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
+import com.guillermonegrete.tts.webreader.db.span
 import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import com.guillermonegrete.tts.webreader.model.SplitParagraph
 import com.guillermonegrete.tts.webreader.model.WordAndLinks
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import org.jsoup.Jsoup
 import timber.log.Timber
 import java.io.File
@@ -40,10 +50,10 @@ import java.io.IOException
 import java.lang.Exception
 import java.text.BreakIterator
 import java.util.*
-import javax.inject.Inject
 
-@HiltViewModel
-class WebReaderViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = WebReaderViewModel.Factory::class)
+class WebReaderViewModel @AssistedInject constructor(
+    @Assisted private val url: String,
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
     private val wordRepository: WordRepositorySource,
@@ -65,23 +75,29 @@ class WebReaderViewModel @Inject constructor(
     val translatedParagraphs: List<Translation?>
         get() = _translatedParagraphs
 
-    private val _translatedParagraph = MutableLiveData<LoadResult<Int>>()
-    val translatedParagraph: LiveData<LoadResult<Int>> = _translatedParagraph
+    private val _paragraphState = MutableStateFlow<ParagraphUiState>(ParagraphUiState())
+    val paragraphState: StateFlow<ParagraphUiState> = _paragraphState
 
-    private val _textInfo = MutableLiveData<LoadResult<WordResult>>()
-    val textInfo: LiveData<LoadResult<WordResult>> = _textInfo
+    private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
+    val dialogState: StateFlow<UiDialogState> = _dialogState
 
-    private val _wordInfo = MutableLiveData<LoadResult<WordResult>>()
-    val wordInfo: LiveData<LoadResult<WordResult>> = _wordInfo
+    private val _editDialogs = MutableStateFlow<UiEditDialogsState>(UiEditDialogsState())
+    val editDialogs: StateFlow<UiEditDialogsState> = _editDialogs
 
-    private val _linksForWord = MutableLiveData<WordAndLinks>()
-    val linksForWord: LiveData<WordAndLinks> = _linksForWord
+    private val _linksForWord = MutableStateFlow<DialogState<WordAndLinks>>(DialogState.Empty)
+    val linksForWord: StateFlow<DialogState<WordAndLinks>> = _linksForWord
 
-    private val _updatedNote = MutableLiveData<ModifiedNote>()
-    val updatedNote: LiveData<ModifiedNote> = _updatedNote
+    private val _selectedLink = MutableStateFlow<Int>(0)
+    val selectedLink: StateFlow<Int> = _selectedLink
 
-    private val _updatedWord = MutableLiveData<ResultType>()
-    val updatedWord: LiveData<ResultType> = _updatedWord
+    private val _notes = MutableSharedFlow<List<Note>>()
+    val notes: SharedFlow<List<Note>> = _notes
+
+    private val _updatedNote = MutableSharedFlow<ModifiedNote>()
+    val updatedNote: SharedFlow<ModifiedNote> = _updatedNote
+
+    private val _updatedWord = MutableSharedFlow<ResultType>()
+    val updatedWord: SharedFlow<ResultType> = _updatedWord
 
     private val _pageSavedWords = MutableSharedFlow<SavedWordsSection>()
     val pageSavedWords: SharedFlow<SavedWordsSection> = _pageSavedWords
@@ -104,8 +120,15 @@ class WebReaderViewModel @Inject constructor(
             runBlocking { settings.setShowSavedWords(value) }
         }
 
+    var pageVersion: PageVersion = PageVersion.LOCAL
+        private set
+
     // Path of the app's external storage folder
     var folderPath = ""
+
+    init {
+        loadDoc(url)
+    }
 
     /**
      * Loads the [url] as a string and loads (or creates if it doesn't exist) a database entry for the [url].
@@ -119,29 +142,27 @@ class WebReaderViewModel @Inject constructor(
             wrapEspressoIdlingResource {
 
                 try {
-                    val linkAndNotes = webLinkDAO.getLinkWithNotes(url)
+                    var webLink = webLinkDAO.getLink(url)
                     val pageInfo: PageInfo
-                    val webLink: WebLink
 
-                    if (linkAndNotes != null) {
-                        webLink = linkAndNotes.webLink
+                    if (webLink != null) {
                         val uuid = webLink.uuid
-                        val pageContent = if (uuid != null) {
-                            readContentFile(uuid)
+
+                        val isLocalPage = uuid != null && pageVersion == PageVersion.LOCAL
+                        pageInfo = if (isLocalPage) {
+                            PageInfo(readContentFile(uuid), true)
                         } else {
-                            val page = getPage(url)
-                            page.content
+                            PageInfo(getPage(url).content, false)
                         }
-                        val isPageSaved = uuid != null
-                        pageInfo = PageInfo(pageContent, linkAndNotes.notes, isPageSaved)
                     } else {
                         val page = getPage(url)
                         webLink = link ?: WebLink(url, page.title)
-                        pageInfo = PageInfo(page.content, emptyList(), false)
+                        pageInfo = PageInfo(page.content, false)
                     }
 
-                    _page.value = LoadResult.Success(pageInfo)
                     cacheWebLink = webLink
+                    _page.value = LoadResult.Success(pageInfo)
+                    _dialogState.update { it.copy(isPageSaved = pageInfo.isLocalPage) }
                     // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
                     // Bug report: https://issuetracker.google.com/issues/198313895
                     val safeLink: WebLink = webLink
@@ -154,17 +175,17 @@ class WebReaderViewModel @Inject constructor(
     }
 
     fun loadLocalPage() {
-
         val webLink = cacheWebLink ?: return
 
         webLink.uuid?.let { uuid ->
+            _translatedParagraphs = mutableListOf()
             _page.value = LoadResult.Loading
 
             viewModelScope.launch {
                 try {
-                    val notes = noteDAO.getNotes(webLink.id)
                     val content = readContentFile(uuid)
-                    _page.value = LoadResult.Success(PageInfo(content, notes, true))
+                    _page.value = LoadResult.Success(PageInfo(content, true))
+                    _dialogState.update { it.copy(isPageSaved = true) }
                 } catch (ex: IOException){
                     _page.value = LoadResult.Error(ex)
                 }
@@ -174,12 +195,14 @@ class WebReaderViewModel @Inject constructor(
 
     fun loadPageFromWeb(){
         val webLink = cacheWebLink ?: return
+        _translatedParagraphs = mutableListOf()
 
         viewModelScope.launch {
             _page.value = LoadResult.Loading
             try {
                 val page = getPage(webLink.url)
-                _page.value = LoadResult.Success(PageInfo(page.content, emptyList(), false))
+                _page.value = LoadResult.Success(PageInfo(page.content, false))
+                _dialogState.update { it.copy(isPageSaved = false) }
             } catch (ex: IOException){
                 _page.value = LoadResult.Error(ex)
             }
@@ -224,19 +247,26 @@ class WebReaderViewModel @Inject constructor(
         if(splitParagraphs == null) {
 
             splitParagraphs = splitBySentence(paragraphs)
-            _translatedParagraphs = arrayOfNulls<Translation>(splitParagraphs.size).toMutableList()
+            if (_translatedParagraphs.isEmpty())
+                _translatedParagraphs = arrayOfNulls<Translation>(splitParagraphs.size).toMutableList()
         }
         return splitParagraphs
     }
 
-    fun translateParagraph(pos: Int) {
-        val paragraphs = cachedParagraphs ?: return
+    fun translateParagraph() : Boolean {
+        val currentParagraph = _paragraphState.value.paragraph
+        val pos = currentParagraph?.index ?: return false
+        val paragraphs = cachedParagraphs ?: return false
         val paragraph = paragraphs[pos].translation
 
         val language = cacheWebLink?.language
-        if(paragraph.translation.isNotBlank() && paragraph.sourceLang == language) return
+        if(paragraph.translation.isNotBlank() && paragraph.sourceLang == language) {
+            val state = currentParagraph.copy(translation = _translatedParagraphs[pos])
+            _paragraphState.update { it.copy(paragraph = state) }
+            return true
+        }
 
-        _translatedParagraph.value = LoadResult.Loading
+        _paragraphState.update { it.copy(paragraph = currentParagraph.copy(isLoading = true)) }
 
         viewModelScope.launch {
             wrapEspressoIdlingResource {
@@ -250,72 +280,167 @@ class WebReaderViewModel @Inject constructor(
                         paragraph.translation = translation.translatedText
                         paragraph.sourceLang = translation.src
                         _translatedParagraphs[pos] = translation
-                        _translatedParagraph.value = LoadResult.Success(pos)
+                        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false, translation = translation)) }
                     }
-                    is Result.Error -> _translatedParagraph.value = LoadResult.Error(result.exception)
+                    is Result.Error -> _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false)) }
                 }
             }
         }
+
+        return true
     }
 
-    fun translateText(text: String) {
+    fun translateWord(word: String, span: Span) {
         if (showWords) {
             // This text is not a saved word, so skip directly to translation
-            translateText(text, _textInfo)
+            fetchTranslation(word, span, false, false) // it's a tapped word, no overlap with notes or saved words
         } else {
-            // The text might be a saved word, query the database first to check
-            setSavedWord(text, null)
+            // The word might be saved, query the database first to check
+            searchSavedWord(word, null, span)
         }
     }
 
-    fun translateWordInSentence(text: String) {
-        translateText(text, _wordInfo)
+    fun translateText(text: String, span: Span, overlapsNote: Boolean, overlapsWord: Boolean) {
+        if (showWords || !text.isWord()) {
+            // This text is not a saved word, so skip directly to translation
+            fetchTranslation(text, span, overlapsNote, overlapsWord)
+        } else {
+            // The text might be a saved word, query the database first to check
+            viewModelScope.launch {
+                _savedWord.emit(WordLang(text, null))
+            }
+
+            _dialogState.update { it.copy(isLoading = true) }
+
+            launchSearchWordJob(span, overlapsNote, overlapsWord)
+        }
     }
 
-    fun setSavedWord(word: String, lang: String?) {
+    fun translateWordInSentence(text: String, span: Span) {
+        _dialogState.update { it.copy(isWordLoading = true) }
+
+        if (showWords) {
+            viewModelScope.launch {
+                getTranslation(text) { translation ->
+                    val translation = SimpleTranslation(text, translation.translatedText, translation.src)
+                    _dialogState.update { it.copy(dialogState = DialogType.Translation(translation, span, false, false), isWordLoading = false) }
+                }
+            }
+        } else {
+            // The word might be a saved, query the database first to check
+            viewModelScope.launch {
+                _savedWord.emit(WordLang(text, null))
+            }
+
+            _dialogState.update { it.copy(isWordLoading = true) }
+
+            launchSearchWordJob(span, false, false)
+        }
+    }
+
+    fun clearTextInfo() {
+        _dialogState.update { it.copy(dialogState = null, sentence = null, isLoading = false, isWordLoading = false) }
+    }
+
+    fun setNoteData(note: Note, sentenceSpan: Span?) {
+        val noteSpan = note.span
+        val sentence = if (sentenceSpan != null && sentenceSpan.hasInside(noteSpan))
+            _dialogState.value.sentence
+        else {
+            unselectSentence()
+            null
+        }
+
+        _dialogState.update { it.copy(dialogState = DialogType.Note(note), sentence = sentence) }
+    }
+
+    fun searchSavedWord(word: String, lang: String?, wordSpan: Span) {
         viewModelScope.launch {
             _savedWord.emit(WordLang(word, lang))
         }
-        if (job == null) {
-            launchWordJob()
+
+        _dialogState.update { it.copy(isLoading = true, sentence = null) }
+
+        launchSearchWordJob(wordSpan, false, false)
+    }
+
+    fun setSavedWord(id: Int, wordSpan: Span, sentenceSpan: Span?) {
+        if (sentenceSpan != null && sentenceSpan.hasInside(wordSpan)) {
+            _dialogState.update { it.copy(isWordLoading = true) }
+        } else {
+            _dialogState.update { it.copy(isLoading = true, sentence = null) }
+            unselectSentence()
         }
+
+        launchWordJob(id, wordSpan)
+    }
+
+    fun setSavedWord(id: Int, wordSpan: Span) {
+        val sentence = _dialogState.value.sentence
+        if (sentence != null)
+            _dialogState.update { it.copy(isWordLoading = true) }
+        else
+            _dialogState.update { it.copy(isLoading = true) }
+
+        launchWordJob(id, wordSpan)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun launchWordJob() {
+    private fun launchSearchWordJob(span: Span, overlapsNote: Boolean, overlapsWord: Boolean) {
+        job?.cancel()
         job = viewModelScope.launch {
             _savedWord.flatMapLatest { data ->
                 wordRepository.getLocalWord(data.word, data.lang ?: cacheWebLink?.language)
                     .distinctUntilChanged()
                     .asFlow()
-            }.collectLatest {
-                if (it != null) {
-                    _updatedWord.value = ResultType.Update(it)
+            }.collectLatest { dbWord ->
+                if (dbWord != null) {
+                    _dialogState.update { it.copy(dialogState = DialogType.SavedWord(dbWord, span), isLoading = false, isWordLoading = false) }
                 } else {
                     if (!showWords) {
                         val data = _savedWord.first()
-                        getTranslationInfo(data.word)
+                        getTranslationInfo(data.word, span, overlapsNote, overlapsWord)
                     }
                 }
             }
         }
     }
 
-    private fun translateText(text: String, observer: MutableLiveData<LoadResult<WordResult>>) {
-        observer.value = LoadResult.Loading
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun launchWordJob(id: Int, span: Span) {
+        job?.cancel()
+        job = viewModelScope.launch {
+            wordRepository.getLocalWord(id)
+                .distinctUntilChanged()
+                .asFlow()
+                .collectLatest { dbWord ->
+                    if (dbWord != null) {
+                        _dialogState.update { it.copy(dialogState = DialogType.SavedWord(dbWord, span), isLoading = false, isWordLoading = false) }
+                    }
+                }
+        }
+    }
+
+    private fun fetchTranslation(text: String, span: Span, overlapsNote: Boolean, overlapsWord: Boolean) {
+        _dialogState.update { it.copy(isLoading = true, sentence = null) }
+        unselectSentence()
 
         viewModelScope.launch {
             getTranslation(text) { translation ->
-                val word = Words(text, translation.src, translation.translatedText)
-                observer.value = LoadResult.Success(WordResult(word, false))
+                viewModelScope.launch {
+                    val translation = SimpleTranslation(text, translation.translatedText, translation.src)
+                    _dialogState.update { it.copy(dialogState = DialogType.Translation(translation, span, overlapsNote, overlapsWord), isLoading = false) }
+                }
             }
         }
     }
 
-    private suspend fun getTranslationInfo(text: String) {
+    private suspend fun getTranslationInfo(text: String, span: Span, overlapsNote: Boolean, overlapsWord: Boolean) {
         getTranslation(text) { translation ->
-            val word = Words(text, translation.src, translation.translatedText)
-            _textInfo.value = LoadResult.Success(WordResult(word, false))
+            viewModelScope.launch {
+                val translation = SimpleTranslation(text, translation.translatedText, translation.src)
+                _dialogState.update { it.copy(dialogState = DialogType.Translation(translation, span, overlapsNote, overlapsWord), isWordLoading = false, isLoading = false) }
+            }
         }
     }
 
@@ -326,8 +451,13 @@ class WebReaderViewModel @Inject constructor(
 
         when(result){
             is Result.Success -> onResult(result.data)
-            is Result.Error -> _textInfo.value = LoadResult.Error(result.exception)
+            is Result.Error -> _dialogState.update { it.copy(error = result.exception.message, isLoading = false, isWordLoading = false) }
         }
+    }
+
+    fun setSentenceInParagraph(paragraphPos: Int, charIndex: Int) {
+        val span = findSelectedSentence(paragraphPos, charIndex)
+        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(highlights = span)) }
     }
 
     fun findSelectedSentence(paragraphPos: Int, charIndex: Int): SplitPageSpan? {
@@ -368,13 +498,23 @@ class WebReaderViewModel @Inject constructor(
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
             val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-            _linksForWord.value = WordAndLinks(word, links)
+            _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
+            // if out of index, default to the first item (zero index)
+            if(_selectedLink.value >= links.size) _selectedLink.value = 0
         }
     }
 
     fun getLinksForWord(word: String) {
         val lang = cacheWebLink?.language ?: return
         getLinksForWord(word, lang)
+    }
+
+    fun hideWordLinks() {
+        _linksForWord.value = DialogState.Empty
+    }
+
+    fun setWordLink(position: Int) {
+        _selectedLink.value = position
     }
 
     fun setLanguage(langShort: String?) {
@@ -417,20 +557,23 @@ class WebReaderViewModel @Inject constructor(
 
         val language = cacheWebLink?.language
         if(sentence.translation.isNotBlank() && sentence.sourceLang == language) {
-            val word = Words(sentence.original, sentence.sourceLang, sentence.translation)
-            _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+            val sentence = Sentence(sentence.translation, paragraphIndex)
+            _dialogState.update { it.copy(sentence = sentence, dialogState = null) }
             return
         }
 
-        _textInfo.value = LoadResult.Loading
-
         viewModelScope.launch {
+
+            _dialogState.update { it.copy(isLoading = true) }
+
             wrapEspressoIdlingResource {
                 getTranslation(sentence.original) { translation ->
                     sentence.translation = translation.translatedText
                     sentence.sourceLang = translation.src
-                    val word = Words(sentence.original, translation.src, translation.translatedText)
-                    _textInfo.value = LoadResult.Success(WordResult(word, isSaved = false, isSentence = true))
+                    viewModelScope.launch {
+                        val sentence = Sentence(translation.translatedText, paragraphIndex)
+                        _dialogState.update { it.copy(sentence = sentence, dialogState = null, isLoading = false) }
+                    }
                 }
             }
         }
@@ -452,6 +595,7 @@ class WebReaderViewModel @Inject constructor(
                 it.lastRead = Calendar.getInstance()
                 webLinkDAO.upsert(it)
                 cacheWebLink = webLinkDAO.getLink(link.url)
+                _dialogState.update { it.copy(isPageSaved = true) }
             }
         }
     }
@@ -469,7 +613,15 @@ class WebReaderViewModel @Inject constructor(
         }
     }
 
-    fun saveNote(text:String, noteText: String, selection: Span, id: Long, color: String) {
+    fun saveCurrentNote(noteText: String, color: String) {
+        val type = _editDialogs.value.isEditingType
+        if (type is DialogType.Note) {
+            val noteItem = type.item
+            saveNote(noteItem.originalText, noteText, noteItem.span, noteItem.id, color)
+        }
+    }
+
+    fun saveNote(text: String, noteText: String, selection: Span, id: Long, color: String) {
         val webLink = cacheWebLink ?: return
         viewModelScope.launch {
             wrapEspressoIdlingResource {
@@ -477,17 +629,26 @@ class WebReaderViewModel @Inject constructor(
                 val resultId = noteDAO.upsert(newNote)
                 // Upsert returns -1 when the operation was an update, use the parameter ID.
                 val finalId = if(resultId == -1L) id else resultId
-                val result = ModifiedNote.Update(newNote.copy(id = finalId))
-                _updatedNote.value = result
+                val updatedNote = newNote.copy(id = finalId)
+                _updatedNote.emit(ModifiedNote.Update(updatedNote))
+                _editDialogs.update { it.copy(isEditingType = null) }
+                _dialogState.update { it.copy(dialogState = DialogType.Note(updatedNote)) }
             }
         }
+    }
+
+    fun deleteCurrentNote() {
+        val type = _editDialogs.value.isEditingType
+        if (type is DialogType.Note) deleteNote(type.item.id)
     }
 
     fun deleteNote(id: Long) {
         viewModelScope.launch {
             wrapEspressoIdlingResource {
                 noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
-                _updatedNote.value = ModifiedNote.Delete(id)
+                _updatedNote.emit(ModifiedNote.Delete(id))
+                _editDialogs.update { it.copy(isEditingType = null, isDeleteDialogShown = false) }
+                _dialogState.update { it.copy(dialogState = null) }
             }
         }
     }
@@ -514,12 +675,9 @@ class WebReaderViewModel @Inject constructor(
     }
 
     private fun findWordsInSections(dbWords: List<Words>, sections: List<WordSpans>, position: Int): List<List<WordState>> {
-        val paragraphWords = arrayListOf<List<WordState>>()
-        sections.forEachIndexed { index, wordSpans ->
-            val words = findWordsInSection(dbWords, wordSpans, position + index)
-            paragraphWords.add(words)
+        return sections.mapIndexed { index, wordSpans ->
+            findWordsInSection(dbWords, wordSpans, position + index)
         }
-        return paragraphWords
     }
 
     private fun findWordsInSection(dbWords: List<Words>, section: WordSpans, position: Int): List<WordState> {
@@ -587,20 +745,24 @@ class WebReaderViewModel @Inject constructor(
 
     fun getWordIndexes(id: Int) = wordIdToIndexes[id] ?: emptySet()
 
-    fun upsert(word: Words) {
+    fun upsert(word: Words, wordSpan: Span) {
         viewModelScope.launch {
             val resultId = withContext(ioDispatcher) { wordRepository.upsert(word) }
             if(resultId != -1L) {
                 word.id = resultId.toInt()
-                _updatedWord.value = ResultType.Insert(word)
+                setSavedWord(word.id, wordSpan)
+                _updatedWord.emit(ResultType.Insert(word))
             }
+            _editDialogs.update { it.copy(isEditingType = null) }
         }
     }
 
     fun deleteWord(word: Words) {
         viewModelScope.launch {
             withContext(ioDispatcher) { wordRepository.deleteWord(word) }
-            _updatedWord.value = ResultType.Delete(word.id)
+            _updatedWord.emit(ResultType.Delete(word.id))
+            _dialogState.update { it.copy(dialogState = null) }
+            _editDialogs.update { it.copy(isEditingType = null, isDeleteDialogShown = false) }
         }
     }
 
@@ -608,11 +770,135 @@ class WebReaderViewModel @Inject constructor(
         wordIdToIndexes.clear()
     }
 
-    data class WordResult(val word: Words, val isSaved: Boolean, val isSentence: Boolean = false)
+    fun startEditing(type: DialogType) {
+        _editDialogs.update { it.copy(isEditingType = type) }
+    }
+
+    fun startEditing() {
+        val state = dialogState.value
+        val type = state.dialogState ?: return
+        when(type) {
+            is DialogType.Note -> _editDialogs.update { it.copy(isEditingType = type) }
+            is DialogType.SavedWord -> _editDialogs.update { it.copy(isEditingType = type) }
+            is DialogType.Translation -> {
+                val isWord = type.translation.original.isWord()
+
+                if (isWord && !type.overlapsWord) {
+                    if (state.isPageSaved && !type.overlapsNote) {
+                        _editDialogs.update { it.copy(isEditingType = type) }
+                    } else {
+                        val trans = type.translation
+                        val word = Words(trans.original, trans.sourceLang, trans.translation)
+                        _editDialogs.update { it.copy(isEditingType = DialogType.SavedWord(word, type.span)) }
+                    }
+                } else {
+                    if (state.isPageSaved && !type.overlapsNote) {
+                        _editDialogs.update { it.copy(isEditingType = DialogType.Note(type.toNote())) }
+                    }
+                }
+            }
+        }
+    }
+
+    fun stopEditing() {
+        _editDialogs.update { it.copy(isEditingType = null) }
+    }
+
+    fun setDeleteSate(isShown: Boolean) {
+        _editDialogs.update { it.copy(isDeleteDialogShown = isShown) }
+    }
+
+    fun setPickInfoType(word: DialogType.SavedWord, note: DialogType.Note) {
+        _editDialogs.update { it.copy(isPickingType = InfoType(word, note)) }
+    }
+
+    fun stopPickingInfo() {
+        _editDialogs.update { it.copy(isPickingType = null) }
+    }
+
+    fun pickItem(isNote: Boolean, sentenceSpan: Span?) {
+        val info = _editDialogs.value.isPickingType ?: return
+        if (isNote) {
+            setNoteData(info.note.item, sentenceSpan)
+        } else {
+            val state = info.word
+            setSavedWord(state.word.id, state.span, sentenceSpan)
+        }
+    }
+
+    /**
+     * Create a new note from the current translation.
+     */
+    fun newNote() {
+        val type = dialogState.value.dialogState
+        if (type is DialogType.Translation) {
+            _editDialogs.update { it.copy(isEditingType = DialogType.Note(type.toNote())) }
+        }
+    }
+
+    /**
+     * Create a new saved word from the current translation.
+     */
+    fun newSavedWord() {
+        val type = dialogState.value.dialogState
+        if (type is DialogType.Translation) {
+            val trans = type.translation
+            val word = Words(trans.original, trans.sourceLang, trans.translation)
+            _editDialogs.update { it.copy(isEditingType = DialogType.SavedWord(word, type.span)) }
+        }
+    }
+
+    fun setPageVersion(version: PageVersion) {
+        when (version) {
+            PageVersion.LOCAL -> loadLocalPage()
+            PageVersion.WEB -> loadPageFromWeb()
+        }
+
+        pageVersion = version
+    }
+
+    fun sentenceSelected(paragraphIndex: Int, sentenceIndex: Int) {
+        _paragraphState.update { it.copy(paragraphIndex = paragraphIndex, sentenceIndex = sentenceIndex, paragraph = null) }
+        _dialogState.update { it.copy(sentence = null, dialogState = null) }
+    }
+
+    fun unselectSentence() {
+        _paragraphState.update { it.copy(paragraphIndex = null, sentenceIndex = null) }
+    }
+
+    fun paragraphSelected(index: Int?) {
+        if (index == null) {
+            _paragraphState.update { it.copy(paragraph = null) }
+            return
+        }
+
+        val paragraph = _paragraphState.value.paragraph
+        if (paragraph?.index == index) {
+            _paragraphState.update { it.copy(paragraph = null) }
+        } else {
+            _paragraphState.update { it.copy(paragraph = SelectedParagraph(index), paragraphIndex = null, sentenceIndex = null) }
+        }
+    }
+
+    fun errorShown() {
+        _dialogState.update { it.copy(error = null) }
+    }
+
+    fun getNotes() {
+        val page = _page.value
+        if (page is LoadResult.Success<PageInfo>) {
+            viewModelScope.launch {
+                if (page.data.isLocalPage) {
+                    val webLink = cacheWebLink ?: return@launch
+                    _notes.emit(noteDAO.getNotes(webLink.id))
+                } else {
+                    _notes.emit(emptyList())
+                }
+            }
+        }
+    }
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
-
-    data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
 
     data class Page(val title: String, val content: String)
 
@@ -623,11 +909,63 @@ class WebReaderViewModel @Inject constructor(
     companion object {
         private const val PAGE_FILENAME = "content.xml"
     }
+
+    data class UiDialogState(
+        val isLoading: Boolean = false,
+        val isWordLoading: Boolean = false,
+        val isPageSaved: Boolean = false,
+        val dialogState: DialogType? = null,
+        val sentence: Sentence? = null,
+        val error: String? = null,
+    )
+
+    data class UiEditDialogsState(
+        val isEditingType: DialogType? = null,
+        val isDeleteDialogShown: Boolean = false,
+        val isPickingType: InfoType? = null,
+    )
+
+    data class ParagraphUiState(
+        val paragraph: SelectedParagraph? = null,
+        val paragraphIndex: Int? = null,
+        val sentenceIndex: Int? = null,
+    )
+
+    @AssistedFactory
+    interface Factory {
+        fun create(url: String): WebReaderViewModel
+    }
 }
+
+data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
+
+data class Sentence(val text: String, val paragraphIndex: Int)
+
+data class SelectedParagraph(
+    val index: Int,
+    val isLoading: Boolean = false,
+    val translation: Translation? = null,
+    val highlights: SplitPageSpan? = null,
+)
+
+sealed interface DialogType {
+    data class SavedWord(val word: Words, val span: Span): DialogType
+    data class Note(val item: com.guillermonegrete.tts.webreader.db.Note): DialogType
+    data class Translation(val translation: SimpleTranslation, val span: Span, val overlapsNote: Boolean, val overlapsWord: Boolean): DialogType
+}
+
+fun DialogType.Translation.toNote() = Note(translation.translation, translation.original, span.start, span.end - span.start, "")
+
+data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note)
 
 /**
  * Return class for the UI, used to display the paragraph with the notes
  */
-data class PageInfo(val text: String, val notes: List<Note>, val isLocalPage: Boolean)
+data class PageInfo(val text: String, val isLocalPage: Boolean)
 
 data class SavedWordsSection(val words: List<List<WordState>>, val start: Int)
+
+enum class PageVersion {
+    LOCAL,
+    WEB
+}

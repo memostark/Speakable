@@ -15,6 +15,10 @@ class FakeNoteDAO: NoteDAO {
         }
     }
 
+    override suspend fun update(note: NoteUpdate): Int {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun delete(note: Note) {
         notes.removeIf { it.id == note.id }
     }

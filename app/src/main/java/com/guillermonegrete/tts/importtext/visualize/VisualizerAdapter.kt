@@ -8,9 +8,12 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.updatePadding
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.models.EditNote
 import com.guillermonegrete.tts.common.models.NoteItem
@@ -19,6 +22,9 @@ import com.guillermonegrete.tts.databinding.VisualizerPageItemBinding
 import com.guillermonegrete.tts.databinding.VisualizerSplitPageItemBinding
 import com.guillermonegrete.tts.textprocessing.WordState
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
+import com.guillermonegrete.tts.ui.theme.NestedHighlightColor
+import com.guillermonegrete.tts.ui.theme.TextHighlightColor
+import com.guillermonegrete.tts.ui.theme.YellowNoteHighlightInt
 import com.guillermonegrete.tts.utils.addHighlightedText
 import com.guillermonegrete.tts.utils.findWordForRightHanded
 import com.guillermonegrete.tts.utils.getSelectedText
@@ -26,20 +32,28 @@ import kotlin.math.max
 import kotlin.math.min
 
 class VisualizerAdapter(
-    private val pages: List<PageItem>,
+    private var pages: List<PageItem>,
     private val onCreateNote: (EditNote) -> Unit,
     private val onTextClick: (TextClick) -> Unit = {},
-    private val getPageCharPos: () -> Int = {0},
-    private val measuringPage: Boolean = false
+    var measuringPage: Boolean = false
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var hasBottomSheet = false
-
     var isPageSplit = false
+
+    private var selectedTextAbsSpan: Span? = null
+    private var selectedText: SelectedText? = null
+    private var selectionSpan: BackgroundColorSpan? = null
 
     private var pageMarginsSize = 0
     private var lineSpacingExtra = 0f
     private var largeText = 0
+
+    var horizontalPadding: Int? = null
+    var verticalPadding: Int? = null
+
+    private val textHighlightColor = TextHighlightColor.toArgb()
+    private var wordInsideColor = NestedHighlightColor.toArgb()
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
@@ -47,6 +61,9 @@ class VisualizerAdapter(
             lineSpacingExtra = resources.getDimension(R.dimen.visualize_page_text_line_spacing_extra)
             pageMarginsSize = resources.getDimensionPixelSize(R.dimen.visualize_sheet_bar_height)
             largeText = resources.getDimensionPixelSize(R.dimen.text_size_large)
+            var color = MaterialColors.getColor(this, android.R.attr.textColorHighlight, wordInsideColor)
+            color = ColorUtils.setAlphaComponent(color, 255)
+            wordInsideColor = ColorUtils.blendARGB(textHighlightColor, color, 0.6f)
         }
     }
 
@@ -87,7 +104,16 @@ class VisualizerAdapter(
                     is Int -> {
                         if (payload == UNSELECT_SENTENCE) holder.removeHighlight()
                     }
-                    else -> holder.updateLayoutParams(payload as Boolean)
+                    is Boolean -> holder.updateLayoutParams(payload)
+                    Payload.Text -> holder.setHighlightedText()
+                }
+            } else if (holder is PageViewHolder) {
+                for (payload in payloads) {
+                    if (payload is Payload) {
+                        when(payload) {
+                            Payload.Text -> holder.setHighlightedText()
+                        }
+                    }
                 }
             }
         }
@@ -98,19 +124,32 @@ class VisualizerAdapter(
         return R.layout.visualizer_page_item
     }
 
+    fun updateItems(pages: List<PageItem>) {
+        this.pages = pages
+
+        selectedTextAbsSpan?.let {
+            val pos = getCharListIndex(it.start)
+            if (pos != -1) {
+                val item = pages[pos]
+                selectedText = SelectedText(pos, item.toLocal(it))
+            }
+        }
+    }
+
     fun getPageText(position: Int) = pages.getOrNull(position)?.text
 
     @SuppressLint("ClickableViewAccessibility")
     open inner class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
         protected val pageTextView: TextView = view.findViewById(R.id.page_text_view)
 
-        private val actionModeCallback = PageActionModeCallback(pageTextView) {
-            onTextClick(TextClick.Word(it.toString()))
+        private val actionModeCallback = PageActionModeCallback(pageTextView) { text, span ->
+            onTextClick(TextClick.Word(text, span))
         }
 
         init {
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
+            updateCardPadding()
             val detector = GestureDetector(itemView.context, PageGestureListener())
             pageTextView.setOnTouchListener { _, event ->
                 detector.onTouchEvent(event)
@@ -119,13 +158,15 @@ class VisualizerAdapter(
         }
 
         open fun bind(pageItem: PageItem) {
-            actionModeCallback.item = pageItem
+            actionModeCallback.pageItem = pageItem
         }
 
         protected fun addHighlightItems(pageItem: PageItem, text: Spannable) {
             pageItem.notes.forEach {
                 val span = it.span
-                text.addHighlightedText(span.start, span.end, it.color)
+                val start = span.start.coerceAtLeast(0)
+                val end = span.end.coerceAtMost(text.length)
+                text.addHighlightedText(start, end, it.color)
             }
 
             pageItem.savedWords.forEach {
@@ -146,24 +187,49 @@ class VisualizerAdapter(
             }
         }
 
+        open fun setHighlightedText() {
+            val text = pageTextView.text as? Spannable ?: return
+            selectionSpan?.let { text.removeSpan(it) }
+
+            val sel = selectedText
+            if (sel != null && sel.index == adapterPosition) {
+                selectionSpan = BackgroundColorSpan(textHighlightColor)
+                val start = sel.span.start.coerceAtLeast(0)
+                val end = sel.span.end.coerceAtMost(text.length)
+                text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else {
+                selectionSpan = null
+            }
+        }
+
+        private fun updateCardPadding() {
+            if (horizontalPadding != null || verticalPadding != null) {
+                val newHorizontal = horizontalPadding ?: pageTextView.paddingLeft
+                val newVertical = verticalPadding ?: pageTextView.paddingTop
+                pageTextView.updatePadding(left = newHorizontal, right = newHorizontal, top = newVertical, bottom = newVertical)
+            }
+        }
+
         private inner class PageGestureListener : GestureDetector.SimpleOnGestureListener() {
 
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 val offset = pageTextView.getOffsetForPosition(e.x, e.y)
 
-                val item = pages[adapterPosition]
+                val index = adapterPosition
+                val item = pages[index]
                 val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (savedWord != null && clickedNote != null) {
-                    val word = savedWord.word?.word ?: ""
-                    val note = createNote(clickedNote, item)
+                    val word = savedWord.word.word
+                    val note = EditNote("", clickedNote.text, item.toAbsolute(clickedNote.span), clickedNote.color, true, clickedNote.id)
                     onTextClick(TextClick.Overlap(note, word))
                     return true
                 } else if (savedWord != null) {
-                    onTextClick(TextClick.SavedWord(savedWord.word?.word ?: ""))
+                    onTextClick(TextClick.SavedWord(savedWord))
                     return true
                 } else if (clickedNote != null) {
-                    onTextClick(TextClick.Note(createNote(clickedNote, item)))
+                    val note = EditNote("", clickedNote.text, item.toAbsolute(clickedNote.span), clickedNote.color, true, clickedNote.id)
+                    onTextClick(TextClick.Note(note))
                     return true
                 }
 
@@ -171,7 +237,9 @@ class VisualizerAdapter(
                 val clickedWord = pageTextView.text.substring(wordSpan.start, wordSpan.end)
 
                 if (clickedWord.isNotEmpty()) {
-                    onTextClick(TextClick.Word(clickedWord))
+                    selectedText = SelectedText(index, wordSpan)
+                    onTextClick(TextClick.Word(clickedWord, item.toAbsolute(wordSpan)))
+                    notifyItemChanged(index, Payload.Text)
                     return true
                 }
 
@@ -180,15 +248,84 @@ class VisualizerAdapter(
 
         }
 
+        inner class PageActionModeCallback(
+            private val pageTextView: TextView,
+            private val showTextDialog: (text: String, span: Span) -> Unit
+        ): ActionMode.Callback {
+
+            var pageItem: PageItem? = null
+
+            override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+                val localItem = pageItem ?: return true
+                return when(item.itemId){
+                    R.id.show_process_text_activity -> {
+                        if (pageTextView.isFocused) {
+                            val selStart = pageTextView.selectionStart
+                            val selEnd = pageTextView.selectionEnd
+
+                            // We need to make sure start and end are within the text length
+                            val min = 0.coerceAtLeast(selStart.coerceAtMost(selEnd))
+                            val max = 0.coerceAtLeast(selStart.coerceAtLeast(selEnd))
+
+                            val selectedText = pageTextView.text.subSequence(min, max).toString()
+                            showTextDialog(selectedText, localItem.toAbsolute(Span(min, max)))
+                        }
+
+                        mode.finish()
+                        true
+                    }
+                    R.id.add_new_note_action -> {
+                        val span = Span(pageTextView.selectionStart, pageTextView.selectionEnd)
+                        val text = pageTextView.getSelectedText().toString()
+                        onCreateNote(EditNote(text, "", localItem.toAbsolute(span), YellowNoteHighlightInt, false, 0))
+                        mode.finish()
+                        true
+                    }
+                    else -> false
+                }
+            }
+
+            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
+
+            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+                menu.clear()
+                val inflater: MenuInflater = mode.menuInflater
+                menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
+                inflater.inflate(R.menu.menu_context_text_visualizer, menu)
+
+                if (notesOverlap()) {
+                    val item = menu.findItem(R.id.add_new_note_action)
+                    item.isVisible = false
+                }
+                return true
+            }
+
+            override fun onDestroyActionMode(mode: ActionMode?) {}
+
+            private fun notesOverlap(): Boolean {
+                val localItem = pageItem ?: return true
+                val selStart = pageTextView.selectionStart
+                val selEnd = pageTextView.selectionEnd
+                localItem.notes.forEach {
+                    val span = it.span
+                    val isOverlappingNotes = span.start < selEnd && span.end > selStart
+                    if (isOverlappingNotes) return true
+                }
+
+                return false
+            }
+        }
+
     }
 
-    inner class PageViewHolder(binding: VisualizerPageItemBinding): ViewHolder(binding.root){
+    inner class PageViewHolder(val binding: VisualizerPageItemBinding): ViewHolder(binding.root){
 
         override fun bind(pageItem: PageItem){
             super.bind(pageItem)
             val spannable = SpannableString(pageItem.text)
             addHighlightItems(pageItem, spannable)
             pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
+            setHighlightedText()
         }
     }
 
@@ -212,6 +349,7 @@ class VisualizerAdapter(
 
             addHighlightItems(pageItem, spannable)
             pageTextView.setText(spannable, TextView.BufferType.SPANNABLE)
+            setHighlightedText()
         }
 
         fun updateLayoutParams(splitPage: Boolean){
@@ -253,6 +391,21 @@ class VisualizerAdapter(
             pageTextView.setText(text, TextView.BufferType.SPANNABLE)
         }
 
+        override fun setHighlightedText() {
+            val text = pageTextView.text as? Spannable
+            selectionSpan?.let { text?.removeSpan(it) }
+
+            val sel = selectedText
+            if (sel != null && sel.index == adapterPosition) {
+                val sentenceSpan = sentenceHighlight?.pos
+                val color = if (sentenceSpan != null && sentenceSpan.intersects(sel.span)) wordInsideColor else textHighlightColor
+                selectionSpan = BackgroundColorSpan(color)
+                text?.setSpan(selectionSpan, sel.span.start, sel.span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else {
+                selectionSpan = null
+            }
+        }
+
         fun removeHighlight() {
             val highlight = sentenceHighlight ?: return
             val text = pageTextView.text as? Spannable ?: return
@@ -262,80 +415,15 @@ class VisualizerAdapter(
 
     }
 
-    inner class PageActionModeCallback(
-        private val pageTextView: TextView,
-        private val showTextDialog: (CharSequence) -> Unit
-    ): ActionMode.Callback{
-
-        var item: PageItem? = null
-
-        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-            return when(item.itemId){
-                R.id.show_process_text_activity -> {
-                    if (pageTextView.isFocused) {
-                        val selStart = pageTextView.selectionStart
-                        val selEnd = pageTextView.selectionEnd
-
-                        // We need to make sure start and end are within the text length
-                        val min = 0.coerceAtLeast(selStart.coerceAtMost(selEnd))
-                        val max = 0.coerceAtLeast(selStart.coerceAtLeast(selEnd))
-
-                        val selectedText = pageTextView.text.subSequence(min, max)
-                        showTextDialog(selectedText)
-                    }
-
-                    mode.finish()
-                    true
-                }
-                R.id.add_new_note_action -> {
-                    val firstCharIndex = getPageCharPos()
-                    val span = Span(firstCharIndex + pageTextView.selectionStart, firstCharIndex + pageTextView.selectionEnd)
-                    val text = pageTextView.getSelectedText().toString()
-                    onCreateNote(EditNote(text, "", span, 0, false, 0))
-                    mode.finish()
-                    true
-                }
-                else -> false
-            }
+    fun updateNote(note: NoteItem) {
+        val positions = getCharListIndex(note.span)
+        positions.forEach { pos ->
+            val page = pages[pos]
+            page.notes.removeAll { note.id == it.id }
+            val localSpan = Span(note.span.start - page.firstCharIndex, note.span.end - page.firstCharIndex)
+            page.notes.add(note.copy(span = localSpan))
+            notifyItemChanged(pos)
         }
-
-        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?) = true
-
-        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
-            menu.clear()
-            val inflater: MenuInflater = mode.menuInflater
-            menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
-            inflater.inflate(R.menu.menu_context_text_visualizer, menu)
-
-            if (notesOverlap()) {
-                val item = menu.findItem(R.id.add_new_note_action)
-                item.isVisible = false
-            }
-            return true
-        }
-
-        override fun onDestroyActionMode(mode: ActionMode?) {}
-
-        private fun notesOverlap(): Boolean {
-            val localItem = item ?: return true
-            val selStart = pageTextView.selectionStart
-            val selEnd = pageTextView.selectionEnd
-            localItem.notes.forEach {
-                val span = it.span
-                val isOverlappingNotes = span.start < selEnd && span.end > selStart
-                if (isOverlappingNotes) return true
-            }
-
-            return false
-        }
-    }
-
-    fun updateNote(position: Int, note: NoteItem) {
-        val page = pages[position]
-        page.notes.removeAll { note.id == it.id }
-        val localSpan = Span(note.span.start - page.firstCharIndex, note.span.end - page.firstCharIndex)
-        page.notes.add(note.copy(span = localSpan))
-        notifyItemChanged(position)
     }
 
     fun deleteNote(noteId: Long) {
@@ -356,11 +444,40 @@ class VisualizerAdapter(
         notifyItemChanged(position)
     }
 
-    private fun createNote(clickedNote: NoteItem, item: PageItem): EditNote {
-        val span = clickedNote.span
-        val text = item.text.substring(span.start, span.end)
-        val absoluteSpan = Span(item.firstCharIndex + span.start, item.firstCharIndex + span.end)
-        return EditNote(text, clickedNote.text, absoluteSpan, clickedNote.color, true, clickedNote.id)
+    fun selectText(span: Span){
+        selectedTextAbsSpan = span
+        val index = getCharListIndex(span.start)
+        if (index == -1) return
+
+        val item = pages[index]
+        val newSel = SelectedText(index, item.toLocal(span))
+        if (selectedText == newSel) return
+
+        selectedText = newSel
+        notifyItemChanged(index, Payload.Text)
+    }
+
+    fun unselectText() {
+        selectedText?.let {
+            val index = it.index
+            selectedText = null
+            notifyItemChanged(index, Payload.Text)
+        }
+    }
+
+    private fun getCharListIndex(charPos: Int) = pages.indexOfFirst { it.firstCharIndex + it.text.length > charPos }
+
+    /**
+     * Returns the indices of all the pages that contain part of the given [span] (the span can be a note for example).
+     */
+    private fun getCharListIndex(span: Span): MutableList<Int> {
+        val indexes = mutableListOf<Int>()
+        for ((i, page) in pages.withIndex()) {
+            if (page.firstCharIndex > span.end) break
+            val pageSpan = Span(page.firstCharIndex, page.firstCharIndex + page.text.length)
+            if (span.intersects(pageSpan)) indexes.add(i)
+        }
+        return indexes
     }
 
     companion object {
@@ -379,14 +496,29 @@ class VisualizerAdapter(
         companion object {
             val EMPTY = PageItem("", mutableListOf(), 0)
         }
+
+        fun toAbsolute(span: Span) : Span {
+            return Span(firstCharIndex + span.start, firstCharIndex + span.end)
+        }
+
+        fun toLocal(absSpan: Span) = Span(absSpan.start - firstCharIndex, absSpan.end - firstCharIndex)
     }
+
+    data class SelectedText(
+        val index: Int,
+        val span: Span,
+    )
 
     data class SentenceHighlight(val span: BackgroundColorSpan, val pos: Span)
 
     sealed class TextClick {
         data class Note(val note: EditNote): TextClick()
-        data class SavedWord(val word: String): TextClick()
+        data class SavedWord(val state: WordState): TextClick()
         data class Overlap(val note: EditNote, val word: String): TextClick()
-        data class Word(val word: String): TextClick()
+        data class Word(val word: String, val span: Span): TextClick()
+    }
+
+    sealed interface Payload {
+        data object Text: Payload
     }
 }

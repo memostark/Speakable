@@ -4,12 +4,16 @@ import android.Manifest
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.*
-import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
@@ -26,6 +30,8 @@ import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.DefaultFileRepository
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.di.WordRepositorySourceModule
+import com.guillermonegrete.tts.importtext.tabs.ENTER_TEXT_TAG
+import com.guillermonegrete.tts.importtext.tabs.VISUALIZE_BTN_TAG
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import com.guillermonegrete.tts.launchFragmentInHiltContainer
 import com.guillermonegrete.tts.utils.selectTabAtPosition
@@ -54,6 +60,9 @@ class ImportTextFragmentTest{
 
     @get:Rule
     val runtimePermissionRule: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
 
     @Inject
     lateinit var repository: DefaultFileRepository
@@ -140,11 +149,9 @@ class ImportTextFragmentTest{
 
         onView(withId(R.id.import_tab_layout)).perform(selectTabAtPosition(ImportTextFragment.ENTER_TEXT_INDEX))
 
-        // This can cause the tab to suddenly change, making the test fail
-        // A fix hasn't been found yet
-//        onView(withId(R.id.import_text_edit)).perform(typeText("New text to import"), closeSoftKeyboard())
-        Thread.sleep(500)
-        onView(withId(R.id.visualize_btn)).check(matches(isDisplayed())).perform(click())
+        composeTestRule.onNodeWithTag(ENTER_TEXT_TAG).performTextReplacement("New text to import")
+        Espresso.closeSoftKeyboard()
+        composeTestRule.onNodeWithTag(VISUALIZE_BTN_TAG).performClick()
 
         intended(hasComponent(VisualizeTextActivity::class.java.name))
     }

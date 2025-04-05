@@ -67,6 +67,11 @@ public class WordLocalDataSource implements WordDataSource {
     }
 
     @Override
+    public LiveData<Words> loadWord(@NonNull Integer id) {
+        return mWordDAO.loadWordById(id);
+    }
+
+    @Override
     public int update(@NonNull Words word) {
         return mWordDAO.update(word);
     }

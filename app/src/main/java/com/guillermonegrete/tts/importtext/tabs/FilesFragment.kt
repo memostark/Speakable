@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
@@ -126,11 +127,12 @@ class FilesFragment: Fragment(R.layout.files_layout) {
             })
 
             ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, viewInsets ->
-                val insets = viewInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+                val insets = viewInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
                 fabContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     // Also adding the inset top because it was added to the TopBar and this also pushed the FAB down
                     bottomMargin = insets.bottom + insets.top + fabBottomMargin
                 }
+                recentFilesList.updatePadding(bottom = insets.bottom)
 
                 viewInsets
             }
@@ -166,7 +168,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                         when (uiState) {
                             is LoadResult.Error -> {
                                 Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
-                                Timber.e(uiState.exception, "Failed fetching recent links")
+                                Timber.e(uiState.throwable, "Failed fetching recent links")
                                 binding.recentFilesProgressBar.isVisible = false
                             }
                             is LoadResult.Success -> {
@@ -179,8 +181,6 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                     }
                 }
             }
-
-            loadFiles()
         }
     }
 

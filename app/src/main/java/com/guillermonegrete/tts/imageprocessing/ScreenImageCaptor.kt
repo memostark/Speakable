@@ -26,7 +26,7 @@ class ScreenImageCaptor(
 
     private val mediaProjection = manager.getMediaProjection(resultCode, intent)
     private val density = metrics.densityDpi
-    private var handler = Handler(Looper.getMainLooper())
+    private val handler = Handler(Looper.getMainLooper())
 
     private val width = screenSize.x
     private val height = screenSize.y
@@ -69,6 +69,7 @@ class ScreenImageCaptor(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                callback.onError(e)
             } finally {
                 image?.close()
                 bitmap?.recycle()
@@ -108,7 +109,9 @@ class ScreenImageCaptor(
             DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC
     }
 
-    fun interface Callback{
+    interface Callback {
         fun onImageCaptured(image: Bitmap)
+
+        fun onError(exception: Exception)
     }
 }

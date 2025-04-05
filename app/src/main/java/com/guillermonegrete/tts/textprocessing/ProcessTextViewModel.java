@@ -1,20 +1,26 @@
 package com.guillermonegrete.tts.textprocessing;
 
 
+import static com.guillermonegrete.tts.textprocessing.TextInfoScreenKt.NOT_SAVED_ID;
+
 import android.content.SharedPreferences;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
 
-import com.guillermonegrete.tts.AbstractPresenter;
+import com.guillermonegrete.tts.common.models.Span;
+import com.guillermonegrete.tts.common.models.UIKt;
+import com.guillermonegrete.tts.common.models.WordUI;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.MainThread;
-import com.guillermonegrete.tts.data.Segment;
+import com.guillermonegrete.tts.data.DialogState;
 import com.guillermonegrete.tts.data.Translation;
-import com.guillermonegrete.tts.data.WordResult;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.ExternalLink;
+import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan;
 import com.guillermonegrete.tts.main.SettingsFragment;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.DeleteWord;
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetDictionaryEntry;
@@ -36,13 +42,18 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
+import dagger.hilt.android.lifecycle.HiltViewModel;
 import kotlin.Unit;
 
-public class ProcessTextPresenter extends AbstractPresenter implements ProcessTextContract.Presenter{
+@HiltViewModel
+public class ProcessTextViewModel extends ViewModel implements ProcessTextContract.Presenter{
 
     private ProcessTextContract.View mView;
+    private final ExecutorService executorService;
+    private final MainThread mMainThread;
     private final WordRepositorySource mRepository;
     private final DictionaryRepository dictionaryRepository;
     private final SharedPreferences sharedPreferences;
@@ -50,9 +61,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     private final GetLangAndTranslation getTranslationInteractor;
     private final GetExternalLink getExternalLink;
 
-    private final MutableLiveData<WordResult> selectedWordResult = new MutableLiveData<>();
-
-    private final MutableLiveData<List<ExternalLink>> wordLinks = new MutableLiveData<>();
+    private final MutableLiveData<DialogState<List<ExternalLink>>> wordLinks = new MutableLiveData<>();
+    private final MutableLiveData<Integer> selectedLink = new MutableLiveData<>();
 
     private Words foundWord;
     @Nullable
@@ -66,9 +76,11 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
     private final MutableLiveData<GetLayoutResult> layoutResult = new MutableLiveData<>();
     private final MutableLiveData<StatusTTS> ttsStatus = new MutableLiveData<>();
+    private final MutableLiveData<SentenceDialogUIState> sentenceState = new MutableLiveData<>();
+    private final MutableLiveData<SentenceEditingUIState> editDialogs = new MutableLiveData<>();
 
     @Inject
-    ProcessTextPresenter(
+    ProcessTextViewModel(
             ExecutorService executor,
             MainThread mainThread,
             WordRepositorySource repository,
@@ -77,7 +89,8 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             CustomTTS customTTS,
             GetLangAndTranslation getTranslationInteractor,
             GetExternalLink getExternalLink){
-        super(executor, mainThread);
+        executorService = executor;
+        mMainThread = mainThread;
         mRepository = repository;
         dictionaryRepository = dictRepository;
         this.sharedPreferences = sharedPreferences;
@@ -160,17 +173,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         return mRepository.getLocalWord(text, languageFrom);
     }
 
-    public LiveData<WordResult> wordInfo() {
-        return selectedWordResult;
-    }
-
-    public void setSelectedWord(String word, String languageFrom, String languageTo) {
+    public void setSelectedWord(String word, String languageFrom, String languageTo, Span span) {
 
         executorService.execute(() ->
             mRepository.getWordLanguageInfo(word, languageFrom, languageTo, new WordRepositorySource.GetWordRepositoryCallback() {
                 @Override
                 public void onLocalWordLoaded(Words word) {
-                    selectedWordResult.postValue(new WordResult.Local(word));
+                    var wordState = new WordState(UIKt.toUI(word), word.id, span);
+                    sentenceState.postValue(new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(wordState).build());
                 }
 
                 @Override
@@ -178,13 +188,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
 
                 @Override
                 public void onRemoteWordLoaded(Words word) {
-                    var translation = new Translation(List.of(new Segment(word.definition, word.word)), word.getLang());
-                    selectedWordResult.postValue(new WordResult.Remote(translation));
+                    var wordState = new WordState(UIKt.toUI(word), NOT_SAVED_ID, span);
+                    sentenceState.postValue(new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(wordState).build());
                 }
 
                 @Override
                 public void onDataNotAvailable(Words emptyWord) {
-                    selectedWordResult.postValue(new WordResult.Error(new Exception()));
+                    var newState = new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(null).hasError(emptyWord.toString()).build();
+                    sentenceState.postValue(newState);
                 }
             })
         );
@@ -244,14 +255,35 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
             for(var link: links) {
                 link.link = link.link.replace("{q}", word.word);
             }
-            wordLinks.postValue(links);
+            // If out of index, default to the first item
+            var selected = selectedLink.getValue();
+            if(selected != null && selected >= links.size()) selectedLink.postValue(0);
+            wordLinks.postValue(new DialogState.Success<>(links));
         });
+    }
+
+    /** @noinspection unchecked*/
+    public void hideWordLinks() {
+        wordLinks.setValue(DialogState.Empty.INSTANCE);
+    }
+
+    public void setWordLink(int position) {
+        selectedLink.setValue(position);
     }
 
     @Override
     public void onClickDeleteWord(String word) {
         var interactor = new DeleteWord(executorService, mMainThread, mRepository, word);
         interactor.execute();
+        var state = getSentenceState();
+        var wordState = state.getSelectedWord();
+        if (wordState != null) {
+            var previous = wordState.getWord();
+            var newWord = new WordUI(previous.getWord(), previous.getLang(), previous.getDefinition(), null);
+            var newState = new WordState(newWord, NOT_SAVED_ID, wordState.getSpan());
+            updateSelectedWord(newState);
+        }
+        stopEditing();
         mView.showWordDeleted();
     }
 
@@ -272,12 +304,14 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     public void onLanguageSpinnerChange(String languageFrom, final String languageTo) {
         EspressoIdlingResource.increment();
         hasTranslation = true;
+        var detectedLang = languageFrom.equals("auto");
 
         getTranslationInteractor.invoke(foundWord.word, languageFrom, languageTo,
                 translation -> {
                     currentTranslation = translation;
                     customTTS.initializeTTS(translation.getSrc(), ttsListener);
                     mView.updateTranslation(translation);
+                    if (detectedLang) getExternalLink.invoke(translation.getSrc(), links -> mView.updateExternalLinks(links));
                     EspressoIdlingResource.decrement();
                     return Unit.INSTANCE;
                 },
@@ -288,7 +322,7 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
                     return Unit.INSTANCE;
                 });
 
-        getExternalLink.invoke(languageFrom, links -> mView.updateExternalLinks(links));
+        if (!detectedLang) getExternalLink.invoke(languageFrom, links -> mView.updateExternalLinks(links));
     }
 
     @Override
@@ -314,8 +348,12 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
     @Override
     public void destroy() {
         onViewInactive();
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
         customTTS.removeListener(ttsListener);
-        System.out.println("Shutting down service");
         executorService.shutdown();
         executorService.shutdownNow();
     }
@@ -402,12 +440,89 @@ public class ProcessTextPresenter extends AbstractPresenter implements ProcessTe
         return ttsStatus;
     }
 
-    public LiveData<List<ExternalLink>> getWordLinks() {
+    public @NonNull LiveData<DialogState<List<ExternalLink>>> getWordLinks() {
         return wordLinks;
     }
 
-    @Nullable
-    public Translation getCurrentTranslation() {
-        return currentTranslation;
+    public @NonNull LiveData<Integer> getSelectedLink() {
+        return selectedLink;
+    }
+
+    public LiveData<SentenceDialogUIState> getSentenceUIState() {
+        return sentenceState;
+    }
+
+    public @NonNull MutableLiveData<SentenceEditingUIState> getEditDialogs() {
+        return editDialogs;
+    }
+
+    public void findSelectedSentence(int charIndex) {
+        var translation = currentTranslation;
+        if (translation == null) return;
+        var state = getSentenceState();
+
+        int start = 0;
+        int originStart = 0;
+
+        for(var sentence: translation.getSentences()){
+            var end = start + sentence.getTrans().length();
+            var originalEnd = originStart + sentence.getOrig().length();
+            if(charIndex < end) {
+                // indicate UI to highlight this sentence
+                var spans = new SplitPageSpan(new Span(originStart, originalEnd), new Span(start, end));
+                var newSpans = Objects.equals(state.getHighlights(), spans) ? null : spans;
+                sentenceState.setValue(new SentenceDialogUIState.Builder(state).highlights(newSpans).build());
+                return;
+            }
+            start = end;
+            originStart = originalEnd;
+        }
+
+    }
+
+    public void findWord(int offset, Span newSpan, String languageFrom, String languageTo) {
+        var state = getSentenceState();
+
+        // If true the selected word was tapped, unselect
+        var word = state.getSelectedWord();
+        if (word != null) {
+            var span = word.getSpan();
+            if (span != null && span.inside(offset)) {
+                sentenceState.setValue(new SentenceDialogUIState.Builder(state).selectedWord(null).build());
+                return;
+            }
+        }
+
+        if (currentTranslation == null) return;
+        var text = currentTranslation.getOriginalText();
+
+        var newWord = text.substring(newSpan.getStart(), newSpan.getEnd());
+        setSelectedWord(newWord, languageFrom, languageTo, newSpan);
+    }
+
+    public void startEditing() {
+        editDialogs.setValue(new SentenceEditingUIState(true));
+    }
+
+    public void stopEditing() {
+        editDialogs.setValue(new SentenceEditingUIState(false));
+    }
+
+    public void  setDeleteSate(Boolean isShown) {
+        editDialogs.setValue(new SentenceEditingUIState(true, isShown));
+    }
+
+    public void updateSelectedWord(WordState state) {
+        sentenceState.setValue(new SentenceDialogUIState.Builder(getSentenceState()).selectedWord(state).build());
+    }
+
+    public void errorShown() {
+        sentenceState.postValue(new SentenceDialogUIState.Builder(getSentenceState()).hasError(null).build());
+    }
+
+    private @NonNull SentenceDialogUIState getSentenceState() {
+        var state = sentenceState.getValue();
+        if (state == null) state = new SentenceDialogUIState();
+        return state;
     }
 }

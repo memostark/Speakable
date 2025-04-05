@@ -1,17 +1,17 @@
 package com.guillermonegrete.tts.webreader
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import app.cash.turbine.test
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
 import com.guillermonegrete.tts.common.models.Span
-import com.guillermonegrete.tts.common.models.toUI
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.Segment
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
 import com.guillermonegrete.tts.data.source.FakeWordRepository
 import com.guillermonegrete.tts.data.source.local.FakeExternalLinkSource
-import com.guillermonegrete.tts.data.toWordUI
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.FakeWebLinkDAO
 import com.guillermonegrete.tts.db.WebLink
@@ -19,7 +19,6 @@ import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.getOrAwaitValue
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
-import com.guillermonegrete.tts.savedwords.ResultType
 import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLink
 import com.guillermonegrete.tts.threading.TestMainThread
 import com.guillermonegrete.tts.utils.deleteAllFolder
@@ -77,7 +76,9 @@ class WebReaderViewModelTest {
         notesDAO = FakeNoteDAO()
         val settings = mockk<SettingsRepository>(relaxed = true)
         every { settings.showSavedWords() } returns flowOf(true)
+        val url = "https://example.com"
         viewModel = WebReaderViewModel(
+            url,
             getTranslationInteractor,
             getExternalLink,
             wordRepository,
@@ -110,7 +111,7 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url, link)
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", emptyList(), false)
+        val expected = PageInfo("My document", false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
@@ -125,7 +126,7 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url)
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", emptyList(), false)
+        val expected = PageInfo("My document", false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
@@ -141,7 +142,7 @@ class WebReaderViewModelTest {
 
         val result = viewModel.page.getOrAwaitValue()
         assertTrue(result is LoadResult.Error)
-        assertTrue((result as LoadResult.Error).exception is IOException)
+        assertTrue((result as LoadResult.Error).throwable is IOException)
     }
 
     @Test
@@ -161,7 +162,7 @@ class WebReaderViewModelTest {
         viewModel.loadPageFromWeb()
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", emptyList(), false)
+        val expected = PageInfo("My document", false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
 
         // Finally test loading local page
@@ -169,7 +170,7 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            LoadResult.Success(PageInfo(localContent, emptyList(), true)),
+            LoadResult.Success(PageInfo(localContent, true)),
             viewModel.page.getOrAwaitValue()
         )
     }
@@ -184,7 +185,7 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
 
         val result = viewModel.page.getOrAwaitValue() as LoadResult.Error
-        assertTrue(result.exception is IOException)
+        assertTrue(result.throwable is IOException)
     }
 
     @Test
@@ -199,7 +200,7 @@ class WebReaderViewModelTest {
         advanceUntilIdle()
 
         val result = viewModel.page.getOrAwaitValue() as LoadResult.Error
-        assertTrue(result.exception is IOException)
+        assertTrue(result.throwable is IOException)
     }
     // endregion
 
@@ -217,13 +218,13 @@ class WebReaderViewModelTest {
 
     @Test
     fun `Given two paragraphs, when translate paragraph pos 1, then load and success`() = runTest {
-        setParagraphs()
+        setParagraphs(1)
 
-        viewModel.translateParagraph(1)
+        viewModel.translateParagraph()
 
-        assertEquals(LoadResult.Loading, viewModel.translatedParagraph.value)
+        assertEquals(true, viewModel.paragraphState.value.paragraph?.isLoading)
         advanceUntilIdle()
-        assertEquals(LoadResult.Success(1), viewModel.translatedParagraph.value)
+        assertEquals(secondParagraphTrans, viewModel.paragraphState.value.paragraph?.translation)
     }
 
     @Test
@@ -231,13 +232,15 @@ class WebReaderViewModelTest {
         // setup translation and paragraphs
         val text = "Second paragraph text"
         viewModel.createParagraphs(listOf("First paragraph. Second sentence", text))
+        viewModel.paragraphSelected(1)
 
-        viewModel.translateParagraph(1)
+        viewModel.translateParagraph()
 
-        assertEquals(LoadResult.Loading, viewModel.translatedParagraph.value)
+        assertEquals(true, viewModel.paragraphState.value.paragraph?.isLoading)
         advanceUntilIdle()
-        val resultError = (viewModel.translatedParagraph.value as LoadResult.Error).exception.message
-        assertEquals("Translation not found for: $text", resultError)
+        val resultError = viewModel.paragraphState.value.paragraph
+        assertEquals(null, resultError?.translation)
+        assertEquals(false, resultError?.isLoading)
     }
 
     // endregion
@@ -247,13 +250,15 @@ class WebReaderViewModelTest {
     fun `Given two paragraphs, when translate sentence 1 paragraph 0, then load and success`() = runTest {
         setSentences()
 
-        viewModel.translateSentence(0, 1)
+        viewModel.dialogState.test {
+            assertEquals(WebReaderViewModel.UiDialogState(), awaitItem())
 
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
-        advanceUntilIdle()
+            viewModel.translateSentence(0, 1)
+            assertEquals(true, awaitItem().isLoading)
 
-        val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
-        assertTextInfoSuccess(expected)
+            val expected = Sentence(sentenceTrans.definition, 0)
+            assertEquals(awaitItem().sentence, expected)
+        }
     }
 
     @Test
@@ -261,23 +266,25 @@ class WebReaderViewModelTest {
         loadLocalPage() // need the language set for the cache to work
         setSentences()
 
-        viewModel.translateSentence(0, 1)
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
+        viewModel.dialogState.test {
+            assertEquals(WebReaderViewModel.UiDialogState(isPageSaved = true), awaitItem())
 
-        advanceUntilIdle()
-        val expected = WebReaderViewModel.WordResult(sentenceTrans, isSaved = false, isSentence = true)
-        assertTextInfoSuccess(expected)
+            viewModel.translateSentence(0, 1)
+            assertEquals(true, awaitItem().isLoading)
 
-        // translate again with cache
-        viewModel.translateSentence(0, 1)
-        assertTextInfoSuccess(expected)
+            val expected = Sentence(sentenceTrans.definition, 0)
+            assertEquals(expected, awaitItem().sentence)
+
+            // translate again with cache and expect no events because state didn't change
+            viewModel.translateSentence(0, 1)
+        }
     }
 
     @Test
     fun `Given translated paragraph, when find sentence, then return second sentence`() = runTest {
         setParagraphs()
 
-        viewModel.translateParagraph(0)
+        viewModel.translateParagraph()
         advanceUntilIdle()
 
         val result = viewModel.findSelectedSentence(0, 18) // index 18 is in the second sentence
@@ -288,7 +295,7 @@ class WebReaderViewModelTest {
     fun `When find sentence index out of bound, then return null`() = runTest {
         setParagraphs()
 
-        viewModel.translateParagraph(0)
+        viewModel.translateParagraph()
         advanceUntilIdle()
 
         val result = viewModel.findSelectedSentence(0, 36) // index 18 is in the second sentence
@@ -298,12 +305,18 @@ class WebReaderViewModelTest {
     /**
      * Sets up the paragraphs and their translations
      */
-    private fun setParagraphs() {
+    private fun setParagraphs(index: Int = 0) {
         val first = Translation(listOf(Segment("First translation", "First paragraph. "), Segment("Second translation", "Second sentence")), "en")
-        val second = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
-        wordRepository.addTranslation(first, second)
+        wordRepository.addTranslation(first, secondParagraphTrans)
         viewModel.createParagraphs(listOf("First paragraph. Second sentence", "Second paragraph text"))
-
+        runTest {
+            viewModel.paragraphState.test {
+                assertEquals(WebReaderViewModel.ParagraphUiState(), awaitItem()) // initial value
+                viewModel.paragraphSelected(index)
+                val expected = WebReaderViewModel.ParagraphUiState(paragraph = SelectedParagraph(index))
+                assertEquals(expected, awaitItem())
+            }
+        }
     }
 
     private fun setSentences() {
@@ -317,55 +330,68 @@ class WebReaderViewModelTest {
     // region Translation tests
 
     @Test
-    fun `Given saved word, when translate text, then text info update`() = runTest {
+    fun `Given saved word, when translate text, then word dialog`() = runTest {
         val word = Words("Hola", "es", "Hello").apply { id = 3 }
         wordRepository.addWords(word)
 
-        viewModel.setSavedWord("Hola", "es")
+        viewModel.dialogState.test {
+            assertEquals(WebReaderViewModel.UiDialogState(), awaitItem())
 
-        advanceUntilIdle()
-        assertEquals(ResultType.Update(word), viewModel.updatedWord.value)
+            viewModel.setSavedWord(3, Span(0, 1))
+            assertEquals(true, awaitItem().isLoading)
+            val wordDialog = awaitItem().dialogState as DialogType.SavedWord
+            assertEquals(word, wordDialog.word)
+        }
     }
 
     @Test
-    fun `Give no saved words, when translate text, then text info update`() = runTest {
+    fun `Give no saved words, when translate text, then translation dialog`() = runTest {
         val word = Words("Hola", "es", "Hello")
         val expectedTranslation = Translation(listOf(Segment(word.definition, word.word)), word.lang)
         wordRepository.addTranslation(expectedTranslation)
 
-        viewModel.translateText("Hola")
+        viewModel.dialogState.test {
+            assertEquals(WebReaderViewModel.UiDialogState(), awaitItem())
+            viewModel.translateText("Hola", Span(0, 1), false, false)
 
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
-        advanceUntilIdle()
-        val result = (viewModel.textInfo.value as LoadResult.Success).data
-        assertFalse(result.isSaved)
-        assertFalse(result.isSentence)
-        assertWords(word, result.word)
+            assertEquals(true, awaitItem().isLoading)
+            val result = awaitItem().dialogState as DialogType.Translation
+            assertEquals(word.definition, result.translation.translation)
+        }
     }
 
     @Test
     fun `Given no saved words and translation, when translate text, then error`() = runTest {
-        viewModel.translateText("Hola")
+        viewModel.dialogState.test {
+            assertEquals(WebReaderViewModel.UiDialogState(), awaitItem())
 
-        assertEquals(LoadResult.Loading, viewModel.textInfo.value)
-        advanceUntilIdle()
-        val result = (viewModel.textInfo.value as LoadResult.Error).exception
-        assertEquals("Translation not found for: Hola", result.message)
+            viewModel.translateText("Hola", Span(0, 1), false, false)
+
+            assertEquals(true, awaitItem().isLoading)
+            val result = awaitItem().error
+            assertEquals("Translation not found for: Hola", result)
+        }
     }
 
     @Test
     fun `Given no saved word, when translate word in sentence, then word info updated`() = runTest {
         val translation = Translation("Hola", "es", "Hello")
         wordRepository.addTranslation(translation)
+        setSentences()
 
-        viewModel.translateWordInSentence("Hola")
+        viewModel.dialogState.test {
+            assertEquals(WebReaderViewModel.UiDialogState(), awaitItem())
 
-        assertEquals(LoadResult.Loading, viewModel.wordInfo.value)
-        advanceUntilIdle()
-        val result = (viewModel.wordInfo.value as LoadResult.Success).data
-        assertEquals(translation.toWordUI(), result.word.toUI())
-        assertEquals(false, result.isSaved)
-        assertEquals(false, result.isSentence)
+            viewModel.translateSentence(0, 1)
+            assertEquals(true, awaitItem().isLoading)
+            assertNotNull(awaitItem().sentence)
+
+            viewModel.translateWordInSentence("Hola", Span(0, 2))
+
+            assertEquals(true, awaitItem().isWordLoading)
+            val state = awaitItem().dialogState as DialogType.Translation
+            assertEquals(translation.translatedText, state.translation.translation)
+        }
     }
 
     // endregion
@@ -380,10 +406,13 @@ class WebReaderViewModelTest {
         loadLocalPage()
         viewModel.setLanguage("es")
 
-        viewModel.onWordClicked("hola", 0)
-        advanceUntilIdle()
-
-        assertEquals(WordAndLinks("hola", links), viewModel.linksForWord.getOrAwaitValue())
+        viewModel.linksForWord.test {
+            assertEquals(DialogState.Empty, awaitItem())
+            val word = "hola"
+            viewModel.onWordClicked(word, 0)
+            val expected = DialogState.Success(WordAndLinks(word, links))
+            assertEquals(expected, awaitItem())
+        }
     }
 
 
@@ -453,15 +482,17 @@ class WebReaderViewModelTest {
         // Notes only available when local page exists
         loadLocalPage()
 
-        viewModel.saveNote("original text", "new note text", Span(4, 9), 9, "")
-        advanceUntilIdle()
+        viewModel.updatedNote.test {
+            viewModel.saveNote("original text", "new note text", Span(4, 9), 9, "")
+            advanceUntilIdle()
 
-        // Verify uuid was deleted
-        val newNote = Note("new note text", "original text", 4, 5, "", 10, null, 9)
-        val expected = ModifiedNote.Update(newNote)
-        assertEquals(expected, viewModel.updatedNote.getOrAwaitValue())
-        val note = notesDAO.notes.first()
-        assertEquals(newNote, note)
+            // Verify uuid was deleted
+            val newNote = Note("new note text", "original text", 4, 5, "", 10, null, 9)
+            val expected = ModifiedNote.Update(newNote)
+            assertEquals(expected, awaitItem())
+            val note = notesDAO.notes.first()
+            assertEquals(newNote, note)
+        }
     }
 
     @Test
@@ -471,13 +502,15 @@ class WebReaderViewModelTest {
         val noteId = 9L
         notesDAO.notes.add(Note("saved text", "original text", 0, 4, "", 10, null, noteId))
 
-        viewModel.deleteNote(noteId)
-        advanceUntilIdle()
+        viewModel.updatedNote.test {
+            viewModel.deleteNote(noteId)
+            advanceUntilIdle()
 
-        val expected = ModifiedNote.Delete(noteId)
-        assertEquals(expected, viewModel.updatedNote.getOrAwaitValue())
-        val note = notesDAO.notes.firstOrNull()
-        assertNull(note)
+            val expected = ModifiedNote.Delete(noteId)
+            assertEquals(expected, awaitItem())
+            val note = notesDAO.notes.firstOrNull()
+            assertNull(note)
+        }
     }
 
     // endregion
@@ -495,22 +528,12 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url)
         advanceUntilIdle()
 
-        val expected = PageInfo(localContent, emptyList(), true)
+        val expected = PageInfo(localContent, true)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
-    }
-
-    private fun assertTextInfoSuccess(expected: WebReaderViewModel.WordResult) {
-        val result = (viewModel.textInfo.value as LoadResult.Success).data
-        assertEquals(expected.isSaved, result.isSaved)
-        assertEquals(expected.isSentence, result.isSentence)
-        assertWords(expected.word, result.word)
-    }
-
-    private fun assertWords(expected: Words, actual: Words) {
-        assertEquals(expected.word, actual.word)
-        assertEquals(expected.definition, actual.definition)
-        assertEquals(expected.lang, actual.lang)
+        viewModel.dialogState.test {
+            assertEquals(WebReaderViewModel.UiDialogState(isPageSaved = true), awaitItem())
+        }
     }
 
     companion object {
@@ -524,5 +547,7 @@ class WebReaderViewModelTest {
                            """.trimIndent()
 
         val sentenceTrans = Words("Second sentence", "en", "Imagine this is translated")
+
+        val secondParagraphTrans = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
     }
 }

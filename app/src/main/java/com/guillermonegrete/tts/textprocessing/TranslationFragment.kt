@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
 import androidx.core.os.BundleCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
@@ -80,10 +81,9 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         if(isAdded) {
             binding.translationText.text = word.definition
             spinnerIndex = languageIndex
-        }else{
-            arguments?.putParcelable(ARGUMENT_WORD, word)
-            arguments?.putInt(ARGUMENT_SPINNER_INDEX, languageIndex)
         }
+        arguments?.putParcelable(ARGUMENT_WORD, word)
+        arguments?.putInt(ARGUMENT_SPINNER_INDEX, languageIndex)
     }
 
     fun setErrorLayout(){
@@ -126,13 +126,18 @@ class TranslationFragment: Fragment(R.layout.fragment_process_translation) {
         // Apply the adapter to the spinner
         with (binding) {
             translateToSpinner.apply {
+                val adapter = ArrayAdapter.createFromResource(context, R.array.googleTranslateLanguagesArray, android.R.layout.simple_dropdown_item_1line)
                 spinnerIndex?.let {
                     val item = adapter.getItem(it)
                     if (item != null) setText(item.toString(), false)
                 }
 
                 setOnItemClickListener { _, _, position, _ -> listener?.onItemSelected(position) }
-                post { dropDownVerticalOffset = -height } // the popup display from the top instead of the bottom of the view
+                post {
+                    // Makes the popup display from the top instead of the bottom of the view
+                    dropDownVerticalOffset = -height
+                    setAdapter(adapter)
+                }
             }
 
             definitionGroup.isVisible = false

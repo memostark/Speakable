@@ -8,6 +8,8 @@
     <dimen name="visualize_page_text_line_spacing_extra">8dp</dimen>
     <dimen name="visualize_sheet_bar_height">30dp</dimen>
     <dimen name="visualize_default_margin">16dp</dimen>
+    <dimen name="visualize_page_horizontal_padding">40dp</dimen>
+    <dimen name="visualize_page_top_padding">20dp</dimen>
 
     <dimen name="web_reader_bar_height">64dp</dimen>
 
@@ -17,6 +19,8 @@
     <dimen name="text_margin">16dp</dimen>
 
     <dimen name="default_dialog_padding">16dp</dimen>
+
+    <dimen name="dialog_max_width">700dp</dimen>
 
     <!--80 + 64 = bottom bar + top bar-->
     <dimen name="main_act_bars_height">144dp</dimen>

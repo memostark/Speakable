@@ -13,9 +13,18 @@
         android:layout_height="match_parent"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
+        android:clipToPadding="false"
         app:layoutManager="LinearLayoutManager"
         tools:context=".importtext.tabs.WebLinksFragment"
         tools:listitem="@layout/web_link_item" />
+
+    <ProgressBar
+        android:id="@+id/web_links_progress_bar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="80dp"/>
 
     <TextView
         android:id="@+id/no_links_message"

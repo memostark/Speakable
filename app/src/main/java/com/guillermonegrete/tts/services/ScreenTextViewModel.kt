@@ -117,7 +117,7 @@ class ScreenTextViewModel @JvmOverloads constructor(
     }
 
     private fun setErrorState(msg: String) {
-        _playingAudio.value = PlayAudioState.Error(RuntimeException(msg))
+        _playingAudio.postValue(PlayAudioState.Error(RuntimeException(msg)))
     }
 
     private fun getLanguageToPreference(): Int {

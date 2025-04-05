@@ -5,16 +5,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.guillermonegrete.tts.R;
+import com.guillermonegrete.tts.databinding.FragmentProcessDefinitionBinding;
+import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.List;
 
 public class DefinitionFragment extends Fragment {
 
+    private FragmentProcessDefinitionBinding binding;
 
     private static WiktionaryAdapter mAdapter;
 
@@ -31,17 +33,19 @@ public class DefinitionFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        final View fragment_layout = inflater.inflate(R.layout.fragment_process_definition, container, false);
+        binding = FragmentProcessDefinitionBinding.inflate(inflater, container, false);
+        binding.recyclerViewWiki.setAdapter(mAdapter);
+        return binding.getRoot();
+    }
 
-        RecyclerView mlistView =  fragment_layout.findViewById(R.id.recycler_view_wiki);
-        mlistView.setAdapter(mAdapter);
-        mlistView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        return fragment_layout;
+    public void updateData(List<WikiItem> items) {
+        binding.recyclerViewWiki.setAdapter(new WiktionaryAdapter(items));
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         mAdapter = null;
+        binding = null;
     }
 }

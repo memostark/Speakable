@@ -57,6 +57,11 @@ public class WordRepository implements WordRepositorySource {
     }
 
     @Override
+    public LiveData<Words> getLocalWord(@NonNull Integer id) {
+        return mWordLocalDataSource.loadWord(id);
+    }
+
+    @Override
     public List<String> getLanguagesISO() {
         return mWordLocalDataSource.getLanguagesISO();
     }

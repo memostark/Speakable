@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.importtext.tabs
 
+import app.cash.turbine.test
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.db.FakeWebLinkDAO
@@ -9,7 +10,7 @@ import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -43,12 +44,21 @@ class WebLinksViewModelTest {
 
     @Test
     fun `When get links, then loading and success`() = runTest {
-        viewModel.getRecentLinks()
-        Assert.assertEquals(LoadResult.Loading, viewModel.uiState.value)
+        viewModel.uiState.test {
+            assertEquals(LoadResult.Loading, awaitItem())
+            assertEquals(LoadResult.Success(files), awaitItem())
+        }
+    }
 
-        advanceUntilIdle()
+    @Test
+    fun `When exception on loading files, then error result`() = runTest {
+        val error = Exception("Error loading recent files")
+        webLinkDAO.returnError = error
 
-        Assert.assertEquals(LoadResult.Success(files), viewModel.uiState.value)
+        viewModel.uiState.test {
+            assertEquals(LoadResult.Loading, awaitItem())
+            assertEquals(error, (awaitItem() as LoadResult.Error).throwable)
+        }
     }
 
     @Test
@@ -57,6 +67,6 @@ class WebLinksViewModelTest {
 
         advanceUntilIdle()
 
-        Assert.assertEquals(1, webLinkDAO.links.size)
+        assertEquals(1, webLinkDAO.links.size)
     }
 }

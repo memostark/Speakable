@@ -7,6 +7,9 @@ import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.preference.ListPreference
 import androidx.preference.Preference
@@ -23,15 +26,23 @@ class SettingsFragment : PreferenceFragmentCompat(), MenuProvider {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        (activity as? AppCompatActivity)?.supportActionBar?.apply {
+    ): View {
+        val menuHost: MenuHost = requireActivity()
+        (menuHost as AppCompatActivity).supportActionBar?.apply {
             setHomeButtonEnabled(true)
             setDisplayHomeAsUpEnabled(true)
         }
 
-        val menuHost: MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
-        return super.onCreateView(inflater, container, savedInstanceState)
+
+        val layout = super.onCreateView(inflater, container, savedInstanceState)
+        ViewCompat.setOnApplyWindowInsetsListener(layout) { v, rootInsets ->
+            val insets = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            listView.updatePadding(bottom = insets.bottom)
+            rootInsets
+        }
+
+        return layout
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {

@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.webreader.db
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Update
 import androidx.room.Upsert
 
 @Dao
@@ -10,6 +11,9 @@ interface NoteDAO {
 
     @Upsert
     suspend fun upsert(note: Note): Long
+
+    @Update(entity = Note::class)
+    suspend fun update(note: NoteUpdate): Int
 
     @Delete
     suspend fun delete(note: Note)

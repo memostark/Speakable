@@ -18,8 +18,19 @@ sealed class Result<out T> {
 sealed class LoadResult<out T>{
 
     data class Success<out T>(val data: T): LoadResult<T>()
-    data class Error<out T>(val exception: Exception): LoadResult<T>()
+    data class Error<out T>(val throwable: Throwable): LoadResult<T>()
     data object Loading : LoadResult<Nothing>()
+}
+
+/**
+ * Similar to [LoadResult] but specific for dialogs with an additional state for then the dialog is hidden/empty.
+ */
+sealed class DialogState<out T>{
+
+    data object Empty: DialogState<Nothing>()
+    data class Success<out T>(val data: T): DialogState<T>()
+    data class Error<out T>(val exception: Exception): DialogState<T>()
+    data object Loading : DialogState<Nothing>()
 }
 
 /**

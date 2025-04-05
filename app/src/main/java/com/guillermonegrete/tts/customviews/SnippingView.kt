@@ -6,6 +6,7 @@ package com.guillermonegrete.tts.customviews
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.*
 import android.os.Build
 import android.util.AttributeSet
@@ -13,9 +14,11 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
+import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.guillermonegrete.tts.R
+import timber.log.Timber
 import kotlin.math.sqrt
 
 class SnippingView : View {
@@ -27,6 +30,7 @@ class SnippingView : View {
     private var colorBalls = arrayListOf<ColorBall>()
     private var pressedBallID = 0
     private var paint = Paint()
+    private var fillPaint = Paint()
 
     private var wParent: Int = 0
     private var hParent: Int = 0
@@ -37,6 +41,7 @@ class SnippingView : View {
     private var snipBottom: Int = 0
 
     private var isDragging = false
+    private var hasInitialState = true
     
     private var bitmaps = arrayOf(
         R.drawable.corner_topleft,
@@ -49,6 +54,23 @@ class SnippingView : View {
 
     init {
         isFocusable = true
+        paint.apply {
+            isAntiAlias = true
+            isDither = true
+            strokeJoin = Paint.Join.ROUND
+            style = Paint.Style.STROKE
+            color = Color.parseColor("#AA000000")
+            strokeWidth = 2f
+        }
+
+        fillPaint.apply {
+            isAntiAlias = true
+            isDither = true
+            strokeJoin = Paint.Join.ROUND
+            style = Paint.Style.FILL
+            color = Color.parseColor("#55DB1255")
+            strokeWidth = 0f
+        }
     }
 
     constructor(context: Context) : super(context)
@@ -57,19 +79,42 @@ class SnippingView : View {
 
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
 
-    private fun setBitmaps(statusBarHeight: Int) {
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        super.onConfigurationChanged(newConfig)
+        val sizes = getWindowSize()
+        Timber.d(sizes.toString())
+        if (!hasInitialState) {
+            ensureSnipViewFitsScreen()
+            updateBottom()
+            updateRight()
+        }
+        Timber.d(snipRectangle.toString())
+
+        // The insets and system UI listeners don't work for older devices, update here for rotations and other config changes.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && hasInitialState) {
+            val statusBarHeight = sizes.statusHeight
+            snipTop = statusBarHeight
+            snipRight = wParent
+            snipBottom = hParent
+
+            setBitmaps(Insets.of(0, statusBarHeight, 0, 0))
+        }
+    }
+
+    private fun setBitmaps(insets: Insets) {
 
         val firstBitmap = BitmapFactory.decodeResource(context.resources, bitmaps.first())
         val bitmapWidth = firstBitmap.width
         val bitmapHeight = firstBitmap.height
 
         val cornerPoints = arrayListOf<Point>().apply {
-            add(Point(0, statusBarHeight)) // top left
-            add(Point(0, hParent - bitmapHeight)) // bottom left
-            add(Point(wParent - bitmapWidth, hParent - bitmapHeight)) // bottom right
-            add(Point(wParent - bitmapWidth, statusBarHeight)) // top right
+            add(Point(insets.left, insets.top)) // top left
+            add(Point(insets.left, hParent - bitmapHeight)) // bottom left
+            add(Point(wParent - bitmapWidth - insets.right, hParent - bitmapHeight)) // bottom right
+            add(Point(wParent - bitmapWidth - insets.right, insets.top)) // top right
         }
 
+        colorBalls.clear()
         for ((j, point) in cornerPoints.withIndex()) {
             val bitmap = BitmapFactory.decodeResource(context.resources, bitmaps[j])
             colorBalls.add(ColorBall(bitmap, j, point))
@@ -80,53 +125,45 @@ class SnippingView : View {
 
     fun prepareLayout() {
 
-        if (colorBalls.isNotEmpty()) {
-            // The usable window height may have shrunk, if that's the case adjust the bottom
-            if (snipBottom > hParent) {
-                updateBottom(hParent)
-                invalidate()
-            }
-            return
-        }
-
-        val sizes = getWindowSize()
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-                // Recalculate height because nav size might have changed
-                // Don't use the nav height from the insets because it always return 0 when using an overlay layout
-                val navBarVisible = insets.isVisible(WindowInsetsCompat.Type.navigationBars())
-                val navSize = if (navBarVisible) sizes.navHeight else 0
-                hParent = sizes.height - navSize
+                // Recalculate snip view dimensions because the bars might have changed visibility
+                getWindowSize()
+                updateBottom()
+                updateRight()
+                if (!hasInitialState) return@setOnApplyWindowInsetsListener insets
+                // If it's the initial state set snipping view fully expanded
+                val sysInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
 
-                val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-                val statusBarHeight = statusBarInsets.top
-
-                val statusBarVisible = insets.isVisible(WindowInsetsCompat.Type.statusBars())
-                if (!statusBarVisible ||
-                    statusBarHeight > 0) { // sometimes the status bar is visible but the height is 0, ignore those insets until the height has a value
-
-                    if (colorBalls.isEmpty()) {
-                        snipTop = sizes.statusHeight
-                        snipRight = wParent
-                        snipBottom = hParent
-                        setBitmaps(sizes.statusHeight)
-                    }
-                }
+                snipTop = sysInsets.top
+                snipRight = wParent - sysInsets.right
+                snipBottom = hParent
+                snipLeft = sysInsets.left
+                setBitmaps(sysInsets)
 
                 insets
             }
         } else {
+            // When using an overlay service with older devices, setOnApplyWindowInsetsListener only returns empty values and setOnSystemUiVisibilityChangeListener is not called when set
+            // So neither is reliable for this case, assume the bars are always visible.
+            val sizes = getWindowSize()
+            if (!hasInitialState) return
+
             val statusBarHeight = sizes.statusHeight
 
             snipTop = statusBarHeight
             snipRight = wParent
             snipBottom = hParent
 
-            setBitmaps(statusBarHeight)
+            setBitmaps(Insets.of(0, statusBarHeight, 0, 0))
         }
     }
 
+    fun removeInsetsListener() {
+        ViewCompat.setOnApplyWindowInsetsListener(this, null)
+    }
+
+    @SuppressLint("InternalInsetResource", "DiscouragedApi")
     private fun getWindowSize(): Sizes {
 
         val sizes: Sizes
@@ -136,13 +173,12 @@ class SnippingView : View {
             val windowMetrics = wm.currentWindowMetrics
             val windowInsets = windowMetrics.windowInsets
 
-            val insets = windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars() or WindowInsets.Type.displayCutout())
-            val insetsWidth = insets.right + insets.left
-            val insetsHeight = insets.bottom // Ignore top inset because the app draws over it
+            val insets = windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+            val navBar = windowInsets.getInsets(WindowInsets.Type.navigationBars())
 
             val b = windowMetrics.bounds
-            wParent = b.width() - insetsWidth
-            hParent = b.height() - insetsHeight
+            wParent = b.width() - navBar.left - navBar.right
+            hParent = b.height() - navBar.bottom
 
             sizes = Sizes(b.width(), b.height(), insets.top, insets.bottom)
         } else {
@@ -162,42 +198,16 @@ class SnippingView : View {
     data class Sizes(val width: Int, val height: Int, val statusHeight: Int, val navHeight: Int)
 
     override fun onDraw(canvas: Canvas) {
-
-        paint.apply {
-            isAntiAlias = true
-            isDither = true
-            strokeJoin = Paint.Join.ROUND
-            strokeWidth = 5f
-        }
-
         // Draw snipping rectangle border
-        paint.apply {
-            style = Paint.Style.STROKE
-            color = Color.parseColor("#AA000000")
-            strokeWidth = 2f
-        }
         canvas.drawRect(snipLeft.toFloat(), snipTop.toFloat(), snipRight.toFloat(), snipBottom.toFloat(), paint)
 
         // Fill rectangle
-        paint.apply {
-            style = Paint.Style.FILL
-            color = Color.parseColor("#55DB1255")
-            strokeWidth = 0f
-        }
-        canvas.drawRect(snipLeft.toFloat(), snipTop.toFloat(), snipRight.toFloat(), snipBottom.toFloat(), paint)
+        canvas.drawRect(snipLeft.toFloat(), snipTop.toFloat(), snipRight.toFloat(), snipBottom.toFloat(), fillPaint)
 
         //draw the corners
         // draw the balls on the canvas
-        paint.color = Color.BLUE
-        paint.textSize = 18f
-        paint.strokeWidth = 0f
         for (ball in colorBalls) {
-            canvas.drawBitmap(
-                ball.bitmap, ball.left.toFloat(), ball.top.toFloat(),
-                paint
-            )
-//            drawCornerBorder(canvas, Rect(point.x, point.y, point.x + wBall, point.y))
-//            canvas.drawText("" + (i+1), point.x.toFloat(), point.y.toFloat(), paint)
+            canvas.drawBitmap(ball.bitmap, ball.left.toFloat(), ball.top.toFloat(), null)
         }
     }
 
@@ -251,19 +261,19 @@ class SnippingView : View {
 
             MotionEvent.ACTION_MOVE ->
 
-
                 if (pressedBallID > -1) {
+                    hasInitialState = false
 
                     val colorBall = colorBalls[pressedBallID]
-                    val halfWidth = colorBall.width / 2
-                    val halfHeight = colorBall.height / 2
+                    val halfWidth = colorBall.halfWidth
+                    val halfHeight = colorBall.halfHeight
 
-                    if(pressedBallID > 1){ // Right points
+                    if (pressedBallID > 1) { // Right points
                         val minLeft = colorBalls[0].centerX
                         val maxLeft =  wParent - halfWidth
                         x = ensureRange(x, minLeft, maxLeft)
                         snipRight = x + halfWidth
-                    }else{ // Left points
+                    } else { // Left points
                         val maxLeft = colorBalls[2].centerX
                         x = ensureRange(x, halfWidth, maxLeft)
                         snipLeft = x - halfWidth
@@ -283,25 +293,30 @@ class SnippingView : View {
                         }
                     }
 
-                    colorBalls[pressedBallID].left = x - colorBall.width / 2
-                    colorBalls[pressedBallID].top = y - colorBall.height / 2
+                    colorBalls[pressedBallID].left = x - colorBall.halfWidth
+                    colorBalls[pressedBallID].top = y - colorBall.halfHeight
 
                     if (groupId == 1) {
 
-                        colorBalls[1].left = colorBalls[0].left
-                        colorBalls[1].top = colorBalls[2].top
-                        colorBalls[3].left = colorBalls[2].left
-                        colorBalls[3].top = colorBalls[0].top
+                        val ball1 = colorBalls[1]
+                        ball1.left = colorBalls[0].left
+                        ball1.top = colorBalls[2].top
+                        val ball3 = colorBalls[3]
+                        ball3.left = colorBalls[2].left
+                        ball3.top = colorBalls[0].top
                     } else {
 
-                        colorBalls[0].left = colorBalls[1].left
-                        colorBalls[0].top = colorBalls[3].top
-                        colorBalls[2].left = colorBalls[3].left
-                        colorBalls[2].top = colorBalls[1].top
+                        val ball0 = colorBalls[0]
+                        ball0.left = colorBalls[1].left
+                        ball0.top = colorBalls[3].top
+                        val ball2 = colorBalls[2]
+                        ball2.left = colorBalls[3].left
+                        ball2.top = colorBalls[1].top
                     }
 
                     invalidate()
                 } else if (isDragging){
+                    hasInitialState = false
                     val deltaX = x - initialX
                     val deltaY = y - initialY
                     initialX = x
@@ -331,13 +346,37 @@ class SnippingView : View {
 
     }
 
+    private fun ensureSnipViewFitsScreen() {
+        if (snipTop >= hParent) {
+            snipTop = 0
+            colorBalls[0].top = snipTop
+            colorBalls[3].top = snipTop
+        }
+
+        if (snipLeft >= wParent) {
+            snipLeft = 0
+            colorBalls[0].left = snipLeft
+            colorBalls[1].left = snipLeft
+        }
+    }
+
     /**
      * Updates the position of the snip bottom along with the bottom corners.
      */
-    private fun updateBottom(bottomPos: Int) {
-        snipBottom = bottomPos
-        colorBalls[1].top = bottomPos - colorBalls[1].height
-        colorBalls[2].top = bottomPos - colorBalls[2].height
+    private fun updateBottom() {
+        if (snipBottom > hParent) {
+            snipBottom = hParent
+            colorBalls[1].top = snipBottom - colorBalls[1].height
+            colorBalls[2].top = snipBottom - colorBalls[2].height
+        }
+    }
+
+    private fun updateRight() {
+        if (snipRight > wParent) {
+            snipRight = wParent
+            colorBalls[2].left = snipRight - colorBalls[2].width
+            colorBalls[3].left = snipRight - colorBalls[2].width
+        }
     }
 
     private fun ensureRange(value: Int, min: Int, max: Int) = minOf(maxOf(value, min), max)
@@ -352,6 +391,9 @@ class SnippingView : View {
 
         internal val width = bitmap.width
         internal val height = bitmap.height
+
+        val halfWidth = width / 2
+        val halfHeight = height / 2
 
         var left = pointTopLeft.x
         var top = pointTopLeft.y

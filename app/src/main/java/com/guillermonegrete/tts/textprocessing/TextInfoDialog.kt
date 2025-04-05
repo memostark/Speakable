@@ -13,7 +13,6 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,8 +24,12 @@ import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import androidx.window.layout.WindowMetricsCalculator
 import com.google.android.material.tabs.TabLayoutMediator
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
@@ -34,12 +37,11 @@ import com.guillermonegrete.tts.common.compose.ExternalLinksDialog
 import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.StringList
 import com.guillermonegrete.tts.common.compose.YesNoDialog
-import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.customviews.ButtonsPreference
+import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.Translation
-import com.guillermonegrete.tts.data.WordResult
 import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
@@ -59,6 +61,7 @@ import com.guillermonegrete.tts.utils.dpToPixel
 import com.guillermonegrete.tts.utils.findWord
 import com.guillermonegrete.tts.utils.isNightMode
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 import javax.inject.Inject
@@ -77,8 +80,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private var mFoundWords: Words? = null
     private var dbWord: Words? = null
 
-    @Inject
-    internal lateinit var presenter: ProcessTextContract.Presenter
+    private val presenter: ProcessTextViewModel by viewModels()
     private val saveWordViewModel: SaveWordDialogViewModel by viewModels()
 
     private  var _bindingWord: DialogFragmentWordBinding? = null
@@ -95,15 +97,12 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private val detectedLanguage = mutableIntStateOf(-1)
     private val selectedSpans = mutableStateOf<SplitPageSpan?>(null)
     private val wordState = mutableStateOf<WordState?>(null)
+    private val editWordDialogVisible = mutableStateOf<EditDeleteDialogUI?>(null)
 
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
-    private var selectedLink = 0
+    private var selectedLink = mutableIntStateOf(0)
 
-    private val editDialogShown = mutableStateOf(false)
-    private val deleteDialogShown = mutableStateOf(false)
     private var linksDialogShown = mutableStateOf(false)
-
-    private var selectedWordSpan = Span(0, 0)
 
     @Inject
     internal lateinit var preferences: SharedPreferences
@@ -139,7 +138,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         window = dialog.window
         window?.requestFeature(Window.FEATURE_NO_TITLE)
         val back = ColorDrawable(Color.TRANSPARENT)
-        val inset = InsetDrawable(back, requireContext().dpToPixel(20))
+        val margin = requireContext().dpToPixel(20)
+        val inset = InsetDrawable(back, margin, 0, margin, 0)
         window?.setBackgroundDrawable(inset)
         return dialog
     }
@@ -177,13 +177,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             highlightedSpanState = selectedSpans,
                             wordState = wordState,
                             onPlayButtonClick = { onPlayButtonClick(text) },
-                            onTopTextClick = { findWord(it) },
-                            onBottomTextClick = { findSelectedSentence(it) },
-                            onBookmarkClicked = { editDialogShown.value = true },
+                            onTopTextClick = ::findWord,
+                            onBottomTextClick = presenter::findSelectedSentence,
+                            onBookmarkClicked = presenter::startEditing,
                             onMoreInfoClicked = { onMoreInfoClicked() },
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
-                            onDismiss = { dismiss() },
+                            onDismiss = { dialog?.cancel() },
                         )
 
                         Dialogs()
@@ -202,51 +202,63 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         setPlayButton(text)
         bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else View.GONE
 
-        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val metrics = WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(requireContext())
+        val maxWidth = resources.getDimensionPixelSize(R.dimen.dialog_max_width)
+        val width = if (metrics.bounds.width() > maxWidth) maxWidth else ViewGroup.LayoutParams.MATCH_PARENT
+        window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         return bindingWord.root
     }
 
     private fun onMoreInfoClicked() {
         val wordUI = wordState.value?.word ?: return
-        (presenter as ProcessTextPresenter).getExternalLinks(wordUI.toWord())
+        presenter.getExternalLinks(wordUI.toWord())
     }
 
     private fun findWord(offset: Int) {
-        // If true the selected word was tapped, unselect
-        if (selectedWordSpan.inside(offset)) {
-            selectedWordSpan = Span(0, 0)
-            wordState.value = null
-            return
-        }
-
         val text = inputText ?: return
-
-        val span = text.findWord(offset)
-        selectedWordSpan = span
-        val word = text.substring(span.start, span.end)
         val detectedIndex = detectedLanguage.intValue
         val language = if (languageFromIndex == 0 && detectedIndex != -1) {
             languagesISO.getOrNull(detectedIndex) ?: languageFrom
         } else languageFrom
-        (presenter as ProcessTextPresenter).setSelectedWord(word, language, languageToISO)
+
+        presenter.findWord(offset, text.findWord(offset), language, languageToISO)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (_bindingWord != null) setSwipeListener()
 
-        val presenterImp = (presenter as ProcessTextPresenter)
-        presenterImp.layoutResult.observe(viewLifecycleOwner){
-            onLayoutResult(it)
-        }
-
-        presenterImp.statusTTS.observe(viewLifecycleOwner){
-            val available = when(it) {
-                StatusTTS.LanguageReady -> true
-                StatusTTS.Unavailable -> false
+        with(presenter) {
+            layoutResult.observe(viewLifecycleOwner){
+                onLayoutResult(it)
             }
-            playIconState.value = playIconState.value.copy(isLoading = false, isTTSAvailable = available)
+
+            statusTTS.observe(viewLifecycleOwner){
+                val available = when(it) {
+                    StatusTTS.LanguageReady -> true
+                    StatusTTS.Unavailable -> false
+                }
+                playIconState.value = playIconState.value.copy(isLoading = false, isTTSAvailable = available)
+            }
+
+            sentenceUIState.observe(viewLifecycleOwner) { state ->
+                if (state.hasError != null) {
+                    Toast.makeText(context, "Couldn't load selected word", Toast.LENGTH_SHORT).show()
+                    Timber.e("Couldn't load selected word info: ${state.hasError}")
+                    presenter.errorShown()
+                }
+                selectedSpans.value = state.highlights
+                wordState.value = state.selectedWord
+            }
+
+            editDialogs.observe(viewLifecycleOwner) { state ->
+                val word = wordState.value
+                if (word != null) {
+                    editWordDialogVisible.value =
+                        if (state.isEditing) EditDeleteDialogUI(word, state.isDeleteDialogShown, LanguagesList(languages, languagesISO)) else null
+                }
+            }
         }
 
         val extraWord = BundleCompat.getParcelable(requireArguments(), WORD_KEY, Words::class.java)
@@ -262,41 +274,50 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             }
         }
 
-        presenterImp.wordInfo().observe(this) {result ->
-            when(result) {
-                is WordResult.Local -> wordState.value = WordState(result.word.toUI(), result.word.id, selectedWordSpan)
-                is WordResult.Remote -> wordState.value = WordState(WordUI(result.translation.originalText, result.translation.src, result.translation.translatedText), span = selectedWordSpan)
-                is WordResult.Error -> {
-                    Toast.makeText(context, "Couldn't load selected word", Toast.LENGTH_SHORT).show()
-                    Timber.e(result.exception, "Couldn't load selected word info")
+        presenter.wordLinks.observe(this) { state ->
+            when(state) {
+                DialogState.Empty -> linksDialogShown.value = false
+                is DialogState.Error -> {
+                    Timber.e(state.exception, "Error retrieving links for word")
+                    linksDialogShown.value = false
+                }
+                DialogState.Loading -> {}
+                is DialogState.Success -> {
+                    val links = state.data
+                    wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
+
+                    linksDialogShown.value = true
                 }
             }
         }
 
-        presenterImp.wordLinks.observe(this) { links ->
-            wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
-            // If out of index, default to the first item
-            if(selectedLink >= links.size) selectedLink = 0
-            linksDialogShown.value = true
-        }
+        presenter.selectedLink.observe(this) { selectedLink.intValue = it }
 
-        saveWordViewModel.update.observe(this) {result ->
-            when(result) {
-                is ResultType.Insert -> {
-                    editDialogShown.value = false
-                    if (_bindingWord != null) {
-                        setSavedWordToolbar(result.word)
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                saveWordViewModel.updateFlow.collect { result ->
+                    when(result) {
+                        is ResultType.Insert -> {
+                            presenter.stopEditing()
+                            if (_bindingWord != null) {
+                                setSavedWordToolbar(result.word)
+                            }
+                            updateDatabaseWord(result.word.id)
+                            val newState = WordState(result.word.toUI(), result.word.id, wordState.value?.span)
+                            wordState.value = newState
+                            presenter.updateSelectedWord(newState)
+                            dbWord = result.word
+                        }
+                        is ResultType.Update -> {
+                            val newState = WordState(result.word.toUI(), result.word.id, wordState.value?.span)
+                            wordState.value = newState
+                            presenter.updateSelectedWord(newState)
+                            dbWord = result.word
+                            presenter.stopEditing()
+                        }
+                        is ResultType.Delete -> {}
                     }
-                    updateDatabaseWord(result.word.id)
-                    wordState.value = WordState(result.word.toUI(), result.word.id, wordState.value?.span)
-                    dbWord = result.word
                 }
-                is ResultType.Update -> {
-                    wordState.value = WordState(result.word.toUI(), result.word.id, wordState.value?.span)
-                    dbWord = result.word
-                    editDialogShown.value = false
-                }
-                is ResultType.Delete -> {}
             }
         }
     }
@@ -311,11 +332,18 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         presenter.stop()
     }
 
+    override fun onCancel(dialog: DialogInterface) {
+        super.onCancel(dialog)
+        // Unlike onDismiss(), this method does not get called when there is a configuration change
+        val fragment = parentFragment
+        if (fragment is DialogInterface.OnCancelListener) fragment.onCancel(dialog)
+        val parent = activity
+        if (parent is DialogInterface.OnCancelListener) parent.onCancel(dialog)
+    }
+
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         presenter.destroy()
-        val parent = activity
-        if(parent is DialogInterface.OnDismissListener) parent.onDismiss(dialog)
     }
 
     override fun onDestroyView() {
@@ -366,7 +394,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     private fun setWordLayout(word: Words) {
         bindingWord.textLanguageCode.text = word.lang
 
-        bindingWord.saveIcon.setOnClickListener { editDialogShown.value = true }
+        bindingWord.saveIcon.setOnClickListener { presenter.startEditing() }
         bindingWord.composeRoot.setContent {
             VisualizerTheme(theme = brightnessTheme) {
                 languages = resources.getStringArray(R.array.googleTranslateLanguagesArray).toList()
@@ -432,18 +460,37 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     override fun setExternalDictionary(links: List<ExternalLink>) {
         if(!isAdded) return
 
+        // Check if fragments ware already added (e.g. saved instances for configuration change)
+        val fragments = arrayOfNulls<Fragment>(3)
+        for (frag in childFragmentManager.fragments) {
+            when (frag) {
+                is DefinitionFragment -> fragments[0] = frag
+                is TranslationFragment -> fragments[1] = frag
+                is ExternalLinksFragment -> fragments[2] = frag
+            }
+        }
+
         val pagerAdapter = MyPageAdapter(this)
-        if (dictionaryAdapter != null) pagerAdapter.addFragment(
-            DefinitionFragment.newInstance(dictionaryAdapter)
-        )
+        dictionaryAdapter?.let {
+            val previous = fragments[0]
+            val fragment = if (previous is DefinitionFragment) {
+                previous.updateData(it.items)
+                previous
+            } else {
+                DefinitionFragment.newInstance(dictionaryAdapter)
+            }
+            pagerAdapter.addFragment(fragment)
+        }
+
         val word = dbWord ?: mFoundWords
         if (word != null) {
-            val translationFragment = TranslationFragment.newInstance(word, languagePreferenceIndex)
-            translationFragment.setListener(translationFragListener)
-            pagerAdapter.addFragment(translationFragment)
+            val fragment = (fragments[1] as? TranslationFragment) ?: TranslationFragment.newInstance(word, languagePreferenceIndex)
+            fragment.setListener(translationFragListener)
+            pagerAdapter.addFragment(fragment)
         }
+
         pagerAdapter.addFragment(
-            ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
+            fragments[2] ?: ExternalLinksFragment.newInstance(inputText, links as ArrayList<ExternalLink>)
         )
 
         pager?.let {
@@ -498,8 +545,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
         }
         updateDatabaseWord(NOT_SAVED_ID)
-        deleteDialogShown.value = false
-        editDialogShown.value = false
+        presenter.stopEditing()
     }
 
     override fun showErrorPlayingAudio() {
@@ -557,7 +603,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         // If pager is not null, means we are using activity_processtext layout,
         // otherwise is sentence layout
         if (pager != null) {
-            bindingWord.textLanguageCode.visibility = if (languageFrom == "auto") View.VISIBLE else  View.GONE
+            val detectLang = languageFrom == "auto"
+            bindingWord.textLanguageCode.visibility = if (detectLang) View.VISIBLE else  View.GONE
+            if (detectLang) bindingWord.textLanguageCode.text = translation.src
             val fragIndex = if (dictionaryAdapter != null && pagerAdapter?.itemCount == 3) 1 else 0
 
             val fragment = pagerAdapter?.fragments?.get(fragIndex)
@@ -583,7 +631,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     override fun setPresenter(presenter: ProcessTextContract.Presenter) {
-        this.presenter = presenter
+        // No longer used, the presenter is obtained with DI
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -689,7 +737,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             val wlp = it.attributes
             wlp.dimAmount = 0f
             wlp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-            wlp.y = requireContext().dpToPixel(40)
+            wlp.y = requireContext().dpToPixel(8)
             wlp.gravity = Gravity.BOTTOM
             it.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             it.attributes = wlp
@@ -698,7 +746,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     private fun setSavedWordToolbar(word: Words) {
         bindingWord.saveIcon.setImageResource(R.drawable.ic_bookmark_black_24dp)
-        bindingWord.saveIcon.setOnClickListener { editDialogShown.value = true }
+        bindingWord.saveIcon.setOnClickListener { presenter.startEditing() }
 
         // Hides language from spinner, because language is already predefined.
         bindingWord.spinnerLanguageFrom.visibility = View.INVISIBLE
@@ -748,12 +796,15 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             R.array.googleTranslateLangsWithAutoArray,
             android.R.layout.simple_spinner_dropdown_item
         )
-        spinner.setAdapter(adapter)
-        val item = spinner.adapter.getItem(languageFromIndex)
+        val item = adapter.getItem(languageFromIndex)
         if (item != null) spinner.setText(item.toString(), false)
         spinner.setOnItemClickListener { _, _, position, _ -> updateLanguageFrom(position) }
         spinner.setOnClickListener { spinner.showDropDown() }
-        spinner.post { spinner.dropDownVerticalOffset = -spinner.height }
+        spinner.post {
+            // There is a bug after a config change the adapter contains only one element, setting in post() fixes that problem
+            spinner.setAdapter(adapter)
+            spinner.dropDownVerticalOffset = -spinner.height
+        }
     }
 
     /**
@@ -791,26 +842,6 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
     }
 
-    private fun findSelectedSentence(charIndex: Int) {
-        val translation = (presenter as ProcessTextPresenter).currentTranslation ?: return
-
-        var start = 0
-        var originStart = 0
-
-        for(sentence in translation.sentences){
-            val end = start + sentence.trans.length
-            val originalEnd = originStart + sentence.orig.length
-            if(charIndex < end) {
-                // indicate UI to highlight this sentence
-                val spans = SplitPageSpan(Span(originStart, originalEnd), Span(start, end))
-                selectedSpans.value = if (selectedSpans.value == spans) null else spans
-                return
-            }
-            start = end
-            originStart = originalEnd
-        }
-    }
-
     private fun updateDatabaseWord(id: Int) {
         val fragment = childFragmentManager.fragments.find { it is TranslationFragment}
         if (fragment != null && fragment is TranslationFragment) {
@@ -844,6 +875,8 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         const val LANGUAGE_PREFERENCE = "ProcessTextLangPreference"
         const val NO_SERVICE = "no_service"
+
+        const val TAG = "Text_Info"
 
         @JvmStatic
         @JvmOverloads
@@ -880,15 +913,14 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val word = state.word
 
         EditDeleteWordDialogs(
-            state,
-            editDialogShown,
-            deleteDialogShown,
-            LanguagesList(languages, languagesISO),
+            editWordDialogVisible.value,
             onSave = {
                 val resultWord = it.toWord()
                 resultWord.id = state.dbId
                 if(state.isSaved) saveWordViewModel.update(resultWord) else saveWordViewModel.save(resultWord)
             },
+            onDismiss =  presenter::stopEditing,
+            deleteDialogChange = presenter::setDeleteSate,
             onDelete = { presenter.onClickDeleteWord(word.word) },
         )
     }
@@ -899,43 +931,55 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         ExternalLinksDialog(
             isShown = linksDialogShown.value,
             links = wordLinks.value,
-            selection = selectedLink,
-            onItemClick = { selectedLink = it},
-            onDismiss = { linksDialogShown.value = false },
+            selection = selectedLink.intValue,
+            onItemClick = presenter::setWordLink,
+            onDismiss = presenter::hideWordLinks,
         )
     }
 }
 
+data class EditDeleteDialogUI(
+    val word: WordState,
+    val isDeleteShown: Boolean,
+    val languages: LanguagesList
+)
+
 @Composable
 fun EditDeleteWordDialogs(
-    wordState: WordState,
-    editDialogShown: MutableState<Boolean>,
-    deleteDialogShown: MutableState<Boolean>,
-    languages: LanguagesList,
+    state: EditDeleteDialogUI?,
     onSave: (word: WordUI) -> Unit = { _ -> },
+    onDismiss: () -> Unit = {},
+    deleteDialogChange: (Boolean) -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
+    if (state == null) return
+    val wordState = state.word
     val word = wordState.word
 
-    var editShown by remember { editDialogShown }
-    var deleteShown by remember { deleteDialogShown }
+    var deleteShown by remember { mutableStateOf(state.isDeleteShown) }
 
     EditWordDialog(
-        isShown = editShown,
+        isShown = true,
         word = word.word,
         language = word.lang,
         translation = word.definition,
         notes = word.notes,
-        languages = languages,
+        languages = state.languages,
         isSaved = wordState.isSaved,
         onSave = onSave,
-        onDelete = { deleteDialogShown.value = true },
-        onDismiss = { editShown = false },
+        onDelete = {
+            deleteDialogChange(true)
+            deleteShown = true
+        },
+        onDismiss = onDismiss,
     )
 
-    if (deleteDialogShown.value) {
+    if (deleteShown) {
         YesNoDialog(
-            onDismissRequest = { deleteShown = false },
+            onDismissRequest = {
+                deleteDialogChange(false)
+                deleteShown = false
+            },
             onConfirmation = onDelete,
             dialogTitle = LocalContext.current.getString(R.string.delete_word_message),
             dialogText = LocalContext.current.getString(R.string.delete_word_message),

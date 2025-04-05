@@ -55,7 +55,7 @@ class GooglePublicSourceTest {
         val selectedText = "La primer oración del texto. Y la segunda oración del texto.\nY la tercer oración."
         val response = GoogleTranslateResponse(
             listOf(
-                Sentence( "The first sentence of the text. ", "La primer oración del texto."),
+                Sentence( "The first sentence of the text.", "La primer oración del texto."),
                 Sentence( "And the second sentence of the text.\n", "Y la segunda oración del texto.\n"),
                 Sentence( "And the third sentence.", "Y la tercer oración."),
             ), "es")
@@ -64,9 +64,9 @@ class GooglePublicSourceTest {
         val result = dataSource.getTranslation(selectedText, "es", "en")
         val expectedTranslation = Translation(
             listOf(
-                Segment("The first sentence of the text. ", "La primer oración del texto. "),
-                Segment( "And the second sentence of the text.\n", "Y la segunda oración del texto.\n"),
-                Segment( "And the third sentence.", "Y la tercer oración."),
+                Segment("The first sentence of the text.", "La primer oración del texto."),
+                Segment("And the second sentence of the text.\n", "Y la segunda oración del texto.\n"),
+                Segment("And the third sentence.", "Y la tercer oración."),
             ), "es")
 
         assertEquals(expectedTranslation, result)
