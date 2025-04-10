@@ -234,6 +234,9 @@ dependencies {
     implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {
         transitive=true
     }
+
+    // Readability
+    implementation 'net.dankito.readability4j:readability4j:1.0.8'
 }
 
 apply plugin: 'com.google.gms.google-services'
