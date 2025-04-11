@@ -111,7 +111,7 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url, link)
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", false)
+        val expected = PageInfo(DEFAULT_PAGE_RESULT, false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
@@ -126,7 +126,7 @@ class WebReaderViewModelTest {
         viewModel.loadDoc(url)
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", false)
+        val expected = PageInfo(DEFAULT_PAGE_RESULT, false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
         assertEquals(link, viewModel.webLink.getOrAwaitValue())
     }
@@ -162,7 +162,7 @@ class WebReaderViewModelTest {
         viewModel.loadPageFromWeb()
         advanceUntilIdle()
 
-        val expected = PageInfo("My document", false)
+        val expected = PageInfo(DEFAULT_PAGE_RESULT, false)
         assertEquals(LoadResult.Success(expected), viewModel.page.getOrAwaitValue())
 
         // Finally test loading local page
@@ -549,5 +549,7 @@ class WebReaderViewModelTest {
         val sentenceTrans = Words("Second sentence", "en", "Imagine this is translated")
 
         val secondParagraphTrans = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
+
+        const val DEFAULT_PAGE_RESULT = "<div id=\"readability-page-1\" class=\"page\">   My document  \n</div>"
     }
 }
