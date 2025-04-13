@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
@@ -44,6 +43,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import androidx.core.graphics.toColorInt
+import com.guillermonegrete.tts.utils.count
 
 class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
@@ -161,6 +162,7 @@ class ParagraphAdapter(
                             Payload.WordInSentence -> holder.highlightInsideWord(items[position])
                             is Payload.AddNote -> holder.highlightNote(items[position], payload.id)
                             is Payload.DeleteNote -> holder.removeNote(payload.id)
+                            Payload.AddNotes -> holder.highlightNotes(items[position])
                             is Payload.AddWord -> holder.highlightSavedWord(items[position], payload.id)
                             is Payload.DeleteWord -> holder.removeWord(payload.id)
                             Payload.AddWords -> {
@@ -412,7 +414,6 @@ class ParagraphAdapter(
                     }
                 }
 
-                // why are we doing this twice? Because we need to remove the intersections and reapply them
                 item.savedWords.forEach { word ->
                     val wordSpan = word.span
                     if (wordSpan != null && span.intersects(wordSpan)) {
@@ -496,13 +497,27 @@ class ParagraphAdapter(
             removeNote(id) // remove previous note
             spannable.addHighlightedText(span.start, span.end, Highlight.Note(note.color, id))
 
-            // add overlaps
+            addWordOverlaps(item, note, spannable)
+        }
+
+        fun highlightNotes(item: ParagraphItem) {
+            val spannable = getSpannable() ?: return
+
+            item.notes.forEach { note ->
+                val span = note.span
+                spannable.addHighlightedText(span.start, span.end, Highlight.Note(note.color, note.id))
+
+                addWordOverlaps(item, note, spannable)
+            }
+        }
+
+        fun addWordOverlaps(item: ParagraphItem, note: NoteItem, spannable: Spannable) {
             item.savedWords.forEach { word ->
                 val wordSpan = word.span
-                if (wordSpan != null && span.intersects(wordSpan)) {
+                if (wordSpan != null && note.span.intersects(wordSpan)) {
                     val overlap = getOverlap(note, word)
                     if (overlap != null)
-                        spannable.addHighlightedText(overlap.start, overlap.end, Highlight.Overlap(overlap.color, id, word.dbId))
+                        spannable.addHighlightedText(overlap.start, overlap.end, Highlight.Overlap(overlap.color, note.id, word.dbId))
                 }
             }
         }
@@ -959,9 +974,18 @@ class ParagraphAdapter(
         val paragraphItem = items[pos]
         val oldNote = paragraphItem.notes.find { noteId == it.id }
         paragraphItem.notes.removeAll { noteId == it.id }
-        val newNote = NoteItem(result.text, paragraphItem.toLocal(selection), Color.parseColor(result.colorHex), noteId)
+        val newNote = NoteItem(result.text, paragraphItem.toLocal(selection), result.colorHex.toColorInt(), noteId)
         paragraphItem.notes.add(newNote)
         if (oldNote == null || oldNote.color != newNote.color) notifyItemChanged(pos, Payload.AddNote(noteId))
+    }
+
+    fun updateNotes(notesByParagraph: List<List<NoteItem>>, range: IntRange) {
+        notesByParagraph.forEachIndexed { i, notes ->
+            val pageItem = items[i]
+            pageItem.notes.clear()
+            pageItem.notes.addAll(notes)
+        }
+        notifyItemRangeChanged(range.start, range.count, Payload.AddNotes)
     }
 
     fun deleteNote(noteId: Long) {
@@ -1138,6 +1162,7 @@ class ParagraphAdapter(
         data object WordInSentence: Payload
         data class AddNote(val id: Long): Payload
         data class DeleteNote(val id: Long): Payload
+        data object AddNotes: Payload
         data class AddWord(val id: Int): Payload
         data class DeleteWord(val id: Int): Payload
         data object AddWords: Payload

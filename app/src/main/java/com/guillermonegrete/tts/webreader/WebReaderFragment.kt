@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
@@ -56,6 +55,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 import kotlin.text.isNotEmpty
+import androidx.core.graphics.toColorInt
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -112,7 +112,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onWordClicked(it.word, it.position)
                 }
             },
-            onTextHighlighted =  {
+            onTextHighlighted = {
                 viewModel.unselectSentence()
                 viewModel.clearTextInfo()
             },
@@ -333,7 +333,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             // Create items for adapter
             val splitParagraphs = viewModel.createParagraphs(newParagraphs)
             var index = 0
-            val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
+            val paragraphItems = splitParagraphs.map {
+                val startIndex = index
+                index += it.paragraph.length
+                ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, mutableListOf(), startIndex)
+            }
+
+            adapter.isPageSaved = page.isLocalPage
+            adapter.updateItems(paragraphItems)
+            paragraphsList.adapter = adapter
+            paragraphsList.post {
+                loadWordsForVisibleItems()
+            }
+
+            iconsVisible.value = true
+            setAdapterListeners()
 
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -341,7 +355,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     viewModel.notes.collect {
                         val dbNotes = it.toMutableList()
 
-                        splitParagraphs.forEach {
+                        index = 0
+                        val notes = splitParagraphs.mapIndexed { i, it ->
                             val nextIndex = index + it.paragraph.length
                             // Search the notes applied to this paragraph
                             val paragraphNotes = dbNotes.filter { dbNote ->
@@ -350,23 +365,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                             val noteItems = paragraphNotes.map { note ->
                                 val itemStart = note.position - index
-                                NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
+                                NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color.toColorInt(), note.id)
                             }
 
-                            paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
                             index = nextIndex
                             dbNotes.removeAll(paragraphNotes)
+                            noteItems
                         }
 
-                        adapter.isPageSaved = page.isLocalPage
-                        adapter.updateItems(paragraphItems)
-                        paragraphsList.adapter = adapter
-                        paragraphsList.post {
-                            loadWordsForVisibleItems()
-                        }
-
-                        iconsVisible.value = true
-                        setAdapterListeners()
+                        adapter.updateNotes(notes, getVisibleListItems())
                     }
                 }
             }
