@@ -197,28 +197,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             }
                         }
                     }
-
-                    launch {
-                        viewModel.paragraphState.collect { result ->
-                            if (result.paragraphIndex != null && result.sentenceIndex != null) {
-                                adapter.selectSentence(result.paragraphIndex, result.sentenceIndex)
-                            } else {
-                                adapter.unselectSentence()
-                            }
-
-                            val paragraph = result.paragraph
-                            if (paragraph != null) {
-                                if (paragraph.isLoading) {
-                                    adapter.setParagraphLoading()
-                                } else {
-                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
-                                    adapter.displayParagraph(paragraphUi)
-                                }
-                            } else {
-                                adapter.unselectParagraph()
-                            }
-                        }
-                    }
                 }
             }
 
@@ -607,6 +585,28 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    launch {
+                        viewModel.paragraphState.collect { result ->
+                            if (result.paragraphIndex != null && result.sentenceIndex != null) {
+                                adapter.selectSentence(result.paragraphIndex, result.sentenceIndex)
+                            } else {
+                                adapter.unselectSentence()
+                            }
+
+                            val paragraph = result.paragraph
+                            if (paragraph != null) {
+                                if (paragraph.isLoading) {
+                                    adapter.setParagraphLoading()
+                                } else {
+                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
+                                    adapter.displayParagraph(paragraphUi)
+                                }
+                            } else {
+                                adapter.unselectParagraph()
+                            }
+                        }
+                    }
+
                     launch {
                         viewModel.dialogState.collect(::handleUiDialogState)
                     }
