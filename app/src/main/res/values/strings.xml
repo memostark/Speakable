@@ -234,6 +234,7 @@
     <string name="pick_language_web_reader">To see more information about this text, please pick a language using the bottom bar</string>
     <string name="create_db_item_dialog_title">Create new:</string>
     <string name="web_reader_words_action">Show saved words</string>
+    <string name="paragraphs_list">Paragraphs list</string>
 
     <!-- Text/Epub visualizer-->
     <string name="white_theme">White theme</string>
