@@ -23,6 +23,7 @@
             android:layout_height="match_parent"
             android:paddingBottom="@dimen/web_reader_bar_height"
             android:clipToPadding="false"
+            android:contentDescription="@string/paragraphs_list"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/paragraph_item"/>
 

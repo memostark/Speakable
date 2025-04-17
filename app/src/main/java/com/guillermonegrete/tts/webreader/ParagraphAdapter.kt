@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
@@ -44,6 +45,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import androidx.core.graphics.toColorInt
+import androidx.core.view.iterator
 import com.guillermonegrete.tts.utils.count
 
 class ParagraphAdapter(
@@ -598,6 +600,7 @@ class ParagraphAdapter(
 
             var item: ParagraphItem? = null
             override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                mode?.title = null
                 unselectSentence()
                 highlightedTextView = binding.paragraph
                 highlightedTextPos = adapterPosition
@@ -613,9 +616,16 @@ class ParagraphAdapter(
 
                 menu.clear()
                 menu.add(Menu.NONE, android.R.id.copy, Menu.NONE, android.R.string.copy)
-                menu.add(Menu.NONE, TRANSLATE_MENU_ITEM_ID, Menu.NONE, R.string.translate_description)
                 val inflater = mode?.menuInflater
                 inflater?.inflate(R.menu.menu_context_web_reader, menu)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                    /**
+                     * For sdk < 23. the context menu is in the action bar.
+                     * The overflow menu doesn't work with selected text, when shown the popup menu grabs focus and unselects the text finishing the action mode.
+                     * Force all items to show in the action bar to avoid the overflow menu.
+                     */
+                    for (item in menu.iterator()) item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                }
 
                 val selStart = binding.paragraph.selectionStart
                 val selEnd = binding.paragraph.selectionEnd
@@ -669,7 +679,7 @@ class ParagraphAdapter(
                         mode?.finish()
                         true
                     }
-                    TRANSLATE_MENU_ITEM_ID -> {
+                    R.id.translate_action -> {
                         val text = getHighlightedText() ?: return false
                         onTranslateHighlightedText(text.toString(), span)
                         mode?.finish()
@@ -1181,8 +1191,6 @@ class ParagraphAdapter(
     }
 
     companion object {
-        private const val TRANSLATE_MENU_ITEM_ID = 3
-
         private const val SWIPE_THRESHOLD = 0.8
         private const val SWIPE_VELOCITY_THRESHOLD = 0.8
     }

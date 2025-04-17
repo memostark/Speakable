@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
@@ -260,12 +261,23 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val initialBarSize = appBarSize
         ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            v.updatePadding(top = insets.top)
             binding.composeBar.updatePadding(bottom = insets.bottom)
             binding.composeRoot.updatePadding(top = insets.top)
             appBarSize = initialBarSize + insets.bottom
-            updateListBottomPadding(0)
+            handleListPadding(insets.top, appBarSize)
             WindowInsetsCompat.CONSUMED
+        }
+    }
+
+    private fun handleListPadding(top: Int, bottom: Int) {
+        val v = binding.paragraphsList
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            v.updatePadding(top = top, bottom = bottom)
+        } else {
+            // Avoid unnecessarily updating padding because in older version it cancels the action mode (e.g. text selection).
+            if (v.paddingTop != top && v.paddingTop != bottom) {
+                v.updatePadding(top = top, bottom = bottom)
+            }
         }
     }
 

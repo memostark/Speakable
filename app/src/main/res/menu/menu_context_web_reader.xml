@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/translate_action"
+        android:title="@string/translate_description"
+        android:icon="@drawable/ic_translate_black_24dp"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/add_new_note_action"
         android:title="@string/new_note"
         android:icon="@drawable/baseline_note_add_24"
@@ -11,6 +17,7 @@
     <item
         android:id="@+id/add_saved_word_action"
         android:title="@string/save_icon_description"
-        app:showAsAction="always" />
+        android:icon="@drawable/ic_add_black_24dp"
+        app:showAsAction="ifRoom" />
 
 </menu>
