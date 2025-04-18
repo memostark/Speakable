@@ -184,6 +184,32 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
 
                     launch {
+                        viewModel.notes.collect {
+                            val dbNotes = it.toMutableList()
+
+                            var index = 0
+                            val notes = adapter.items.mapIndexed { i, it ->
+                                val nextIndex = index + it.original.length
+                                // Search the notes applied to this paragraph
+                                val paragraphNotes = dbNotes.filter { dbNote ->
+                                    dbNote.position in index until nextIndex
+                                }
+
+                                val noteItems = paragraphNotes.map { note ->
+                                    val itemStart = note.position - index
+                                    NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color.toColorInt(), note.id)
+                                }
+
+                                index = nextIndex
+                                dbNotes.removeAll(paragraphNotes)
+                                noteItems
+                            }
+
+                            adapter.updateNotes(notes, getVisibleListItems())
+                        }
+                    }
+
+                    launch {
                         viewModel.updatedNote.collect { result ->
                             when(result){
                                 is ModifiedNote.Update -> {
@@ -313,7 +339,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun setParagraphList(page: PageInfo, iconsVisible: MutableState<Boolean>) {
         pageText = page.text
 
-        with(binding){
+        with(binding) {
             paragraphsList.isVisible = true
 
             // Split text and parse from html
@@ -339,34 +365,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             iconsVisible.value = true
             setAdapterListeners()
 
-            lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
-
-                    viewModel.notes.collect {
-                        val dbNotes = it.toMutableList()
-
-                        index = 0
-                        val notes = splitParagraphs.mapIndexed { i, it ->
-                            val nextIndex = index + it.paragraph.length
-                            // Search the notes applied to this paragraph
-                            val paragraphNotes = dbNotes.filter { dbNote ->
-                                dbNote.position in index until nextIndex
-                            }
-
-                            val noteItems = paragraphNotes.map { note ->
-                                val itemStart = note.position - index
-                                NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color.toColorInt(), note.id)
-                            }
-
-                            index = nextIndex
-                            dbNotes.removeAll(paragraphNotes)
-                            noteItems
-                        }
-
-                        adapter.updateNotes(notes, getVisibleListItems())
-                    }
-                }
-            }
             viewModel.getNotes()
         }
     }

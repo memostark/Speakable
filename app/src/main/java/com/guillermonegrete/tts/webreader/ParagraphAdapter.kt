@@ -59,7 +59,8 @@ class ParagraphAdapter(
     val scanParagraph: (dbWords: List<Words>, text: String, position: Int) -> List<WordState> = { _, _, _ -> emptyList() },
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private var items = emptyList<ParagraphItem>()
+    var items = emptyList<ParagraphItem>()
+        private set
     var isPageSaved: Boolean = false
 
     private var expandedItem: SelectedParagraph? = null
