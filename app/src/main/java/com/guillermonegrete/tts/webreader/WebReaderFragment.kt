@@ -166,7 +166,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     launch {
                         viewModel.pageSavedWords.collect { result ->
                             adapter.updateSavedWords(result.words, result.start)
-                            adapter.initialWordsLoaded = true
                         }
                     }
 
@@ -850,8 +849,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun loadWordsForVisibleItems() {
         val range = getVisibleListItems()
+        adapter.initialRange = range
         val text = adapter.getItemsText(range)
-        viewModel.loadLocalWords(text, range.first)
+        viewModel.loadLocalWords(text, range.first) {
+            adapter.initialWordsLoaded = true
+        }
     }
 
     private fun hideSavedWords() {
