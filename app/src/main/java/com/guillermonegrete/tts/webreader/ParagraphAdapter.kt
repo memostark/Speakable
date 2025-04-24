@@ -73,6 +73,11 @@ class ParagraphAdapter(
     var initialWordsLoaded = false
 
     /**
+     * This is the range of the initial visible items. Used for the inital load of saved words.
+     */
+    var initialRange: IntRange? = null
+
+    /**
      * Whether the current selected text (started with a long-press) is overlapping a note.
      */
     var isOverlappingNotes = false
@@ -278,8 +283,10 @@ class ParagraphAdapter(
 
             addSavedWords(item, spannable)
 
-            if (initialWordsLoaded && !item.databaseWordsLoaded) {
-                loadDatabaseWord(item.original, adapterPosition)
+            val pos = adapterPosition
+            if ((initialWordsLoaded || initialRange?.contains(pos) == false) // Load words if this item doesn't belong to the initial range (those are already loading/loaded)
+                && !item.databaseWordsLoaded) {
+                loadDatabaseWord(item.original, pos)
             }
 
             binding.paragraph.setText(spannable, TextView.BufferType.SPANNABLE)

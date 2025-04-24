@@ -661,7 +661,11 @@ class WebReaderViewModel @AssistedInject constructor(
         }
     }
 
-    fun loadLocalWords(texts: List<String>, index: Int) {
+    fun loadLocalWords(
+        texts: List<String>,
+        index: Int,
+        onFinished: () -> Unit = {}
+    ) {
         if (!showWords) return
 
         viewModelScope.launch {
@@ -672,6 +676,7 @@ class WebReaderViewModel @AssistedInject constructor(
                     viewModelScope.launch {
                         val paragraphWords = withContext(defaultDispatcher) { findWordsInSections(words, sections, index) }
                         _pageSavedWords.emit(SavedWordsSection(paragraphWords, index))
+                        onFinished()
                     }
                 }
 
