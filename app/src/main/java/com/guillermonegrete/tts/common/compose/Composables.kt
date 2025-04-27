@@ -59,11 +59,11 @@ fun YesNoDialog(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit,
     dialogTitle: String,
-    dialogText: String,
+    dialogText: String?,
 ) {
     AlertDialog(
         title = { Text(text = dialogTitle) },
-        text = { Text(text = dialogText) },
+        text = if (dialogText != null) { { Text(dialogText) } } else null,
         onDismissRequest = onDismissRequest,
         confirmButton = {
             TextButton(onClick = onConfirmation) {
