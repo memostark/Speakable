@@ -245,5 +245,8 @@
     <string name="language_label">Language</string>
     <string name="translate_to_label">Translate to</string>
     <string name="pick_info_dialog_title">Show information for:</string>
+    <string name="web_links_list_description">web links list</string>
+    <string name="link_description">Link</string>
+    <string name="copy_link">Copy link</string>
 
 </resources>

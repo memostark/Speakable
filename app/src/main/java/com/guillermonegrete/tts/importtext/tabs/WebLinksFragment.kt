@@ -1,12 +1,36 @@
 package com.guillermonegrete.tts.importtext.tabs
 
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.util.Patterns
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,10 +47,13 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.DialogOpenLinkBinding
 import com.guillermonegrete.tts.databinding.FragmentWebLinksListBinding
+import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
+import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.dpToPixel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -39,8 +66,10 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
     private val viewModel: WebLinksViewModel by viewModels()
 
-    private  var _binding: FragmentWebLinksListBinding? = null
+    private var _binding: FragmentWebLinksListBinding? = null
     private val binding get() = _binding!!
+
+    val showBottomSheet = mutableStateOf<WebLink?>(null)
 
     private var fabBottomMargin = 0
 
@@ -52,8 +81,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentWebLinksListBinding.bind(view)
-        val externalPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
-        val adapter = WebLinkAdapter { viewModel.delete(it, externalPath) }
+        val adapter = WebLinkAdapter { showBottomSheet.value = it }
         binding.list.adapter = adapter
 
         lifecycleScope.launch {
@@ -100,6 +128,56 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                 rootInsets
             }
         }
+        
+        setUpCompose()
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    private fun setUpCompose() {
+        val externalPath = context?.getExternalFilesDir(null)?.absolutePath.toString()
+
+        binding.composeRoot.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+
+            setContent {
+                AppTheme {
+
+                    val link = showBottomSheet.value
+                    if (link != null) {
+                        var deleteDialogShown by rememberSaveable { mutableStateOf(false) }
+
+                        ModalBottomSheet(
+                            onDismissRequest = { showBottomSheet.value = null },
+                        ) {
+                            WebLinkMenu { item ->
+                                when (item) {
+                                    WebLinkMenuItem.DELETE -> deleteDialogShown = true
+                                    WebLinkMenuItem.COPY_LINK -> {
+                                        val clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        val linkText = requireContext().getString(R.string.link_description)
+                                        clipboardManager.setPrimaryClip(ClipData.newPlainText(linkText, link.url))
+                                        showBottomSheet.value = null
+                                    }
+                                }
+                            }
+                        }
+
+                        if (deleteDialogShown) {
+                            YesNoDialog(
+                                onDismissRequest = { deleteDialogShown = false },
+                                onConfirmation = {
+                                    viewModel.delete(link, externalPath)
+                                    deleteDialogShown = false
+                                    showBottomSheet.value = null
+                                },
+                                dialogTitle = context.getString(R.string.delete_item),
+                                dialogText = null
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun showAddNewDialog() {
@@ -140,4 +218,38 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
         const val MARGIN_OFFSET_KEY = "margin_offset_key"
     }
+}
+
+@Composable
+fun WebLinkMenu(onItemClick: (item: WebLinkMenuItem) -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+        val deleteDesc = stringResource(R.string.delete)
+        DropdownMenuItem(
+            leadingIcon = { Icon(Icons.Filled.Delete, deleteDesc) },
+            text = { Text(deleteDesc) },
+            onClick = { onItemClick(WebLinkMenuItem.DELETE) }
+        )
+
+        DropdownMenuItem(
+            leadingIcon = { Icon(painterResource(R.drawable.baseline_link_24), stringResource(R.string.link_description)) },
+            text = { Text(stringResource(R.string.copy_link)) },
+            onClick = { onItemClick(WebLinkMenuItem.COPY_LINK) }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+fun WebLinkMenuPreview() {
+    AppTheme {
+        Surface {
+            WebLinkMenu {}
+        }
+    }
+}
+
+enum class WebLinkMenuItem {
+    DELETE,
+    COPY_LINK;
 }
