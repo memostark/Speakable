@@ -51,7 +51,6 @@ import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.databinding.DialogOpenLinkBinding
 import com.guillermonegrete.tts.databinding.FragmentWebLinksListBinding
-import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.utils.dpToPixel
@@ -69,8 +68,6 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
     private var _binding: FragmentWebLinksListBinding? = null
     private val binding get() = _binding!!
 
-    val showBottomSheet = mutableStateOf<WebLink?>(null)
-
     private var fabBottomMargin = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +78,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentWebLinksListBinding.bind(view)
-        val adapter = WebLinkAdapter { showBottomSheet.value = it }
+        val adapter = WebLinkAdapter { viewModel.setSelectedLink(it) }
         binding.list.adapter = adapter
 
         lifecycleScope.launch {
@@ -142,12 +139,12 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
             setContent {
                 AppTheme {
 
-                    val link = showBottomSheet.value
+                    val link = viewModel.showBottomSheet
                     if (link != null) {
                         var deleteDialogShown by rememberSaveable { mutableStateOf(false) }
 
                         ModalBottomSheet(
-                            onDismissRequest = { showBottomSheet.value = null },
+                            onDismissRequest = { viewModel.removeSelectedLink() },
                         ) {
                             WebLinkMenu { item ->
                                 when (item) {
@@ -156,7 +153,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                                         val clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         val linkText = requireContext().getString(R.string.link_description)
                                         clipboardManager.setPrimaryClip(ClipData.newPlainText(linkText, link.url))
-                                        showBottomSheet.value = null
+                                        viewModel.removeSelectedLink()
                                     }
                                 }
                             }
@@ -168,7 +165,6 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
                                 onConfirmation = {
                                     viewModel.delete(link, externalPath)
                                     deleteDialogShown = false
-                                    showBottomSheet.value = null
                                 },
                                 dialogTitle = context.getString(R.string.delete_item),
                                 dialogText = null

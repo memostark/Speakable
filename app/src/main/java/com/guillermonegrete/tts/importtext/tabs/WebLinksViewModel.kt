@@ -1,5 +1,8 @@
 package com.guillermonegrete.tts.importtext.tabs
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.LoadResult
@@ -18,6 +21,9 @@ import javax.inject.Inject
 @HiltViewModel
 class WebLinksViewModel @Inject constructor(private val webLinkDAO: WebLinkDAO): ViewModel() {
 
+    var showBottomSheet by mutableStateOf<WebLink?>(null)
+        private set
+
     val uiState = webLinkDAO.getRecentLinks()
         .map { LoadResult.Success(it) as LoadResult<List<WebLink>> }
         .catch { emit(LoadResult.Error(it)) }
@@ -27,6 +33,7 @@ class WebLinksViewModel @Inject constructor(private val webLinkDAO: WebLinkDAO):
         viewModelScope.launch {
             deleteLinkFolder(link, rootFolder)
             webLinkDAO.delete(link)
+            showBottomSheet = null
         }
     }
 
@@ -34,5 +41,13 @@ class WebLinksViewModel @Inject constructor(private val webLinkDAO: WebLinkDAO):
         val uuid = link.uuid ?: return
 
         deleteAllFolder(File(rootPath, uuid.toString()))
+    }
+
+    fun setSelectedLink(link: WebLink) {
+        showBottomSheet = link
+    }
+
+    fun removeSelectedLink() {
+        showBottomSheet = null
     }
 }
