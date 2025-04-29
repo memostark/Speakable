@@ -1,6 +1,9 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
@@ -322,15 +325,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     adapter.isPageSaved = true
                 }
             }
-            is WebReaderMenuAction.PageVersion -> {
-                when(action.version) {
-                    "Local" -> viewModel.setPageVersion(PageVersion.LOCAL)
-                    "Web" -> viewModel.setPageVersion(PageVersion.WEB)
-                }
-            }
+            is WebReaderMenuAction.PageVersionToggle -> viewModel.setPageVersion(action.version)
             is WebReaderMenuAction.ShowWords -> {
                 viewModel.showWords = action.shown
                 if (action.shown) loadWordsForVisibleItems() else hideSavedWords()
+            }
+
+            is WebReaderMenuAction.CopyLink -> {
+                val clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val linkText = requireContext().getString(R.string.link_description)
+                clipboardManager.setPrimaryClip(ClipData.newPlainText(linkText, args.link))
             }
         }
     }
