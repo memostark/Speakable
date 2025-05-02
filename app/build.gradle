@@ -95,7 +95,7 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Compose
-    def composeBom = platform('androidx.compose:compose-bom:2025.02.00')
+    def composeBom = platform('androidx.compose:compose-bom:2025.04.01')
     implementation composeBom
     androidTestImplementation composeBom
 
