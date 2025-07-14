@@ -5,12 +5,10 @@ import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.databinding.WebLinkItemBinding
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.importtext.ImportTextFragmentDirections
@@ -20,7 +18,7 @@ import java.util.*
  * [RecyclerView.Adapter] that can display a [WebLink].
  */
 class WebLinkAdapter(
-    private val onDeleteCallback: (WebLink) -> Unit
+    private val onItemLongPress: (WebLink) -> Unit
 ) : ListAdapter<WebLink, WebLinkAdapter.ViewHolder>(WebLinkDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -50,10 +48,7 @@ class WebLinkAdapter(
                 }
 
                 root.setOnLongClickListener {
-                    AlertDialog.Builder(itemView.context).setTitle(R.string.delete_item)
-                        .setPositiveButton(android.R.string.ok) { _, _ -> onDeleteCallback(link) }
-                        .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
-                        .show()
+                    onItemLongPress(link)
                     true
                 }
 

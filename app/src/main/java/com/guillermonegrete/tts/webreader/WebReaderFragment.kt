@@ -1,7 +1,10 @@
 package com.guillermonegrete.tts.webreader
 
 import android.annotation.SuppressLint
-import android.graphics.Color
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
@@ -56,6 +59,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 import kotlin.text.isNotEmpty
+import androidx.core.graphics.toColorInt
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -112,7 +116,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onWordClicked(it.word, it.position)
                 }
             },
-            onTextHighlighted =  {
+            onTextHighlighted = {
                 viewModel.unselectSentence()
                 viewModel.clearTextInfo()
             },
@@ -165,7 +169,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     launch {
                         viewModel.pageSavedWords.collect { result ->
                             adapter.updateSavedWords(result.words, result.start)
-                            adapter.initialWordsLoaded = true
                         }
                     }
 
@@ -183,6 +186,32 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
 
                     launch {
+                        viewModel.notes.collect {
+                            val dbNotes = it.toMutableList()
+
+                            var index = 0
+                            val notes = adapter.items.mapIndexed { i, it ->
+                                val nextIndex = index + it.original.length
+                                // Search the notes applied to this paragraph
+                                val paragraphNotes = dbNotes.filter { dbNote ->
+                                    dbNote.position in index until nextIndex
+                                }
+
+                                val noteItems = paragraphNotes.map { note ->
+                                    val itemStart = note.position - index
+                                    NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color.toColorInt(), note.id)
+                                }
+
+                                index = nextIndex
+                                dbNotes.removeAll(paragraphNotes)
+                                noteItems
+                            }
+
+                            adapter.updateNotes(notes, getVisibleListItems())
+                        }
+                    }
+
+                    launch {
                         viewModel.updatedNote.collect { result ->
                             when(result){
                                 is ModifiedNote.Update -> {
@@ -194,28 +223,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     adapter.unselectWord()
                                     adapter.deleteNote(result.noteId)
                                 }
-                            }
-                        }
-                    }
-
-                    launch {
-                        viewModel.paragraphState.collect { result ->
-                            if (result.paragraphIndex != null && result.sentenceIndex != null) {
-                                adapter.selectSentence(result.paragraphIndex, result.sentenceIndex)
-                            } else {
-                                adapter.unselectSentence()
-                            }
-
-                            val paragraph = result.paragraph
-                            if (paragraph != null) {
-                                if (paragraph.isLoading) {
-                                    adapter.setParagraphLoading()
-                                } else {
-                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
-                                    adapter.displayParagraph(paragraphUi)
-                                }
-                            } else {
-                                adapter.unselectParagraph()
                             }
                         }
                     }
@@ -282,12 +289,23 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val initialBarSize = appBarSize
         ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            v.updatePadding(top = insets.top)
             binding.composeBar.updatePadding(bottom = insets.bottom)
             binding.composeRoot.updatePadding(top = insets.top)
             appBarSize = initialBarSize + insets.bottom
-            updateListBottomPadding(0)
+            handleListPadding(insets.top, appBarSize)
             WindowInsetsCompat.CONSUMED
+        }
+    }
+
+    private fun handleListPadding(top: Int, bottom: Int) {
+        val v = binding.paragraphsList
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            v.updatePadding(top = top, bottom = bottom)
+        } else {
+            // Avoid unnecessarily updating padding because in older version it cancels the action mode (e.g. text selection).
+            if (v.paddingTop != top && v.paddingTop != bottom) {
+                v.updatePadding(top = top, bottom = bottom)
+            }
         }
     }
 
@@ -307,15 +325,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     adapter.isPageSaved = true
                 }
             }
-            is WebReaderMenuAction.PageVersion -> {
-                when(action.version) {
-                    "Local" -> viewModel.setPageVersion(PageVersion.LOCAL)
-                    "Web" -> viewModel.setPageVersion(PageVersion.WEB)
-                }
-            }
+            is WebReaderMenuAction.PageVersionToggle -> viewModel.setPageVersion(action.version)
             is WebReaderMenuAction.ShowWords -> {
                 viewModel.showWords = action.shown
                 if (action.shown) loadWordsForVisibleItems() else hideSavedWords()
+            }
+
+            is WebReaderMenuAction.CopyLink -> {
+                val clipboardManager = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val linkText = requireContext().getString(R.string.link_description)
+                clipboardManager.setPrimaryClip(ClipData.newPlainText(linkText, args.link))
             }
         }
     }
@@ -323,7 +342,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun setParagraphList(page: PageInfo, iconsVisible: MutableState<Boolean>) {
         pageText = page.text
 
-        with(binding){
+        with(binding) {
             paragraphsList.isVisible = true
 
             // Split text and parse from html
@@ -333,43 +352,22 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             // Create items for adapter
             val splitParagraphs = viewModel.createParagraphs(newParagraphs)
             var index = 0
-            val paragraphItems = mutableListOf<ParagraphAdapter.ParagraphItem>()
-
-            lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
-
-                    viewModel.notes.collect {
-                        val dbNotes = it.toMutableList()
-
-                        splitParagraphs.forEach {
-                            val nextIndex = index + it.paragraph.length
-                            // Search the notes applied to this paragraph
-                            val paragraphNotes = dbNotes.filter { dbNote ->
-                                dbNote.position in index until nextIndex
-                            }
-
-                            val noteItems = paragraphNotes.map { note ->
-                                val itemStart = note.position - index
-                                NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
-                            }
-
-                            paragraphItems.add(ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, noteItems.toMutableList(), index))
-                            index = nextIndex
-                            dbNotes.removeAll(paragraphNotes)
-                        }
-
-                        adapter.isPageSaved = page.isLocalPage
-                        adapter.updateItems(paragraphItems)
-                        paragraphsList.adapter = adapter
-                        paragraphsList.post {
-                            loadWordsForVisibleItems()
-                        }
-
-                        iconsVisible.value = true
-                        setAdapterListeners()
-                    }
-                }
+            val paragraphItems = splitParagraphs.map {
+                val startIndex = index
+                index += it.paragraph.length
+                ParagraphAdapter.ParagraphItem(it.paragraph, it.indexes, it.sentences, mutableListOf(), startIndex)
             }
+
+            adapter.isPageSaved = page.isLocalPage
+            adapter.updateItems(paragraphItems)
+            paragraphsList.adapter = adapter
+            paragraphsList.post {
+                loadWordsForVisibleItems()
+            }
+
+            iconsVisible.value = true
+            setAdapterListeners()
+
             viewModel.getNotes()
         }
     }
@@ -600,6 +598,28 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    launch {
+                        viewModel.paragraphState.collect { result ->
+                            if (result.paragraphIndex != null && result.sentenceIndex != null) {
+                                adapter.selectSentence(result.paragraphIndex, result.sentenceIndex)
+                            } else {
+                                adapter.unselectSentence()
+                            }
+
+                            val paragraph = result.paragraph
+                            if (paragraph != null) {
+                                if (paragraph.isLoading) {
+                                    adapter.setParagraphLoading()
+                                } else {
+                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
+                                    adapter.displayParagraph(paragraphUi)
+                                }
+                            } else {
+                                adapter.unselectParagraph()
+                            }
+                        }
+                    }
+
                     launch {
                         viewModel.dialogState.collect(::handleUiDialogState)
                     }
@@ -833,8 +853,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun loadWordsForVisibleItems() {
         val range = getVisibleListItems()
+        adapter.initialRange = range
         val text = adapter.getItemsText(range)
-        viewModel.loadLocalWords(text, range.first)
+        viewModel.loadLocalWords(text, range.first) {
+            adapter.initialWordsLoaded = true
+        }
     }
 
     private fun hideSavedWords() {

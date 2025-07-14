@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -114,20 +115,24 @@ fun WebReaderBottomBar(
 
         Spinner(languages, langSelection.value, onItemSelected = onLangSelected)
 
-        WebReaderBarMenu(isPageSaved, wordsShown, getPageVersion, onMenuItemClick)
+        WebReaderBarMenu(isPageSaved, wordsShown, getPageVersion, false, onMenuItemClick)
     }
 }
+
+val pageVersionStates = mapOf(PageVersion.LOCAL to "Local", PageVersion.WEB to "Web")
+val pageVersionLabels = pageVersionStates.values.toList()
 
 @Composable
 fun WebReaderBarMenu(
     isPageSaved: MutableState<Boolean>,
     wordsShown: Boolean,
     getPageVersion: () -> String,
+    menuExpanded: Boolean = false,
     onMenuItemClick: (action: WebReaderMenuAction) -> Unit,
 ) {
     Box {
-        var menuExpanded by remember { mutableStateOf(false) }
-        val pageVersionStates = listOf("Local", "Web")
+        var menuExpanded by rememberSaveable { mutableStateOf(menuExpanded) }
+
         var checked by remember { mutableStateOf(wordsShown) }
 
         IconButton(onClick = { menuExpanded = true }) {
@@ -157,9 +162,10 @@ fun WebReaderBarMenu(
             if (isSaved) {
                 DropdownMenuItem(
                     text = {
-                        MultiToggleButton(getPageVersion(), StringList(pageVersionStates)) {
+                        MultiToggleButton(getPageVersion(), StringList(pageVersionLabels)) { state ->
                             menuExpanded = false
-                            onMenuItemClick(WebReaderMenuAction.PageVersion(it))
+                            val version = pageVersionStates.entries.first { it.value == state }.key
+                            onMenuItemClick(WebReaderMenuAction.PageVersionToggle(version))
                         }
                     },
                     onClick = {},
@@ -179,14 +185,21 @@ fun WebReaderBarMenu(
                     )
                 }
             )
+
+            DropdownMenuItem(
+                leadingIcon = { Icon(painterResource(R.drawable.baseline_link_24), stringResource(R.string.link_description)) },
+                text = { Text(stringResource(R.string.copy_link)) },
+                onClick = { onMenuItemClick(WebReaderMenuAction.CopyLink()) },
+            )
         }
     }
 }
 
 sealed interface WebReaderMenuAction {
     data object PageStatus : WebReaderMenuAction
-    data class PageVersion(val version: String): WebReaderMenuAction
+    data class PageVersionToggle(val version: PageVersion): WebReaderMenuAction
     data class ShowWords(val shown: Boolean): WebReaderMenuAction
+    class CopyLink(): WebReaderMenuAction
 }
 
 val WebReaderBarHeight = 64.dp // Default bar height is 80dp, looks too big for this case
@@ -488,6 +501,16 @@ private val suggestions = StringList(listOf("Item1", "Item2", "Item3"))
 fun BarPreview() {
     AppTheme {
         WebReaderBottomBar(suggestions)
+    }
+}
+
+@Preview
+@Composable
+fun WebReaderBarMenuPreview() {
+    AppTheme {
+        Surface {
+            WebReaderBarMenu(remember { mutableStateOf(false) }, true, { "Local" }, true) { }
+        }
     }
 }
 

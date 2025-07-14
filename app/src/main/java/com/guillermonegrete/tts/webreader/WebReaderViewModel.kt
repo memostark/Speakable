@@ -43,7 +43,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
+import net.dankito.readability4j.Readability4J
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
@@ -222,15 +224,21 @@ class WebReaderViewModel @AssistedInject constructor(
     private suspend fun getPage(url: String): Page = withContext(ioDispatcher){
         val result = runCatching {
             val doc = Jsoup.connect(url).get()
-            doc.body().select("menu, header, footer, logo, nav, search, link, button, btn, ad, script, style, img").remove()
-            // Removes empty tags (e.g. <div></div>) and keeps self closing tags e.g. <br/>
-            for (element in doc.select("*")) {
-                if (!element.hasText() && element.isBlock) element.remove()
-            }
-            Page(doc.title(), doc.body().html())
+            val readability4J = Readability4J(url, doc)
+            val content = readability4J.parse().content ?: simpleParse(doc)
+            Page(doc.title(), content)
         }
 
         return@withContext result.getOrThrow()
+    }
+
+    private fun simpleParse(doc: Document): String {
+        doc.body().select("menu, header, footer, logo, nav, search, link, button, btn, ad, script, style, noscript, img," +
+                "form,fieldset,object,embed,link,iframe,input,textarea,select").remove()
+        for (element in doc.select("*")) {
+            if (!element.hasText() && element.isBlock) element.remove()
+        }
+        return doc.body().html()
     }
 
     fun saveWebLink(){
@@ -653,7 +661,11 @@ class WebReaderViewModel @AssistedInject constructor(
         }
     }
 
-    fun loadLocalWords(texts: List<String>, index: Int) {
+    fun loadLocalWords(
+        texts: List<String>,
+        index: Int,
+        onFinished: () -> Unit = {}
+    ) {
         if (!showWords) return
 
         viewModelScope.launch {
@@ -664,6 +676,7 @@ class WebReaderViewModel @AssistedInject constructor(
                     viewModelScope.launch {
                         val paragraphWords = withContext(defaultDispatcher) { findWordsInSections(words, sections, index) }
                         _pageSavedWords.emit(SavedWordsSection(paragraphWords, index))
+                        onFinished()
                     }
                 }
 

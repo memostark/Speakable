@@ -16,8 +16,8 @@ android {
         applicationId "com.guillermonegrete.tts"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 16
-        versionName "1.22.0"
+        versionCode 17
+        versionName "1.22.1"
         testInstrumentationRunner "com.guillermonegrete.tts.CustomTestRunner"
         vectorDrawables.useSupportLibrary = true
         javaCompileOptions {
@@ -95,7 +95,7 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Compose
-    def composeBom = platform('androidx.compose:compose-bom:2025.02.00')
+    def composeBom = platform('androidx.compose:compose-bom:2025.04.01')
     implementation composeBom
     androidTestImplementation composeBom
 
@@ -170,7 +170,6 @@ dependencies {
     androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
 
     // Navigation component
-    def nav_version = "2.8.5"
     // Java language implementation
     implementation "androidx.navigation:navigation-fragment:$nav_version"
     implementation "androidx.navigation:navigation-ui:$nav_version"
@@ -235,6 +234,9 @@ dependencies {
     implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {
         transitive=true
     }
+
+    // Readability
+    implementation 'net.dankito.readability4j:readability4j:1.0.8'
 }
 
 apply plugin: 'com.google.gms.google-services'
