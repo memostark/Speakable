@@ -8,8 +8,8 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
-        classpath 'com.google.gms:google-services:4.4.3'
+        classpath 'com.android.tools.build:gradle:8.13.1'
+        classpath 'com.google.gms:google-services:4.4.4'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.dagger:hilt-android-gradle-plugin:2.56.2'
         classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$nav_version"
