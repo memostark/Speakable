@@ -61,10 +61,6 @@ android {
 
 repositories {
     maven { url 'https://dl.bintray.com/android/android-tools' }
-    maven { url 'https://kotlin.bintray.com/kotlinx/' }
-    maven() {
-        url "https://oss.sonatype.org/content/repositories/snapshots"
-    }
 }
 
 ext {
@@ -229,11 +225,6 @@ dependencies {
 
     // Glide Image Library
     implementation 'com.github.bumptech.glide:glide:4.16.0'
-
-    // How to use app library
-    implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {
-        transitive=true
-    }
 
     // Readability
     implementation 'net.dankito.readability4j:readability4j:1.0.8'
