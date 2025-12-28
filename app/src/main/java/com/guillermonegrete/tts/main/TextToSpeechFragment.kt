@@ -6,7 +6,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
@@ -18,8 +17,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
@@ -46,7 +43,6 @@ import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERVICE
 import com.guillermonegrete.tts.utils.createBackPressedCallback
 import dagger.hilt.android.AndroidEntryPoint
-import tourguide.tourguide.TourGuide
 import javax.inject.Inject
 
 
@@ -119,10 +115,6 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.how_to_menu_item -> {
-                playTutorial()
-                true
-            }
             R.id.info_item -> {
                 findNavController().navigate(R.id.action_textToSpeechFragment_to_appInfoDest)
                 true
@@ -188,7 +180,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
             webView.parent.requestDisallowInterceptTouchEvent(true)
             false
         }
-        webview.webViewClient = HelloWebViewClient()
+        webview.webViewClient = WebViewClient()
 
         setFragmentResultListener("requestKey") { _, bundle ->
             binding.main.pickLanguage.text = bundle.getString("lang")
@@ -363,50 +355,5 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         })
 
         return bottomSheetBehavior
-    }
-
-    private fun playTutorial(){
-        activity?.let {
-
-            val guideOverlay = TourGuide.create(it) {
-                toolTip {
-                    title{"Enable overlay mode"}
-                    description { "Shows floating icon that allows you to select text to reproduce" }
-                }
-                overlay {
-                    backgroundColor { Color.parseColor("#66FF0000") }
-                    disableClickThroughHole(true)
-                    setOnClickListener { this@create.cleanUp() }
-                }
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // API 23+ only have the Overlay button, so just play that part
-                guideOverlay.playOn(binding.main.startBubbleBtn)
-                return
-            }
-
-            TourGuide.create(it){
-                toolTip {
-                    title{"Enable clipboard mode"}
-                    description { "Shows dialog with translation whenever text is copied to clipboard" }
-                }
-                overlay {
-                    backgroundColor { Color.parseColor("#66FF0000") }
-                    disableClickThroughHole(true)
-                    setOnClickListener {
-                        this@create.cleanUp()
-                        guideOverlay.playOn(binding.main.startBubbleBtn)
-                    }
-                }
-            }.playOn(binding.main.clipboardBtn)
-        }
-    }
-
-    private inner class HelloWebViewClient : WebViewClient() {
-
-        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-            return super.shouldOverrideUrlLoading(view, request)
-        }
     }
 }
