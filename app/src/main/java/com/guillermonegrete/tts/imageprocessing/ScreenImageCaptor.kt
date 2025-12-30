@@ -11,10 +11,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Handler
 import android.os.Looper
 import android.util.DisplayMetrics
-
-/*
-    Based on https://github.com/mtsahakis/MediaProjectionDemo/blob/master/src/com/mtsahakis/mediaprojectiondemo/ScreenCaptureImageActivity.java
- */
+import androidx.core.graphics.createBitmap
 
 class ScreenImageCaptor(
     manager: MediaProjectionManager,
@@ -31,13 +28,13 @@ class ScreenImageCaptor(
     private val width = screenSize.x
     private val height = screenSize.y
     private val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
-    private val virtualDisplay: VirtualDisplay
+    private val virtualDisplay: VirtualDisplay?
 
     private var imagesCaptured = false
 
     init {
-        mediaProjection.registerCallback(MediaProjectionStopCallback(), handler)
-        virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCap", width, height, density,
+        mediaProjection?.registerCallback(MediaProjectionStopCallback(), handler)
+        virtualDisplay = mediaProjection?.createVirtualDisplay("ScreenCap", width, height, density,
             VIRTUAL_DISPLAY_FLAGS, imageReader.surface, null, handler)
     }
 
@@ -81,7 +78,7 @@ class ScreenImageCaptor(
             val pixelStride = plane.pixelStride
             val rowPadding = plane.rowStride - pixelStride * width
 
-            return Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888).apply {
+            return createBitmap(width + rowPadding / pixelStride, height).apply {
                 copyPixelsFromBuffer(plane.buffer)
             }
         }
@@ -91,7 +88,7 @@ class ScreenImageCaptor(
     private inner class MediaProjectionStopCallback: MediaProjection.Callback() {
         override fun onStop() {
             handler.post {
-                virtualDisplay.release()
+                virtualDisplay?.release()
                 imageReader.setOnImageAvailableListener(null, null)
 //                mediaProjection.unregisterCallback(this@MediaProjectionStopCallback)
             }
@@ -100,7 +97,7 @@ class ScreenImageCaptor(
 
     private fun stopProjection(){
         handler.post {
-            mediaProjection.stop()
+            mediaProjection?.stop()
         }
     }
 
