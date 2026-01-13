@@ -180,13 +180,14 @@ dependencies {
     debugImplementation 'com.github.amitshekhariitbhu.Android-Debug-Database:debug-db:v1.0.6'
 
     // Dagger 2
-    def dagger_version = "2.56.2"
+    def dagger_version = "2.57.2"
     implementation "com.google.dagger:dagger:$dagger_version"
     ksp "com.google.dagger:dagger-compiler:$dagger_version"
 
     // Hilt
     implementation "com.google.dagger:hilt-android:$dagger_version"
     ksp "com.google.dagger:hilt-android-compiler:$dagger_version"
+    ksp "org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0" // hilt requires this for kotlin 2.3.0
 
     // Hilt testing
     androidTestImplementation "com.google.dagger:hilt-android-testing:$dagger_version"
