@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.data.source.remote;
 
 import androidx.annotation.NonNull;
 
+import com.guillermonegrete.tts.common.UserAgentInterceptor;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryLangHeader;
@@ -26,6 +27,9 @@ public class WiktionarySource implements DictionaryDataSource {
     private final WiktionaryAPI wiktionaryAPI;
 
     public WiktionarySource(OkHttpClient client, Moshi moshi){
+        client = client.newBuilder()
+                .addInterceptor(new UserAgentInterceptor())
+                .build();
         var retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(client)
