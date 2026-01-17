@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -26,6 +28,7 @@ public class WiktionarySource implements DictionaryDataSource {
 
     private final WiktionaryAPI wiktionaryAPI;
 
+    @Inject
     public WiktionarySource(OkHttpClient client, Moshi moshi){
         client = client.newBuilder()
                 .addInterceptor(new UserAgentInterceptor())
@@ -41,7 +44,7 @@ public class WiktionarySource implements DictionaryDataSource {
 
 
     @Override
-    public void getDefinition(String word, final GetDefinitionCallback callback) {
+    public void getDefinition(@NonNull String word, @NonNull final GetDefinitionCallback callback) {
 
         wiktionaryAPI.getDefinition(word).enqueue(new Callback<>() {
             @Override

@@ -30,6 +30,9 @@ abstract class TestApplicationModuleBinds {
 
     @Binds
     abstract fun bindTTS(tts: FakeTTS): TTS
+
+    @Binds
+    abstract fun provideWiktionarySource(dictionarySource: FakeDictionarySource): DictionaryDataSource
 }
 
 @Module

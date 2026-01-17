@@ -131,10 +131,6 @@ object ApplicationModule {
     @Provides
     fun provideExternalLinksSource(app: Application, moshi: Moshi): ExternalLinksDataSource = AssetsExternalLinksSource(app, moshi)
 
-    @Singleton
-    @Provides
-    fun provideWiktionarySource(client: OkHttpClient, moshi: Moshi): DictionaryDataSource = WiktionarySource(client, moshi)
-
     @Provides
     fun provideTextDetectorSource(
         type: TextRecognizerType,
@@ -244,6 +240,9 @@ abstract class WordRepositorySourceModule {
 
     @Binds
     abstract fun bindTTS(tts: CustomTTS): TTS
+
+    @Binds
+    abstract fun provideWiktionarySource(dictionarySource: WiktionarySource): DictionaryDataSource
 }
 
 /**
