@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.textprocessing.domain.interactors;
 
+import androidx.annotation.NonNull;
+
 import com.guillermonegrete.tts.AbstractInteractor;
 import com.guillermonegrete.tts.MainThread;
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation;
@@ -106,7 +108,7 @@ public class GetLayout extends AbstractInteractor implements GetLayoutInteractor
     private void getDictionaryEntry(String mText) {
         dictionaryRepository.getDefinition(mText, new DictionaryDataSource.GetDefinitionCallback() {
             @Override
-            public void onDefinitionLoaded(List<WikiItem> definitions) {
+            public void onDefinitionLoaded(@NonNull List<WikiItem> definitions) {
                 insideDictionary = true;
                 dictionaryRequestDone = true;
                 items = definitions;

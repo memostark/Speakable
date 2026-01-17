@@ -19,10 +19,8 @@ class GetDictionaryEntry(
 
         dictionaryRepository.getDefinition(text, object : DictionaryDataSource.GetDefinitionCallback{
 
-            override fun onDefinitionLoaded(definitions: MutableList<WikiItem>?) {
-                if (definitions != null) {
-                    mMainThread.post{ callback.onDictionaryLayoutDetermined(definitions) }
-                }
+            override fun onDefinitionLoaded(definitions: MutableList<WikiItem>) {
+                mMainThread.post{ callback.onDictionaryLayoutDetermined(definitions) }
             }
 
             override fun onDataNotAvailable() {
