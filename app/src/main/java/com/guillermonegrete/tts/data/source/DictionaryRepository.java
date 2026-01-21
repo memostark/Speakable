@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.data.source;
 
+import androidx.annotation.NonNull;
+
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 
 import javax.inject.Inject;
@@ -18,10 +20,10 @@ public class DictionaryRepository implements DictionaryDataSource{
 
 
     @Override
-    public void getDefinition(String word, final GetDefinitionCallback callback) {
+    public void getDefinition(@NonNull String word, @NonNull final GetDefinitionCallback callback) {
         mWiktionaryDataSource.getDefinition(word, new DictionaryDataSource.GetDefinitionCallback() {
             @Override
-            public void onDefinitionLoaded(List<WikiItem> definitions) {
+            public void onDefinitionLoaded(@NonNull List<WikiItem> definitions) {
                 callback.onDefinitionLoaded(definitions);
             }
 

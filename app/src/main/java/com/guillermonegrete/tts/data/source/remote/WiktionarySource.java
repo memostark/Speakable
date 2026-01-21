@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.data.source.remote;
 
 import androidx.annotation.NonNull;
 
+import com.guillermonegrete.tts.common.UserAgentInterceptor;
 import com.guillermonegrete.tts.textprocessing.domain.model.WikiItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryItem;
 import com.guillermonegrete.tts.textprocessing.domain.model.WiktionaryLangHeader;
@@ -11,6 +12,8 @@ import com.squareup.moshi.Moshi;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -25,7 +28,11 @@ public class WiktionarySource implements DictionaryDataSource {
 
     private final WiktionaryAPI wiktionaryAPI;
 
+    @Inject
     public WiktionarySource(OkHttpClient client, Moshi moshi){
+        client = client.newBuilder()
+                .addInterceptor(new UserAgentInterceptor())
+                .build();
         var retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(client)
@@ -37,7 +44,7 @@ public class WiktionarySource implements DictionaryDataSource {
 
 
     @Override
-    public void getDefinition(String word, final GetDefinitionCallback callback) {
+    public void getDefinition(@NonNull String word, @NonNull final GetDefinitionCallback callback) {
 
         wiktionaryAPI.getDefinition(word).enqueue(new Callback<>() {
             @Override

@@ -65,15 +65,6 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="LightTheme"/>
 
-    <!--Ripple effect with white background-->
-    <style name="SelectableItemTheme">
-        <item name="colorControlHighlight">@color/LightGrey</item>
-    </style>
-    <style name="SelectableItemBackground">
-        <item name="android:theme">@style/SelectableItemTheme</item>
-        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
-    </style>
-
     <!--Used to change brightness of AlertDialog: https://stackoverflow.com/a/29799142/10244759-->
     <style name="DialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert"/>
 

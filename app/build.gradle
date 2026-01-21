@@ -10,14 +10,14 @@ apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs"
 
 android {
-    compileSdk 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId "com.guillermonegrete.tts"
         minSdkVersion 21
-        targetSdkVersion 35
-        versionCode 17
-        versionName "1.22.1"
+        targetSdkVersion 36
+        versionCode 18
+        versionName "1.22.2"
         testInstrumentationRunner "com.guillermonegrete.tts.CustomTestRunner"
         vectorDrawables.useSupportLibrary = true
         javaCompileOptions {
@@ -33,7 +33,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     compileOptions {
@@ -41,8 +41,8 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        jvmToolchain(17) // This sets the JVM target for Kotlin tasks
     }
 
     sourceSets {
@@ -61,10 +61,6 @@ android {
 
 repositories {
     maven { url 'https://dl.bintray.com/android/android-tools' }
-    maven { url 'https://kotlin.bintray.com/kotlinx/' }
-    maven() {
-        url "https://oss.sonatype.org/content/repositories/snapshots"
-    }
 }
 
 ext {
@@ -135,7 +131,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics:19.3.0'
 
     // Room
-    def room_version = "2.6.1"
+    def room_version = "2.7.2"
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     ksp "androidx.room:room-compiler:$room_version"
@@ -184,13 +180,14 @@ dependencies {
     debugImplementation 'com.github.amitshekhariitbhu.Android-Debug-Database:debug-db:v1.0.6'
 
     // Dagger 2
-    def dagger_version = "2.55"
+    def dagger_version = "2.57.2"
     implementation "com.google.dagger:dagger:$dagger_version"
     ksp "com.google.dagger:dagger-compiler:$dagger_version"
 
     // Hilt
     implementation "com.google.dagger:hilt-android:$dagger_version"
     ksp "com.google.dagger:hilt-android-compiler:$dagger_version"
+    ksp "org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0" // hilt requires this for kotlin 2.3.0
 
     // Hilt testing
     androidTestImplementation "com.google.dagger:hilt-android-testing:$dagger_version"
@@ -229,11 +226,6 @@ dependencies {
 
     // Glide Image Library
     implementation 'com.github.bumptech.glide:glide:4.16.0'
-
-    // How to use app library
-    implementation ('com.github.worker8:tourguide:2.0.0-SNAPSHOT@aar') {
-        transitive=true
-    }
 
     // Readability
     implementation 'net.dankito.readability4j:readability4j:1.0.8'
