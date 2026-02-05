@@ -60,6 +60,7 @@ import timber.log.Timber
 import java.util.*
 import kotlin.text.isNotEmpty
 import androidx.core.graphics.toColorInt
+import androidx.navigation.fragment.findNavController
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -336,6 +337,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val linkText = requireContext().getString(R.string.link_description)
                 clipboardManager.setPrimaryClip(ClipData.newPlainText(linkText, args.link))
             }
+            WebReaderMenuAction.OpenNotesList -> findNavController().navigate(R.id.notesListFragment)
         }
     }
 

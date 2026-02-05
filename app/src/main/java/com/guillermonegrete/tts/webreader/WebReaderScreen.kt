@@ -170,6 +170,11 @@ fun WebReaderBarMenu(
                     },
                     onClick = {},
                 )
+
+                DropdownMenuItem(
+                    text = { Text(stringResource( R.string.show_notes_list)) },
+                    onClick = { onMenuItemClick(WebReaderMenuAction.OpenNotesList) },
+                )
             }
 
             DropdownMenuItem(
@@ -189,7 +194,7 @@ fun WebReaderBarMenu(
             DropdownMenuItem(
                 leadingIcon = { Icon(painterResource(R.drawable.baseline_link_24), stringResource(R.string.link_description)) },
                 text = { Text(stringResource(R.string.copy_link)) },
-                onClick = { onMenuItemClick(WebReaderMenuAction.CopyLink()) },
+                onClick = { onMenuItemClick(WebReaderMenuAction.CopyLink) },
             )
         }
     }
@@ -199,7 +204,8 @@ sealed interface WebReaderMenuAction {
     data object PageStatus : WebReaderMenuAction
     data class PageVersionToggle(val version: PageVersion): WebReaderMenuAction
     data class ShowWords(val shown: Boolean): WebReaderMenuAction
-    class CopyLink(): WebReaderMenuAction
+    data object CopyLink: WebReaderMenuAction
+    data object OpenNotesList: WebReaderMenuAction
 }
 
 val WebReaderBarHeight = 64.dp // Default bar height is 80dp, looks too big for this case
