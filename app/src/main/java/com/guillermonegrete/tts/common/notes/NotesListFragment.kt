@@ -15,7 +15,6 @@ class NotesListFragment: Fragment() {
         savedInstanceState: Bundle?
     ) = content {
         AppTheme {
-            val dummyNotes = listOf(NoteItem("Dummy text", "Dummy note text"), NoteItem("Another dummy text", "More dummy note text"))
             NotesListScreen(dummyNotes)
         }
     }

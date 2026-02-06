@@ -104,7 +104,8 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
 
             int destId = destination.getId();
             if (destId == R.id.settingsFragmentDest
-                    || destId == R.id.webReaderFragment) {
+                    || destId == R.id.webReaderFragment
+                    || destId == R.id.notesListFragment) {
                 navView.setVisibility(View.GONE);
             } else {
                 navView.setVisibility(View.VISIBLE);

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -22,49 +23,70 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.guillermonegrete.tts.R
 
 @Composable
 fun NotesListScreen(notes: List<NoteItem>) {
-    Surface {
+
+    var selectedNote by remember { mutableStateOf<NoteItem?>(null) }
+
+    Surface (modifier = Modifier.statusBarsPadding()) {
         LazyColumn {
             items(notes) { note ->
                 Column  {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column  {
-                            Text(note.originalText)
+                        Column (Modifier.padding(8.dp))  {
+                            Text(note.originalText, fontWeight = FontWeight.Bold)
                             Text(note.note)
                         }
                         Spacer(Modifier.weight(1f))
                         IconButton(
-                            onClick = {}
+                            onClick = { selectedNote = note }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Clear"
+                                contentDescription = "Options"
                             )
                         }
                     }
 
                     Spacer(
-                        modifier = Modifier.height(2.dp).fillMaxWidth().background(Color.Red)
+                        modifier = Modifier
+                            .height(2.dp)
+                            .fillMaxWidth()
+                            .background(Color(note.color))
                     )
                 }
             }
+        }
+    }
+
+    if (selectedNote != null) {
+        NoteItemMenu ( onDismiss = { selectedNote = null }) {
+            when(it) {
+                NoteMenuItem.DELETE -> {}
+                NoteMenuItem.GO_TO -> {}
+            }
+            selectedNote = null
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NoteItemMenu(onItemClick: (item: NoteMenuItem) -> Unit) {
-    ModalBottomSheet(onDismissRequest = {}) {
+fun NoteItemMenu(onDismiss: () -> Unit, onItemClick: (item: NoteMenuItem) -> Unit) {
+    ModalBottomSheet(onDismiss) {
         Column(modifier = Modifier.padding(horizontal = 8.dp)) {
             val goToDesc = stringResource(R.string.go_to_text)
             DropdownMenuItem(
@@ -86,19 +108,24 @@ fun NoteItemMenu(onItemClick: (item: NoteMenuItem) -> Unit) {
 @Preview
 @Composable
 fun NotesListScreenPreview() {
-    NotesListScreen(listOf(NoteItem("First text", "First note"), NoteItem("Second text", "Second note")))
+    NotesListScreen(dummyNotes)
 }
 
 @Preview
 @Composable
 fun NoteItemMenuPreview() {
-    NoteItemMenu {  }
+    NoteItemMenu ({}) {  }
 }
 
+val dummyNotes = listOf(
+    NoteItem("Dummy text", "Dummy note text", 0xFF0000FF.toInt()),
+    NoteItem("Another dummy text", "More dummy note text", 0xFF00FF00.toInt()),
+)
 
 data class NoteItem(
     val originalText: String,
     val note: String,
+    @param:ColorInt val color: Int,
 )
 
 enum class NoteMenuItem {
