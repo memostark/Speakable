@@ -43,6 +43,9 @@ data class Note(
      * The length of the note span.
      */
     val length: Int,
+    /**
+     * Associated color of the note represented in hexadecimal ARGB. Example: "#aafdc817"
+     */
     var color: String,
     @ColumnInfo(name = "link_id")
     val linkId: Int? = null,
