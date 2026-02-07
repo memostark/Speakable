@@ -89,7 +89,7 @@ class WebReaderViewModel @AssistedInject constructor(
     private val _linksForWord = MutableStateFlow<DialogState<WordAndLinks>>(DialogState.Empty)
     val linksForWord: StateFlow<DialogState<WordAndLinks>> = _linksForWord
 
-    private val _selectedLink = MutableStateFlow<Int>(0)
+    private val _selectedLink = MutableStateFlow(0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
     private val _notes = MutableSharedFlow<List<Note>>()
@@ -531,6 +531,8 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun getLanguage() = cacheWebLink?.language
 
+    fun getWebLinkId() = cacheWebLink?.id
+
     private fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
         val iterator = BreakIterator.getSentenceInstance()
 
@@ -599,9 +601,9 @@ class WebReaderViewModel @AssistedInject constructor(
         link.uuid = uuid
 
         viewModelScope.launch {
-            cacheWebLink?.let {
-                it.lastRead = Calendar.getInstance()
-                webLinkDAO.upsert(it)
+            cacheWebLink?.let { link ->
+                link.lastRead = Calendar.getInstance()
+                webLinkDAO.upsert(link)
                 cacheWebLink = webLinkDAO.getLink(link.url)
                 _dialogState.update { it.copy(isPageSaved = true) }
             }

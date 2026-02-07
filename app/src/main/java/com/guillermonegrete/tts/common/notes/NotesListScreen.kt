@@ -34,7 +34,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.data.LoadResult
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun NotesListScreen(notes: List<NoteItem>) {
@@ -80,6 +84,18 @@ fun NotesListScreen(notes: List<NoteItem>) {
             }
             selectedNote = null
         }
+    }
+}
+
+@Composable
+fun NotesListScreen(viewModel: NotesListViewModel = viewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    if (uiState is LoadResult.Success) {
+        val notes = (uiState as LoadResult.Success).data.map {
+            NoteItem(it.originalText, it.text, it.color.toColorInt())
+        }
+        NotesListScreen(notes)
     }
 }
 
