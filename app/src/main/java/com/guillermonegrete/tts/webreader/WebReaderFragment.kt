@@ -337,7 +337,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val linkText = requireContext().getString(R.string.link_description)
                 clipboardManager.setPrimaryClip(ClipData.newPlainText(linkText, args.link))
             }
-            WebReaderMenuAction.OpenNotesList -> findNavController().navigate(R.id.notesListFragment)
+            WebReaderMenuAction.OpenNotesList -> {
+                val id = viewModel.getWebLinkId() ?: return
+                findNavController().navigate(WebReaderFragmentDirections.toNotesListFragment(id))
+            }
         }
     }
 
