@@ -59,6 +59,10 @@ data class Note(
      * For a book note, gets the position in the chapter. The actual position is in the first 24 bits of a 32 bit int
      */
     fun getPosInChapter() = position and 0xFFFFFF
+
+    companion object {
+        fun emptyNote(id: Long) = Note("", "", 0, 0, "", 0, null, id)
+    }
 }
 
 val Note.span: Span
