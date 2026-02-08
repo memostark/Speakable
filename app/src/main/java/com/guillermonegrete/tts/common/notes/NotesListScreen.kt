@@ -20,12 +20,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,15 +45,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.LoadResult
 import androidx.core.graphics.toColorInt
+import com.guillermonegrete.tts.common.compose.YesNoDialog
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Composable
-fun NotesListScreen(notes: List<NoteItem>) {
+fun NotesListScreen(
+    notes: List<NoteItem>,
+    onMenuAction: (item: NoteMenuItem, note: NoteItem) -> Unit = { _, _ -> },
+) {
 
     var selectedNote by remember { mutableStateOf<NoteItem?>(null) }
 
     Surface (modifier = Modifier.statusBarsPadding()) {
         LazyColumn {
-            items(notes) { note ->
+            items(
+                notes,
+                key = { it.id }
+            ) { note ->
                 Column  {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column (Modifier.padding(8.dp))  {
@@ -76,12 +91,9 @@ fun NotesListScreen(notes: List<NoteItem>) {
         }
     }
 
-    if (selectedNote != null) {
-        NoteItemMenu ( onDismiss = { selectedNote = null }) {
-            when(it) {
-                NoteMenuItem.DELETE -> {}
-                NoteMenuItem.GO_TO -> {}
-            }
+    selectedNote?.let { note ->
+        NoteItemMenu(onDismiss = { selectedNote = null }) {
+            onMenuAction(it, note)
             selectedNote = null
         }
     }
@@ -93,15 +105,39 @@ fun NotesListScreen(viewModel: NotesListViewModel = viewModel()) {
 
     if (uiState is LoadResult.Success) {
         val notes = (uiState as LoadResult.Success).data.map {
-            NoteItem(it.originalText, it.text, it.color.toColorInt())
+            NoteItem(it.id, it.originalText, it.text, it.color.toColorInt())
         }
-        NotesListScreen(notes)
+        
+        var deleteDialogShown by rememberSaveable { mutableStateOf<NoteItem?>(null) }
+        NotesListScreen(notes) { menuAction, note ->
+            when(menuAction) {
+                NoteMenuItem.DELETE -> deleteDialogShown = note
+                NoteMenuItem.GO_TO -> {}
+            }
+        }
+
+        deleteDialogShown?.let { note ->
+            YesNoDialog(
+                onDismissRequest = { deleteDialogShown = null },
+                onConfirmation = {
+                    viewModel.deleteNote(note.id)
+                    deleteDialogShown = null
+                },
+                dialogTitle = stringResource(R.string.delete_item),
+                dialogText = null
+            )
+        }
+
+        SnackBarError(viewModel)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NoteItemMenu(onDismiss: () -> Unit, onItemClick: (item: NoteMenuItem) -> Unit) {
+fun NoteItemMenu(
+    onDismiss: () -> Unit,
+    onItemClick: (item: NoteMenuItem) -> Unit = {},
+) {
     ModalBottomSheet(onDismiss) {
         Column(modifier = Modifier.padding(horizontal = 8.dp)) {
             val goToDesc = stringResource(R.string.go_to_text)
@@ -121,6 +157,28 @@ fun NoteItemMenu(onDismiss: () -> Unit, onItemClick: (item: NoteMenuItem) -> Uni
     }
 }
 
+@Composable
+fun SnackBarError(viewModel: NotesListViewModel) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val error by viewModel.errorMessage.collectAsState()
+
+    SnackbarHost(
+        snackbarHostState,
+        Modifier.statusBarsPadding(),
+    )
+
+    LaunchedEffect(error) {
+        error?.let { e ->
+            Timber.e(e)
+            scope.launch {
+                snackbarHostState.showSnackbar(e.message ?: "")
+                viewModel.clearErrorMessage()
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 fun NotesListScreenPreview() {
@@ -134,11 +192,12 @@ fun NoteItemMenuPreview() {
 }
 
 val dummyNotes = listOf(
-    NoteItem("Dummy text", "Dummy note text", 0xFF0000FF.toInt()),
-    NoteItem("Another dummy text", "More dummy note text", 0xFF00FF00.toInt()),
+    NoteItem(0, "Dummy text", "Dummy note text", 0xFF0000FF.toInt()),
+    NoteItem(1, "Another dummy text", "More dummy note text", 0xFF00FF00.toInt()),
 )
 
 data class NoteItem(
+    val id: Long,
     val originalText: String,
     val note: String,
     @param:ColorInt val color: Int,
