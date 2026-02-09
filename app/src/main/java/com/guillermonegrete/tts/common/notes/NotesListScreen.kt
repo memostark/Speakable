@@ -100,19 +100,22 @@ fun NotesListScreen(
 }
 
 @Composable
-fun NotesListScreen(viewModel: NotesListViewModel = viewModel()) {
+fun NotesListScreen(
+    viewModel: NotesListViewModel = viewModel(),
+    jumpToChar: (Int) -> Unit = {},
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     if (uiState is LoadResult.Success) {
         val notes = (uiState as LoadResult.Success).data.map {
-            NoteItem(it.id, it.originalText, it.text, it.color.toColorInt())
+            NoteItem(it.id, it.originalText, it.text, it.color.toColorInt(), it.position)
         }
         
         var deleteDialogShown by rememberSaveable { mutableStateOf<NoteItem?>(null) }
         NotesListScreen(notes) { menuAction, note ->
             when(menuAction) {
                 NoteMenuItem.DELETE -> deleteDialogShown = note
-                NoteMenuItem.GO_TO -> {}
+                NoteMenuItem.GO_TO -> jumpToChar(note.startPos)
             }
         }
 
@@ -192,8 +195,8 @@ fun NoteItemMenuPreview() {
 }
 
 val dummyNotes = listOf(
-    NoteItem(0, "Dummy text", "Dummy note text", 0xFF0000FF.toInt()),
-    NoteItem(1, "Another dummy text", "More dummy note text", 0xFF00FF00.toInt()),
+    NoteItem(0, "Dummy text", "Dummy note text", 0xFF0000FF.toInt(), 10),
+    NoteItem(1, "Another dummy text", "More dummy note text", 0xFF00FF00.toInt(), 15),
 )
 
 data class NoteItem(
@@ -201,6 +204,7 @@ data class NoteItem(
     val originalText: String,
     val note: String,
     @param:ColorInt val color: Int,
+    val startPos: Int,
 )
 
 enum class NoteMenuItem {

@@ -60,7 +60,9 @@ import timber.log.Timber
 import java.util.*
 import kotlin.text.isNotEmpty
 import androidx.core.graphics.toColorInt
+import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
+import com.guillermonegrete.tts.common.notes.NotesListFragment
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -97,6 +99,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private var pageText = ""
 
     private var appBarSize = 0
+
+    private var jumpToPos: Int? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setFragmentResultListener(NotesListFragment.NOTES_LIST_RESULT_KEY) { _, bundle ->
+            // We use a String here, but any type that can be put in a Bundle is supported.
+            val result = bundle.getInt(NotesListFragment.CHAR_POSITION_KEY)
+            jumpToPos = result
+        }
+    }
 
     override fun onPause() {
         super.onPause()
@@ -187,11 +200,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
 
                     launch {
-                        viewModel.notes.collect {
-                            val dbNotes = it.toMutableList()
+                        viewModel.notes.collect { notes ->
+                            val dbNotes = notes.toMutableList()
 
                             var index = 0
-                            val notes = adapter.items.mapIndexed { i, it ->
+                            val notes = adapter.items.map {
                                 val nextIndex = index + it.original.length
                                 // Search the notes applied to this paragraph
                                 val paragraphNotes = dbNotes.filter { dbNote ->
@@ -288,7 +301,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun setInsetListener() {
         val initialBarSize = appBarSize
-        ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { _, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             binding.composeBar.updatePadding(bottom = insets.bottom)
             binding.composeRoot.updatePadding(top = insets.top)
@@ -349,6 +362,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
         with(binding) {
             paragraphsList.isVisible = true
+            paragraphsList.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
 
             // Split text and parse from html
             val newParagraphs =  page.text.split("\n")
@@ -367,6 +381,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             adapter.updateItems(paragraphItems)
             paragraphsList.adapter = adapter
             paragraphsList.post {
+                jumpToPos?.let { charPos ->
+                    val pos = adapter.getPositionInList(charPos)
+                    paragraphsList.post {
+                        val layoutManager = paragraphsList.layoutManager as LinearLayoutManager
+                        layoutManager.scrollToPositionWithOffset(pos, paragraphsList.height / 2)
+                    }
+                }
                 loadWordsForVisibleItems()
             }
 
