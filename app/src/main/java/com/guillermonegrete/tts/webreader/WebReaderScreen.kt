@@ -173,7 +173,10 @@ fun WebReaderBarMenu(
 
                 DropdownMenuItem(
                     text = { Text(stringResource( R.string.show_notes_list)) },
-                    onClick = { onMenuItemClick(WebReaderMenuAction.OpenNotesList) },
+                    onClick = {
+                        onMenuItemClick(WebReaderMenuAction.OpenNotesList)
+                        menuExpanded = false
+                    },
                 )
             }
 

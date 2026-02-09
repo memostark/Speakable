@@ -986,6 +986,9 @@ class ParagraphAdapter(
         return EditNote(text, clickedNote.text, item.toAbsolute(span), clickedNote.color, true, clickedNote.id)
     }
 
+    private fun getCharListIndex(charPos: Int)
+        = items.indexOfFirst { it.firstCharIndex + it.original.length > charPos }
+
     fun updateNote(selection: Span, noteId: Long, result: AddNoteResult) {
         val pos = getCharListIndex(selection.start)
         if (pos == -1) return
@@ -1003,7 +1006,7 @@ class ParagraphAdapter(
             pageItem.notes.clear()
             pageItem.notes.addAll(notes)
         }
-        notifyItemRangeChanged(range.start, range.count, Payload.AddNotes)
+        notifyItemRangeChanged(range.first, range.count, Payload.AddNotes)
     }
 
     fun deleteNote(noteId: Long) {
@@ -1142,8 +1145,6 @@ class ParagraphAdapter(
         initialWordsLoaded = false
     }
 
-    private fun getCharListIndex(charPos: Int) = items.indexOfFirst { it.firstCharIndex + it.original.length > charPos }
-
     fun setParagraphLoading() {
         isLoading = true
         expandedItem?.let { notifyItemChanged(it.index, PayloadParagraph.Translation(LoadResult.Loading)) }
@@ -1158,6 +1159,8 @@ class ParagraphAdapter(
             if (paragraph.highlights != null) notifyItemChanged(paragraph.index, PayloadParagraph.Highlights)
         }
     }
+
+    fun getPositionInList(charPos: Int) = getCharListIndex(charPos)
 
     data class OverlapSpan(val start: Int, val end: Int, @ColorInt val color: Int, val noteId: Long, val wordId: Int)
 
