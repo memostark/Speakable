@@ -1162,6 +1162,9 @@ class ParagraphAdapter(
 
     fun getPositionInList(charPos: Int) = getCharListIndex(charPos)
 
+    fun getLocalCharPosition(position: Int, absoluteCharPos: Int)
+        = absoluteCharPos - items[position].firstCharIndex
+
     data class OverlapSpan(val start: Int, val end: Int, @ColorInt val color: Int, val noteId: Long, val wordId: Int)
 
     sealed interface TextClick {
