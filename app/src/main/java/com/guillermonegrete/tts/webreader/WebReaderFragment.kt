@@ -63,6 +63,7 @@ import androidx.core.graphics.toColorInt
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
 import com.guillermonegrete.tts.common.notes.NotesListFragment
+import com.guillermonegrete.tts.common.views.CharacterSmoothScroller
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -362,7 +363,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
         with(binding) {
             paragraphsList.isVisible = true
-            paragraphsList.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
 
             // Split text and parse from html
             val newParagraphs =  page.text.split("\n")
@@ -382,11 +382,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             paragraphsList.adapter = adapter
             paragraphsList.post {
                 jumpToPos?.let { charPos ->
-                    val pos = adapter.getPositionInList(charPos)
+                    val position = adapter.getPositionInList(charPos)
                     paragraphsList.post {
-                        val layoutManager = paragraphsList.layoutManager as LinearLayoutManager
-                        layoutManager.scrollToPositionWithOffset(pos, paragraphsList.height / 2)
+                        val localPos = adapter.getLocalCharPosition(position, charPos)
+
+                        val smoothScroller = CharacterSmoothScroller(requireContext(), localPos)
+                        smoothScroller.targetPosition = position
+                        val layoutManager = paragraphsList.layoutManager
+                        layoutManager?.startSmoothScroll(smoothScroller)
                     }
+                    jumpToPos = null
                 }
                 loadWordsForVisibleItems()
             }
