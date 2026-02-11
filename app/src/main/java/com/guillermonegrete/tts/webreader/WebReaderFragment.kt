@@ -505,6 +505,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     override fun onDestroyView() {
+        binding.paragraphsList.adapter = null
         _binding = null
         super.onDestroyView()
     }
@@ -527,7 +528,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
 
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
-            requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, bottomSheetBackCallback)
+            requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, bottomSheetBackCallback)
 
             bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
@@ -560,7 +561,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             linksList.addItemDecoration(decor)
 
             lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     viewModel.linksForWord.collect { state ->
                         when(state) {
                             DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
@@ -606,7 +607,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val bottomSheetBehavior = BottomSheetBehavior.from(root)
 
             val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
-            requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, backPressedCallback)
+            requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
 
             bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
@@ -628,7 +629,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             })
 
             lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     launch {
                         viewModel.paragraphState.collect { result ->
                             if (result.paragraphIndex != null && result.sentenceIndex != null) {

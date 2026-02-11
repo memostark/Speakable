@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -19,7 +18,6 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebViewClient
 import android.widget.*
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -44,6 +42,7 @@ import com.guillermonegrete.tts.services.ScreenTextService.NO_FLOATING_ICON_SERV
 import com.guillermonegrete.tts.utils.createBackPressedCallback
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 
 @AndroidEntryPoint
@@ -56,8 +55,6 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     private lateinit var requestOverlayPermission: ActivityResultLauncher<Intent>
     private lateinit var requestScreenCapture: ActivityResultLauncher<Intent>
-
-    private var backPressedCallback: OnBackPressedCallback? = null
 
     private var screenCaptureIntent: Intent? = null
     private val requestNotificationPermission =
@@ -196,8 +193,6 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
     override fun onDestroyView() {
         _binding = null
-        backPressedCallback?.remove()
-        backPressedCallback = null
         super.onDestroyView()
     }
 
@@ -228,7 +223,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         // For versions of android older than Android M (sdk 23), only it was necessary to request the screen capture permission
         // For newer versions it's necessary to first ask for the permission to draw overlays, then ask for the screen capture one
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context?.packageName))
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context?.packageName}".toUri())
             requestOverlayPermission.launch(intent)
         } else {
             getScreenCaptureIntent()
@@ -340,13 +335,12 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         // Setup predictive back
         val callback = createBackPressedCallback(bottomSheetBehavior)
-        requireActivity().onBackPressedDispatcher.addCallback(this, callback)
-        backPressedCallback = callback
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
         bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
                 when (newState) {
-                    BottomSheetBehavior.STATE_HIDDEN -> backPressedCallback?.isEnabled = false
-                    BottomSheetBehavior.STATE_EXPANDED -> backPressedCallback?.isEnabled = true
+                    BottomSheetBehavior.STATE_HIDDEN -> callback.isEnabled = false
+                    BottomSheetBehavior.STATE_EXPANDED -> callback.isEnabled = true
                     else -> {}
                 }
             }
