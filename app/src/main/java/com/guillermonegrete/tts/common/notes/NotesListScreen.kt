@@ -5,10 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -57,19 +60,18 @@ fun NotesListScreen(
 
     var selectedNote by remember { mutableStateOf<NoteItem?>(null) }
 
-    Surface (modifier = Modifier.statusBarsPadding()) {
-        LazyColumn {
+    Surface  {
+        LazyColumn(contentPadding = WindowInsets.systemBars.asPaddingValues()) {
             items(
                 notes,
                 key = { it.id }
             ) { note ->
-                Column  {
+                Column(Modifier.fillMaxWidth())  {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column (Modifier.padding(8.dp))  {
+                        Column (Modifier.padding(8.dp).weight(1f))  {
                             Text(note.originalText, fontWeight = FontWeight.Bold)
                             Text(note.note)
                         }
-                        Spacer(Modifier.weight(1f))
                         IconButton(
                             onClick = { selectedNote = note }
                         ) {
@@ -196,7 +198,7 @@ fun NoteItemMenuPreview() {
 
 val dummyNotes = listOf(
     NoteItem(0, "Dummy text", "Dummy note text", 0xFF0000FF.toInt(), 10),
-    NoteItem(1, "Another dummy text", "More dummy note text", 0xFF00FF00.toInt(), 15),
+    NoteItem(1, "Another dummy text", "More dummy note text, a text so ridiculously long that there it requires multiple rows", 0xFF00FF00.toInt(), 15),
 )
 
 data class NoteItem(
