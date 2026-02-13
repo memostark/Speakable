@@ -21,7 +21,7 @@ class NotesListFragment: Fragment() {
 
     private val viewModel: NotesListViewModel by viewModels(extrasProducer = {
         defaultViewModelCreationExtras.withCreationCallback<NotesListViewModel.Factory> { factory ->
-            factory.create(args.id)
+            factory.create(args.id, args.type)
         }
     })
 

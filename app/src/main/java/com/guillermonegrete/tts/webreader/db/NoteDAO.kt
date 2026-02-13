@@ -26,7 +26,10 @@ interface NoteDAO {
     suspend fun getNotes(linkId: Int): List<Note>
 
     @Query("SELECT * FROM notes WHERE link_id = :linkId")
-    fun getNotesFlow(linkId: Int): Flow<List<Note>>
+    fun getLinkNotes(linkId: Int): Flow<List<Note>>
+
+    @Query("SELECT * FROM notes WHERE book_id = :fileId")
+    fun getFileNotes(fileId: Int): Flow<List<Note>>
 
     // The chapter is encoded in the last 8 bits of the position (32 bit int) so we search notes between the chapter index and the index plus 1 (shifted left 24 represented by the constant 0x1000000)
     @Query("SELECT * FROM notes WHERE book_id = :bookId AND (position BETWEEN :chapterIndex AND (:chapterIndex + 0x1000000))")

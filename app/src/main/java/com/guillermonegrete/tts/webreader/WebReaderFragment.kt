@@ -62,8 +62,10 @@ import kotlin.text.isNotEmpty
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
+import com.guillermonegrete.tts.ImporttextDirections
 import com.guillermonegrete.tts.common.notes.NotesListFragment
 import com.guillermonegrete.tts.common.views.CharacterSmoothScroller
+import com.guillermonegrete.tts.db.NoteType
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -353,7 +355,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             }
             WebReaderMenuAction.OpenNotesList -> {
                 val id = viewModel.getWebLinkId() ?: return
-                findNavController().navigate(WebReaderFragmentDirections.toNotesListFragment(id))
+                findNavController().navigate(ImporttextDirections.toNotesListFragment(id, NoteType.WEB_LINK))
             }
         }
     }
@@ -364,7 +366,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding) {
             paragraphsList.isVisible = true
 
-            // Split text and parse from html
+            // Split text and parse from HTML
             val newParagraphs =  page.text.split("\n")
                 .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
                 .filter { it.isNotEmpty() }
@@ -459,12 +461,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun updateSheet(info: WordUI, span: Span, isWord: Boolean) {
-        with(binding.transSheet) {
-            if(isSheetVisible() && adapter.isInsideSelectedSentence(span)){
-                showWordInfo(info, isWord)
-            } else {
-                showSheetInfo(info, isWord)
-            }
+        if(isSheetVisible() && adapter.isInsideSelectedSentence(span)){
+            showWordInfo(info, isWord)
+        } else {
+            showSheetInfo(info, isWord)
         }
         adapter.unselectWord()
     }
