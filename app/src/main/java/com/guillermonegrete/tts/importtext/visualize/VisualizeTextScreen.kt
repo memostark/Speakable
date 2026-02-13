@@ -4,20 +4,27 @@ import androidx.compose.animation.core.FloatExponentialDecaySpec
 import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
@@ -34,6 +41,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
@@ -158,10 +166,61 @@ fun NoteSheet(
     }
 }
 
+@Composable
+fun ContentMenu(
+    hasToC: Boolean,
+    onDismiss: () -> Unit,
+    onItemClick: (item: ContentMenuItem) -> Unit = {},
+) {
+    Box(
+        Modifier
+            .padding(WindowInsets.systemBars.asPaddingValues())
+            .padding(end = 8.dp) // Adds additional padding
+    ) {
+        Popup(
+            alignment = Alignment.BottomEnd,
+            onDismissRequest = onDismiss,
+        ) {
+            ElevatedCard {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    if (hasToC) {
+                        Text(
+                            text = AnnotatedString(stringResource(R.string.table_of_contents)),
+                            modifier = Modifier
+                                .clickable(true) { onItemClick(ContentMenuItem.TABLE_OF_CONTENTS) }
+                                .padding(8.dp),
+                        )
+                    }
+
+                    Text(
+                        text = AnnotatedString(stringResource(R.string.show_notes_list)),
+                        modifier = Modifier
+                            .clickable(true) { onItemClick(ContentMenuItem.NOTES) }
+                            .padding(8.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 fun NoteSheetPreview() {
     AppTheme {
         NoteSheet(true, {"My note text"})
     }
+}
+
+@Preview
+@Composable
+fun ContentMenuPreview() {
+    AppTheme {
+        ContentMenu(true, {})
+    }
+}
+
+enum class ContentMenuItem {
+    TABLE_OF_CONTENTS,
+    NOTES;
 }

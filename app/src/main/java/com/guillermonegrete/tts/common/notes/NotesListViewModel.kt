@@ -3,6 +3,7 @@ package com.guillermonegrete.tts.common.notes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.data.LoadResult
+import com.guillermonegrete.tts.db.NoteType
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
 import dagger.assisted.Assisted
@@ -22,21 +23,17 @@ import kotlinx.coroutines.launch
 @HiltViewModel(assistedFactory = NotesListViewModel.Factory::class)
 class NotesListViewModel @AssistedInject constructor(
     @Assisted id: Int,
+    @Assisted type: NoteType,
     private val notesDAO: NoteDAO,
 ): ViewModel() {
 
-    val uiState = notesDAO.getNotesFlow(id)
+    val uiState = getNotes(id, type)
         .map { LoadResult.Success(it) as LoadResult<List<Note>> }
         .catch { emit(LoadResult.Error(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LoadResult.Loading)
 
     private val _errorMessage = MutableStateFlow<Exception?>(null)
     val errorMessage: StateFlow<Exception?> = _errorMessage.asStateFlow()
-
-    @AssistedFactory
-    interface Factory {
-        fun create(id: Int): NotesListViewModel
-    }
 
     fun deleteNote(id: Long) {
         viewModelScope.launch {
@@ -50,5 +47,15 @@ class NotesListViewModel @AssistedInject constructor(
 
     fun clearErrorMessage() {
         _errorMessage.update { null }
+    }
+
+    private fun getNotes(id: Int, type: NoteType) = when (type) {
+        NoteType.FILE -> notesDAO.getFileNotes(id)
+        NoteType.WEB_LINK -> notesDAO.getLinkNotes(id)
+    }
+
+    @AssistedFactory
+    interface Factory {
+        fun create(id: Int, type: NoteType): NotesListViewModel
     }
 }
