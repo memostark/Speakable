@@ -87,6 +87,10 @@ import java.text.BreakIterator
 import javax.inject.Inject
 import kotlin.math.abs
 import androidx.core.graphics.toColorInt
+import androidx.fragment.app.setFragmentResultListener
+import com.guillermonegrete.tts.common.notes.NotesListFragment
+import com.guillermonegrete.tts.webreader.db.BookPosition
+import com.guillermonegrete.tts.webreader.db.Note
 
 @AndroidEntryPoint
 class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogInterface.OnCancelListener {
@@ -147,6 +151,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     private var sheetBarHeight = 0
 
+    private var jumpToPos: BookPosition? = null
+
     private var dialog: TextInfoDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -158,6 +164,10 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val infoDialog = childFragmentManager.findFragmentByTag(TextInfoDialog.TAG)
         if (infoDialog is TextInfoDialog) dialog = infoDialog
         if (viewModel.fullScreen) hideSystemUi()
+
+        setFragmentResultListener(NotesListFragment.NOTES_LIST_RESULT_KEY) { _, bundle ->
+            jumpToPos = Note.getBookPosition(bundle.getInt(NotesListFragment.CHAR_POSITION_KEY))
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -593,8 +603,18 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
         val pages = chapter.pages
         val position = viewModel.getPage()
-        binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
-        viewPager.setCurrentItem(position, false)
+
+        // Set the page and chapter.
+        jumpToPos?.let {
+            viewModel.jumpToChapter(it.chapter) {
+                val position = pagesAdapter.getCharListIndex(it.charPos)
+                viewPager.setCurrentItem(position, false)
+            }
+            jumpToPos = null
+        } ?: run {
+            binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
+            viewPager.setCurrentItem(position, false)
+        }
 
         // Subtract 1 because seek bar is zero based numbering
         binding.pagesSeekBar.max = pages.size - 1
@@ -610,7 +630,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val paragraphItems = mutableListOf<VisualizerAdapter.PageItem>()
         val dbNotes = chapter.notes.toMutableList()
 
-        val currentPage = viewModel.getPage()
+        val currentPage = viewModel.currentPage
         chapter.pages.forEachIndexed { i, page ->
             val nextIndex = index + page.length
             val pageSpan = Span(index, nextIndex - 1)
@@ -1143,6 +1163,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                         findNavController().navigate(ImporttextDirections.toNotesListFragment(id, NoteType.FILE))
                     }
                 }
+                contentsMenuVisible.value = false
             }
         }
     }
