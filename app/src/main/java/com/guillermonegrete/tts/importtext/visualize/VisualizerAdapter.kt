@@ -465,7 +465,7 @@ class VisualizerAdapter(
         }
     }
 
-    private fun getCharListIndex(charPos: Int) = pages.indexOfFirst { it.firstCharIndex + it.text.length > charPos }
+    fun getCharListIndex(charPos: Int) = pages.indexOfFirst { it.firstCharIndex + it.text.length > charPos }
 
     /**
      * Returns the indices of all the pages that contain part of the given [span] (the span can be a note for example).

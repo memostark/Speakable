@@ -299,6 +299,16 @@ class VisualizeTextViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Jumps to the chapter by the index in the spine. The callback notifies when the chapter has been set.
+     */
+    fun jumpToChapter(index: Int, onDone: () -> Unit) {
+        viewModelScope.launch {
+            if (currentChapter != index) jumpToChapter(index)
+            onDone()
+        }
+    }
+
     fun translatePage(index: Int){
         val text = currentPages[index].toString()
 
