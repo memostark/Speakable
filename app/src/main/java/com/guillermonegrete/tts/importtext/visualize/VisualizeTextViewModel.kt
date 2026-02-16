@@ -223,7 +223,7 @@ class VisualizeTextViewModel @Inject constructor(
         }
     }
 
-    fun getPage(): Int{
+    fun getInitialPage(): Int{
         currentPage = if(firstLoad) {
             firstLoad = false
             val lastChar = databaseBookFile?.lastChar ?: 0
