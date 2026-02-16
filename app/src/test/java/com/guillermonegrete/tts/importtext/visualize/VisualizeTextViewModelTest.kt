@@ -217,11 +217,11 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         // Returns initial page in first load
-        val page = viewModel.getPage()
+        val page = viewModel.getInitialPage()
         assertEquals(initialPage, page)
 
         // Doesn't return initial page
-        val secondLoadPage = viewModel.getPage()
+        val secondLoadPage = viewModel.getInitialPage()
         assertEquals(0, secondLoadPage)
 
     }
@@ -239,7 +239,7 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         // Returns initial page in first load
-        val page = viewModel.getPage()
+        val page = viewModel.getInitialPage()
         assertEquals(initialPage, page)
     }
 
@@ -258,14 +258,14 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         // Returns initial page in first load
-        val page = viewModel.getPage()
+        val page = viewModel.getInitialPage()
         assertEquals(initialPage, page)
 
         // Second load, changed to chapter 0
         splitPages(5)
         viewModel.swipeChapterLeft()
         advanceUntilIdle()
-        val secondLoadPage = viewModel.getPage()
+        val secondLoadPage = viewModel.getInitialPage()
         assertEquals((5 - 1), secondLoadPage)
     }
 
@@ -281,14 +281,14 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         // Returns initial page in first load
-        val page = viewModel.getPage()
+        val page = viewModel.getInitialPage()
         val initialPage = 2
         assertEquals(initialPage, page)
 
         // Second load
         viewModel.swipeChapterRight()
         splitPages(5)
-        val secondLoadPage = viewModel.getPage()
+        val secondLoadPage = viewModel.getInitialPage()
         assertEquals(0, secondLoadPage)
     }
 
@@ -305,7 +305,7 @@ class VisualizeTextViewModelTest {
         viewModel.fileId = bookFile.id
         viewModel.fileUri = "default_uri"
         parse_book(DEFAULT_BOOK)
-        viewModel.getPage()
+        viewModel.getInitialPage()
 
         // User modifies values
         viewModel.swipeChapterRight()
@@ -316,7 +316,7 @@ class VisualizeTextViewModelTest {
         parse_book(DEFAULT_BOOK)
 
         assertEquals(4, viewModel.currentChapter)
-        assertEquals(3, viewModel.getPage())
+        assertEquals(3, viewModel.getInitialPage())
     }
 
     @Test
@@ -405,7 +405,7 @@ class VisualizeTextViewModelTest {
 
         splitPages(4)
         parse_book(DEFAULT_BOOK)
-        viewModel.getPage()
+        viewModel.getInitialPage()
 
         // Swipe to right
         viewModel.swipeChapterRight()
@@ -441,7 +441,7 @@ class VisualizeTextViewModelTest {
 
         splitPages(4)
         parse_book(DEFAULT_BOOK)
-        viewModel.getPage()
+        viewModel.getInitialPage()
 
         val lastReadDate = Calendar.getInstance()
         val uuid = "random"

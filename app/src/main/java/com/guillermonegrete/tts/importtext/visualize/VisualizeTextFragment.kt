@@ -602,7 +602,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         addPagerCallback()
 
         val pages = chapter.pages
-        val position = viewModel.getPage()
+        val position = viewModel.currentPage
 
         // Set the page and chapter.
         jumpToPos?.let {
@@ -630,7 +630,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val paragraphItems = mutableListOf<VisualizerAdapter.PageItem>()
         val dbNotes = chapter.notes.toMutableList()
 
-        val currentPage = viewModel.currentPage
+        val currentPage = viewModel.getInitialPage()
         chapter.pages.forEachIndexed { i, page ->
             val nextIndex = index + page.length
             val pageSpan = Span(index, nextIndex - 1)
