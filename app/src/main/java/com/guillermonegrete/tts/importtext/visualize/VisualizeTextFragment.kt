@@ -256,7 +256,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         cardWidth = (screenSizes.width * ratio).toInt()
 
         val cutoutInsets = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
-        setPagePadding(cutoutInsets)
+        setPageMargin(cutoutInsets)
 
         val cardParams = textCardView.layoutParams
         cardParams.width = cardWidth
@@ -789,22 +789,22 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         }
     }
 
-    private fun setPagePadding(insets: Insets) {
+    private fun setPageMargin(insets: Insets) {
         var shouldUpdate = false
 
-        val defaultPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_padding)
+        val defaultMargin = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_margin)
         // Get the biggest horizontal inset, calculate how much padding the cards needs to not overlap it.
         // If it's bigger than the default padding then update it.
-        val requiredPadding = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
-        if (requiredPadding > defaultPadding && requiredPadding != pagesAdapter.horizontalPadding) {
-            pagesAdapter.horizontalPadding = requiredPadding
+        val requiredMargin = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
+        if (requiredMargin > defaultMargin && requiredMargin != pagesAdapter.horizontalMargin) {
+            pagesAdapter.horizontalMargin = requiredMargin
             shouldUpdate = true
         }
 
-        val defaultVertPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_top_padding)
-        val requiredVertPadding = (ratio * insets.top.coerceAtLeast(insets.bottom)).toInt()
-        if (requiredVertPadding > defaultVertPadding && requiredVertPadding != pagesAdapter.verticalPadding) {
-            pagesAdapter.verticalPadding = requiredVertPadding
+        val defaultTopMargin = resources.getDimensionPixelSize(R.dimen.visualize_page_top_margin)
+        val requiredTopMargin = (ratio * insets.top.coerceAtLeast(insets.bottom)).toInt()
+        if (requiredTopMargin > defaultTopMargin && requiredTopMargin != pagesAdapter.topMargin) {
+            pagesAdapter.topMargin = requiredTopMargin
             shouldUpdate = true
         }
 
