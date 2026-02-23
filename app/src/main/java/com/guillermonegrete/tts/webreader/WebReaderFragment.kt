@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -66,6 +68,7 @@ import com.guillermonegrete.tts.ImporttextDirections
 import com.guillermonegrete.tts.common.notes.NotesListFragment
 import com.guillermonegrete.tts.common.views.CharacterSmoothScroller
 import com.guillermonegrete.tts.db.NoteType
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -116,6 +119,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     override fun onPause() {
         super.onPause()
+        val charPosition = getFirstVisibleCharPosition()
+        Toast.makeText(context, "Char position: $charPosition", Toast.LENGTH_SHORT).show()
         viewModel.saveWebLink()
     }
 
@@ -907,6 +912,27 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun isSheetVisible(): Boolean {
         val behavior = BottomSheetBehavior.from(binding.transSheet.root)
         return behavior.state == BottomSheetBehavior.STATE_EXPANDED
+    }
+
+    /**
+     * Returns the position in absolute terms of the start character of the first visible line.
+     */
+    private fun getFirstVisibleCharPosition(): Int {
+        val layoutManager = binding.paragraphsList.layoutManager as LinearLayoutManager
+        val index = layoutManager.findFirstVisibleItemPosition()
+        val view = layoutManager.findViewByPosition(index) as? TextView
+        if (view != null) {
+            // The top property is the distance between the RecyclerView and the item (remove any inset padding)
+            // convert to positive because it's usually negative if the top is off-screen due to scroll
+            val offscreenHeight = abs(view.top - binding.paragraphsList.paddingTop)
+            val layout = view.layout
+            val line = layout.getLineForVertical(offscreenHeight)
+            val relativePos = layout.getLineStart(line)
+            val absolutePos = adapter.getAbsoluteCharPosition(index, relativePos)
+            Timber.d("Index: $index, offscreen: $offscreenHeight, line: $line, line start rel: $relativePos, abs: $absolutePos")
+            return absolutePos
+        }
+        return 0
     }
 
     @Composable
