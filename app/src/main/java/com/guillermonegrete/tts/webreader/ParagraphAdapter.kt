@@ -73,7 +73,7 @@ class ParagraphAdapter(
     var initialWordsLoaded = false
 
     /**
-     * This is the range of the initial visible items. Used for the inital load of saved words.
+     * This is the range of the initial visible items. Used for the initial load of saved words.
      */
     var initialRange: IntRange? = null
 
@@ -253,7 +253,7 @@ class ParagraphAdapter(
         }
 
         private fun findSentence(offset: Int): Int {
-            val item = items[adapterPosition]
+            val item = items[bindingAdapterPosition]
             item.indexes.forEachIndexed { index, span ->
                 if(offset in span.start..span.end) return index
             }
@@ -278,12 +278,12 @@ class ParagraphAdapter(
             }
 
             if (item.scanNewWords) {
-                addNewWords(item, adapterPosition)
+                addNewWords(item, bindingAdapterPosition)
             }
 
             addSavedWords(item, spannable)
 
-            val pos = adapterPosition
+            val pos = bindingAdapterPosition
             if ((initialWordsLoaded || initialRange?.contains(pos) == false) // Load words if this item doesn't belong to the initial range (those are already loading/loaded)
                 && !item.databaseWordsLoaded) {
                 loadDatabaseWord(item.original, pos)
@@ -300,7 +300,7 @@ class ParagraphAdapter(
                 val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
 
                 // First check if a note was tapped
-                val item = items[adapterPosition]
+                val item = items[bindingAdapterPosition]
                 val savedWord = item.savedWords.find { it.span != null && offset in it.span.start ..it.span.end }
                 val clickedNote = item.notes.find { offset in it.span.start .. it.span.end }
                 if (savedWord != null && clickedNote != null) {
@@ -342,8 +342,8 @@ class ParagraphAdapter(
 
                     // Select new word
                     item.selectedWord = wordSpan
-                    selectedWordPos = adapterPosition
-                    notifyItemChanged(adapterPosition, Payload.Text)
+                    selectedWordPos = bindingAdapterPosition
+                    notifyItemChanged(bindingAdapterPosition, Payload.Text)
                 }
                 return super.onSingleTapConfirmed(e)
             }
@@ -365,7 +365,7 @@ class ParagraphAdapter(
                 // Detects horizontal swipes in any direction
                 if (abs(diffX) > abs(diffY)) {
                     if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                        onParagraphSelected(adapterPosition)
+                        onParagraphSelected(bindingAdapterPosition)
                     }
                 }
                 return true
@@ -378,8 +378,8 @@ class ParagraphAdapter(
 
             val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
             val index = findSentence(offset)
-            selectSentence(adapterPosition, index)
-            onSentenceSelected(adapterPosition, index)
+            selectSentence(bindingAdapterPosition, index)
+            onSentenceSelected(bindingAdapterPosition, index)
         }
 
         /**
@@ -401,7 +401,7 @@ class ParagraphAdapter(
                 val item = items[itemPos]
                 val span = item.indexes[selectedSentence.sentenceIndex]
                 // remove overlapping notes/words
-                text.getSpans(span.start, span.end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
+                text.getSpans(span.start, span.end, BackgroundColorSpan::class.java).forEach { bgSpan -> text.removeSpan(bgSpan) }
 
                 // add highlight
                 selectionSpan = BackgroundColorSpan(textHighlightColor)
@@ -440,14 +440,14 @@ class ParagraphAdapter(
                 }
 
                 // Reapply overlaps
-                overlaps.map {
+                overlaps.forEach {
                     text.addHighlightedText(it.start, it.end, Highlight.Overlap(it.color, it.noteId, it.wordId))
                 }
             }
         }
 
         fun Spannable.getOverlapSpan(overlap: OverlapSpan): BackgroundColorSpan? {
-            getSpans(overlap.start, overlap.end, BackgroundColorSpan::class.java).map { bgSpan ->
+            getSpans(overlap.start, overlap.end, BackgroundColorSpan::class.java).forEach { bgSpan ->
                 if (bgSpan is Highlight.Overlap &&
                     bgSpan.noteId == overlap.noteId && bgSpan.wordId == overlap.wordId) {
                     return bgSpan
@@ -535,7 +535,7 @@ class ParagraphAdapter(
         fun removeNote(id: Long) {
             val spannable = getSpannable() ?: return
 
-            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).map {
+            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).forEach {
                 when (it) {
                     is Highlight.Note -> if(it.id == id) spannable.removeSpan(it)
                     is Highlight.Overlap -> if(it.noteId == id) spannable.removeSpan(it)
@@ -586,7 +586,7 @@ class ParagraphAdapter(
         fun removeWord(id: Int) {
             val spannable = getSpannable() ?: return
 
-            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).map {
+            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).forEach {
                 when (it) {
                     is Highlight.SavedWord -> if(it.id == id) spannable.removeSpan(it)
                     is Highlight.Overlap -> if(it.wordId == id) spannable.removeSpan(it)
@@ -597,7 +597,7 @@ class ParagraphAdapter(
         fun removeWords() {
             val spannable = getSpannable() ?: return
 
-            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).map {
+            spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).forEach {
                 when (it) {
                     is Highlight.SavedWord, is Highlight.Overlap -> spannable.removeSpan(it)
                 }
@@ -611,7 +611,7 @@ class ParagraphAdapter(
                 mode?.title = null
                 unselectSentence()
                 highlightedTextView = binding.paragraph
-                highlightedTextPos = adapterPosition
+                highlightedTextPos = bindingAdapterPosition
                 onTextHighlighted()
                 return true
             }
@@ -921,7 +921,7 @@ class ParagraphAdapter(
                 }
 
                 paragraph.setOnClickListener {
-                    clickedWord?.let { word -> onParagraphEvent(ParagraphEvent.TopClick(word, adapterPosition)) }
+                    clickedWord?.let { word -> onParagraphEvent(ParagraphEvent.TopClick(word, bindingAdapterPosition)) }
                     clickedWord = null
                 }
 
@@ -930,7 +930,7 @@ class ParagraphAdapter(
 
                     if(event.action == MotionEvent.ACTION_UP && duration < 300){
                         val index = translatedParagraph.getOffsetForPosition(event.x, event.y)
-                        onParagraphEvent(ParagraphEvent.BottomClick(adapterPosition, index))
+                        onParagraphEvent(ParagraphEvent.BottomClick(bindingAdapterPosition, index))
                     }
                     true
                 }
@@ -974,7 +974,7 @@ class ParagraphAdapter(
         val text = this.text as Spannable
 
         //Remove previous
-        text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+        text.getSpans(0, text.length, BackgroundColorSpan::class.java).forEach { span -> text.removeSpan(span) }
 
         val selectionSpan = BackgroundColorSpan(textHighlightColor)
         text.setSpan(selectionSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -1118,7 +1118,7 @@ class ParagraphAdapter(
 
     fun removeWord(wordIndexes: Set<Int>, id: Int) {
         newWords.removeAll { it.id == id }
-        wordIndexes.map { pos ->
+        wordIndexes.forEach { pos ->
             val item = items[pos]
             val removed = item.savedWords.removeAll { it.dbId == id }
             if (removed) notifyItemChanged(pos, Payload.DeleteWord(id)) // use payload
@@ -1131,7 +1131,7 @@ class ParagraphAdapter(
 
     fun removeWords(visibleItems: IntRange) {
         newWords.clear()
-        visibleItems.map {
+        visibleItems.forEach {
             val words = items[it].savedWords
             if (words.isNotEmpty()) {
                 words.clear()
@@ -1165,6 +1165,9 @@ class ParagraphAdapter(
     fun getLocalCharPosition(position: Int, absoluteCharPos: Int)
         = absoluteCharPos - items[position].firstCharIndex
 
+    fun getAbsoluteCharPosition(position: Int, relativeCharPos: Int)
+        = relativeCharPos + items[position].firstCharIndex
+
     data class OverlapSpan(val start: Int, val end: Int, @ColorInt val color: Int, val noteId: Long, val wordId: Int)
 
     sealed interface TextClick {
@@ -1175,7 +1178,7 @@ class ParagraphAdapter(
     }
 
     sealed interface ParagraphEvent {
-        class ToggleClick(): ParagraphEvent
+        class ToggleClick: ParagraphEvent
         data class TopClick(val word: String, val position: Int): ParagraphEvent
         data class BottomClick(val itemIndex: Int, val charPos: Int): ParagraphEvent
     }
