@@ -128,6 +128,8 @@ class WebReaderViewModel @AssistedInject constructor(
     // Path of the app's external storage folder
     var folderPath = ""
 
+    var firstLoad = true
+
     init {
         loadDoc(url)
     }
@@ -241,11 +243,11 @@ class WebReaderViewModel @AssistedInject constructor(
         return doc.body().html()
     }
 
-    fun saveWebLink(){
+    fun saveWebLink(charPosition: Int) {
         viewModelScope.launch {
             cacheWebLink?.let {
-                it.lastRead = Calendar.getInstance()
-                webLinkDAO.upsert(it)
+                val newWebLink = it.copy(lastRead = Calendar.getInstance(), charPosition = charPosition)
+                webLinkDAO.upsert(newWebLink)
             }
         }
     }
@@ -532,6 +534,8 @@ class WebReaderViewModel @AssistedInject constructor(
     fun getLanguage() = cacheWebLink?.language
 
     fun getWebLinkId() = cacheWebLink?.id
+
+    fun getCharPos() = cacheWebLink?.charPosition ?: 0
 
     private fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
         val iterator = BreakIterator.getSentenceInstance()
