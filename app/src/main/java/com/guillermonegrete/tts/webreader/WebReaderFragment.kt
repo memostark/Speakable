@@ -10,7 +10,6 @@ import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -120,8 +119,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     override fun onPause() {
         super.onPause()
         val charPosition = getFirstVisibleCharPosition()
-        Toast.makeText(context, "Char position: $charPosition", Toast.LENGTH_SHORT).show()
-        viewModel.saveWebLink()
+        viewModel.saveWebLink(charPosition)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -388,16 +386,13 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             adapter.updateItems(paragraphItems)
             paragraphsList.adapter = adapter
             paragraphsList.post {
-                jumpToPos?.let { charPos ->
-                    val position = adapter.getPositionInList(charPos)
-                    paragraphsList.post {
-                        val localPos = adapter.getLocalCharPosition(position, charPos)
+                if (viewModel.firstLoad) {
+                    jumpToChar(viewModel.getCharPos())
+                    viewModel.firstLoad = false
+                }
 
-                        val smoothScroller = CharacterSmoothScroller(requireContext(), localPos)
-                        smoothScroller.targetPosition = position
-                        val layoutManager = paragraphsList.layoutManager
-                        layoutManager?.startSmoothScroll(smoothScroller)
-                    }
+                jumpToPos?.let { charPos ->
+                    jumpToChar(charPos)
                     jumpToPos = null
                 }
                 loadWordsForVisibleItems()
@@ -407,6 +402,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             setAdapterListeners()
 
             viewModel.getNotes()
+        }
+    }
+
+    private fun jumpToChar(charPos: Int) {
+        val position = adapter.getPositionInList(charPos)
+        val paragraphsList = binding.paragraphsList
+        paragraphsList.post {
+            val localPos = adapter.getLocalCharPosition(position, charPos)
+
+            val smoothScroller = CharacterSmoothScroller(requireContext(), localPos)
+            smoothScroller.targetPosition = position
+            val layoutManager = paragraphsList.layoutManager
+            layoutManager?.startSmoothScroll(smoothScroller)
         }
     }
 
