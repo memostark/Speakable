@@ -110,6 +110,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     private lateinit var pagesAdapter: VisualizerAdapter
     private lateinit var callback: OnBackPressedCallback
+    private var pagerCallback: ViewPager2.OnPageChangeCallback? = null
 
     @Inject
     lateinit var preferences: SharedPreferences
@@ -282,6 +283,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         pageItemView = null
         scaleDetector = null
         splitterCreated = false
+        pagerCallback = null
         viewPager.adapter = null
         _viewPager = null
         _binding = null
@@ -720,58 +722,66 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     }
 
     private fun addPagerCallback(){
-        var swipeFirst = false
-        viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
+        if (pagerCallback == null) {
+            var swipeFirst = false
+            val callback = object : ViewPager2.OnPageChangeCallback() {
 
-            var previousPage = -1
+                var previousPage = -1
 
-            override fun onPageSelected(position: Int) {
-                viewModel.currentPage = position
+                override fun onPageSelected(position: Int) {
+                    viewModel.currentPage = position
 
-                val pageNumber = position + 1
-                binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
-                binding.pagesSeekBar.progress = position
+                    val pageNumber = position + 1
+                    binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
+                    binding.pagesSeekBar.progress = position
 
-                if(pagesAdapter.hasBottomSheet)
-                    binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
+                    if (pagesAdapter.hasBottomSheet)
+                        binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
 
-                if (previousPage != -1) {
-                    // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
-                    viewPager.post {
-                        viewModel.hideDialog()
-                        pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+                    if (previousPage != -1) {
+                        // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
+                        viewPager.post {
+                            viewModel.hideDialog()
+                            pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+                        }
                     }
+
+                    // Load saved words when reaching new page
+                    val text = pagesAdapter.getPageText(position)
+                    val words = splitByWords(text.toString())
+                    viewModel.loadLocalWords(words)
+
+                    previousPage = position
                 }
 
-                // Load saved words when reaching new page
-                val text = pagesAdapter.getPageText(position)
-                val words = splitByWords(text.toString())
-                viewModel.loadLocalWords(words)
+                override fun onPageScrollStateChanged(state: Int) {
+                    super.onPageScrollStateChanged(state)
+                    if (state == ViewPager2.SCROLL_STATE_DRAGGING) swipeFirst = true
+                }
 
-                previousPage = position
-            }
+                override fun onPageScrolled(
+                    position: Int,
+                    positionOffset: Float,
+                    positionOffsetPixels: Int
+                ) {
 
-            override fun onPageScrollStateChanged(state: Int) {
-                super.onPageScrollStateChanged(state)
-                if(state == ViewPager2.SCROLL_STATE_DRAGGING) swipeFirst = true
-            }
-
-            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-
-                if(positionOffset > 0){
-                    swipeFirst = false
-                }else{
-                    if(swipeFirst) {
+                    if (positionOffset > 0) {
                         swipeFirst = false
-                        if(position == 0) {
-                            viewModel.swipeChapterLeft()
-                        } else if(position == viewModel.pagesSize - 1) {
-                            viewModel.swipeChapterRight()
+                    } else {
+                        if (swipeFirst) {
+                            swipeFirst = false
+                            if (position == 0) {
+                                viewModel.swipeChapterLeft()
+                            } else if (position == viewModel.pagesSize - 1) {
+                                viewModel.swipeChapterRight()
+                            }
                         }
                     }
                 }
             }
-        })
+            viewPager.registerOnPageChangeCallback(callback)
+            pagerCallback = callback
+        }
     }
 
     private fun setUpPageParsing(focusedView: View){
