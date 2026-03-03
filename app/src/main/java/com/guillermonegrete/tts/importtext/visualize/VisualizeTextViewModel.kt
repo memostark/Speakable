@@ -238,7 +238,8 @@ class VisualizeTextViewModel @Inject constructor(
         if(isEpub){
             databaseBookFile = getBookFile()
             if (databaseBookFile == null) databaseBookFile = createNewBook()
-            val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
+            val initialChapter = if(currentChapter == -1)
+                databaseBookFile?.chapter?.coerceAtLeast(0) ?: 0 else currentChapter
 
             // Create files folder and save image cover
             createFolderForBook()
