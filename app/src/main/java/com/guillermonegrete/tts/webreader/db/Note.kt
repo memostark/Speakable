@@ -43,6 +43,9 @@ data class Note(
      * The length of the note span.
      */
     val length: Int,
+    /**
+     * Associated color of the note represented in hexadecimal ARGB. Example: "#aafdc817"
+     */
     var color: String,
     @ColumnInfo(name = "link_id")
     val linkId: Int? = null,
@@ -53,9 +56,15 @@ data class Note(
 ) {
 
     /**
-     * For a book note, gets the position in the chapter. The actual position is in the first 24 bits of a 32 bit int
+     * For a book note, gets the position with the chapter. The actual position is in the first 24 bits of a 32 bit int
      */
     fun getPosInChapter() = position and 0xFFFFFF
+
+    companion object {
+        fun emptyNote(id: Long) = Note("", "", 0, 0, "", 0, null, id)
+
+        fun getBookPosition(position: Int) = BookPosition(position shr 24, position and 0xFFFFFF)
+    }
 }
 
 val Note.span: Span
@@ -81,3 +90,5 @@ data class NoteUpdate (
     val text: String,
     val color: String
 )
+
+data class BookPosition(val chapter: Int, val charPos: Int)

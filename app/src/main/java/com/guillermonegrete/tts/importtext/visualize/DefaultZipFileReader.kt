@@ -6,9 +6,11 @@ import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.IOUtils
+import timber.log.Timber
 import java.io.*
 import java.util.zip.ZipInputStream
 import kotlin.math.roundToInt
+import androidx.core.graphics.scale
 
 
 class DefaultZipFileReader(inputStream: InputStream?, fileManager: EpubFileManager): ZipFileReader {
@@ -47,7 +49,7 @@ class DefaultZipFileReader(inputStream: InputStream?, fileManager: EpubFileManag
                     zipEntry = zipStream.nextEntry
                 }
             }catch (e: IOException){
-                println("Error opening file $filePath: $e")
+                Timber.e(e, "Error opening file $filePath")
             }
             return@withContext null
         }
@@ -78,9 +80,9 @@ class DefaultZipFileReader(inputStream: InputStream?, fileManager: EpubFileManag
 
                 return@withContext streamMap
             }catch (e: IOException){
-                println("Error opening zip file: $e")
+                Timber.e(e, "Error opening zip file")
             }
-            return@withContext mapOf<String, StringReader>()
+            return@withContext mapOf()
         }
     }
 
@@ -128,7 +130,7 @@ class DefaultZipFileReader(inputStream: InputStream?, fileManager: EpubFileManag
                     val aspectRatio: Float = bitmap.width / bitmap.height.toFloat()
                     val width = 150
                     val height = (width / aspectRatio).roundToInt()
-                    val thumbBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false)
+                    val thumbBitmap = bitmap.scale(width, height, false)
 
                     thumbFile.outputStream().use { outStream ->
                         thumbBitmap.compress(Bitmap.CompressFormat.PNG, 85, outStream)

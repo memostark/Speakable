@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -14,6 +15,8 @@ data class WebLink(
     val title: String? = null,
     var language: String? = null,
     var lastRead: Calendar = Calendar.getInstance(),
+    @ColumnInfo(defaultValue = "0")
+    val charPosition: Int = 0,
     var uuid: UUID? = null,
     @PrimaryKey(autoGenerate = true) val id: Int = 0
 )

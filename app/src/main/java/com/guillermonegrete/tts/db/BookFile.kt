@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.guillermonegrete.tts.importtext.ImportedFileType
 import java.util.*
@@ -10,7 +11,10 @@ import java.util.*
  * Stores all metadata associated to represent a book.
  * Value "und" for parameter language means language unknown
  */
-@Entity(tableName = "book_files")
+@Entity(
+    tableName = "book_files",
+    indices = [Index(value = ["uri"], unique = true, name = "idx_book_files_uri_unique")],
+)
 data class BookFile(
     val uri: String,
     val title: String,

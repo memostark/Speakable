@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
-import com.guillermonegrete.tts.common.models.NoteItem
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.Result
@@ -118,13 +117,13 @@ class VisualizeTextViewModel @Inject constructor(
     private val _linksForWord = MutableStateFlow<DialogState<List<ExternalLink>>>(DialogState.Empty)
     val linksForWord: StateFlow<DialogState<List<ExternalLink>>> = _linksForWord
 
-    private val _selectedLink = MutableStateFlow<Int>(0)
+    private val _selectedLink = MutableStateFlow(0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
     private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
     val dialogState: StateFlow<UiDialogState> = _dialogState
 
-    private val _editDialogs = MutableStateFlow<UiEditDialogsState>(UiEditDialogsState())
+    private val _editDialogs = MutableStateFlow(UiEditDialogsState())
     val editDialogs: StateFlow<UiEditDialogsState> = _editDialogs
 
     // Settings
@@ -151,7 +150,7 @@ class VisualizeTextViewModel @Inject constructor(
             }
         }
 
-    private val pageWords = MutableStateFlow(emptyList<String>())
+    private val pageWords = MutableSharedFlow<List<String>>()
     @OptIn(ExperimentalCoroutinesApi::class)
     val pageSavedWords = pageWords.flatMapLatest { words ->
         wordDAO.findWordsStream(words)
@@ -224,7 +223,7 @@ class VisualizeTextViewModel @Inject constructor(
         }
     }
 
-    fun getPage(): Int{
+    fun getInitialPage(): Int{
         currentPage = if(firstLoad) {
             firstLoad = false
             val lastChar = databaseBookFile?.lastChar ?: 0
@@ -239,7 +238,8 @@ class VisualizeTextViewModel @Inject constructor(
         if(isEpub){
             databaseBookFile = getBookFile()
             if (databaseBookFile == null) databaseBookFile = createNewBook()
-            val initialChapter = if(currentChapter == -1) databaseBookFile?.chapter ?: 0 else currentChapter
+            val initialChapter = if(currentChapter == -1)
+                databaseBookFile?.chapter?.coerceAtLeast(0) ?: 0 else currentChapter
 
             // Create files folder and save image cover
             createFolderForBook()
@@ -297,6 +297,16 @@ class VisualizeTextViewModel @Inject constructor(
                 splitToPages()
                 _dataLoading.value = false
             }
+        }
+    }
+
+    /**
+     * Jumps to the chapter by the index in the spine. The callback notifies when the chapter has been set.
+     */
+    fun jumpToChapter(index: Int, onDone: () -> Unit) {
+        viewModelScope.launch {
+            if (currentChapter != index) jumpToChapter(index)
+            onDone()
         }
     }
 
@@ -565,7 +575,9 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun loadLocalWords(words: List<String>) {
-        pageWords.value = words
+        viewModelScope.launch {
+            pageWords.emit(words)
+        }
     }
 
     fun setNoteData(note: Note) {
@@ -577,7 +589,9 @@ class VisualizeTextViewModel @Inject constructor(
     }
 
     fun translateWord(word: String, span: Span) {
-        _dialogState.update { it.copy(dialogState = DialogType.Translation(SimpleTranslation(word), span, false, false)) }
+        _dialogState.update {
+            it.copy(dialogState = DialogType.Translation(SimpleTranslation(word), span, overlapsNote = false, overlapsWord = false))
+        }
     }
 
     fun hideDialog() {
@@ -622,8 +636,7 @@ class VisualizeTextViewModel @Inject constructor(
      * This is used when there is a change in the page size and the current span is no longer visible.
      */
     fun verifySpanInPage(pageSpan: Span) {
-        val state = _dialogState.value.dialogState
-        when(state) {
+        when(val state = _dialogState.value.dialogState) {
             is DialogType.Note -> {
                 val span = state.item.spanBook
                 if (!pageSpan.intersects(span)) hideDialog()
@@ -637,6 +650,10 @@ class VisualizeTextViewModel @Inject constructor(
             null -> {}
         }
     }
+
+    fun getFileId() = databaseBookFile?.id
+
+    fun getBook() = _book.value
 
     data class UiDialogState(
         val isLoading: Boolean = false,

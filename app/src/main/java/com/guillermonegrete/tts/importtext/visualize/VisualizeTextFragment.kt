@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.Selection
@@ -46,9 +45,11 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.guillermonegrete.tts.EventObserver
+import com.guillermonegrete.tts.ImporttextDirections
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.DialogList
 import com.guillermonegrete.tts.common.compose.ExternalLinkList
@@ -62,6 +63,7 @@ import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
+import com.guillermonegrete.tts.db.NoteType
 import com.guillermonegrete.tts.db.Words
 import com.guillermonegrete.tts.importtext.epub.NavPoint
 import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
@@ -84,6 +86,11 @@ import timber.log.Timber
 import java.text.BreakIterator
 import javax.inject.Inject
 import kotlin.math.abs
+import androidx.core.graphics.toColorInt
+import androidx.fragment.app.setFragmentResultListener
+import com.guillermonegrete.tts.common.notes.NotesListFragment
+import com.guillermonegrete.tts.webreader.db.BookPosition
+import com.guillermonegrete.tts.webreader.db.Note
 
 @AndroidEntryPoint
 class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogInterface.OnCancelListener {
@@ -93,7 +100,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private var _binding: FragmentVisualizeTextBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var viewPager: ViewPager2
+    private var _viewPager: ViewPager2? = null
+    private val viewPager get() = _viewPager!!
 
     // Bottom sheet layout
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<ViewGroup>
@@ -102,6 +110,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     private lateinit var pagesAdapter: VisualizerAdapter
     private lateinit var callback: OnBackPressedCallback
+    private var pagerCallback: ViewPager2.OnPageChangeCallback? = null
 
     @Inject
     lateinit var preferences: SharedPreferences
@@ -116,6 +125,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private val noteSheetVisible = mutableStateOf(false)
     private var linksDialogShown = mutableStateOf(false)
     private val pickInfoDialogVisible = mutableStateOf(false)
+    private val contentsMenuVisible = mutableStateOf(false)
     private val wordLinks = mutableStateOf(ExternalLinkList(emptyList()))
     private var selectedLinkPos = mutableIntStateOf(0)
 
@@ -124,7 +134,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     private var splitterCreated = false
 
-    private lateinit var scaleDetector: ScaleGestureDetector
+    private var scaleDetector: ScaleGestureDetector? = null
 
     private var cardWidth = 0
     /**
@@ -142,6 +152,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     private var sheetBarHeight = 0
 
+    private var jumpToPos: BookPosition? = null
+
     private var dialog: TextInfoDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -153,6 +165,10 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val infoDialog = childFragmentManager.findFragmentByTag(TextInfoDialog.TAG)
         if (infoDialog is TextInfoDialog) dialog = infoDialog
         if (viewModel.fullScreen) hideSystemUi()
+
+        setFragmentResultListener(NotesListFragment.NOTES_LIST_RESULT_KEY) { _, bundle ->
+            jumpToPos = Note.getBookPosition(bundle.getInt(NotesListFragment.CHAR_POSITION_KEY))
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -169,7 +185,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             binding.readerCurrentChapter.isGone = true
         }
 
-        viewPager = binding.textReaderViewpager
+        _viewPager = binding.textReaderViewpager
         // Creates one item so setPageTransformer is called
         // Used to get the page text view properties to create page splitter.
         pagesAdapter = VisualizerAdapter(
@@ -241,7 +257,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         cardWidth = (screenSizes.width * ratio).toInt()
 
         val cutoutInsets = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
-        setPagePadding(cutoutInsets)
+        setPageMargin(cutoutInsets)
 
         val cardParams = textCardView.layoutParams
         cardParams.width = cardWidth
@@ -263,6 +279,13 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     override fun onDestroyView() {
         super.onDestroyView()
+        ViewCompat.setOnApplyWindowInsetsListener(requireActivity().window.decorView, null)
+        pageItemView = null
+        scaleDetector = null
+        splitterCreated = false
+        pagerCallback = null
+        viewPager.adapter = null
+        _viewPager = null
         _binding = null
     }
 
@@ -297,10 +320,11 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private var scaleInProgress = false
 
     fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        val detector = scaleDetector ?: return false
 
         if (eventInProgress) {
-            if (pageItemView?.isShown == true) scaleDetector.onTouchEvent(ev)
-            if (scaleDetector.isInProgress) {
+            if (pageItemView?.isShown == true) detector.onTouchEvent(ev)
+            if (detector.isInProgress) {
                 // Cancel long press to avoid showing contextual action menu
                 pageItemView?.cancelLongPress()
                 scaleInProgress = true
@@ -336,7 +360,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     }
 
     /**
-     * Hide the UI if it gets shown again (e.g. when opening a external link in the browser).
+     * Hide the UI if it gets shown again (e.g. when opening an external link in the browser).
      *
      * This is for older devices because newer devices re-hide the UI automatically.
      */
@@ -429,9 +453,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                     binding.readerCurrentChapter.visibility = View.VISIBLE
                 }
 
-                val navPoints = it.tableOfContents.navPoints
-                binding.showTocBtn.setOnClickListener { showTableOfContents(navPoints) }
-                binding.showTocBtn.isGone = navPoints.isEmpty()
+                binding.showTocBtn.setOnClickListener { contentsMenuVisible.value = true }
+                binding.showTocBtn.isVisible = true
             }
 
             val bottomText = binding.pageBottomTextView
@@ -467,9 +490,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                                 is ModifiedNote.Update -> {
                                     val note = result.note
                                     val span = note.spanBook
-                                    val noteItem = NoteItem(note.text, span, Color.parseColor(note.color), note.id)
+                                    val noteItem = NoteItem(note.text, span, note.color.toColorInt(), note.id)
                                     pagesAdapter.updateNote(noteItem)
-                                    noteInfo.value = EditNote(note.originalText, note.text, span, Color.parseColor(note.color), true, note.id)
+                                    noteInfo.value = EditNote(note.originalText, note.text, span, note.color.toColorInt(), true, note.id)
                                 }
 
                                 is ModifiedNote.Delete -> {
@@ -581,9 +604,19 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         addPagerCallback()
 
         val pages = chapter.pages
-        val position = viewModel.getPage()
-        binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
-        viewPager.setCurrentItem(position, false)
+        val position = viewModel.currentPage
+
+        // Set the page and chapter.
+        jumpToPos?.let {
+            viewModel.jumpToChapter(it.chapter) {
+                val position = pagesAdapter.getCharListIndex(it.charPos)
+                viewPager.setCurrentItem(position, false)
+            }
+            jumpToPos = null
+        } ?: run {
+            binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, position + 1, pages.size) // Example: 1 / 33
+            viewPager.setCurrentItem(position, false)
+        }
 
         // Subtract 1 because seek bar is zero based numbering
         binding.pagesSeekBar.max = pages.size - 1
@@ -599,7 +632,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val paragraphItems = mutableListOf<VisualizerAdapter.PageItem>()
         val dbNotes = chapter.notes.toMutableList()
 
-        val currentPage = viewModel.getPage()
+        val currentPage = viewModel.getInitialPage()
         chapter.pages.forEachIndexed { i, page ->
             val nextIndex = index + page.length
             val pageSpan = Span(index, nextIndex - 1)
@@ -610,7 +643,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
             val noteItems = paragraphNotes.map { note ->
                 val itemStart = note.position - index
-                NoteItem(note.text, Span(itemStart, itemStart + note.length), Color.parseColor(note.color), note.id)
+                NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color.toColorInt(), note.id)
             }.toMutableList()
 
             paragraphItems.add(VisualizerAdapter.PageItem(page, noteItems, index))
@@ -689,58 +722,66 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     }
 
     private fun addPagerCallback(){
-        var swipeFirst = false
-        viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback(){
+        if (pagerCallback == null) {
+            var swipeFirst = false
+            val callback = object : ViewPager2.OnPageChangeCallback() {
 
-            var previousPage = -1
+                var previousPage = -1
 
-            override fun onPageSelected(position: Int) {
-                viewModel.currentPage = position
+                override fun onPageSelected(position: Int) {
+                    viewModel.currentPage = position
 
-                val pageNumber = position + 1
-                binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
-                binding.pagesSeekBar.progress = position
+                    val pageNumber = position + 1
+                    binding.readerCurrentPage.text = resources.getString(R.string.reader_current_page_label, pageNumber, viewModel.pagesSize)
+                    binding.pagesSeekBar.progress = position
 
-                if(pagesAdapter.hasBottomSheet)
-                    binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
+                    if (pagesAdapter.hasBottomSheet)
+                        binding.pageBottomTextView.text = viewModel.translatedPages[position]?.translatedText ?: getString(R.string.click_to_translate_msg)
 
-                if (previousPage != -1) {
-                    // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
-                    viewPager.post {
-                        viewModel.hideDialog()
-                        pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+                    if (previousPage != -1) {
+                        // Can't update items directly in the pager callback methods, need to wait until layout measurements are done.
+                        viewPager.post {
+                            viewModel.hideDialog()
+                            pagesAdapter.notifyItemChanged(previousPage, VisualizerAdapter.UNSELECT_SENTENCE)
+                        }
                     }
+
+                    // Load saved words when reaching new page
+                    val text = pagesAdapter.getPageText(position)
+                    val words = splitByWords(text.toString())
+                    viewModel.loadLocalWords(words)
+
+                    previousPage = position
                 }
 
-                // Load saved words when reaching new áge
-                val text = pagesAdapter.getPageText(position)
-                val words = splitByWords(text.toString())
-                viewModel.loadLocalWords(words)
+                override fun onPageScrollStateChanged(state: Int) {
+                    super.onPageScrollStateChanged(state)
+                    if (state == ViewPager2.SCROLL_STATE_DRAGGING) swipeFirst = true
+                }
 
-                previousPage = position
-            }
+                override fun onPageScrolled(
+                    position: Int,
+                    positionOffset: Float,
+                    positionOffsetPixels: Int
+                ) {
 
-            override fun onPageScrollStateChanged(state: Int) {
-                super.onPageScrollStateChanged(state)
-                if(state == ViewPager2.SCROLL_STATE_DRAGGING) swipeFirst = true
-            }
-
-            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-
-                if(positionOffset > 0){
-                    swipeFirst = false
-                }else{
-                    if(swipeFirst) {
+                    if (positionOffset > 0) {
                         swipeFirst = false
-                        if(position == 0) {
-                            viewModel.swipeChapterLeft()
-                        } else if(position == viewModel.pagesSize - 1) {
-                            viewModel.swipeChapterRight()
+                    } else {
+                        if (swipeFirst) {
+                            swipeFirst = false
+                            if (position == 0) {
+                                viewModel.swipeChapterLeft()
+                            } else if (position == viewModel.pagesSize - 1) {
+                                viewModel.swipeChapterRight()
+                            }
                         }
                     }
                 }
             }
-        })
+            viewPager.registerOnPageChangeCallback(callback)
+            pagerCallback = callback
+        }
     }
 
     private fun setUpPageParsing(focusedView: View){
@@ -758,22 +799,22 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         }
     }
 
-    private fun setPagePadding(insets: Insets) {
+    private fun setPageMargin(insets: Insets) {
         var shouldUpdate = false
 
-        val defaultPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_padding)
+        val defaultMargin = resources.getDimensionPixelSize(R.dimen.visualize_page_horizontal_margin)
         // Get the biggest horizontal inset, calculate how much padding the cards needs to not overlap it.
         // If it's bigger than the default padding then update it.
-        val requiredPadding = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
-        if (requiredPadding > defaultPadding && requiredPadding != pagesAdapter.horizontalPadding) {
-            pagesAdapter.horizontalPadding = requiredPadding
+        val requiredMargin = (ratio * insets.left.coerceAtLeast(insets.right)).toInt()
+        if (requiredMargin > defaultMargin && requiredMargin != pagesAdapter.horizontalMargin) {
+            pagesAdapter.horizontalMargin = requiredMargin
             shouldUpdate = true
         }
 
-        val defaultVertPadding = resources.getDimensionPixelSize(R.dimen.visualize_page_top_padding)
-        val requiredVertPadding = (ratio * insets.top.coerceAtLeast(insets.bottom)).toInt()
-        if (requiredVertPadding > defaultVertPadding && requiredVertPadding != pagesAdapter.verticalPadding) {
-            pagesAdapter.verticalPadding = requiredVertPadding
+        val defaultTopMargin = resources.getDimensionPixelSize(R.dimen.visualize_page_top_margin)
+        val requiredTopMargin = (ratio * insets.top.coerceAtLeast(insets.bottom)).toInt()
+        if (requiredTopMargin > defaultTopMargin && requiredTopMargin != pagesAdapter.topMargin) {
+            pagesAdapter.topMargin = requiredTopMargin
             shouldUpdate = true
         }
 
@@ -827,8 +868,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
     private fun handleUiDialogState(result: VisualizeTextViewModel.UiDialogState) {
         if (!result.isLoading) {
-            val state = result.dialogState
-            when(state) {
+            when(val state = result.dialogState) {
                 is DialogType.Note -> {
                     noteInfo.value = state.item.toEditNote()
                     noteSheetVisible.value = true
@@ -1047,7 +1087,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
         val text = SpannableString(binding.pageBottomTextView.text)
 
         //Remove previous
-        text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { span -> text.removeSpan(span) }
+        text.getSpans(0, text.length, BackgroundColorSpan::class.java).forEach { span -> text.removeSpan(span) }
 
         text.setSpan(BackgroundColorSpan(0x6633B5E5), pageSpans.bottomSpan.start, pageSpans.bottomSpan.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         binding.pageBottomTextView.setText(text, TextView.BufferType.SPANNABLE)
@@ -1063,11 +1103,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private fun getIntentText(): String {
         val intent = requireActivity().intent
         val extras = intent.extras
-        val text = extras?.getString(IMPORTED_TEXT)
-        if (text == null) {
-            return intent.getStringExtra(Intent.EXTRA_TEXT) ?: "No text"
-        }
-        return text
+        return extras?.getString(IMPORTED_TEXT) ?: return intent.getStringExtra(Intent.EXTRA_TEXT) ?: "No text"
     }
 
     private fun splitByWords(text: String): List<String> {
@@ -1122,6 +1158,24 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                 onDismiss = viewModel::stopPickingInfo
             )
         }
+
+        if (contentsMenuVisible.value) {
+            val navPoints = viewModel.getBook()?.tableOfContents?.navPoints
+            val hasToC = navPoints?.isNotEmpty() ?: false
+            ContentMenu(
+                hasToC,
+                { contentsMenuVisible.value = false }
+            ) { option ->
+                when(option) {
+                    ContentMenuItem.TABLE_OF_CONTENTS -> navPoints?.let { showTableOfContents(it) }
+                    ContentMenuItem.NOTES -> {
+                        val id = viewModel.getFileId() ?: return@ContentMenu
+                        findNavController().navigate(ImporttextDirections.toNotesListFragment(id, NoteType.FILE))
+                    }
+                }
+                contentsMenuVisible.value = false
+            }
+        }
     }
 
     @Composable
@@ -1144,7 +1198,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                 viewModel.getExternalLinks(word)
             },
             onDismiss = {
-                // Not used, the dismiss is made by the back pressed dispatcher
+                // Not used, the dismissing is made by the back pressed dispatcher
             }
         )
     }

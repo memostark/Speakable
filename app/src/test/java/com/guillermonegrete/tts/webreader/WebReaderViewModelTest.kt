@@ -428,12 +428,13 @@ class WebReaderViewModelTest {
         val time = Calendar.getInstance()
         mockkStatic(Calendar::class)
         every { Calendar.getInstance() } returns time // so link's lastRead is saved with this time
-        viewModel.saveWebLink()
+        val charPos = 10
+        viewModel.saveWebLink(charPos)
         advanceUntilIdle()
 
         val savedLink = webLinkDAO.links.find { it.url == url }
         assertNotNull(savedLink)
-        assertEquals(WebLink(url, "", lastRead = time), savedLink)
+        assertEquals(WebLink(url, "", lastRead = time, charPosition = charPos), savedLink)
     }
 
     @Test

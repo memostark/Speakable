@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
 import android.webkit.WebViewClient
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -60,6 +61,13 @@ import timber.log.Timber
 import java.util.*
 import kotlin.text.isNotEmpty
 import androidx.core.graphics.toColorInt
+import androidx.fragment.app.setFragmentResultListener
+import androidx.navigation.fragment.findNavController
+import com.guillermonegrete.tts.ImporttextDirections
+import com.guillermonegrete.tts.common.notes.NotesListFragment
+import com.guillermonegrete.tts.common.views.CharacterSmoothScroller
+import com.guillermonegrete.tts.db.NoteType
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
@@ -97,9 +105,21 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private var appBarSize = 0
 
+    private var jumpToPos: Int? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setFragmentResultListener(NotesListFragment.NOTES_LIST_RESULT_KEY) { _, bundle ->
+            // We use a String here, but any type that can be put in a Bundle is supported.
+            val result = bundle.getInt(NotesListFragment.CHAR_POSITION_KEY)
+            jumpToPos = result
+        }
+    }
+
     override fun onPause() {
         super.onPause()
-        viewModel.saveWebLink()
+        val charPosition = getFirstVisibleCharPosition()
+        viewModel.saveWebLink(charPosition)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -186,11 +206,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     }
 
                     launch {
-                        viewModel.notes.collect {
-                            val dbNotes = it.toMutableList()
+                        viewModel.notes.collect { notes ->
+                            val dbNotes = notes.toMutableList()
 
                             var index = 0
-                            val notes = adapter.items.mapIndexed { i, it ->
+                            val notes = adapter.items.map {
                                 val nextIndex = index + it.original.length
                                 // Search the notes applied to this paragraph
                                 val paragraphNotes = dbNotes.filter { dbNote ->
@@ -287,7 +307,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     private fun setInsetListener() {
         val initialBarSize = appBarSize
-        ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { v, windowInsets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { _, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             binding.composeBar.updatePadding(bottom = insets.bottom)
             binding.composeRoot.updatePadding(top = insets.top)
@@ -336,6 +356,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 val linkText = requireContext().getString(R.string.link_description)
                 clipboardManager.setPrimaryClip(ClipData.newPlainText(linkText, args.link))
             }
+            WebReaderMenuAction.OpenNotesList -> {
+                val id = viewModel.getWebLinkId() ?: return
+                findNavController().navigate(ImporttextDirections.toNotesListFragment(id, NoteType.WEB_LINK))
+            }
         }
     }
 
@@ -345,7 +369,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding) {
             paragraphsList.isVisible = true
 
-            // Split text and parse from html
+            // Split text and parse from HTML
             val newParagraphs =  page.text.split("\n")
                 .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
                 .filter { it.isNotEmpty() }
@@ -362,6 +386,15 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             adapter.updateItems(paragraphItems)
             paragraphsList.adapter = adapter
             paragraphsList.post {
+                if (viewModel.firstLoad) {
+                    jumpToChar(viewModel.getCharPos())
+                    viewModel.firstLoad = false
+                }
+
+                jumpToPos?.let { charPos ->
+                    jumpToChar(charPos)
+                    jumpToPos = null
+                }
                 loadWordsForVisibleItems()
             }
 
@@ -369,6 +402,19 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             setAdapterListeners()
 
             viewModel.getNotes()
+        }
+    }
+
+    private fun jumpToChar(charPos: Int) {
+        val position = adapter.getPositionInList(charPos)
+        val paragraphsList = binding.paragraphsList
+        paragraphsList.post {
+            val localPos = adapter.getLocalCharPosition(position, charPos)
+
+            val smoothScroller = CharacterSmoothScroller(requireContext(), localPos)
+            smoothScroller.targetPosition = position
+            val layoutManager = paragraphsList.layoutManager
+            layoutManager?.startSmoothScroll(smoothScroller)
         }
     }
 
@@ -428,12 +474,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     private fun updateSheet(info: WordUI, span: Span, isWord: Boolean) {
-        with(binding.transSheet) {
-            if(isSheetVisible() && adapter.isInsideSelectedSentence(span)){
-                showWordInfo(info, isWord)
-            } else {
-                showSheetInfo(info, isWord)
-            }
+        if(isSheetVisible() && adapter.isInsideSelectedSentence(span)){
+            showWordInfo(info, isWord)
+        } else {
+            showSheetInfo(info, isWord)
         }
         adapter.unselectWord()
     }
@@ -474,6 +518,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     }
 
     override fun onDestroyView() {
+        binding.paragraphsList.adapter = null
         _binding = null
         super.onDestroyView()
     }
@@ -496,7 +541,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
 
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
-            requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, bottomSheetBackCallback)
+            requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, bottomSheetBackCallback)
 
             bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
@@ -529,7 +574,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             linksList.addItemDecoration(decor)
 
             lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     viewModel.linksForWord.collect { state ->
                         when(state) {
                             DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
@@ -575,7 +620,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val bottomSheetBehavior = BottomSheetBehavior.from(root)
 
             val backPressedCallback = createBackPressedCallback(bottomSheetBehavior)
-            requireActivity().onBackPressedDispatcher.addCallback(this@WebReaderFragment, backPressedCallback)
+            requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
 
             bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
@@ -597,7 +642,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             })
 
             lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     launch {
                         viewModel.paragraphState.collect { result ->
                             if (result.paragraphIndex != null && result.sentenceIndex != null) {
@@ -875,6 +920,27 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private fun isSheetVisible(): Boolean {
         val behavior = BottomSheetBehavior.from(binding.transSheet.root)
         return behavior.state == BottomSheetBehavior.STATE_EXPANDED
+    }
+
+    /**
+     * Returns the position in absolute terms of the start character of the first visible line.
+     */
+    private fun getFirstVisibleCharPosition(): Int {
+        val layoutManager = binding.paragraphsList.layoutManager as LinearLayoutManager
+        val index = layoutManager.findFirstVisibleItemPosition()
+        val view = layoutManager.findViewByPosition(index) as? TextView
+        if (view != null) {
+            // The top property is the distance between the RecyclerView and the item (remove any inset padding)
+            // convert to positive because it's usually negative if the top is off-screen due to scroll
+            val offscreenHeight = abs(view.top - binding.paragraphsList.paddingTop)
+            val layout = view.layout
+            val line = layout.getLineForVertical(offscreenHeight)
+            val relativePos = layout.getLineStart(line)
+            val absolutePos = adapter.getAbsoluteCharPosition(index, relativePos)
+            Timber.d("Index: $index, offscreen: $offscreenHeight, line: $line, line start rel: $relativePos, abs: $absolutePos")
+            return absolutePos
+        }
+        return 0
     }
 
     @Composable

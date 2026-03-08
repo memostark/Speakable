@@ -8,8 +8,8 @@
     <dimen name="visualize_page_text_line_spacing_extra">8dp</dimen>
     <dimen name="visualize_sheet_bar_height">30dp</dimen>
     <dimen name="visualize_default_margin">16dp</dimen>
-    <dimen name="visualize_page_horizontal_padding">40dp</dimen>
-    <dimen name="visualize_page_top_padding">20dp</dimen>
+    <dimen name="visualize_page_horizontal_margin">40dp</dimen>
+    <dimen name="visualize_page_top_margin">20dp</dimen>
 
     <dimen name="web_reader_bar_height">64dp</dimen>
 

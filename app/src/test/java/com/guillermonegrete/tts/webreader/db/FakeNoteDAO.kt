@@ -1,5 +1,7 @@
 package com.guillermonegrete.tts.webreader.db
 
+import kotlinx.coroutines.flow.Flow
+
 class FakeNoteDAO: NoteDAO {
 
     val notes = mutableListOf<Note>()
@@ -29,6 +31,14 @@ class FakeNoteDAO: NoteDAO {
 
     override suspend fun getNotes(linkId: Int): List<Note> {
         return emptyList()
+    }
+
+    override fun getLinkNotes(linkId: Int): Flow<List<Note>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getFileNotes(fileId: Int): Flow<List<Note>> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun getFileNotes(bookId: Int, chapterIndex: Int): List<Note> {

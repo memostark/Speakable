@@ -10,7 +10,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
-import androidx.core.view.updatePadding
+import androidx.core.view.marginLeft
+import androidx.core.view.marginTop
+import androidx.core.view.updateLayoutParams
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.MaterialColors
@@ -49,8 +51,8 @@ class VisualizerAdapter(
     private var lineSpacingExtra = 0f
     private var largeText = 0
 
-    var horizontalPadding: Int? = null
-    var verticalPadding: Int? = null
+    var horizontalMargin: Int? = null
+    var topMargin: Int? = null
 
     private val textHighlightColor = TextHighlightColor.toArgb()
     private var wordInsideColor = NestedHighlightColor.toArgb()
@@ -149,7 +151,7 @@ class VisualizerAdapter(
         init {
             // Color taken from member variable mHighlightColor from TextView class.
             pageTextView.highlightColor = 0x6633B5E5
-            updateCardPadding()
+            updateCardMargin()
             val detector = GestureDetector(itemView.context, PageGestureListener())
             pageTextView.setOnTouchListener { _, event ->
                 detector.onTouchEvent(event)
@@ -202,11 +204,16 @@ class VisualizerAdapter(
             }
         }
 
-        private fun updateCardPadding() {
-            if (horizontalPadding != null || verticalPadding != null) {
-                val newHorizontal = horizontalPadding ?: pageTextView.paddingLeft
-                val newVertical = verticalPadding ?: pageTextView.paddingTop
-                pageTextView.updatePadding(left = newHorizontal, right = newHorizontal, top = newVertical, bottom = newVertical)
+        private fun updateCardMargin() {
+            if (horizontalMargin != null || topMargin != null) {
+                val newHorizontal = horizontalMargin ?: pageTextView.marginLeft
+                val newVertical = topMargin ?: pageTextView.marginTop
+                pageTextView.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    marginEnd = newHorizontal
+                    marginStart = newHorizontal
+                    topMargin = newVertical
+                    // Don't modify the bottom margin, it should always be the size of the sheet bar.
+                }
             }
         }
 
@@ -367,7 +374,7 @@ class VisualizerAdapter(
         fun setHighlightedText(item: PageItem, start: Int, end: Int){
             val text = SpannableString(pageTextView.text)
             // remove overlapping notes
-            text.getSpans(start, end, BackgroundColorSpan::class.java).map { bgSpan -> text.removeSpan(bgSpan) }
+            text.getSpans(start, end, BackgroundColorSpan::class.java).forEach { bgSpan -> text.removeSpan(bgSpan) }
 
             //Remove previous selection
             sentenceHighlight?.let { text.removeSpan(it.span) }
@@ -465,7 +472,7 @@ class VisualizerAdapter(
         }
     }
 
-    private fun getCharListIndex(charPos: Int) = pages.indexOfFirst { it.firstCharIndex + it.text.length > charPos }
+    fun getCharListIndex(charPos: Int) = pages.indexOfFirst { it.firstCharIndex + it.text.length > charPos }
 
     /**
      * Returns the indices of all the pages that contain part of the given [span] (the span can be a note for example).

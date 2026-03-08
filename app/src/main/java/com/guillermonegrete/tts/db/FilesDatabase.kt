@@ -9,7 +9,7 @@ import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
 
 @Database(
-    version = 13,
+    version = 15,
     entities = [BookFile::class, WebLink::class, Note::class],
     autoMigrations = [
         AutoMigration (from = 4, to = 5),
@@ -19,7 +19,8 @@ import com.guillermonegrete.tts.webreader.db.NoteDAO
         AutoMigration (from = 9, to = 10),
         AutoMigration (from = 10, to = 11),
         AutoMigration (from = 11, to = 12, spec = FilesDatabase.RenameFileIdColumnMigration::class),
-        AutoMigration (12, 13)
+        AutoMigration (12, 13),
+        AutoMigration (13, 14)
     ]
 
 )
@@ -37,7 +38,7 @@ abstract class FilesDatabase: RoomDatabase() {
                 context.applicationContext,
                 FilesDatabase::class.java,
                 "files.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_8_9)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_8_9, MIGRATION_14_15)
                 .build()
         }
 
@@ -82,6 +83,33 @@ abstract class FilesDatabase: RoomDatabase() {
                 db.execSQL("DROP TABLE notes")
                 // Change name of table to correct one
                 db.execSQL("ALTER TABLE notes_new RENAME TO notes")
+            }
+        }
+
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // This migration removes the duplicates in the uri column (persists the entry with the most notes) of book_files and adds a unique constraint for said column
+                db.execSQL("""
+                    DELETE FROM book_files
+                    WHERE rowid NOT IN (
+                        WITH BooksByNoteCount AS (
+                            SELECT bookFileId, uri FROM book_files
+                            LEFT JOIN notes ON notes.book_id = bookFileId
+                            GROUP BY bookFileId
+                            ORDER BY COUNT(notes.book_id) DESC
+                        )
+                        SELECT bookFileId FROM BooksByNoteCount
+                        GROUP BY uri -- this removes duplicated uris and keeps the first id found, in this case the one with the most notes
+                        
+                        -- Alternative simpler query, picks the first created entry with the uri
+                        -- SELECT MIN(rowid)
+                        -- FROM book_files
+                        -- GROUP BY uri 
+                    );
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_book_files_uri_unique ON book_files(uri);
+                """.trimIndent())
             }
         }
     }

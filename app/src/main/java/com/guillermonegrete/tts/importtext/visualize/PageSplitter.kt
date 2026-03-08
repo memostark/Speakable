@@ -4,19 +4,21 @@ import android.os.Build
 import android.text.*
 import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.core.view.marginEnd
+import androidx.core.view.marginStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class PageSplitter(
     textView: TextView,
-    width: Int,
+    parentWidth: Int,
     private val imageGetter: Html.ImageGetter?,
 ) {
     private val pages = ArrayList<CharSequence>()
     private val mSpannableStringBuilder = SpannableStringBuilder()
 
-    private val pageWidth = width - textView.paddingStart - textView.paddingEnd
-    private val pageHeight = textView.height - textView.paddingTop - textView.paddingBottom
+    private val pageWidth = parentWidth - textView.marginStart - textView.marginEnd
+    private val pageHeight = textView.height
 
     private val lineSpacingMultiplier = textView.lineSpacingMultiplier
     private val lineSpacingExtra = textView.lineSpacingExtra

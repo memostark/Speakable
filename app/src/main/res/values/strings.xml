@@ -234,6 +234,7 @@
     <string name="create_db_item_dialog_title">Create new:</string>
     <string name="web_reader_words_action">Show saved words</string>
     <string name="paragraphs_list">Paragraphs list</string>
+    <string name="show_notes_list">View all notes</string>
 
     <!-- Text/Epub visualizer-->
     <string name="white_theme">White theme</string>
@@ -247,5 +248,8 @@
     <string name="web_links_list_description">web links list</string>
     <string name="link_description">Link</string>
     <string name="copy_link">Copy link</string>
+
+    <!-- Notes list-->
+    <string name="go_to_text">Go to text</string>
 
 </resources>
