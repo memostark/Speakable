@@ -13,17 +13,16 @@ import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.*
+import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
@@ -44,10 +43,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import javax.inject.Inject
-import org.junit.rules.TemporaryFolder
-import java.io.File
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
@@ -84,22 +82,6 @@ class ImportTextFragmentTest{
         Intents.release()
     }
 
-    /**
-     * Create an epub file in a temporary directory copied from the assets.
-     */
-    private fun createEpubFile(): File{
-        val context = InstrumentationRegistry.getInstrumentation().context
-
-        val tempFile = testFolder.newFile("copied_file.epub")
-        context.assets.open("test_epub.epub").use { input ->
-            tempFile.outputStream().use { output ->
-                input.copyTo(output, 1024)
-            }
-        }
-
-        return tempFile
-    }
-
     @Test
     fun given_one_recent_file_when_clicked_then_navigate_to_visualizer(){
         runTest { settingsRepository.setImportTabPosition(ImportTextFragment.FILES_INDEX) }
@@ -129,7 +111,7 @@ class ImportTextFragmentTest{
         launchFragmentInHiltContainer<ImportTextFragment>(bundleOf(), R.style.AppTheme)
 
         // Mock receiving the intent with the uri of the epub
-        val copiedFile = createEpubFile()
+        val copiedFile = testFolder.createEpubFile()
         val resultData = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE, copiedFile.toUri())
         resultData.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION and Intent.FLAG_GRANT_WRITE_URI_PERMISSION and Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         val result = Instrumentation.ActivityResult(Activity.RESULT_OK, resultData)
