@@ -85,7 +85,7 @@ dependencies {
     //  Mockito framework
     testImplementation 'org.mockito:mockito-core:5.15.2'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:5.4.0'
-    testImplementation "io.mockk:mockk:1.13.16"
+    testImplementation "io.mockk:mockk:1.14.9"
 
     implementation 'androidx.preference:preference:1.2.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
@@ -219,6 +219,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation "androidx.arch.core:core-testing:2.2.0"
     androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
     def espressoVersion = "3.7.0"
     androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
     androidTestImplementation "androidx.test.espresso:espresso-contrib:$espressoVersion"
