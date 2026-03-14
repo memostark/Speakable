@@ -163,22 +163,24 @@ class VisualizeTextViewModel @Inject constructor(
 
         _dataLoading.value = true
         viewModelScope.launch {
-            val parsedBook: Book
-            try {
-                parsedBook = epubParser.parseBook(reader)
-            } catch (e: Exception){
-                Timber.e(e, "Error parsing book")
-                return@launch
+            wrapEspressoIdlingResource {
+                val parsedBook: Book
+                try {
+                    parsedBook = epubParser.parseBook(reader)
+                } catch (e: Exception){
+                    Timber.e(e, "Error parsing book")
+                    return@launch
+                }
+
+                text = parsedBook.currentChapter
+                spineSize = parsedBook.spine.size
+                currentBook = parsedBook
+                fileType = ImportedFileType.EPUB
+                _book.value = parsedBook
+
+                initPageSplit(true)
+                _dataLoading.value = false
             }
-
-            text = parsedBook.currentChapter
-            spineSize = parsedBook.spine.size
-            currentBook = parsedBook
-            fileType = ImportedFileType.EPUB
-            _book.value = parsedBook
-
-            initPageSplit(true)
-            _dataLoading.value = false
         }
     }
 
@@ -216,9 +218,11 @@ class VisualizeTextViewModel @Inject constructor(
             currentChapter = position
             _dataLoading.value = true
             viewModelScope.launch {
-                changeEpubChapter(newChapterPath)
-                splitToPages()
-                _dataLoading.value = false
+                wrapEspressoIdlingResource {
+                    changeEpubChapter(newChapterPath)
+                    splitToPages()
+                    _dataLoading.value = false
+                }
             }
         }
     }

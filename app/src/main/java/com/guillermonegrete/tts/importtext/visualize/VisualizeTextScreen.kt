@@ -40,6 +40,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
@@ -188,6 +189,7 @@ fun ContentMenu(
                             text = AnnotatedString(stringResource(R.string.table_of_contents)),
                             modifier = Modifier
                                 .clickable(true) { onItemClick(ContentMenuItem.TABLE_OF_CONTENTS) }
+                                .testTag(TOC_BTN_TAG)
                                 .padding(8.dp),
                         )
                     }
@@ -196,6 +198,7 @@ fun ContentMenu(
                         text = AnnotatedString(stringResource(R.string.show_notes_list)),
                         modifier = Modifier
                             .clickable(true) { onItemClick(ContentMenuItem.NOTES) }
+                            .testTag(NOTE_BTN_TAG)
                             .padding(8.dp),
                     )
                 }
@@ -219,6 +222,9 @@ fun ContentMenuPreview() {
         ContentMenu(true, {})
     }
 }
+
+const val TOC_BTN_TAG = "show toc btn"
+const val NOTE_BTN_TAG = "show notes btn"
 
 enum class ContentMenuItem {
     TABLE_OF_CONTENTS,
