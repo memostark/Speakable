@@ -5,6 +5,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
+import androidx.navigation.Navigation
+import androidx.navigation.testing.TestNavHostController
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
@@ -30,6 +32,7 @@ import dagger.hilt.android.testing.UninstallModules
 import org.hamcrest.CoreMatchers.anything
 import org.hamcrest.CoreMatchers.not
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -63,14 +66,17 @@ class VisualizeTextFragmentTest {
 
     @Test
     fun give_epub_file_when_load_then_book_layout() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val navController = TestNavHostController(context)
         val file = testFolder.createEpubFile()
         val bundle = bundleOf(
             VisualizeTextFragment.EPUB_URI to file.toUri(),
             VisualizeTextFragment.FILE_ID to -1
         )
-        launchFragmentInHiltContainer<VisualizeTextFragment>(themeResId = R.style.AppTheme, intentExtras = bundle, intentAction = VisualizeTextFragment.SHOW_EPUB)
-
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        launchFragmentInHiltContainer<VisualizeTextFragment>(themeResId = R.style.AppTheme, intentExtras = bundle, intentAction = VisualizeTextFragment.SHOW_EPUB) {
+            navController.setGraph(R.navigation.importtext)
+            Navigation.setViewNavController(this.requireView(), navController)
+        }
         val firstChapterLabel = context.resources.getString(R.string.reader_current_chapter_label, 1, 3)
         onView(withId(R.id.reader_current_chapter)).check(matches(withText(firstChapterLabel)))
         onView(withId(R.id.show_toc_btn)).check(matches(isDisplayed()))
@@ -79,8 +85,7 @@ class VisualizeTextFragmentTest {
         onView(withId(R.id.text_reader_viewpager)).perform(swipeLeft())
         onView(withId(R.id.text_reader_viewpager)).perform(swipeLeft())
 
-
-        var expectedChapterLabel = context.resources.getString(R.string.reader_current_chapter_label, 2, 3)
+        val expectedChapterLabel = context.resources.getString(R.string.reader_current_chapter_label, 2, 3)
         onView(withId(R.id.reader_current_chapter)).check(matches(withText(expectedChapterLabel)))
 
         onView(withId(R.id.text_reader_viewpager)).perform(swipeRight())
@@ -94,6 +99,14 @@ class VisualizeTextFragmentTest {
 
         onView(withId(R.id.arrow_btn)).perform(click())
 
+        // Disable split mode
+        onView(withId(R.id.brightness_settings_btn)).perform(click())
+        onView(withId(R.id.single_page_btn)).perform(click())
+
+        Espresso.pressBack()
+
+        onView(withId(R.id.arrow_btn)).check(matches(not(isDisplayed())))
+
         // Use table of contents and pick first chapter
         onView(withId(R.id.text_reader_viewpager)).perform(swipeLeft()) // navigate to second chapter
 
@@ -103,6 +116,11 @@ class VisualizeTextFragmentTest {
             .atPosition(0)
             .perform(click())
         onView(withId(R.id.reader_current_chapter)).check(matches(withText(firstChapterLabel)))
+
+        // Show notes list
+        onView(withId(R.id.show_toc_btn)).perform(click())
+        composeTestRule.onNodeWithTag(NOTE_BTN_TAG).performClick()
+        assertEquals(R.id.notesListFragment, navController.currentDestination?.id)
     }
 
     @Test
