@@ -537,6 +537,8 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun getCharPos() = cacheWebLink?.charPosition ?: 0
 
+    fun getGesturePreferences() = settings.getGestures()
+
     private fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
         val iterator = BreakIterator.getSentenceInstance()
 

@@ -126,7 +126,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         appBarSize = resources.getDimensionPixelSize(R.dimen.web_reader_bar_height)
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
-        adapter = ParagraphAdapter(viewModel,
+        adapter = ParagraphAdapter(
+            viewModel,
+            viewModel.getGesturePreferences(),
             onSentenceSelected = viewModel::sentenceSelected,
             onParagraphSelected = viewModel::paragraphSelected,
             onParagraphEvent = {

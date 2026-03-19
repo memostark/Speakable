@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.guillermonegrete.tts.common.models.Gestures
+import com.guillermonegrete.tts.main.SettingsFragment
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -57,6 +59,12 @@ class DefaultSettingsRepository @Inject constructor(
             // No type safety.
             preferences[key] ?: 0
         }
+    }
+
+    override fun getGestures(): Gestures {
+        val selectWord = preferences.getString(SettingsFragment.PREF_WORD_SEL, null) ?: ""
+        val selectSentence  = preferences.getString(SettingsFragment.PREF_SENTENCE_SEL, null) ?: ""
+        return Gestures(selectWord, selectSentence)
     }
 
     override suspend fun setImportTabPosition(pos: Int) {
