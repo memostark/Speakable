@@ -46,10 +46,14 @@ import kotlin.math.max
 import kotlin.math.min
 import androidx.core.graphics.toColorInt
 import androidx.core.view.iterator
+import com.guillermonegrete.tts.common.models.Gestures
 import com.guillermonegrete.tts.utils.count
+import com.guillermonegrete.tts.utils.findWord
+import timber.log.Timber
 
 class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
+    val gestures: Gestures,
     val onSentenceSelected: (paragraph: Int, sentence: Int) -> Unit,
     val onParagraphSelected: (paragraph: Int?) -> Unit,
     val onParagraphEvent: (event: ParagraphEvent) -> Unit = {},
@@ -105,6 +109,14 @@ class ParagraphAdapter(
 
     private var wordInsideColor = NestedHighlightColor.toArgb()
     private val textHighlightColor = TextHighlightColor.toArgb()
+
+    var tapStrategy: GestureStrategy = SelectWordStrategy()
+    var doubleTapStrategy: GestureStrategy = SelectSentenceStrategy()
+
+    init {
+        setGestureStrategy(gestures.selectWord, SelectWordStrategy())
+        setGestureStrategy(gestures.selectSentence, SelectSentenceStrategy())
+    }
 
     private val _textClicked = MutableSharedFlow<TextClick>(
         replay = 0,
@@ -252,14 +264,6 @@ class ParagraphAdapter(
             }
         }
 
-        private fun findSentence(offset: Int): Int {
-            val item = items[bindingAdapterPosition]
-            item.indexes.forEachIndexed { index, span ->
-                if(offset in span.start..span.end) return index
-            }
-            return -1
-        }
-
         fun bind(item: ParagraphItem) {
             val spannable = SpannableString(item.original)
             if(item.selectedIndex != -1){
@@ -322,13 +326,12 @@ class ParagraphAdapter(
                     return true
                 }
 
-                val wordSpan = binding.paragraph.findWordForRightHanded(offset)
-                val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
-
                 // If a highlighted sentence was tapped, notify sentence clicked to observers
                 if (item.selectedIndex != -1) {
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
+                        val wordSpan = binding.paragraph.findWordForRightHanded(offset)
+                        val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
                         item.selectedWord = wordSpan
                         selectedSentence.wordSelected = true
                         _textClicked.tryEmit(TextClick.Sentence(clickedWord))
@@ -336,20 +339,13 @@ class ParagraphAdapter(
                     }
                 }
 
-                if(clickedWord.isNotEmpty()) {
-                    viewModel.translateWord(clickedWord, item.toAbsolute(wordSpan))
-                    unselectWord()
-
-                    // Select new word
-                    item.selectedWord = wordSpan
-                    selectedWordPos = bindingAdapterPosition
-                    notifyItemChanged(bindingAdapterPosition, Payload.Text)
-                }
+                tapStrategy.execute(offset, bindingAdapterPosition, binding.paragraph.text)
                 return super.onSingleTapConfirmed(e)
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                setSentenceSelected(e)
+                val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+                doubleTapStrategy.execute(offset, bindingAdapterPosition, binding.paragraph.text)
                 return true
             }
 
@@ -370,16 +366,6 @@ class ParagraphAdapter(
                 }
                 return true
             }
-        }
-
-        private fun setSentenceSelected(e: MotionEvent) {
-            unselectSentence()
-            unselectWord()
-
-            val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
-            val index = findSentence(offset)
-            selectSentence(bindingAdapterPosition, index)
-            onSentenceSelected(bindingAdapterPosition, index)
         }
 
         /**
@@ -708,6 +694,14 @@ class ParagraphAdapter(
             }
 
         }
+    }
+
+    private fun findSentence(offset: Int, itemIndex: Int): Int {
+        val item = items[itemIndex]
+        item.indexes.forEachIndexed { index, span ->
+            if(offset in span.start..span.end) return index
+        }
+        return -1
     }
 
     /**
@@ -1167,6 +1161,47 @@ class ParagraphAdapter(
 
     fun getAbsoluteCharPosition(position: Int, relativeCharPos: Int)
         = relativeCharPos + items[position].firstCharIndex
+
+    interface GestureStrategy {
+        fun execute(offset: Int, itemIndex: Int, text: CharSequence = "")
+    }
+
+    inner class SelectWordStrategy: GestureStrategy {
+        override fun execute(offset: Int, itemIndex: Int, text: CharSequence) {
+            val wordSpan = text.findWord(offset)
+            val clickedWord = text.substring(wordSpan.start, wordSpan.end)
+
+            if(clickedWord.isNotEmpty()) {
+                val item = items[itemIndex]
+                viewModel.translateWord(clickedWord, item.toAbsolute(wordSpan))
+                unselectWord()
+
+                // Select new word
+                item.selectedWord = wordSpan
+                selectedWordPos = itemIndex
+                notifyItemChanged(itemIndex, Payload.Text)
+            }
+        }
+    }
+
+    inner class SelectSentenceStrategy: GestureStrategy {
+        override fun execute(offset: Int, itemIndex: Int, text: CharSequence) {
+            unselectSentence()
+            unselectWord()
+
+            val index = findSentence(offset, itemIndex)
+            selectSentence(itemIndex, index)
+            onSentenceSelected(itemIndex, index)
+        }
+    }
+
+    fun setGestureStrategy(type: String, gestureStrategy: GestureStrategy) {
+        return when (type) {
+            "tap" -> tapStrategy = gestureStrategy
+            "double_tap" -> doubleTapStrategy = gestureStrategy
+            else -> Timber.e("Unknown gesture: $type")
+        }
+    }
 
     data class OverlapSpan(val start: Int, val end: Int, @ColorInt val color: Int, val noteId: Long, val wordId: Int)
 

@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.preferences
 
+import com.guillermonegrete.tts.common.models.Gestures
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsRepository {
@@ -17,6 +18,8 @@ interface SettingsRepository {
     fun showSavedWords(): Flow<Boolean>
 
     fun getImportTabPosition(): Flow<Int>
+
+    fun getGestures(): Gestures
 
     suspend fun setImportTabPosition(pos: Int)
 }
