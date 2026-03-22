@@ -66,7 +66,10 @@ fun YesNoDialog(
         text = if (dialogText != null) { { Text(dialogText) } } else null,
         onDismissRequest = onDismissRequest,
         confirmButton = {
-            TextButton(onClick = onConfirmation) {
+            TextButton(
+                onClick = onConfirmation,
+                modifier = Modifier.testTag(CONFIRM_BTN_TAG),
+            ) {
                 Text(stringResource(android.R.string.ok))
             }
         },
@@ -256,6 +259,7 @@ fun DialogList(
 }
 
 const val DIALOG_LIST_TAG = "dialog list tag"
+const val CONFIRM_BTN_TAG = "confirm_btn"
 
 @Preview
 @Composable

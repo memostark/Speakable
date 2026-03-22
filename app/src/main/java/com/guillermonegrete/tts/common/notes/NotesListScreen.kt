@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Delete
@@ -64,10 +63,10 @@ fun NotesListScreen(
 
     Surface  {
         LazyColumn(contentPadding = WindowInsets.systemBars.asPaddingValues()) {
-            itemsIndexed(
+            items(
                 notes,
-                key = { _, it -> it.id }
-            ) { index, note ->
+                key = { it.id },
+            ) { note ->
                 Column(Modifier.fillMaxWidth())  {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column (Modifier.padding(8.dp).weight(1f))  {
@@ -75,7 +74,6 @@ fun NotesListScreen(
                             Text(note.note)
                         }
                         IconButton(
-                            modifier = Modifier.testTag("$NOTE_ITEM_TAG$index"),
                             onClick = { selectedNote = note },
                         ) {
                             Icon(
@@ -205,7 +203,6 @@ val dummyNotes = listOf(
     NoteItem(1, "Another dummy text", "More dummy note text, a text so ridiculously long that there it requires multiple rows", 0xFF00FF00.toInt(), 15),
 )
 
-const val NOTE_ITEM_TAG = "note_item"
 const val DELETE_NOTE_BTN_TAG = "delete_note_btn"
 
 data class NoteItem(
