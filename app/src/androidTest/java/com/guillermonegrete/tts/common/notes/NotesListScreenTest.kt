@@ -1,8 +1,15 @@
 package com.guillermonegrete.tts.common.notes
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import com.guillermonegrete.tts.common.compose.CONFIRM_BTN_TAG
 import com.guillermonegrete.tts.db.NoteType
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
@@ -60,9 +67,20 @@ class NotesListScreenTest {
         }
 
         // Verify notes displayed
+        val items = composeTestRule.onAllNodesWithContentDescription("Options")
+        items.assertCountEquals(2)
         composeTestRule.onNodeWithText(note1.text).assertIsDisplayed()
         composeTestRule.onNodeWithText(note1.originalText).assertIsDisplayed()
         composeTestRule.onNodeWithText(note2.text).assertIsDisplayed()
         composeTestRule.onNodeWithText(note2.originalText).assertIsDisplayed()
+
+        // Delete note
+        items.onFirst().performClick()
+        composeTestRule.onNodeWithTag(DELETE_NOTE_BTN_TAG).performClick()
+        composeTestRule.onNodeWithTag(CONFIRM_BTN_TAG).performClick()
+
+        composeTestRule.onAllNodesWithContentDescription("Options").assertCountEquals(1)
+        composeTestRule.onNodeWithText(note1.text).assertIsNotDisplayed()
+        composeTestRule.onNodeWithText(note1.originalText).assertIsNotDisplayed()
     }
 }
