@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Delete
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,10 +64,10 @@ fun NotesListScreen(
 
     Surface  {
         LazyColumn(contentPadding = WindowInsets.systemBars.asPaddingValues()) {
-            items(
+            itemsIndexed(
                 notes,
-                key = { it.id }
-            ) { note ->
+                key = { _, it -> it.id }
+            ) { index, note ->
                 Column(Modifier.fillMaxWidth())  {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column (Modifier.padding(8.dp).weight(1f))  {
@@ -73,7 +75,8 @@ fun NotesListScreen(
                             Text(note.note)
                         }
                         IconButton(
-                            onClick = { selectedNote = note }
+                            modifier = Modifier.testTag("$NOTE_ITEM_TAG$index"),
+                            onClick = { selectedNote = note },
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
@@ -156,7 +159,8 @@ fun NoteItemMenu(
             DropdownMenuItem(
                 leadingIcon = { Icon(Icons.Filled.Delete, deleteDesc) },
                 text = { Text(deleteDesc) },
-                onClick = { onItemClick(NoteMenuItem.DELETE) }
+                onClick = { onItemClick(NoteMenuItem.DELETE) },
+                modifier = Modifier.testTag(DELETE_NOTE_BTN_TAG),
             )
         }
     }
@@ -200,6 +204,9 @@ val dummyNotes = listOf(
     NoteItem(0, "Dummy text", "Dummy note text", 0xFF0000FF.toInt(), 10),
     NoteItem(1, "Another dummy text", "More dummy note text, a text so ridiculously long that there it requires multiple rows", 0xFF00FF00.toInt(), 15),
 )
+
+const val NOTE_ITEM_TAG = "note_item"
+const val DELETE_NOTE_BTN_TAG = "delete_note_btn"
 
 data class NoteItem(
     val id: Long,
