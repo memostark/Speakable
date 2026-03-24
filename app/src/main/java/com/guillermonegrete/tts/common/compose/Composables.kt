@@ -109,7 +109,10 @@ fun Spinner(
             onClick = { expanded = !expanded },
             contentPadding = PaddingValues(8.dp, end = 0.dp),
         ) {
-            Text(text = displayText ?: list.items.getOrNull(selected) ?: "")
+            Text(
+                text = displayText ?: list.items.getOrNull(selected) ?: "",
+                modifier = Modifier.testTag(SPINNER_TEXT_TAG),
+            )
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null
@@ -126,7 +129,7 @@ fun Spinner(
             // The Box's size has to be explicitly defined otherwise it will crash (fillMaxWidth() crashes)
             // See related issue: https://issuetracker.google.com/issues/242398344
             Box(modifier = Modifier.size(width = 200.dp, height = 500.dp)) {
-                LazyColumn {
+                LazyColumn(Modifier.testTag(SPINNER_LIST_TAG)) {
                     itemsIndexed(list.items) { index, item ->
                         DropdownMenuItem(
                             text = { Text(text = item) },
@@ -258,6 +261,8 @@ fun DialogList(
     }
 }
 
+const val SPINNER_TEXT_TAG = "spinner_text"
+const val SPINNER_LIST_TAG = "spinner_list"
 const val DIALOG_LIST_TAG = "dialog list tag"
 const val CONFIRM_BTN_TAG = "confirm_btn"
 
