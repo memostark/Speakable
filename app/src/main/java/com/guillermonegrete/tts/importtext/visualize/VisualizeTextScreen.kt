@@ -1,10 +1,8 @@
 package com.guillermonegrete.tts.importtext.visualize
 
-import androidx.compose.animation.core.FloatExponentialDecaySpec
-import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -30,7 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +37,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -54,7 +51,6 @@ import com.guillermonegrete.tts.textprocessing.SwipeDirection
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NoteSheet(
     isShown: Boolean,
@@ -67,16 +63,14 @@ fun NoteSheet(
 
     if (!isShown) return
 
-    val density = LocalDensity.current
     val swipeableState = remember {
-        AnchoredDraggableState(
-            SwipeDirection.Initial,
-            { distance -> distance * 0.5f },
-            { with(density) { 125.dp.toPx() }},
-            tween(),
-            FloatExponentialDecaySpec().generateDecayAnimationSpec(),
-        )
+        AnchoredDraggableState(SwipeDirection.Initial)
     }
+    val flingBehavior = AnchoredDraggableDefaults.flingBehavior(
+        swipeableState,
+        { distance -> distance * 0.5f },
+        tween(),
+    )
 
     // Allows nested scrolling of the swipeable note and the scrollable text
     val connection = remember {
@@ -100,7 +94,7 @@ fun NoteSheet(
             }
 
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                swipeableState.settle(available.y)
+                swipeableState.settle(tween())
                 return super.onPostFling(consumed, available)
             }
         }
@@ -120,7 +114,7 @@ fun NoteSheet(
                         DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Bottom at sizePx}
                     )
                 }
-                .anchoredDraggable(swipeableState, Orientation.Vertical)
+                .anchoredDraggable(swipeableState, Orientation.Vertical, flingBehavior = flingBehavior)
                 .offset { IntOffset(0, swipeableState.requireOffset().roundToInt()) }
                 .nestedScroll(connection)
                 .widthIn(0.dp, 700.dp)
@@ -155,14 +149,10 @@ fun NoteSheet(
     }
 
     // Handle swipeable events
-    if (swipeableState.isAnimationRunning) {
-        DisposableEffect(Unit) {
-            onDispose {
-                when (swipeableState.currentValue) {
-                    SwipeDirection.Bottom -> onDismiss()
-                    else -> return@onDispose
-                }
-            }
+    LaunchedEffect(swipeableState.settledValue) {
+        when (swipeableState.currentValue) {
+            SwipeDirection.Bottom -> onDismiss()
+            else -> {}
         }
     }
 }
