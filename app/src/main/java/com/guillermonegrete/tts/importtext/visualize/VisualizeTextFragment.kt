@@ -1198,7 +1198,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                 viewModel.getExternalLinks(word)
             },
             onDismiss = {
-                // Not used, the dismissing is made by the back pressed dispatcher
+                viewModel.hideDialog()
             }
         )
     }

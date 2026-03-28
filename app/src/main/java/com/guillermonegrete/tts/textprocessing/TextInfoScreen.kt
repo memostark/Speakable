@@ -2,11 +2,9 @@ package com.guillermonegrete.tts.textprocessing
 
 import android.view.Gravity
 import android.view.WindowManager
-import androidx.compose.animation.core.FloatExponentialDecaySpec
-import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -49,7 +47,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -62,7 +60,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -96,7 +93,6 @@ import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SentenceDialog(
     isVisible: Boolean,
@@ -135,16 +131,14 @@ fun SentenceDialog(
         wlp.gravity = Gravity.BOTTOM
         window.attributes = wlp
 
-        val density = LocalDensity.current
         val swipeableState = remember {
-            AnchoredDraggableState(
-                SwipeDirection.Initial,
-                { distance -> distance * 0.6f },
-                { with(density) { 125.dp.toPx() }},
-                tween(),
-                FloatExponentialDecaySpec().generateDecayAnimationSpec(),
-            )
+            AnchoredDraggableState(SwipeDirection.Initial)
         }
+        val flingBehavior = AnchoredDraggableDefaults.flingBehavior(
+            swipeableState,
+            { distance -> distance * 0.6f },
+            tween(),
+        )
 
         Row {
 
@@ -160,7 +154,7 @@ fun SentenceDialog(
                             DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
                         )
                     }
-                    .anchoredDraggable(swipeableState, Orientation.Horizontal)
+                    .anchoredDraggable(swipeableState, Orientation.Horizontal, flingBehavior = flingBehavior)
                     .pointerInput(Unit) {
                         // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
                         detectVerticalDragGestures(
@@ -215,14 +209,10 @@ fun SentenceDialog(
             Spacer(modifier = Modifier.weight(1f))
 
             // Handle swipeable events
-            if (swipeableState.isAnimationRunning) {
-                DisposableEffect(Unit) {
-                    onDispose {
-                        when (swipeableState.currentValue) {
-                            SwipeDirection.Right, SwipeDirection.Left -> onDismiss()
-                            else -> return@onDispose
-                        }
-                    }
+            LaunchedEffect(swipeableState.settledValue) {
+                when (swipeableState.currentValue) {
+                    SwipeDirection.Right, SwipeDirection.Left -> onDismiss()
+                    else -> {}
                 }
             }
         }
