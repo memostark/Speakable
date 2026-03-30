@@ -313,6 +313,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             binding.composeBar.updatePadding(bottom = insets.bottom)
             binding.composeRoot.updatePadding(top = insets.top)
+            // Handle links bottom sheet insets
+            binding.bottomSheet.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = insets.top }
+            binding.linksList.updatePadding(bottom = insets.bottom)
+
             appBarSize = initialBarSize + insets.bottom
             handleListPadding(insets.top, appBarSize)
             WindowInsetsCompat.CONSUMED
@@ -541,9 +545,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding) {
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
+            val linksSheetCollapsedHeight = resources.getDimensionPixelSize(R.dimen.links_sheet_collapsed_height)
 
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
             requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, bottomSheetBackCallback)
+
+            var linksSheetState = BottomSheetBehavior.STATE_HIDDEN
 
             bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
@@ -556,9 +563,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBackCallback.isEnabled = true
                         else -> {}
                     }
+                    linksSheetState = newState
                 }
 
-                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    // Adjusts the position of the external links list to be always fixed at the bottom of the screen if the sheet is expanded.
+                    val bottomSheetVisibleHeight = bottomSheet.height - bottomSheet.top + bottomSheet.marginTop
+                    // Only adjust if the sheet is not collapsed, otherwise the list shouldn't be fixed.
+                    val listPos =
+                        (if (bottomSheetVisibleHeight > linksSheetCollapsedHeight) bottomSheetVisibleHeight else linksSheetCollapsedHeight)
+                    linksList.y = (listPos - linksList.height).toFloat()
+                }
             })
 
             infoWebview.webViewClient = WebViewClient()
@@ -595,11 +610,17 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 adapter.setSelectedPos(selectedPos)
                                 linksList.scrollToPosition(selectedPos)
                                 linksList.adapter = adapter
+                                linksList.post {
+                                    // Add this margin to avoid the link list covering content of the webview
+                                    infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = linksList.height }
+                                }
 
                                 launch {
                                     viewModel.selectedLink.collect {
                                         infoWebview.loadUrl(links[it].link)
                                         linksList.scrollToPosition(it)
+                                        // When clicking a link the sheet moves down slightly, this makes sure it returns to the correct position
+                                        bottomSheetBehavior.state = linksSheetState
                                     }
                                 }
 

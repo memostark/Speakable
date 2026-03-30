@@ -24,4 +24,5 @@
 
     <!--80 + 64 = bottom bar + top bar-->
     <dimen name="main_act_bars_height">144dp</dimen>
+    <dimen name="links_sheet_collapsed_height">360dp</dimen>
 </resources>
