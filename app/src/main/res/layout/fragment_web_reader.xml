@@ -21,11 +21,11 @@
             android:id="@+id/paragraphs_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingBottom="@dimen/web_reader_bar_height"
             android:clipToPadding="false"
             android:contentDescription="@string/paragraphs_list"
+            android:paddingBottom="@dimen/web_reader_bar_height"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/paragraph_item"/>
+            tools:listitem="@layout/paragraph_item" />
 
         <RelativeLayout
             android:id="@+id/bottom_sheet"

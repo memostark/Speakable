@@ -104,6 +104,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private var pageText = ""
 
     private var appBarSize = 0
+    private var topInset = 0
 
     private var jumpToPos: Int? = null
 
@@ -311,10 +312,10 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val initialBarSize = appBarSize
         ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { _, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            topInset = insets.top
             binding.composeBar.updatePadding(bottom = insets.bottom)
             binding.composeRoot.updatePadding(top = insets.top)
             // Handle links bottom sheet insets
-            binding.bottomSheet.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = insets.top }
             binding.linksList.updatePadding(bottom = insets.bottom)
 
             appBarSize = initialBarSize + insets.bottom
@@ -550,8 +551,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
             requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, bottomSheetBackCallback)
 
-            var linksSheetState = BottomSheetBehavior.STATE_HIDDEN
-
             bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     when (newState) {
@@ -560,10 +559,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.hideWordLinks()
                             if (translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
                         }
-                        BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBackCallback.isEnabled = true
-                        else -> {}
+                        BottomSheetBehavior.STATE_EXPANDED -> {
+                            // Handle insets for the sheet using padding when it's expanded
+                            // Don't use margin because it causes a twitch when changing links due to a bug with the material library
+                            bottomSheet.updatePadding(top = topInset)
+                            bottomSheetBackCallback.isEnabled = true
+                        }
+                        else -> {
+                            if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
+                        }
                     }
-                    linksSheetState = newState
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {
@@ -619,8 +624,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     viewModel.selectedLink.collect {
                                         infoWebview.loadUrl(links[it].link)
                                         linksList.scrollToPosition(it)
-                                        // When clicking a link the sheet moves down slightly, this makes sure it returns to the correct position
-                                        bottomSheetBehavior.state = linksSheetState
                                     }
                                 }
 
