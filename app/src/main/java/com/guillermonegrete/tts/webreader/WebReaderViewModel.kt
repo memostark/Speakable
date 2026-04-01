@@ -89,6 +89,9 @@ class WebReaderViewModel @AssistedInject constructor(
     private val _linksForWord = MutableStateFlow<DialogState<WordAndLinks>>(DialogState.Empty)
     val linksForWord: StateFlow<DialogState<WordAndLinks>> = _linksForWord
 
+    private val _linksSheetExpanded = MutableStateFlow<Boolean>(false)
+    val linksSheetExpanded: StateFlow<Boolean> = _linksSheetExpanded
+
     private val _selectedLink = MutableStateFlow(0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
@@ -917,6 +920,10 @@ class WebReaderViewModel @AssistedInject constructor(
                 }
             }
         }
+    }
+
+    fun setLinkSheetState(isExpanded: Boolean) {
+        _linksSheetExpanded.value = isExpanded
     }
 
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
