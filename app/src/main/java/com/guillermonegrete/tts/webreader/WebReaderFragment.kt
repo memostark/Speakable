@@ -564,6 +564,11 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             // Don't use margin because it causes a twitch when changing links due to a bug with the material library
                             bottomSheet.updatePadding(top = topInset)
                             bottomSheetBackCallback.isEnabled = true
+                            viewModel.setLinkSheetState(true)
+                        }
+                        BottomSheetBehavior.STATE_COLLAPSED -> {
+                            viewModel.setLinkSheetState(false)
+                            if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
                         }
                         else -> {
                             if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
@@ -597,38 +602,65 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    viewModel.linksForWord.collect { state ->
-                        when(state) {
-                            DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                            is DialogState.Error -> Timber.e(state.exception, "Error retrieving links for word")
-                            DialogState.Loading -> {}
-                            is DialogState.Success -> {
-                                val links = state.data.links
-                                links.forEach { link -> link.link = link.link.replace("{q}", state.data.word) }
 
-                                val adapter = ExternalLinksAdapter(links) { index ->
-                                    viewModel.setWordLink(index)
-                                }
+                    launch {
+                        viewModel.linksForWord.collect { state ->
+                            when (state) {
+                                DialogState.Empty -> bottomSheetBehavior.state =
+                                    BottomSheetBehavior.STATE_HIDDEN
 
-                                adapter.setFlatButton(true)
-                                val selectedPos = viewModel.selectedLink.value
-                                adapter.setSelectedPos(selectedPos)
-                                linksList.scrollToPosition(selectedPos)
-                                linksList.adapter = adapter
-                                linksList.post {
-                                    // Add this margin to avoid the link list covering content of the webview
-                                    infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = linksList.height }
-                                }
+                                is DialogState.Error -> Timber.e(
+                                    state.exception,
+                                    "Error retrieving links for word"
+                                )
 
-                                launch {
-                                    viewModel.selectedLink.collect {
-                                        infoWebview.loadUrl(links[it].link)
-                                        linksList.scrollToPosition(it)
+                                DialogState.Loading -> {}
+                                is DialogState.Success -> {
+                                    val links = state.data.links
+                                    links.forEach { link ->
+                                        link.link = link.link.replace("{q}", state.data.word)
                                     }
-                                }
 
-                                composeBar.isVisible = false
-                                root.post { bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED }
+                                    val adapter = ExternalLinksAdapter(links) { index ->
+                                        viewModel.setWordLink(index)
+                                    }
+
+                                    adapter.setFlatButton(true)
+                                    val selectedPos = viewModel.selectedLink.value
+                                    adapter.setSelectedPos(selectedPos)
+                                    linksList.scrollToPosition(selectedPos)
+                                    linksList.adapter = adapter
+                                    linksList.post {
+                                        // Add this margin to avoid the link list covering content of the webview
+                                        infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                                            bottomMargin = linksList.height
+                                        }
+                                    }
+
+                                    launch {
+                                        viewModel.selectedLink.collect {
+                                            infoWebview.loadUrl(links[it].link)
+                                            linksList.scrollToPosition(it)
+                                        }
+                                    }
+
+                                    composeBar.isVisible = false
+                                }
+                            }
+                        }
+                    }
+
+                    launch {
+                        viewModel.linksSheetExpanded.collect {
+                            root.post {
+                                bottomSheetBehavior.state =
+                                    if (it) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_COLLAPSED
+                                val bottomSheetVisibleHeight =
+                                    bottomSheet.height - bottomSheet.top + bottomSheet.marginTop
+                                // Only adjust if the sheet is not collapsed, otherwise the list shouldn't be fixed.
+                                val listPos =
+                                    (if (bottomSheetVisibleHeight > linksSheetCollapsedHeight) bottomSheetVisibleHeight else linksSheetCollapsedHeight)
+                                linksList.y = (listPos - linksList.height).toFloat()
                             }
                         }
                     }
