@@ -526,6 +526,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     override fun onDestroyView() {
         binding.paragraphsList.adapter = null
+        binding.linksList.adapter = null
         _binding = null
         super.onDestroyView()
     }
@@ -567,6 +568,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.setLinkSheetState(true)
                         }
                         BottomSheetBehavior.STATE_COLLAPSED -> {
+                            bottomSheetBackCallback.isEnabled = true
                             viewModel.setLinkSheetState(false)
                             if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
                         }
@@ -577,12 +579,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                    // Adjusts the position of the external links list to be always fixed at the bottom of the screen if the sheet is expanded.
-                    val bottomSheetVisibleHeight = bottomSheet.height - bottomSheet.top + bottomSheet.marginTop
-                    // Only adjust if the sheet is not collapsed, otherwise the list shouldn't be fixed.
-                    val listPos =
-                        (if (bottomSheetVisibleHeight > linksSheetCollapsedHeight) bottomSheetVisibleHeight else linksSheetCollapsedHeight)
-                    linksList.y = (listPos - linksList.height).toFloat()
+                    adjustLinksList(linksSheetCollapsedHeight)
                 }
             })
 
@@ -637,7 +634,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                         }
                                     }
 
-                                    launch {
+                                    lifecycleScope.launch {
                                         viewModel.selectedLink.collect {
                                             infoWebview.loadUrl(links[it].link)
                                             linksList.scrollToPosition(it)
@@ -652,21 +649,29 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                     launch {
                         viewModel.linksSheetExpanded.collect {
+                            it ?: return@collect
                             root.post {
-                                bottomSheetBehavior.state =
-                                    if (it) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_COLLAPSED
-                                val bottomSheetVisibleHeight =
-                                    bottomSheet.height - bottomSheet.top + bottomSheet.marginTop
-                                // Only adjust if the sheet is not collapsed, otherwise the list shouldn't be fixed.
-                                val listPos =
-                                    (if (bottomSheetVisibleHeight > linksSheetCollapsedHeight) bottomSheetVisibleHeight else linksSheetCollapsedHeight)
-                                linksList.y = (listPos - linksList.height).toFloat()
+                                bottomSheetBehavior.state = if (it) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_COLLAPSED
+                                adjustLinksList(linksSheetCollapsedHeight)
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Adjusts the position of the external links list to be always fixed at the bottom of the screen if the sheet is expanded.
+     */
+    private fun adjustLinksList(linksSheetCollapsedHeight: Int) {
+        val bottomSheet = binding.bottomSheet
+        val linksList = binding.linksList
+        val bottomSheetVisibleHeight = bottomSheet.height - bottomSheet.top + bottomSheet.marginTop
+        // Only adjust if the sheet is not collapsed, otherwise the list shouldn't be fixed to the bottom.
+        val listPos =
+            (if (bottomSheetVisibleHeight > linksSheetCollapsedHeight) bottomSheetVisibleHeight else linksSheetCollapsedHeight)
+        linksList.y = (listPos - linksList.height).toFloat()
     }
 
     @SuppressLint("ClickableViewAccessibility")
