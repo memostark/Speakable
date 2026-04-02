@@ -89,8 +89,8 @@ class WebReaderViewModel @AssistedInject constructor(
     private val _linksForWord = MutableStateFlow<DialogState<WordAndLinks>>(DialogState.Empty)
     val linksForWord: StateFlow<DialogState<WordAndLinks>> = _linksForWord
 
-    private val _linksSheetExpanded = MutableStateFlow<Boolean>(false)
-    val linksSheetExpanded: StateFlow<Boolean> = _linksSheetExpanded
+    private val _linksSheetExpanded = MutableStateFlow<Boolean?>(null)
+    val linksSheetExpanded: StateFlow<Boolean?> = _linksSheetExpanded
 
     private val _selectedLink = MutableStateFlow(0)
     val selectedLink: StateFlow<Int> = _selectedLink
@@ -512,6 +512,7 @@ class WebReaderViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
             _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
+            _linksSheetExpanded.value = false
             // if out of index, default to the first item (zero index)
             if(_selectedLink.value >= links.size) _selectedLink.value = 0
         }
@@ -524,6 +525,7 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun hideWordLinks() {
         _linksForWord.value = DialogState.Empty
+        _linksSheetExpanded.value = null
     }
 
     fun setWordLink(position: Int) {
