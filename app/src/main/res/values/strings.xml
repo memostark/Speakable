@@ -220,6 +220,7 @@
     <string name="dialog">Dialog</string>
     <string name="refresh">Refresh</string>
     <string name="loading_page_error_msg">Error loading page</string>
+    <string name="loading_links_error_msg">Error loading links</string>
     <string name="previous_selection">previous selection</string>
     <string name="next_selection">next selection</string>
     <string name="saving_page_dialog">Saving page…</string>
