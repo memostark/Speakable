@@ -63,6 +63,7 @@ import kotlin.text.isNotEmpty
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import com.guillermonegrete.tts.ImporttextDirections
 import com.guillermonegrete.tts.common.notes.NotesListFragment
 import com.guillermonegrete.tts.common.views.CharacterSmoothScroller
@@ -527,6 +528,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     override fun onDestroyView() {
         binding.paragraphsList.adapter = null
         binding.linksList.adapter = null
+        binding.infoWebview.destroy() // to avoid memory leaks
         _binding = null
         super.onDestroyView()
     }
@@ -552,6 +554,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
             requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, bottomSheetBackCallback)
 
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     when (newState) {
@@ -564,6 +567,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             // Handle insets for the sheet using padding when it's expanded
                             // Don't use margin because it causes a twitch when changing links due to a bug with the material library
                             bottomSheet.updatePadding(top = topInset)
+                            infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                                bottomMargin = linksList.height
+                            }
                             bottomSheetBackCallback.isEnabled = true
                             viewModel.setLinkSheetState(true)
                         }
@@ -571,6 +577,9 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             bottomSheetBackCallback.isEnabled = true
                             viewModel.setLinkSheetState(false)
                             if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
+                            infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                                bottomMargin = bottomSheet.top + linksList.height
+                            }
                         }
                         else -> {
                             if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
@@ -603,14 +612,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                     launch {
                         viewModel.linksForWord.collect { state ->
                             when (state) {
-                                DialogState.Empty -> bottomSheetBehavior.state =
-                                    BottomSheetBehavior.STATE_HIDDEN
-
-                                is DialogState.Error -> Timber.e(
-                                    state.exception,
-                                    "Error retrieving links for word"
-                                )
-
+                                DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                                is DialogState.Error -> { handleLinksError(state.exception) }
                                 DialogState.Loading -> {}
                                 is DialogState.Success -> {
                                     val links = state.data.links
@@ -627,12 +630,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                     adapter.setSelectedPos(selectedPos)
                                     linksList.scrollToPosition(selectedPos)
                                     linksList.adapter = adapter
-                                    linksList.post {
-                                        // Add this margin to avoid the link list covering content of the webview
-                                        infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                                            bottomMargin = linksList.height
-                                        }
-                                    }
 
                                     lifecycleScope.launch {
                                         viewModel.selectedLink.collect {
@@ -651,7 +648,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         viewModel.linksSheetExpanded.collect {
                             it ?: return@collect
                             root.post {
-                                bottomSheetBehavior.state = if (it) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_COLLAPSED
+                                bottomSheetBehavior.state = if (it) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
                                 adjustLinksList(linksSheetCollapsedHeight)
                             }
                         }
@@ -659,6 +656,22 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 }
             }
         }
+    }
+
+    private fun handleLinksError(exception: Exception) {
+        val snackBar = Snackbar.make(
+            binding.root,
+            getString(R.string.loading_links_error_msg),
+            Snackbar.LENGTH_SHORT
+        )
+        snackBar.addCallback(object : Snackbar.Callback() {
+            override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                super.onDismissed(transientBottomBar, event)
+                viewModel.hideWordLinks()
+            }
+        })
+        snackBar.show()
+        Timber.e(exception, "Error retrieving links for word")
     }
 
     /**

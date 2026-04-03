@@ -217,7 +217,7 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 
     /**
-     * Reads the html file saved in the local storage. With [uuid] being the folder name.
+     * Reads the HTML file saved in the local storage. With [uuid] being the folder name.
      */
     private fun readContentFile(uuid: UUID): String {
         val rootFolder = File(folderPath, uuid.toString())
@@ -510,11 +510,15 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
-            val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-            _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
-            _linksSheetExpanded.value = false
-            // if out of index, default to the first item (zero index)
-            if(_selectedLink.value >= links.size) _selectedLink.value = 0
+            try {
+                val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
+                _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
+                _linksSheetExpanded.value = false
+                // if out of index, default to the first item (zero index)
+                if(_selectedLink.value >= links.size) _selectedLink.value = 0
+            } catch (e: Exception) {
+                _linksForWord.value = DialogState.Error(e)
+            }
         }
     }
 
