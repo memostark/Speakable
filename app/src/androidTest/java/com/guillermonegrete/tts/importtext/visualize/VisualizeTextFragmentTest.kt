@@ -83,6 +83,7 @@ class VisualizeTextFragmentTest {
 
         // Test swiping chapters
         onView(withId(R.id.text_reader_viewpager)).perform(swipeLeft())
+        Thread.sleep(50) // wait for the first swipe to complete
         onView(withId(R.id.text_reader_viewpager)).perform(swipeLeft())
 
         val expectedChapterLabel = context.resources.getString(R.string.reader_current_chapter_label, 2, 3)

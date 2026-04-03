@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.data.preferences
 
+import com.guillermonegrete.tts.common.models.Gestures
 import kotlinx.coroutines.flow.Flow
 
 class FakeSettingsRepository: SettingsRepository {
@@ -32,6 +33,10 @@ class FakeSettingsRepository: SettingsRepository {
     }
 
     override fun getImportTabPosition(): Flow<Int> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getGestures(): Gestures {
         TODO("Not yet implemented")
     }
 
