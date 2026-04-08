@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -44,7 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -108,10 +111,13 @@ fun Spinner(
         Button(
             onClick = { expanded = !expanded },
             contentPadding = PaddingValues(8.dp, end = 0.dp),
+            modifier = Modifier.widthIn(0.dp, 320.dp) // Max recommended width for buttons
         ) {
             Text(
                 text = displayText ?: list.items.getOrNull(selected) ?: "",
-                modifier = Modifier.testTag(SPINNER_TEXT_TAG),
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                modifier = Modifier.weight(1f, fill = false).testTag(SPINNER_TEXT_TAG),
             )
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
@@ -283,7 +289,9 @@ fun SpinnerPreview() {
     AppTheme {
         Column {
             Spinner(suggestions)
-            Spinner(suggestions, 0)
+            Spinner(suggestions, preselected =  1)
+            val longText = LoremIpsum(words = 10).values.toList().first()
+            Spinner(StringList(listOf(longText)), preselected = 0)
         }
     }
 }
