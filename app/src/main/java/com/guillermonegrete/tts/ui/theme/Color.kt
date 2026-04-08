@@ -3,7 +3,7 @@ package com.guillermonegrete.tts.ui.theme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 
-val GreenLight = Color(0xFF28C7BB)
+val GreenLight = Color(0xFF006a63)
 val GreenDark = Color(0xFF00968b)
 val BlueLight = Color(0xFF6a98ba)
 

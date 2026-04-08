@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--This colors were obtained using the Material Theme Builder: https://material-foundation.github.io/material-theme-builder/
+    <!--These colors were obtained using the Material Theme Builder: https://material-foundation.github.io/material-theme-builder/
     Set the source color as #28C7BB, leave "Stay true to my color inputs" unchecked so the tool generates the secondary, tertiary and other colors for you.
     Then set the primary color as #28C7BB, check "Stay true to my color inputs" and copy the other 3 primary colors (onPrimary, etc...).-->
-    <color name="md_theme_primary">#28C7BB</color>
+    <color name="md_theme_primary">#006a63</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
     <color name="md_theme_primaryContainer">#3ad2c5</color>
     <color name="md_theme_onPrimaryContainer">#003632</color>
