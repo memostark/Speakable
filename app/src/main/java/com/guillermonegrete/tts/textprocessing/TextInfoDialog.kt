@@ -938,6 +938,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             selection = selectedLink.intValue,
             onItemClick = presenter::setWordLink,
             onDismiss = presenter::hideWordLinks,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
     }
 }

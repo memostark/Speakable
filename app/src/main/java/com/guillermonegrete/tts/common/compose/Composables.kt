@@ -159,6 +159,7 @@ fun ExternalLinksDialog(
     isShown: Boolean,
     links: ExternalLinkList,
     selection: Int,
+    modifier: Modifier = Modifier,
     onItemClick: (Int) -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
@@ -175,8 +176,7 @@ fun ExternalLinksDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(modifier = Modifier
-            .padding(horizontal = 16.dp)
+        Surface(modifier = modifier
             .clip(RoundedCornerShape(12.dp))
         ) {
             Column(Modifier.height(400.dp)) {
@@ -277,7 +277,7 @@ const val CONFIRM_BTN_TAG = "confirm_btn"
 @Composable
 fun ExternalLinksDialogPreview() {
     AppTheme {
-        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site", "", "") })
+        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site ${it + 1}", "", "") })
         ExternalLinksDialog(true, links, 1)
     }
 }

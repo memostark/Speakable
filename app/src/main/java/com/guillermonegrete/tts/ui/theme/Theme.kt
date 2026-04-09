@@ -9,9 +9,9 @@ import androidx.compose.ui.graphics.Color
 import com.guillermonegrete.tts.ui.BrightnessTheme
 
 private val DarkColorPalette = darkColorScheme(
-    primary = GreenLight,
-    onPrimary = Color.White,
-    secondary = GreenDark,
+    primary = Color(0xFF81d5cc),
+    onPrimary = Color(0xFF003733),
+    secondary = GreenLight,
     tertiary = BlueLight,
 )
 
