@@ -7,19 +7,21 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.InsetDrawable
 import android.os.Bundle
 import android.view.*
 import android.widget.*
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -67,6 +69,8 @@ import java.util.*
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.sqrt
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.content.edit
 
 @AndroidEntryPoint
 class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
@@ -137,7 +141,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         val dialog = super.onCreateDialog(savedInstanceState)
         window = dialog.window
         window?.requestFeature(Window.FEATURE_NO_TITLE)
-        val back = ColorDrawable(Color.TRANSPARENT)
+        val back = Color.TRANSPARENT.toDrawable()
         val margin = requireContext().dpToPixel(20)
         val inset = InsetDrawable(back, margin, 0, margin, 0)
         window?.setBackgroundDrawable(inset)
@@ -184,6 +188,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                             onSourceLangChanged = { updateLanguageFrom(it) },
                             onTargetLangChanged = { updateLanguageTo(it) },
                             onDismiss = { dialog?.cancel() },
+                            modifier = Modifier.padding(16.dp),
                         )
 
                         Dialogs()
@@ -359,7 +364,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
     }
 
     private fun getLanguageFromPreference(): String {
-        // Give highest priority to the language set in the arguments, if null use the preference language
+        // Give the highest priority to the language set in the arguments, if null use the preference language
         val setLang = arguments?.getString(LANG_FROM_KEY)
         val preference = setLang ?: preferences.getString(SettingsFragment.PREF_LANGUAGE_FROM, "auto") ?: "auto"
         languageFromIndex = languagesISO.indexOf(preference)
@@ -600,8 +605,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
     override fun updateTranslation(translation: Translation) {
 
-        // If pager is not null, means we are using activity_processtext layout,
-        // otherwise is sentence layout
+        // If pager is not null, means we are using the word layout otherwise it's the sentence layout
         if (pager != null) {
             val detectLang = languageFrom == "auto"
             bindingWord.textLanguageCode.visibility = if (detectLang) View.VISIBLE else  View.GONE
@@ -686,7 +690,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
                     if(horizontalAxis){
                         params.x = iParamX + dRawX.toInt()
                     }else {
-                        // Multiple by 1 or -1 because the y axis can be inverted when using Gravity.Bottom param.
+                        // Multiply by 1 or -1 because the y-axis can be inverted when using Gravity.Bottom param.
                         params.y = iParamY + (dRawY * yAxis).toInt()
                         if(initialScreenY + dRawY.toInt() <= 0) return@setOnTouchListener false
                     }
@@ -797,7 +801,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             android.R.layout.simple_spinner_dropdown_item
         )
         val item = adapter.getItem(languageFromIndex)
-        if (item != null) spinner.setText(item.toString(), false)
+        if (item != null) spinner.setText(item, false)
         spinner.setOnItemClickListener { _, _, position, _ -> updateLanguageFrom(position) }
         spinner.setOnClickListener { spinner.showDropDown() }
         spinner.post {
@@ -814,9 +818,9 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         override fun onItemSelected(position: Int) {
             languageToISO = languagesISO[position]
             languagePreferenceIndex = position
-            val editor = preferences.edit()
-            editor.putInt(LANGUAGE_PREFERENCE, position)
-            editor.apply()
+            preferences.edit {
+                putInt(LANGUAGE_PREFERENCE, position)
+            }
             presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
         }
     }
@@ -827,18 +831,18 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
             "auto"
         else
             languagesISO[position - 1]
-        val editor = preferences.edit()
-        editor.putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom)
-        editor.apply()
+        preferences.edit {
+            putString(SettingsFragment.PREF_LANGUAGE_FROM, languageFrom)
+        }
         presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
     }
 
     private fun updateLanguageTo(position: Int) {
         languagePreferenceIndex = position
         languageToISO = languagesISO[position]
-        val editor = preferences.edit()
-        editor.putInt(LANGUAGE_PREFERENCE, position)
-        editor.apply()
+        preferences.edit {
+            putInt(LANGUAGE_PREFERENCE, position)
+        }
         presenter.onLanguageSpinnerChange(languageFrom, languageToISO)
     }
 
@@ -849,7 +853,7 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
         }
     }
 
-    private inner class MyPageAdapter(fragment: Fragment) :
+    private class MyPageAdapter(fragment: Fragment) :
         FragmentStateAdapter(fragment) {
 
         val fragments = ArrayList<Fragment>()
