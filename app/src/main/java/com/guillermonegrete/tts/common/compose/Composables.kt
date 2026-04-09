@@ -100,6 +100,7 @@ fun YesNoDialogPreview() {
 @Composable
 fun Spinner(
     list: StringList,
+    modifier: Modifier = Modifier,
     preselected: Int = -1,
     displayText: String? = null,
     onItemSelected: (Int, String) -> Unit = { _, _ -> }
@@ -107,7 +108,7 @@ fun Spinner(
     var selected by remember(preselected) { mutableIntStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
 
-    Box {
+    Box(modifier) {
         Button(
             onClick = { expanded = !expanded },
             contentPadding = PaddingValues(8.dp, end = 0.dp),

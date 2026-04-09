@@ -101,6 +101,7 @@ fun SentenceDialog(
     languagesFrom: StringList,
     languagesTo: StringList,
     targetLangIndex: Int,
+    modifier: Modifier = Modifier,
     playIconState: MutableState<PlayIconState> = mutableStateOf(PlayIconState()),
     sourceLangIndex: Int = 0,
     detectedLanguageState: MutableIntState = mutableIntStateOf(-1),
@@ -146,8 +147,7 @@ fun SentenceDialog(
             Spacer(modifier = Modifier.weight(1f))
 
             ElevatedCard(
-                modifier = Modifier
-                    .padding(16.dp)
+                modifier = modifier
                     .onSizeChanged {
                         val sizePx = it.width.toFloat()
                         swipeableState.updateAnchors(
@@ -303,18 +303,25 @@ fun TopTextBar(
             .fillMaxWidth()
     ) {
 
-        Text(text = "From:", Modifier.padding(horizontal = 8.dp))
+        Text(
+            text = "From:",
+            Modifier.padding(horizontal = 8.dp),
+            MaterialTheme.colorScheme.onPrimary,
+        )
 
         var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
         val detectedLanguageIndex = detectedLanguageState.intValue
         val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
             "Auto detect (${languagesTo.items.getOrNull(detectedLanguageIndex)})" else null
-        Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+        Spinner(
+            languagesFrom,
+            modifier = Modifier.weight(1f),
+            preselected = sourcePos,
+            displayText =  displayText
+        ) { index, _ ->
             onSourceLangChanged(index)
             sourcePos = index
         }
-        Spacer(Modifier.weight(1f))
-
         PlayButton(playIconState, onPlayButtonClick)
     }
 }
@@ -350,8 +357,12 @@ fun BottomTextBar(languagesTo: StringList, langIndex: Int, onTargetLangChanged: 
             .background(MaterialTheme.colorScheme.primary)
             .fillMaxWidth()
     ) {
-        Text(text = "To:", Modifier.padding(horizontal = 8.dp))
-        Spinner(languagesTo, langIndex) { index, _ ->
+        Text(
+            text = "To:",
+            Modifier.padding(horizontal = 8.dp),
+            MaterialTheme.colorScheme.onPrimary,
+        )
+        Spinner(languagesTo, Modifier.weight(1f), langIndex) { index, _ ->
             onTargetLangChanged(index)
         }
     }
@@ -376,17 +387,16 @@ fun LanguageBar(
                 .background(MaterialTheme.colorScheme.primary)
                 .weight(1f)
         ) {
-            Text(text = "From:", Modifier.padding(horizontal = 8.dp))
+            Text(text = "From:", Modifier.padding(horizontal = 8.dp), MaterialTheme.colorScheme.onPrimary)
 
             var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
             val detectedLanguageIndex = detectedLanguageState.intValue
             val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
                 "Auto detect (${languagesTo.items.getOrNull(detectedLanguageIndex)})" else null
-            Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+            Spinner(languagesFrom, Modifier.weight(1f), sourcePos, displayText) { index, _ ->
                 onSourceLangChanged(index)
                 sourcePos = index
             }
-            Spacer(Modifier.weight(1f))
 
             PlayButton(playIconState, onPlayButtonClick)
         }
@@ -399,8 +409,8 @@ fun LanguageBar(
                 .background(MaterialTheme.colorScheme.primary)
                 .weight(1f)
         ) {
-            Text(text = "To:", Modifier.padding(horizontal = 8.dp))
-            Spinner(languagesTo, targetLangIndex) { index, _ ->
+            Text(text = "To:", Modifier.padding(horizontal = 8.dp), MaterialTheme.colorScheme.onPrimary)
+            Spinner(languagesTo, Modifier.weight(1f), targetLangIndex) { index, _ ->
                 onTargetLangChanged(index)
             }
         }
@@ -428,6 +438,7 @@ fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: ()
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = stringResource(R.string.play_tts_icon_description),
+                tint = MaterialTheme.colorScheme.onPrimary,
             )
         }
     }

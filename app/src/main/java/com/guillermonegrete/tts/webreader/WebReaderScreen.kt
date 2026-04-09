@@ -113,7 +113,7 @@ fun WebReaderBottomBar(
 
         Spacer(Modifier.weight(1f))
 
-        Spinner(languages, langSelection.value, onItemSelected = onLangSelected)
+        Spinner(languages, preselected = langSelection.value, onItemSelected = onLangSelected)
 
         WebReaderBarMenu(isPageSaved, wordsShown, getPageVersion, false, onMenuItemClick)
     }
