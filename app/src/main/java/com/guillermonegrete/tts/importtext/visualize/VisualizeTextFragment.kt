@@ -23,12 +23,15 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.IntentCompat
 import androidx.core.content.edit
@@ -1131,6 +1134,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             selection = selectedLinkPos.intValue,
             onItemClick = viewModel::setWordLink,
             onDismiss = viewModel::hideWordLinks,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
 
         var addNoteVisible by remember { addNoteDialogVisible }
