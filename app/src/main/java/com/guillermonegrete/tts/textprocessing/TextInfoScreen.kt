@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -175,10 +176,10 @@ fun SentenceDialog(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column {
+                    WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
+
                     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
                     if (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT) {
-                        WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
-
                         LanguageBar(
                             languagesFrom, languagesTo, sourceLangIndex, targetLangIndex, detectedLanguageState,
                             playIconState, onPlayButtonClick, onSourceLangChanged, onTargetLangChanged
@@ -190,8 +191,6 @@ fun SentenceDialog(
 
                         BottomText(translation, highlightedSpanState, onBottomTextClick)
                     } else {
-                        WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
-
                         TopText(text, wordState, highlightedSpanState, onTopTextClick)
 
                         TopTextBar(
@@ -229,10 +228,13 @@ fun WordRow(
     if (state != null) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
         ) {
-            Text(state.word.definition, Modifier.padding(horizontal = 8.dp))
-            Spacer(Modifier.weight(1f))
+            Text(
+                state.word.definition,
+                modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                softWrap = false,
+            )
             IconButton(onClick = onBookmarkClicked) {
                 val iconRes = if(state.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
                 Icon(
@@ -471,7 +473,7 @@ fun EditWordDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(Modifier.testTag(EDIT_WORD_DIALOG_TAG)) {
-            Column(Modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 val focusManager = LocalFocusManager.current
 
                 TextField(
@@ -483,13 +485,13 @@ fun EditWordDialog(
                         onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     ),
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .widthIn(0.dp, 488.dp)
                         .padding(bottom = 16.dp)
                 )
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.widthIn(0.dp, 488.dp)
                 ) {
                     val lang = languages.fullNames.getOrNull(indexLang) ?: ""
                     TextField(
@@ -502,7 +504,7 @@ fun EditWordDialog(
                         keyboardActions = KeyboardActions(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
-                        modifier = Modifier.menuAnchor(PrimaryNotEditable).fillMaxWidth()
+                        modifier = Modifier.menuAnchor(PrimaryNotEditable).widthIn(0.dp, 488.dp)
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -529,7 +531,7 @@ fun EditWordDialog(
                     keyboardActions = KeyboardActions(
                         onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.widthIn(0.dp, 488.dp)
                 )
 
                 TextField(
@@ -537,7 +539,7 @@ fun EditWordDialog(
                     onValueChange = { notesText = it },
                     label = { Text(stringResource(id = R.string.notes_edit_text)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.widthIn(0.dp, 488.dp)
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
