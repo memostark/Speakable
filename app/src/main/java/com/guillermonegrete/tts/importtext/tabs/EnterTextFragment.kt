@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -37,12 +39,16 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.window.core.layout.WindowHeightSizeClass
 import com.guillermonegrete.tts.R
+import com.guillermonegrete.tts.common.compose.isDesktopOrTabletSize
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextFragment
 import com.guillermonegrete.tts.ui.theme.AppTheme
@@ -70,13 +76,12 @@ class EnterTextFragment: Fragment() {
         startActivity(intent)
     }
 
-    @PreviewScreenSizes
     @Composable
-    fun EnterTextScreen() {
+    fun EnterTextScreen(text: String = "") {
         AppTheme {
             val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
             var textField by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-                mutableStateOf(TextFieldValue())
+                mutableStateOf(TextFieldValue(text))
             }
             if (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT) {
                 EnterTextScreenHeightCompact( { textField }, { textField = it } )
@@ -175,15 +180,21 @@ class EnterTextFragment: Fragment() {
         val field = textField()
         var textFieldValue by remember(field) { mutableStateOf(field) }
         val clearVisible by remember(textFieldValue.text) { derivedStateOf { textFieldValue.text.isNotBlank() } }
+        val useLargeText = isDesktopOrTabletSize()
+        val style = if (useLargeText) LocalTextStyle.current.copy(fontSize = 20.sp) else LocalTextStyle.current
         OutlinedTextField(
             value = textFieldValue,
             onValueChange = onTextFieldChange,
             label = { Text(stringResource(R.string.import_text_hint)) },
             minLines = textLines,
             maxLines = textLines,
+            textStyle = style,
             trailingIcon = {
                 if (clearVisible) {
-                    IconButton(onClick = { onTextFieldChange(TextFieldValue()) }) {
+                    IconButton(
+                        onClick = { onTextFieldChange(TextFieldValue()) },
+                        modifier = Modifier.padding(8.dp),
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Clear,
                             contentDescription = "Clear"
@@ -191,8 +202,16 @@ class EnterTextFragment: Fragment() {
                     }
                 }
             },
-            modifier = Modifier.testTag(ENTER_TEXT_TAG)
+            modifier = Modifier.widthIn(0.dp, 488.dp).testTag(ENTER_TEXT_TAG)
         )
+    }
+
+    @PreviewScreenSizes
+    @Composable
+    fun EnterTextScreenPreview(@PreviewParameter(LoremIpsum::class) longText: String ) {
+        AppTheme {
+            EnterTextScreen(longText)
+        }
     }
 }
 

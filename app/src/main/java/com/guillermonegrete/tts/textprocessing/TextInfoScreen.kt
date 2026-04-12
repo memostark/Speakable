@@ -73,6 +73,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -484,8 +485,10 @@ fun EditWordDialog(
                     keyboardActions = KeyboardActions(
                         onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     ),
+                    singleLine = true,
                     modifier = Modifier
                         .widthIn(0.dp, 488.dp)
+                        .horizontalScroll(rememberScrollState())
                         .padding(bottom = 16.dp)
                 )
                 ExposedDropdownMenuBox(
@@ -504,6 +507,7 @@ fun EditWordDialog(
                         keyboardActions = KeyboardActions(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
+                        singleLine = true,
                         modifier = Modifier.menuAnchor(PrimaryNotEditable).widthIn(0.dp, 488.dp)
                     )
                     ExposedDropdownMenu(
@@ -531,7 +535,8 @@ fun EditWordDialog(
                     keyboardActions = KeyboardActions(
                         onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     ),
-                    modifier = Modifier.widthIn(0.dp, 488.dp)
+                    singleLine = true,
+                    modifier = Modifier.widthIn(0.dp, 488.dp).horizontalScroll(rememberScrollState()),
                 )
 
                 TextField(
@@ -539,7 +544,7 @@ fun EditWordDialog(
                     onValueChange = { notesText = it },
                     label = { Text(stringResource(id = R.string.notes_edit_text)) },
                     singleLine = true,
-                    modifier = Modifier.widthIn(0.dp, 488.dp)
+                    modifier = Modifier.widthIn(0.dp, 488.dp).horizontalScroll(rememberScrollState()),
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
@@ -660,7 +665,7 @@ fun EditWordDialogPreview() {
             "Hola",
             "es",
             "Hello",
-            "Spanish greeting",
+            "The most common and used spanish greeting",
             LanguagesList(listOf("English", "Spanish", "German"), listOf("en", "es", "de")),
             true
         )
