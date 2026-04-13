@@ -39,9 +39,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -77,7 +80,7 @@ fun WebReaderBottomBar(
         modifier = Modifier
             .testTag("web_reader_bar")
             .height(WebReaderBarHeight),
-        contentPadding = PaddingValues(vertical = 8.dp), // Default is 12dp but it causes asymmetry with height 64 dp
+        contentPadding = PaddingValues(vertical = 8.dp), // Default is 12dp which causes asymmetry with height 64 dp
         windowInsets = WindowInsets(0, 0, 0, 0), // The default insets take too much space when E2E, the insets are handled in the parent view of this bar
     ) {
         IconButton(
@@ -156,8 +159,6 @@ fun WebReaderBarMenu(
                     Icon(painter = painterResource(icon), contentDescription = if (isSaved) "Delete" else "Save")
                 },
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             if (isSaved) {
                 DropdownMenuItem(
@@ -436,7 +437,8 @@ fun CircleColorButton(color: Color, index: Int, colorSel: MutableIntState) {
         .padding(3.dp) // margin
         .border(3.dp, color, shape = CircleShape)
         .padding(6.dp) // space between circle and ring, real size is this value minus the border size. 6dp - 3dp = 3dp
-        .size(36.dp) else Modifier
+        .size(36.dp)
+    else Modifier
         .padding(12.dp)
         .size(36.dp)
 
@@ -444,9 +446,11 @@ fun CircleColorButton(color: Color, index: Int, colorSel: MutableIntState) {
     Box(Modifier.size(48.dp)) {
         OutlinedButton(
             onClick = { colorSel.intValue = index },
-            modifier = modifier.testTag(index.toString()),
+            modifier = modifier.semantics{
+                contentDescription = color.toString()
+            }.testTag(index.toString()),
             shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(containerColor = color)
+            colors = ButtonDefaults.buttonColors(containerColor = color),
         ) {}
     }
 }
@@ -470,9 +474,9 @@ fun MultiToggleButton(
             .border(BorderStroke(1.dp, Color.LightGray))
     ) {
         toggleStates.items.forEachIndexed { index, toggleState ->
-            val isSelected = currentSelection.lowercase() == toggleState.lowercase()
+            val isSelected = currentSelection.equals(toggleState, ignoreCase = true)
             val backgroundTint = if (isSelected) selectedTint else unselectedTint
-            val textColor = if (isSelected) Color.White else Color.Unspecified
+            val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.Unspecified
 
             if (index != 0) {
                 VerticalDivider(
@@ -518,7 +522,7 @@ fun BarPreview() {
 fun WebReaderBarMenuPreview() {
     AppTheme {
         Surface {
-            WebReaderBarMenu(remember { mutableStateOf(false) }, true, { "Local" }, true) { }
+            WebReaderBarMenu(remember { mutableStateOf(true) }, true, { "Local" }, true) { }
         }
     }
 }
@@ -539,19 +543,12 @@ fun DeletePageDialogPreview() {
     }
 }
 
-@Preview
+@PreviewScreenSizes
 @Composable
 fun AddNoteDialogPreview() {
     AppTheme {
-        AddNoteDialog(true, "", 0, true)
-    }
-}
-
-@Preview
-@Composable
-fun AddNoteDialogMediumPreview() {
-    AppTheme {
-        AddNoteDialogMedium(true, "", 0, true)
+        val state = AddNoteDialogUI("", 0, true)
+        AddNoteDialog(state)
     }
 }
 
