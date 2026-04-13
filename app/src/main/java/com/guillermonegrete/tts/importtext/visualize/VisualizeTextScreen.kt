@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -163,35 +164,33 @@ fun ContentMenu(
     onDismiss: () -> Unit,
     onItemClick: (item: ContentMenuItem) -> Unit = {},
 ) {
-    Box(
-        Modifier
-            .padding(WindowInsets.systemBars.asPaddingValues())
-            .padding(end = 8.dp) // Adds additional padding
+    Popup(
+        alignment = Alignment.BottomEnd,
+        onDismissRequest = onDismiss,
     ) {
-        Popup(
-            alignment = Alignment.BottomEnd,
-            onDismissRequest = onDismiss,
+        ElevatedCard(
+            Modifier
+                .padding(WindowInsets.systemBars.asPaddingValues())
+                .padding(end = 8.dp) // Adds additional padding
         ) {
-            ElevatedCard {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    if (hasToC) {
-                        Text(
-                            text = AnnotatedString(stringResource(R.string.table_of_contents)),
-                            modifier = Modifier
-                                .clickable(true) { onItemClick(ContentMenuItem.TABLE_OF_CONTENTS) }
-                                .testTag(TOC_BTN_TAG)
-                                .padding(8.dp),
-                        )
-                    }
-
+            Column(modifier = Modifier.padding(16.dp)) {
+                if (hasToC) {
                     Text(
-                        text = AnnotatedString(stringResource(R.string.show_notes_list)),
+                        text = AnnotatedString(stringResource(R.string.table_of_contents)),
                         modifier = Modifier
-                            .clickable(true) { onItemClick(ContentMenuItem.NOTES) }
-                            .testTag(NOTE_BTN_TAG)
+                            .clickable(true) { onItemClick(ContentMenuItem.TABLE_OF_CONTENTS) }
+                            .testTag(TOC_BTN_TAG)
                             .padding(8.dp),
                     )
                 }
+
+                Text(
+                    text = AnnotatedString(stringResource(R.string.show_notes_list)),
+                    modifier = Modifier
+                        .clickable(true) { onItemClick(ContentMenuItem.NOTES) }
+                        .testTag(NOTE_BTN_TAG)
+                        .padding(8.dp),
+                )
             }
         }
     }
@@ -201,15 +200,19 @@ fun ContentMenu(
 @Composable
 fun NoteSheetPreview() {
     AppTheme {
-        NoteSheet(true, {"My note text"})
+        Box(modifier = Modifier.fillMaxSize()) {
+            NoteSheet(true, { "My note text. ".repeat(15) })
+        }
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun ContentMenuPreview() {
     AppTheme {
-        ContentMenu(true, {})
+        Box(modifier = Modifier.fillMaxSize()) {
+            ContentMenu(true, {})
+        }
     }
 }
 

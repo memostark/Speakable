@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -73,7 +75,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -143,11 +144,10 @@ fun SentenceDialog(
             tween(),
         )
 
-        Row {
-
-            // The spacers make sure the windows is filling the entire space, otherwise the dialog cuts off the swiping horizontally.
-            Spacer(modifier = Modifier.weight(1f))
-
+        Box(
+            modifier = Modifier.fillMaxWidth(), // prevents dialog from getting cut-off when swiping horizontally
+            contentAlignment = Alignment.Center,
+        ) {
             ElevatedCard(
                 modifier = modifier
                     .onSizeChanged {
@@ -205,8 +205,6 @@ fun SentenceDialog(
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
 
             // Handle swipeable events
             LaunchedEffect(swipeableState.settledValue) {
@@ -474,7 +472,10 @@ fun EditWordDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(Modifier.testTag(EDIT_WORD_DIALOG_TAG)) {
-            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier.width(IntrinsicSize.Max).widthIn(0.dp, 520.dp).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 val focusManager = LocalFocusManager.current
 
                 TextField(
@@ -487,14 +488,13 @@ fun EditWordDialog(
                     ),
                     singleLine = true,
                     modifier = Modifier
-                        .widthIn(0.dp, 488.dp)
-                        .horizontalScroll(rememberScrollState())
+                        .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 )
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier.widthIn(0.dp, 488.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     val lang = languages.fullNames.getOrNull(indexLang) ?: ""
                     TextField(
@@ -508,7 +508,7 @@ fun EditWordDialog(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
                         singleLine = true,
-                        modifier = Modifier.menuAnchor(PrimaryNotEditable).widthIn(0.dp, 488.dp)
+                        modifier = Modifier.menuAnchor(PrimaryNotEditable).fillMaxWidth(),
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -536,7 +536,7 @@ fun EditWordDialog(
                         onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     ),
                     singleLine = true,
-                    modifier = Modifier.widthIn(0.dp, 488.dp).horizontalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 TextField(
@@ -544,7 +544,7 @@ fun EditWordDialog(
                     onValueChange = { notesText = it },
                     label = { Text(stringResource(id = R.string.notes_edit_text)) },
                     singleLine = true,
-                    modifier = Modifier.widthIn(0.dp, 488.dp).horizontalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
@@ -664,8 +664,8 @@ fun EditWordDialogPreview() {
             true,
             "Hola",
             "es",
-            "Hello",
-            "The most common and used spanish greeting",
+            "Hello, hi, hey",
+            "The most common spanish greeting used when meeting someone",
             LanguagesList(listOf("English", "Spanish", "German"), listOf("en", "es", "de")),
             true
         )
