@@ -3,4 +3,8 @@
     <item
         android:id="@+id/settings_menu_item"
         android:title="@string/settings"/>
+
+    <item
+        android:id="@+id/create_backup_item"
+        android:title="@string/create_backup_file"/>
 </menu>
