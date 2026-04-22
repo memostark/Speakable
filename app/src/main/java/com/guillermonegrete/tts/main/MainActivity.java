@@ -5,11 +5,18 @@ import static com.guillermonegrete.tts.importtext.tabs.FilesFragment.MARGIN_OFFS
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.MenuProvider;
 import androidx.core.view.ViewCompat;
@@ -27,16 +34,16 @@ import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.common.views.NestedHideViewOnScrollBehavior;
 import com.guillermonegrete.tts.databinding.ActivityMainBinding;
+import com.guillermonegrete.tts.main.domain.interactors.CreateBackupUseCase;
 
-import androidx.appcompat.app.AppCompatActivity;
+import org.jetbrains.annotations.NotNull;
 
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
+import java.io.File;
+
+import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import timber.log.Timber;
 
 
 @AndroidEntryPoint
@@ -45,6 +52,8 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
     NavController navController;
     AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
+
+    @Inject CreateBackupUseCase createBackupUseCase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             var nv = binding.landscapeLayout;
             if (nv != null) nv.setPadding(insets.left, nv.getPaddingTop(), insets.right, nv.getPaddingBottom());
 
-            // Return CONSUMED if you don't want want the window insets to keep passing
+            // Return CONSUMED if you don't want the window insets to keep passing
             // down to descendant views.
             return windowInsets;
         });
@@ -125,8 +134,24 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
 
     @Override
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.settings_menu_item) {
+        var id = item.getItemId();
+        if (id == R.id.settings_menu_item) {
             navController.navigate(R.id.action_global_settingsFragment);
+            return true;
+        } else if (id == R.id.create_backup_item) {
+            createBackupUseCase.invoke(new CreateBackupUseCase.Callback() {
+                @Override
+                public void onBackupSuccess(@NotNull File outputFile) {
+                    Timber.d(outputFile.getAbsolutePath());
+                    Toast.makeText(MainActivity.this, "Backup at: " + outputFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                }
+
+                @Override
+                public void onError(@NotNull Throwable t) {
+                    Timber.e(t, "Error creating backup");
+                    Toast.makeText(MainActivity.this, "Error creating backup", Toast.LENGTH_SHORT).show();
+                }
+            });
             return true;
         }
         return false;
