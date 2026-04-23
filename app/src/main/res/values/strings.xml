@@ -20,6 +20,7 @@
     <!-- Main activity-->
     <string name="settings">Settings</string>
     <string name="create_backup_file">Create backup file</string>
+    <string name="restore_from_backup">Restore from file</string>
 
     <string name="dialog_new_word_title">New word</string>
 
