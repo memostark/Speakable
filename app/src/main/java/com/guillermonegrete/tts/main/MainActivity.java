@@ -16,6 +16,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.MenuProvider;
@@ -43,6 +44,7 @@ import java.io.File;
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import kotlin.Unit;
 import timber.log.Timber;
 
 
@@ -119,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             } else {
                 navView.setVisibility(View.VISIBLE);
                 showBottomBar();
+
                 binding.appBarLayout.setExpanded(true);
             }
         });
@@ -142,7 +145,6 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             createBackupUseCase.invoke(new CreateBackupUseCase.Callback() {
                 @Override
                 public void onBackupSuccess(@NotNull File outputFile) {
-                    Timber.d(outputFile.getAbsolutePath());
                     Toast.makeText(MainActivity.this, "Backup at: " + outputFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
                 }
 
@@ -153,6 +155,26 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
                 }
             });
             return true;
+        } else if (id == R.id.restore_from_backup_item) {
+            var dialog = new AlertDialog.Builder(this)
+                    .setTitle("Do you want to restore data from backup?")
+                    .setMessage("This will override your current data")
+                    .setNegativeButton(R.string.cancel, (dialog1, which) -> dialog1.dismiss())
+                    .setPositiveButton(android.R.string.ok, (dialog1, which) ->
+                        createBackupUseCase.restoreDatabase(
+                            () ->  {
+                                Toast.makeText(MainActivity.this, "Successfully loaded the backup", Toast.LENGTH_LONG).show();
+                                return Unit.INSTANCE;
+                            },
+                            t -> {
+                                Timber.e(t, "Error creating backup");
+                                Toast.makeText(MainActivity.this, "Error loading backup", Toast.LENGTH_SHORT).show();
+                                return Unit.INSTANCE;
+                            }
+                        )
+                    )
+                    .create();
+            dialog.show();
         }
         return false;
     }

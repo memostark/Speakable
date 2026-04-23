@@ -8,6 +8,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
@@ -52,6 +53,44 @@ class CreateBackupUseCase @Inject constructor(
         }
 
         return backupFile
+    }
+
+    fun restoreDatabase(onSuccess: () -> Unit, onError: (t: Throwable) -> Unit) {
+        executorService.execute {
+            try {
+                val zipFilePath = "backup_data.zip"
+                val backupFile = File(
+                    context.getExternalFilesDir(null),
+                    zipFilePath
+                )
+                restoreDatabase(backupFile)
+                onSuccess()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
+    }
+
+    private fun restoreDatabase(backupFile: File) {
+
+        val databases = listOf("words.db", "files.db")
+
+        ZipFile(backupFile).use { zip ->
+            // Iterate through all entries
+            zip.entries().asSequence().forEach { entry ->
+                println("Entry name: ${entry.name}, Size: ${entry.size}")
+
+                // Read content of a specific entry if needed
+                if (!entry.isDirectory && databases.contains(entry.name)) {
+                    zip.getInputStream(entry).use { input ->
+                        val dbFile = context.getDatabasePath(entry.name)
+                        FileOutputStream(dbFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     interface Callback{

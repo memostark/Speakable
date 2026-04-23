@@ -7,4 +7,8 @@
     <item
         android:id="@+id/create_backup_item"
         android:title="@string/create_backup_file"/>
+
+    <item
+        android:id="@+id/restore_from_backup_item"
+        android:title="@string/restore_from_backup"/>
 </menu>
