@@ -1,7 +1,6 @@
 package com.guillermonegrete.tts.main.domain.interactors
 
 import android.content.Context
-import com.guillermonegrete.tts.AbstractInteractor
 import com.guillermonegrete.tts.MainThread
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -12,25 +11,23 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
-class CreateBackupUseCase @Inject constructor(
-    executor: ExecutorService,
-    mainThread: MainThread,
+class BackupManager @Inject constructor(
+    private val executor: ExecutorService,
+    private val mainThread: MainThread,
     @param:ApplicationContext private val context: Context,
-) : AbstractInteractor(executor, mainThread){
+) {
 
-    var callback: Callback? = null
-
-    operator fun invoke(callback: Callback) {
-        this.callback = callback
-        execute()
-    }
-
-    override fun run() {
-        val zipFilePath = "backup_data.zip"
-        val databases = listOf("words.db", "files.db")
-        val file = zipFiles(databases, zipFilePath)
-        mMainThread.post {
-            callback?.onBackupSuccess(file)
+    fun createBackup(fileSuccessCallback: FileCallback, errorCallback: ErrorCallback) {
+        executor.execute {
+            try {
+                val zipFilePath = "backup_data.zip"
+                val file = zipFiles(FILES_TO_BACKUP, zipFilePath)
+                mainThread.post {
+                    fileSuccessCallback.onBackupSuccess(file)
+                }
+            } catch (e: Exception) {
+                mainThread.post { errorCallback.onError(e) }
+            }
         }
     }
 
@@ -55,8 +52,8 @@ class CreateBackupUseCase @Inject constructor(
         return backupFile
     }
 
-    fun restoreDatabase(onSuccess: () -> Unit, onError: (t: Throwable) -> Unit) {
-        executorService.execute {
+    fun restoreDatabase(successCallback: SuccessCallback, errorCallback: ErrorCallback) {
+        executor.execute {
             try {
                 val zipFilePath = "backup_data.zip"
                 val backupFile = File(
@@ -64,22 +61,20 @@ class CreateBackupUseCase @Inject constructor(
                     zipFilePath
                 )
                 restoreDatabase(backupFile)
-                onSuccess()
+                mainThread.post { successCallback.onSuccess() }
             } catch (e: Exception) {
-                onError(e)
+                mainThread.post { errorCallback.onError(e) }
             }
         }
     }
 
     private fun restoreDatabase(backupFile: File) {
 
-        val databases = listOf("words.db", "files.db")
+        val databases = FILES_TO_BACKUP
 
         ZipFile(backupFile).use { zip ->
             // Iterate through all entries
             zip.entries().asSequence().forEach { entry ->
-                println("Entry name: ${entry.name}, Size: ${entry.size}")
-
                 // Read content of a specific entry if needed
                 if (!entry.isDirectory && databases.contains(entry.name)) {
                     zip.getInputStream(entry).use { input ->
@@ -93,9 +88,19 @@ class CreateBackupUseCase @Inject constructor(
         }
     }
 
-    interface Callback{
-        fun onBackupSuccess(outputFile: File)
+    companion object {
+        val FILES_TO_BACKUP = listOf("words.db", "words.db-shm", "words.db-wal", "files.db", "files.db-shm", "files.db-wal")
+    }
 
+    fun interface FileCallback {
+        fun onBackupSuccess(outputFile: File)
+    }
+
+    fun interface SuccessCallback {
+        fun onSuccess()
+    }
+
+    fun interface ErrorCallback {
         fun onError(t: Throwable)
     }
 }
