@@ -35,16 +35,11 @@ import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.common.views.NestedHideViewOnScrollBehavior;
 import com.guillermonegrete.tts.databinding.ActivityMainBinding;
-import com.guillermonegrete.tts.main.domain.interactors.CreateBackupUseCase;
-
-import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
+import com.guillermonegrete.tts.main.domain.interactors.BackupManager;
 
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import kotlin.Unit;
 import timber.log.Timber;
 
 
@@ -55,7 +50,8 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
     AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
 
-    @Inject CreateBackupUseCase createBackupUseCase;
+    @Inject
+    BackupManager backupManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,34 +138,25 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             navController.navigate(R.id.action_global_settingsFragment);
             return true;
         } else if (id == R.id.create_backup_item) {
-            createBackupUseCase.invoke(new CreateBackupUseCase.Callback() {
-                @Override
-                public void onBackupSuccess(@NotNull File outputFile) {
-                    Toast.makeText(MainActivity.this, "Backup at: " + outputFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-                }
-
-                @Override
-                public void onError(@NotNull Throwable t) {
+            backupManager.createBackup(
+                (outputFile) -> Toast.makeText(MainActivity.this, "Backup at: " + outputFile.getAbsolutePath(), Toast.LENGTH_LONG).show(),
+                t -> {
                     Timber.e(t, "Error creating backup");
                     Toast.makeText(MainActivity.this, "Error creating backup", Toast.LENGTH_SHORT).show();
                 }
-            });
+            );
             return true;
         } else if (id == R.id.restore_from_backup_item) {
             var dialog = new AlertDialog.Builder(this)
-                    .setTitle("Do you want to restore data from backup?")
-                    .setMessage("This will override your current data")
+                    .setTitle(R.string.restore_backup_dialog_title)
+                    .setMessage(R.string.restore_backup_dialog_message)
                     .setNegativeButton(R.string.cancel, (dialog1, which) -> dialog1.dismiss())
                     .setPositiveButton(android.R.string.ok, (dialog1, which) ->
-                        createBackupUseCase.restoreDatabase(
-                            () ->  {
-                                Toast.makeText(MainActivity.this, "Successfully loaded the backup", Toast.LENGTH_LONG).show();
-                                return Unit.INSTANCE;
-                            },
+                        backupManager.restoreDatabase(
+                            () -> Toast.makeText(MainActivity.this, "Successfully loaded the backup", Toast.LENGTH_LONG).show(),
                             t -> {
                                 Timber.e(t, "Error creating backup");
                                 Toast.makeText(MainActivity.this, "Error loading backup", Toast.LENGTH_SHORT).show();
-                                return Unit.INSTANCE;
                             }
                         )
                     )
