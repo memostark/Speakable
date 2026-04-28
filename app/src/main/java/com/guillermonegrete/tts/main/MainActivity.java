@@ -4,6 +4,7 @@ import static com.guillermonegrete.tts.importtext.ImportTextFragment.MARGIN_OFFS
 import static com.guillermonegrete.tts.importtext.tabs.FilesFragment.MARGIN_OFFSET_KEY;
 
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -14,6 +15,8 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -52,6 +55,32 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
 
     @Inject
     BackupManager backupManager;
+
+    ActivityResultLauncher<Uri> getBackupFolder = registerForActivityResult(
+        new ActivityResultContracts.OpenDocumentTree(),
+        uri ->
+            backupManager.createBackup(
+                uri,
+                (outputUri) -> Toast.makeText(this, "Backup at: " + outputUri, Toast.LENGTH_LONG).show(),
+                t -> {
+                    Timber.e(t, "Error creating backup");
+                    Toast.makeText(this, "Error creating backup", Toast.LENGTH_SHORT).show();
+                }
+            )
+    );
+
+    ActivityResultLauncher<String[]> getBackupFile = registerForActivityResult(
+        new ActivityResultContracts.OpenDocument(),
+        uri ->
+            backupManager.restoreDatabase(
+                uri,
+                () -> Toast.makeText(this, "Successfully loaded the backup", Toast.LENGTH_LONG).show(),
+                t -> {
+                    Timber.e(t, "Error loading backup");
+                    Toast.makeText(this, "Error loading backup", Toast.LENGTH_SHORT).show();
+                }
+            )
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,13 +167,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             navController.navigate(R.id.action_global_settingsFragment);
             return true;
         } else if (id == R.id.create_backup_item) {
-            backupManager.createBackup(
-                (outputFile) -> Toast.makeText(MainActivity.this, "Backup at: " + outputFile.getAbsolutePath(), Toast.LENGTH_LONG).show(),
-                t -> {
-                    Timber.e(t, "Error creating backup");
-                    Toast.makeText(MainActivity.this, "Error creating backup", Toast.LENGTH_SHORT).show();
-                }
-            );
+            getBackupFolder.launch(null);
             return true;
         } else if (id == R.id.restore_from_backup_item) {
             var dialog = new AlertDialog.Builder(this)
@@ -152,13 +175,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
                     .setMessage(R.string.restore_backup_dialog_message)
                     .setNegativeButton(R.string.cancel, (dialog1, which) -> dialog1.dismiss())
                     .setPositiveButton(android.R.string.ok, (dialog1, which) ->
-                        backupManager.restoreDatabase(
-                            () -> Toast.makeText(MainActivity.this, "Successfully loaded the backup", Toast.LENGTH_LONG).show(),
-                            t -> {
-                                Timber.e(t, "Error creating backup");
-                                Toast.makeText(MainActivity.this, "Error loading backup", Toast.LENGTH_SHORT).show();
-                            }
-                        )
+                        getBackupFile.launch(new String[]{"application/zip", "application/x-zip-compressed"})
                     )
                     .create();
             dialog.show();
