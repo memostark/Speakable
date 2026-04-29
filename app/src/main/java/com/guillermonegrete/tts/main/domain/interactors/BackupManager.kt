@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.guillermonegrete.tts.MainThread
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -54,6 +55,16 @@ class BackupManager @Inject constructor(
                     file.inputStream().use { it.copyTo(zos) }
                     zos.closeEntry()
                 }
+            }
+
+            val prefName = context.packageName + "_preferences"
+            val sharedPrefFile =
+                File(context.filesDir?.parent + "/shared_prefs/" + prefName + ".xml")
+            if (sharedPrefFile.exists()) {
+                // Add entry and copy data
+                zos.putNextEntry(ZipEntry(sharedPrefFile.name))
+                sharedPrefFile.inputStream().use { it.copyTo(zos) }
+                zos.closeEntry()
             }
         }
     }
