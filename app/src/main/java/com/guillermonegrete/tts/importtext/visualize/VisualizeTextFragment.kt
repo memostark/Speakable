@@ -846,7 +846,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle(resources.getString(R.string.table_of_contents))
-            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
+            .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setAdapter(adapter) { _, i ->
                 val path = filePaths[i]
                 viewModel.jumpToChapter(path)
