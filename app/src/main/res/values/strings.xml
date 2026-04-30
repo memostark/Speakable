@@ -33,7 +33,7 @@
 
     <string name="save">Save</string>
     <string name="yes">Yes</string>
-    <string name="cancel">Cancel</string>
+    <string name="no">No</string>
 
     <string name="note">Note</string>
     <string name="saved_word">Saved word</string>
@@ -258,5 +258,7 @@
 
     <!-- Notes list-->
     <string name="go_to_text">Go to text</string>
+    <string name="backup_success_dialog_title">Successfully loaded the backup</string>
+    <string name="backup_success_dialog_message">To see the changes the app needs to be restarted. Would you like to restart now?</string>
 
 </resources>
