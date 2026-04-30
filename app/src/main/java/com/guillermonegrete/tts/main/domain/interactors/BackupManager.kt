@@ -22,6 +22,14 @@ class BackupManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
 
+    val prefName = context.packageName + "_preferences.xml"
+    val prefPath = context.filesDir?.parent + "/shared_prefs/" + prefName
+    val dataStoreName = "settings.preferences_pb"
+    val dataStorePath = context.filesDir.absolutePath + "/datastore/" + dataStoreName
+    val prefMap = mapOf(prefName to prefPath, dataStoreName to dataStorePath)
+    val prefNames = listOf(prefName, dataStoreName)
+    val prefPaths = listOf(prefPath, dataStorePath)
+
     fun createBackup(directoryUri: Uri, fileSuccessCallback: FileCallback, errorCallback: ErrorCallback) {
         executor.execute {
             try {
@@ -57,14 +65,14 @@ class BackupManager @Inject constructor(
                 }
             }
 
-            val prefName = context.packageName + "_preferences"
-            val sharedPrefFile =
-                File(context.filesDir?.parent + "/shared_prefs/" + prefName + ".xml")
-            if (sharedPrefFile.exists()) {
-                // Add entry and copy data
-                zos.putNextEntry(ZipEntry(sharedPrefFile.name))
-                sharedPrefFile.inputStream().use { it.copyTo(zos) }
-                zos.closeEntry()
+            prefPaths.forEach { path ->
+                val file = File(path)
+                if (file.exists()) {
+                    // Add entry and copy data
+                    zos.putNextEntry(ZipEntry(file.name))
+                    file.inputStream().use { it.copyTo(zos) }
+                    zos.closeEntry()
+                }
             }
         }
     }
@@ -88,9 +96,16 @@ class BackupManager @Inject constructor(
         val zipInputStream = ZipInputStream(inputStream)
         var entry: ZipEntry? = zipInputStream.nextEntry
         while (entry != null) {
-            if (!entry.isDirectory && databases.contains(entry.name)) {
-                val dbFile = context.getDatabasePath(entry.name)
-                FileOutputStream(dbFile).use { fos ->
+            if (!entry.isDirectory) {
+                val file = if (databases.contains(entry.name)) {
+                    context.getDatabasePath(entry.name)
+                } else if (prefNames.contains(entry.name)) {
+                    prefMap[entry.name]?.let { File(it) }
+                } else {
+                    null
+                }
+
+                FileOutputStream(file).use { fos ->
                     val buffer = ByteArray(4096)
                     var len: Int
                     while (zipInputStream.read(buffer).also { len = it } > 0) {
