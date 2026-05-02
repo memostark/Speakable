@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.webreader.db
 
+import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
@@ -10,6 +11,7 @@ import androidx.room.Relation
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.db.BookFile
 import com.guillermonegrete.tts.db.WebLink
+import kotlinx.parcelize.Parcelize
 
 /**
  * Represents the text (note) applied to the specified position in a text file.
@@ -31,6 +33,7 @@ import com.guillermonegrete.tts.db.WebLink
         )
     ]
 )
+@Parcelize
 data class Note(
     val text: String,
     @ColumnInfo(defaultValue = "")
@@ -53,7 +56,7 @@ data class Note(
     val bookId: Int? = null,
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0
-) {
+): Parcelable {
 
     /**
      * For a book note, gets the position with the chapter. The actual position is in the first 24 bits of a 32 bit int

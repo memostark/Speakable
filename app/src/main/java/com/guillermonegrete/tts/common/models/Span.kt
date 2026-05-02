@@ -1,6 +1,10 @@
 package com.guillermonegrete.tts.common.models
 
-data class Span(val start: Int, val end: Int) {
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
+data class Span(val start: Int, val end: Int): Parcelable {
 
     fun inside(pos: Int) = pos in start..end
 

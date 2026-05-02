@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
+import android.os.Parcelable
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.hasInside
@@ -43,6 +44,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.parcelize.Parcelize
 import net.dankito.readability4j.Readability4J
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -971,7 +973,8 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 }
 
-data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
+@Parcelize
+data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = ""): Parcelable
 
 data class Sentence(val text: String, val paragraphIndex: Int)
 
@@ -982,7 +985,8 @@ data class SelectedParagraph(
     val highlights: SplitPageSpan? = null,
 )
 
-sealed interface DialogType {
+@Parcelize
+sealed interface DialogType: Parcelable {
     data class SavedWord(val word: Words, val span: Span): DialogType
     data class Note(val item: com.guillermonegrete.tts.webreader.db.Note): DialogType
     data class Translation(val translation: SimpleTranslation, val span: Span, val overlapsNote: Boolean, val overlapsWord: Boolean): DialogType
