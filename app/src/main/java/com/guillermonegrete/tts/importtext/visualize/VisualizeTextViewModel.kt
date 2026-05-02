@@ -1,7 +1,9 @@
 package com.guillermonegrete.tts.importtext.visualize
 
+import android.os.Parcelable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
@@ -40,6 +42,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 import java.io.File
 import java.util.*
@@ -54,6 +57,7 @@ class VisualizeTextViewModel @Inject constructor(
     private val wordDAO: WordsDAO,
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
+    private val savedStateHandle: SavedStateHandle,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
@@ -120,7 +124,7 @@ class VisualizeTextViewModel @Inject constructor(
     private val _selectedLink = MutableStateFlow(0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
-    private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
+    private val _dialogState = savedStateHandle.getMutableStateFlow<UiDialogState>("dialog", UiDialogState())
     val dialogState: StateFlow<UiDialogState> = _dialogState
 
     private val _editDialogs = MutableStateFlow(UiEditDialogsState())
@@ -659,10 +663,11 @@ class VisualizeTextViewModel @Inject constructor(
 
     fun getBook() = _book.value
 
+    @Parcelize
     data class UiDialogState(
         val isLoading: Boolean = false,
         val dialogState: DialogType? = null,
         val error: String? = null,
-    )
+    ): Parcelable
 
 }
