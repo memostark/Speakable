@@ -1,6 +1,9 @@
 package com.guillermonegrete.tts.data
 
+import android.os.Parcelable
 import com.guillermonegrete.tts.db.Words
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 import java.lang.Exception
 
 sealed class Result<out T> {
@@ -31,6 +34,15 @@ sealed class DialogState<out T>{
     data class Success<out T>(val data: T): DialogState<T>()
     data class Error<out T>(val exception: Exception): DialogState<T>()
     data object Loading : DialogState<Nothing>()
+}
+
+@Parcelize
+sealed class DialogStateList<out T>: Parcelable{
+
+    data object Empty: DialogStateList<Nothing>()
+    data class Success<out T: Parcelable>(val data: List<T>): DialogStateList<T>()
+    data class Error<out T>(val exception: Exception): DialogStateList<T>()
+    data object Loading : DialogStateList<Nothing>()
 }
 
 /**

@@ -955,11 +955,12 @@ class WebReaderViewModel @AssistedInject constructor(
         val error: String? = null,
     )
 
+    @Parcelize
     data class UiEditDialogsState(
         val isEditingType: DialogType? = null,
         val isDeleteDialogShown: Boolean = false,
         val isPickingType: InfoType? = null,
-    )
+    ): Parcelable
 
     data class ParagraphUiState(
         val paragraph: SelectedParagraph? = null,
@@ -994,7 +995,8 @@ sealed interface DialogType: Parcelable {
 
 fun DialogType.Translation.toNote() = Note(translation.translation, translation.original, span.start, span.end - span.start, "")
 
-data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note)
+@Parcelize
+data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note): Parcelable
 
 /**
  * Return class for the UI, used to display the paragraph with the notes

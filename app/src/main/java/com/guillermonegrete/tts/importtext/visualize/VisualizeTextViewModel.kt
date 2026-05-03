@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guillermonegrete.tts.Event
 import com.guillermonegrete.tts.common.models.Span
-import com.guillermonegrete.tts.data.DialogState
+import com.guillermonegrete.tts.data.DialogStateList
 import com.guillermonegrete.tts.data.Result
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.data.preferences.SettingsRepository
@@ -37,7 +37,6 @@ import com.guillermonegrete.tts.webreader.model.ModifiedNote
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -57,7 +56,7 @@ class VisualizeTextViewModel @Inject constructor(
     private val wordDAO: WordsDAO,
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
-    private val savedStateHandle: SavedStateHandle,
+    savedStateHandle: SavedStateHandle,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): ViewModel() {
 
@@ -118,16 +117,16 @@ class VisualizeTextViewModel @Inject constructor(
     private val _updatedNote = MutableSharedFlow<ModifiedNote>()
     val updatedNote: SharedFlow<ModifiedNote> = _updatedNote
 
-    private val _linksForWord = MutableStateFlow<DialogState<List<ExternalLink>>>(DialogState.Empty)
-    val linksForWord: StateFlow<DialogState<List<ExternalLink>>> = _linksForWord
+    private val _linksForWord = savedStateHandle.getMutableStateFlow<DialogStateList<ExternalLink>>("wordLinks", DialogStateList.Empty)
+    val linksForWord: StateFlow<DialogStateList<ExternalLink>> = _linksForWord
 
-    private val _selectedLink = MutableStateFlow(0)
+    private val _selectedLink = savedStateHandle.getMutableStateFlow("selectedLink", 0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
-    private val _dialogState = savedStateHandle.getMutableStateFlow<UiDialogState>("dialog", UiDialogState())
+    private val _dialogState = savedStateHandle.getMutableStateFlow("dialogState", UiDialogState())
     val dialogState: StateFlow<UiDialogState> = _dialogState
 
-    private val _editDialogs = MutableStateFlow(UiEditDialogsState())
+    private val _editDialogs = savedStateHandle.getMutableStateFlow("editDialogsState", UiEditDialogsState())
     val editDialogs: StateFlow<UiEditDialogsState> = _editDialogs
 
     // Settings
@@ -570,12 +569,12 @@ class VisualizeTextViewModel @Inject constructor(
             val links = getExternalLinksInteractor(languageFrom, word)
             // If out of index, default to the first item
             if(_selectedLink.value >= links.size) _selectedLink.value = 0
-            _linksForWord.value = DialogState.Success(links)
+            _linksForWord.value = DialogStateList.Success(links)
         }
     }
 
     fun hideWordLinks() {
-        _linksForWord.value = DialogState.Empty
+        _linksForWord.value = DialogStateList.Empty
     }
 
     fun setWordLink(position: Int) {
