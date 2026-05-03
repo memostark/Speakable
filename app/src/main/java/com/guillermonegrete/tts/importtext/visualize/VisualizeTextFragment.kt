@@ -63,7 +63,6 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.toEditNote
 import com.guillermonegrete.tts.common.models.toNote
 import com.guillermonegrete.tts.common.models.toUI
-import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.NoteType
@@ -92,6 +91,7 @@ import kotlin.math.abs
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.setFragmentResultListener
 import com.guillermonegrete.tts.common.notes.NotesListFragment
+import com.guillermonegrete.tts.data.DialogStateList
 import com.guillermonegrete.tts.webreader.db.BookPosition
 import com.guillermonegrete.tts.webreader.db.Note
 
@@ -532,13 +532,13 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                     launch {
                         linksForWord.collect { state ->
                             when(state) {
-                                DialogState.Empty -> linksDialogShown.value = false
-                                is DialogState.Error -> {
+                                DialogStateList.Empty -> linksDialogShown.value = false
+                                is DialogStateList.Error -> {
                                     Timber.e(state.exception, "Error retrieving links for word")
                                     linksDialogShown.value = false
                                 }
-                                DialogState.Loading -> {}
-                                is DialogState.Success -> {
+                                DialogStateList.Loading -> {}
+                                is DialogStateList.Success -> {
                                     val links = state.data
                                     wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
 
