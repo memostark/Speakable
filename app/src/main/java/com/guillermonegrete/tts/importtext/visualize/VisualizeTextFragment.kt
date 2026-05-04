@@ -133,6 +133,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private var selectedLinkPos = mutableIntStateOf(0)
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
+    private var languageFromState = mutableStateOf<String?>(null)
     private var clickedWord = ""
 
     private var splitterCreated = false
@@ -456,6 +457,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                     binding.readerCurrentChapter.visibility = View.VISIBLE
                 }
 
+                languageFromState.value = it.metadata.setLanguage
+
                 binding.showTocBtn.setOnClickListener { contentsMenuVisible.value = true }
                 binding.showTocBtn.isVisible = true
             }
@@ -678,7 +681,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             }
 
             override fun onLanguageFromChanged(position: Int) {
-                viewModel.languageFrom = if (position == 0) "auto" else languagesISO[position - 1]
+                val newLang = if (position == 0) "auto" else languagesISO[position - 1]
+                viewModel.languageFrom = newLang
+                languageFromState.value = newLang
             }
         }
 
@@ -1185,6 +1190,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     @Composable
     fun Sheet() {
         val noteInfo by remember { noteInfo }
+        val languageFrom by remember { languageFromState }
         var noteSheetVisible by remember { noteSheetVisible }
         callback.isEnabled = noteSheetVisible
 
@@ -1194,7 +1200,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             infoButtonVisibility = {
                 val noteSpanText = noteInfo?.text
                 val isWord = noteSpanText != null && noteSpanText.split(" ").size == 1
-                return@NoteSheet viewModel.languageFrom != "auto" && isWord
+                return@NoteSheet languageFrom != "auto" && isWord
             },
             onEditClicked = viewModel::startEditing,
             onInfoClicked = {
