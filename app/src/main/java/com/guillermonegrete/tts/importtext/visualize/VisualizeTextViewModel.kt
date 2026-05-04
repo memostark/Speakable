@@ -179,7 +179,11 @@ class VisualizeTextViewModel @Inject constructor(
                 spineSize = parsedBook.spine.size
                 currentBook = parsedBook
                 fileType = ImportedFileType.EPUB
-                _book.value = parsedBook
+
+                val dbBook = getBookFile() ?: createNewBook()
+                databaseBookFile = dbBook
+                val metadata = parsedBook.metadata.copy(setLanguage = dbBook?.language)
+                _book.value = parsedBook.copy(metadata = metadata)
 
                 initPageSplit(true)
                 _dataLoading.value = false
@@ -243,8 +247,6 @@ class VisualizeTextViewModel @Inject constructor(
 
     private suspend fun initPageSplit(isEpub: Boolean = false) {
         if(isEpub){
-            databaseBookFile = getBookFile()
-            if (databaseBookFile == null) databaseBookFile = createNewBook()
             val initialChapter = if(currentChapter == -1)
                 databaseBookFile?.chapter?.coerceAtLeast(0) ?: 0 else currentChapter
 
