@@ -1,14 +1,17 @@
 package com.guillermonegrete.tts.common.models
 
+import android.os.Parcelable
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.Words
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class WordUI(
     val word: String,
     val lang: String,
     val definition: String,
     val notes: String? = null
-) {
+): Parcelable {
     fun toWord() = Words(word, lang, definition).also { dbWord ->
         dbWord.notes = notes
     }

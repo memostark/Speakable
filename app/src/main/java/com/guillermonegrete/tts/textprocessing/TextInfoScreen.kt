@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.textprocessing
 
+import android.os.Parcelable
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.animation.core.tween
@@ -94,6 +95,8 @@ import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
+import kotlinx.parcelize.IgnoredOnParcel
+import kotlinx.parcelize.Parcelize
 import kotlin.math.roundToInt
 
 @Composable
@@ -595,11 +598,14 @@ fun ClickableText(
 
 const val EDIT_WORD_DIALOG_TAG = "edit word dialog tag"
 
+@Parcelize
 data class WordState(
     val word: WordUI,
     val dbId: Int = NOT_SAVED_ID,
     val span: Span? = null,
-) {
+): Parcelable {
+
+    @IgnoredOnParcel
     val isSaved = dbId != NOT_SAVED_ID
 }
 

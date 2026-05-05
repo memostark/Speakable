@@ -1,15 +1,18 @@
 package com.guillermonegrete.tts.textprocessing
 
+import android.os.Parcelable
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class SentenceDialogUIState(
     val isLoading: Boolean = false,
     val translation: Translation? = null,
     val highlights: SplitPageSpan? = null,
     val selectedWord: WordState? = null,
     val hasError: String? = null,
-) {
+): Parcelable {
     class Builder(origin: SentenceDialogUIState) {
         private var isLoading = origin.isLoading
         private var translation = origin.translation
@@ -28,7 +31,8 @@ data class SentenceDialogUIState(
     }
 }
 
+@Parcelize
 data class SentenceEditingUIState @JvmOverloads constructor(
     val isEditing: Boolean = false,
     val isDeleteDialogShown: Boolean = false,
-)
+): Parcelable

@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 
 import com.guillermonegrete.tts.common.models.Span;
@@ -16,7 +17,7 @@ import com.guillermonegrete.tts.common.models.WordUI;
 import com.guillermonegrete.tts.customtts.CustomTTS;
 import com.guillermonegrete.tts.customtts.interactors.PlayTTS;
 import com.guillermonegrete.tts.MainThread;
-import com.guillermonegrete.tts.data.DialogState;
+import com.guillermonegrete.tts.data.DialogStateList;
 import com.guillermonegrete.tts.data.Translation;
 import com.guillermonegrete.tts.data.source.WordRepositorySource;
 import com.guillermonegrete.tts.db.ExternalLink;
@@ -61,8 +62,8 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
     private final GetLangAndTranslation getTranslationInteractor;
     private final GetExternalLink getExternalLink;
 
-    private final MutableLiveData<DialogState<List<ExternalLink>>> wordLinks = new MutableLiveData<>();
-    private final MutableLiveData<Integer> selectedLink = new MutableLiveData<>();
+    private final MutableLiveData<DialogStateList<ExternalLink>> wordLinks;
+    private final MutableLiveData<Integer> selectedLink;
 
     private Words foundWord;
     @Nullable
@@ -76,8 +77,8 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
 
     private final MutableLiveData<GetLayoutResult> layoutResult = new MutableLiveData<>();
     private final MutableLiveData<StatusTTS> ttsStatus = new MutableLiveData<>();
-    private final MutableLiveData<SentenceDialogUIState> sentenceState = new MutableLiveData<>();
-    private final MutableLiveData<SentenceEditingUIState> editDialogs = new MutableLiveData<>();
+    private final MutableLiveData<SentenceDialogUIState> sentenceState;
+    private final MutableLiveData<SentenceEditingUIState> editDialogs;
 
     @Inject
     ProcessTextViewModel(
@@ -88,7 +89,8 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
             SharedPreferences sharedPreferences,
             CustomTTS customTTS,
             GetLangAndTranslation getTranslationInteractor,
-            GetExternalLink getExternalLink){
+            GetExternalLink getExternalLink,
+            SavedStateHandle savedStateHandle){
         executorService = executor;
         mMainThread = mainThread;
         mRepository = repository;
@@ -97,6 +99,11 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
         this.customTTS = customTTS;
         this.getTranslationInteractor = getTranslationInteractor;
         this.getExternalLink = getExternalLink;
+
+        wordLinks = savedStateHandle.getLiveData("wordLinks");
+        selectedLink = savedStateHandle.getLiveData("selectedLink");
+        sentenceState = savedStateHandle.getLiveData("sentenceState");
+        editDialogs = savedStateHandle.getLiveData("editDialogs");
 
         isPlaying = false;
         isAvailable = true;
@@ -258,13 +265,13 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
             // If out of index, default to the first item
             var selected = selectedLink.getValue();
             if(selected != null && selected >= links.size()) selectedLink.postValue(0);
-            wordLinks.postValue(new DialogState.Success<>(links));
+            wordLinks.postValue(new DialogStateList.Success<>(links));
         });
     }
 
     /** @noinspection unchecked*/
     public void hideWordLinks() {
-        wordLinks.setValue(DialogState.Empty.INSTANCE);
+        wordLinks.setValue(DialogStateList.Empty.INSTANCE);
     }
 
     public void setWordLink(int position) {
@@ -440,7 +447,7 @@ public class ProcessTextViewModel extends ViewModel implements ProcessTextContra
         return ttsStatus;
     }
 
-    public @NonNull LiveData<DialogState<List<ExternalLink>>> getWordLinks() {
+    public @NonNull LiveData<DialogStateList<ExternalLink>> getWordLinks() {
         return wordLinks;
     }
 

@@ -42,7 +42,6 @@ import com.guillermonegrete.tts.common.compose.YesNoDialog
 import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.common.models.toUI
 import com.guillermonegrete.tts.customviews.ButtonsPreference
-import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.data.Translation
 import com.guillermonegrete.tts.databinding.DialogFragmentWordBinding
 import com.guillermonegrete.tts.db.ExternalLink
@@ -71,6 +70,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.content.edit
+import com.guillermonegrete.tts.data.DialogStateList
 
 @AndroidEntryPoint
 class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
@@ -281,13 +281,13 @@ class TextInfoDialog: DialogFragment(), ProcessTextContract.View {
 
         presenter.wordLinks.observe(this) { state ->
             when(state) {
-                DialogState.Empty -> linksDialogShown.value = false
-                is DialogState.Error -> {
+                DialogStateList.Empty -> linksDialogShown.value = false
+                is DialogStateList.Error -> {
                     Timber.e(state.exception, "Error retrieving links for word")
                     linksDialogShown.value = false
                 }
-                DialogState.Loading -> {}
-                is DialogState.Success -> {
+                DialogStateList.Loading -> {}
+                is DialogStateList.Success -> {
                     val links = state.data
                     wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
 
