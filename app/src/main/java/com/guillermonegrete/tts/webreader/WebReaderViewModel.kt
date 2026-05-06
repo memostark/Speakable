@@ -63,9 +63,9 @@ class WebReaderViewModel @AssistedInject constructor(
     private val webLinkDAO: WebLinkDAO,
     private val noteDAO: NoteDAO,
     private val settings: SettingsRepository,
-    savedStateHandle: SavedStateHandle,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ): ViewModel() {
 
     private val _page = MutableLiveData<LoadResult<PageInfo>>()
