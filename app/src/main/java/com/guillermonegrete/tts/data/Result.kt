@@ -3,7 +3,6 @@ package com.guillermonegrete.tts.data
 import android.os.Parcelable
 import com.guillermonegrete.tts.db.Words
 import kotlinx.parcelize.Parcelize
-import kotlinx.parcelize.RawValue
 import java.lang.Exception
 
 sealed class Result<out T> {
@@ -28,10 +27,11 @@ sealed class LoadResult<out T>{
 /**
  * Similar to [LoadResult] but specific for dialogs with an additional state for then the dialog is hidden/empty.
  */
-sealed class DialogState<out T>{
+@Parcelize
+sealed class DialogState<out T>: Parcelable{
 
     data object Empty: DialogState<Nothing>()
-    data class Success<out T>(val data: T): DialogState<T>()
+    data class Success<out T: Parcelable>(val data: T): DialogState<T>()
     data class Error<out T>(val exception: Exception): DialogState<T>()
     data object Loading : DialogState<Nothing>()
 }
