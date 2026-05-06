@@ -37,7 +37,6 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -64,6 +63,7 @@ class WebReaderViewModel @AssistedInject constructor(
     private val webLinkDAO: WebLinkDAO,
     private val noteDAO: NoteDAO,
     private val settings: SettingsRepository,
+    savedStateHandle: SavedStateHandle,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): ViewModel() {
@@ -79,22 +79,22 @@ class WebReaderViewModel @AssistedInject constructor(
     val translatedParagraphs: List<Translation?>
         get() = _translatedParagraphs
 
-    private val _paragraphState = MutableStateFlow<ParagraphUiState>(ParagraphUiState())
+    private val _paragraphState = savedStateHandle.getMutableStateFlow("paragraphState", ParagraphUiState())
     val paragraphState: StateFlow<ParagraphUiState> = _paragraphState
 
-    private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
+    private val _dialogState = savedStateHandle.getMutableStateFlow("dialogState", UiDialogState())
     val dialogState: StateFlow<UiDialogState> = _dialogState
 
-    private val _editDialogs = MutableStateFlow<UiEditDialogsState>(UiEditDialogsState())
+    private val _editDialogs = savedStateHandle.getMutableStateFlow("editDialogs", UiEditDialogsState())
     val editDialogs: StateFlow<UiEditDialogsState> = _editDialogs
 
-    private val _linksForWord = MutableStateFlow<DialogState<WordAndLinks>>(DialogState.Empty)
+    private val _linksForWord = savedStateHandle.getMutableStateFlow<DialogState<WordAndLinks>>("linksForWord", DialogState.Empty)
     val linksForWord: StateFlow<DialogState<WordAndLinks>> = _linksForWord
 
-    private val _linksSheetExpanded = MutableStateFlow<Boolean?>(null)
+    private val _linksSheetExpanded = savedStateHandle.getMutableStateFlow<Boolean?>("linksSheetExpanded", null)
     val linksSheetExpanded: StateFlow<Boolean?> = _linksSheetExpanded
 
-    private val _selectedLink = MutableStateFlow(0)
+    private val _selectedLink = savedStateHandle.getMutableStateFlow("selectedLink", 0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
     private val _notes = MutableSharedFlow<List<Note>>()
@@ -946,6 +946,7 @@ class WebReaderViewModel @AssistedInject constructor(
         private const val PAGE_FILENAME = "content.xml"
     }
 
+    @Parcelize
     data class UiDialogState(
         val isLoading: Boolean = false,
         val isWordLoading: Boolean = false,
@@ -953,7 +954,7 @@ class WebReaderViewModel @AssistedInject constructor(
         val dialogState: DialogType? = null,
         val sentence: Sentence? = null,
         val error: String? = null,
-    )
+    ): Parcelable
 
     @Parcelize
     data class UiEditDialogsState(
@@ -962,11 +963,12 @@ class WebReaderViewModel @AssistedInject constructor(
         val isPickingType: InfoType? = null,
     ): Parcelable
 
+    @Parcelize
     data class ParagraphUiState(
         val paragraph: SelectedParagraph? = null,
         val paragraphIndex: Int? = null,
         val sentenceIndex: Int? = null,
-    )
+    ): Parcelable
 
     @AssistedFactory
     interface Factory {
@@ -977,14 +979,16 @@ class WebReaderViewModel @AssistedInject constructor(
 @Parcelize
 data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = ""): Parcelable
 
-data class Sentence(val text: String, val paragraphIndex: Int)
+@Parcelize
+data class Sentence(val text: String, val paragraphIndex: Int): Parcelable
 
+@Parcelize
 data class SelectedParagraph(
     val index: Int,
     val isLoading: Boolean = false,
     val translation: Translation? = null,
     val highlights: SplitPageSpan? = null,
-)
+): Parcelable
 
 @Parcelize
 sealed interface DialogType: Parcelable {
