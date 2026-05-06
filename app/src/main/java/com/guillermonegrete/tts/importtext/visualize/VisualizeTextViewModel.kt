@@ -56,8 +56,8 @@ class VisualizeTextViewModel @Inject constructor(
     private val wordDAO: WordsDAO,
     private val getTranslationInteractor: GetLangAndTranslation,
     private val getExternalLinksInteractor: GetExternalLink,
-    savedStateHandle: SavedStateHandle,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ): ViewModel() {
 
     var pageSplitter: PageSplitter? = null

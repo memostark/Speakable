@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.SavedStateHandle;
 
 import com.guillermonegrete.tts.LiveDataTestUtilKt;
 import com.guillermonegrete.tts.customtts.CustomTTS;
@@ -102,7 +103,7 @@ public class ProcessTextViewModelTest {
         var mainThread = new TestMainThread();
         var executor = new TestThreadExecutor();
         var getExternalLink = new GetExternalLink(executor, mainThread, linksRepository, Dispatchers.getUnconfined());
-        var presenter = new ProcessTextViewModel(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink);
+        var presenter = new ProcessTextViewModel(executor, mainThread, wordRepository, dictionaryRepository, sharedPreferences, customTTS, getTranslationInteractor, getExternalLink, new SavedStateHandle());
         presenter.setView(view);
         return presenter;
     }
