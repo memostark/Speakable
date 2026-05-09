@@ -51,7 +51,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
         defaultBGColor = MaterialColors.getColor(recyclerView.getContext(), com.google.android.material.R.attr.colorSurface, Color.TRANSPARENT);
-        activeItemColor = MaterialColors.getColor(recyclerView.getContext(), com.google.android.material.R.attr.colorControlActivated, Color.LTGRAY);
+        activeItemColor = MaterialColors.getColor(recyclerView.getContext(), androidx.appcompat.R.attr.colorControlActivated, Color.LTGRAY);
     }
 
     @NonNull
@@ -104,6 +104,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             return true;
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         @Override
         public void onDestroyActionMode(ActionMode actionMode) {
             multiSelect = false;
@@ -181,7 +182,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             if (selectedItems.contains(word)) {
                 container.setBackgroundColor(activeItemColor);
             } else {
-                container.setBackgroundColor(getAdapterPosition() % 2 == 1 ? defaultBGColor : variantBGColor);
+                container.setBackgroundColor(getBindingAdapterPosition() % 2 == 1 ? defaultBGColor : variantBGColor);
             }
         }
 
@@ -202,7 +203,7 @@ public class SavedWordListAdapter extends RecyclerView.Adapter<SavedWordListAdap
             if (multiSelect) {
                 if (selectedItems.contains(item)) {
                     selectedItems.remove(item);
-                    container.setBackgroundColor(getAdapterPosition() % 2 == 1 ? defaultBGColor : variantBGColor);
+                    container.setBackgroundColor(getBindingAdapterPosition() % 2 == 1 ? defaultBGColor : variantBGColor);
                 } else {
                     selectedItems.add(item);
                     container.setBackgroundColor(activeItemColor);
