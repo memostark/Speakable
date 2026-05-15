@@ -47,6 +47,7 @@ import kotlin.math.min
 import androidx.core.graphics.toColorInt
 import androidx.core.view.iterator
 import com.guillermonegrete.tts.common.models.Gestures
+import com.guillermonegrete.tts.common.models.hasInside
 import com.guillermonegrete.tts.utils.count
 import com.guillermonegrete.tts.utils.findWord
 import timber.log.Timber
@@ -199,6 +200,7 @@ class ParagraphAdapter(
                         when (payload) {
                             PayloadParagraph.Highlights -> holder.highlightSentences()
                             is PayloadParagraph.Translation -> holder.onLoadingTranslation(payload.result)
+                            PayloadParagraph.Word -> holder.highlightWord(items[position])
                         }
                     }
                 }
@@ -755,6 +757,18 @@ class ParagraphAdapter(
         }
     }
 
+    fun unselectParagraphWord() {
+        if(selectedWordPos != -1) {
+            val previousItem = items[selectedWordPos]
+            previousItem.selectedWord = null
+            notifyItemChanged(selectedWordPos, PayloadParagraph.Word)
+            selectedWordPos = -1
+            selectedWordSpan = null
+            isOverlappingNotes = false
+            isOverlappingSavedWord = false
+        }
+    }
+
     fun unselectParagraph(){
         selectParagraph(-1)
     }
@@ -767,6 +781,17 @@ class ParagraphAdapter(
         item.selectedWord = item.toLocal(absSpan)
         selectedWordPos = pos
         notifyItemChanged(pos, Payload.Text)
+    }
+
+    fun selectParagraphWord(absSpan: Span) {
+        selectedWordSpan = absSpan
+        val pos = getCharListIndex(absSpan.start)
+        if (pos == -1) return
+        val item = items[pos]
+        val localSpan = item.toLocal(absSpan)
+        item.selectedWord = localSpan
+        selectedWordPos = pos
+        notifyItemChanged(pos, PayloadParagraph.Word)
     }
 
     fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
@@ -895,6 +920,11 @@ class ParagraphAdapter(
 
         private val noTranslationText: CharSequence = itemView.context.getText(R.string.paragraph_not_translated)
 
+        /**
+         * Background span of the selected word
+         */
+        private var selectionSpan: BackgroundColorSpan? = null
+
         init {
             with(binding){
 
@@ -902,21 +932,23 @@ class ParagraphAdapter(
                     onParagraphEvent(ParagraphEvent.ToggleClick())
                 }
 
-                var clickedWord: String? = null
+                var wordSpan: Span? = null
 
                 // Handles click
                 paragraph.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = paragraph.getOffsetForPosition(event.x, event.y)
-                        val wordSpan = paragraph.findWordForRightHanded(offset)
-                        clickedWord = paragraph.text.substring(wordSpan.start, wordSpan.end)
+                        wordSpan = paragraph.findWordForRightHanded(offset)
                     }
                     return@setOnTouchListener false
                 }
 
                 paragraph.setOnClickListener {
-                    clickedWord?.let { word -> onParagraphEvent(ParagraphEvent.TopClick(word, bindingAdapterPosition)) }
-                    clickedWord = null
+                    wordSpan?.let { span ->
+                        val item = items[bindingAdapterPosition]
+                        onParagraphEvent(ParagraphEvent.TopClick(paragraph.text.substring(span.start, span.end), bindingAdapterPosition, item.toAbsolute(span)))
+                    }
+                    wordSpan = null
                 }
 
                 translatedParagraph.setOnTouchListener { _, event ->
@@ -937,6 +969,7 @@ class ParagraphAdapter(
 
             setTranslation()
             highlightSentences()
+            highlightWord(item)
         }
 
         fun setTranslation() {
@@ -949,6 +982,25 @@ class ParagraphAdapter(
             val spans = expandedItem?.highlights ?: return
             binding.paragraph.setHighlightedText(spans.topSpan.start, spans.topSpan.end)
             binding.translatedParagraph.setHighlightedText(spans.bottomSpan.start, spans.bottomSpan.end)
+        }
+
+        /**
+         * Set the highlighted span without reassigning the text to the TextView.
+         */
+        fun highlightWord(item: ParagraphItem) {
+            val text = binding.paragraph.text as? Spannable
+            selectionSpan?.let { text?.removeSpan(it) }
+
+            val span = item.selectedWord
+            if (span != null) {
+                val spans = expandedItem?.highlights
+                val isWordInside = spans?.topSpan?.hasInside(span) ?: false
+                val color = if (isWordInside) wordInsideColor else textHighlightColor
+                selectionSpan = BackgroundColorSpan(color)
+                text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else {
+                selectionSpan = null
+            }
         }
 
         fun onLoadingTranslation(result: LoadResult<Unit>) {
@@ -1063,6 +1115,7 @@ class ParagraphAdapter(
         val index: Int,
         val translation: String? = null,
         val highlights: SplitPageSpan? = null,
+        val wordSpan: Span? = null,
     )
 
     private fun Span.toLocal(paragraphItem: ParagraphItem): Span {
@@ -1214,7 +1267,7 @@ class ParagraphAdapter(
 
     sealed interface ParagraphEvent {
         class ToggleClick: ParagraphEvent
-        data class TopClick(val word: String, val position: Int): ParagraphEvent
+        data class TopClick(val word: String, val position: Int, val wordSpan: Span): ParagraphEvent
         data class BottomClick(val itemIndex: Int, val charPos: Int): ParagraphEvent
     }
 
@@ -1234,6 +1287,7 @@ class ParagraphAdapter(
     sealed interface PayloadParagraph {
         data object Highlights: PayloadParagraph
         data class Translation(val result: LoadResult<Unit>): PayloadParagraph
+        data object Word: PayloadParagraph
     }
 
     sealed interface Highlight {

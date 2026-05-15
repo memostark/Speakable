@@ -502,10 +502,11 @@ class WebReaderViewModel @AssistedInject constructor(
      *
      * In this case, retrieves the external link for the language of the word and emits them.
      */
-    fun onWordClicked(word: String, pos: Int) {
+    fun onParagraphWordClicked(word: String, pos: Int, wordSpan: Span) {
 
         // first try to get the language from a translation, if not from the set language, else ignore.
         val lang = translatedParagraphs.getOrNull(pos)?.src ?: cacheWebLink?.language ?: return
+        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(selectedWord = wordSpan)) }
 
         getLinksForWord(word, lang)
     }
@@ -532,6 +533,7 @@ class WebReaderViewModel @AssistedInject constructor(
     fun hideWordLinks() {
         _linksForWord.value = DialogState.Empty
         _linksSheetExpanded.value = null
+        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(selectedWord = null)) }
     }
 
     fun setWordLink(position: Int) {
@@ -988,6 +990,7 @@ data class SelectedParagraph(
     val isLoading: Boolean = false,
     val translation: Translation? = null,
     val highlights: SplitPageSpan? = null,
+    val selectedWord: Span? = null,
 ): Parcelable
 
 @Parcelize

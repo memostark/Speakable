@@ -137,7 +137,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 when (it) {
                     is ParagraphAdapter.ParagraphEvent.BottomClick -> viewModel.setSentenceInParagraph(it.itemIndex, it.charPos)
                     is ParagraphAdapter.ParagraphEvent.ToggleClick -> viewModel.paragraphSelected(null)
-                    is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onWordClicked(it.word, it.position)
+                    is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onParagraphWordClicked(it.word, it.position, it.wordSpan)
                 }
             },
             onTextHighlighted = {
@@ -732,8 +732,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 if (paragraph.isLoading) {
                                     adapter.setParagraphLoading()
                                 } else {
-                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
+                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights, paragraph.selectedWord)
                                     adapter.displayParagraph(paragraphUi)
+                                    if (paragraph.selectedWord != null)
+                                        adapter.selectParagraphWord(paragraph.selectedWord)
+                                    else
+                                        adapter.unselectParagraphWord()
                                 }
                             } else {
                                 adapter.unselectParagraph()
