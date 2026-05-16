@@ -741,6 +741,7 @@ class ParagraphAdapter(
             val previousItem = items[selectedWordPos]
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, Payload.Text)
+            notifyItemChanged(selectedWordPos, PayloadParagraph.Word)
             selectedWordPos = -1
             selectedWordSpan = null
             isOverlappingNotes = false
@@ -762,6 +763,7 @@ class ParagraphAdapter(
             val previousItem = items[selectedWordPos]
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, PayloadParagraph.Word)
+            notifyItemChanged(selectedWordPos, Payload.Text)
             selectedWordPos = -1
             selectedWordSpan = null
             isOverlappingNotes = false
