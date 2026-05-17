@@ -702,7 +702,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         backPressedCallback.isEnabled = false
-                        adapter.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
                         viewModel.clearTextInfo()
@@ -932,6 +931,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         null -> {
                             deleteDialogVisible.value = false
                             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                            if (!viewModel.paragraphWordSelected()) adapter.unselectWord()
                         }
                     }
                 }
