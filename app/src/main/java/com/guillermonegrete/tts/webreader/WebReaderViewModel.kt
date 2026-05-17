@@ -313,6 +313,8 @@ class WebReaderViewModel @AssistedInject constructor(
             // The word might be saved, query the database first to check
             searchSavedWord(word, null, span)
         }
+
+        hideWordLinks()
     }
 
     fun translateText(text: String, span: Span, overlapsNote: Boolean, overlapsWord: Boolean) {
@@ -506,6 +508,7 @@ class WebReaderViewModel @AssistedInject constructor(
 
         // first try to get the language from a translation, if not from the set language, else ignore.
         val lang = translatedParagraphs.getOrNull(pos)?.src ?: cacheWebLink?.language ?: return
+        clearTextInfo()
         _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(selectedWord = wordSpan)) }
 
         getLinksForWord(word, lang)
@@ -551,6 +554,8 @@ class WebReaderViewModel @AssistedInject constructor(
     fun getCharPos() = cacheWebLink?.charPosition ?: 0
 
     fun getGesturePreferences() = settings.getGestures()
+
+    fun paragraphWordSelected() = _paragraphState.value.paragraph?.selectedWord != null
 
     private fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
         val iterator = BreakIterator.getSentenceInstance()
