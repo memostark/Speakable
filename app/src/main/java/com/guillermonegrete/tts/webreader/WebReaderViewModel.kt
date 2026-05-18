@@ -368,6 +368,7 @@ class WebReaderViewModel @AssistedInject constructor(
             null
         }
 
+        hideWordLinks()
         _dialogState.update { it.copy(dialogState = DialogType.Note(note), sentence = sentence) }
     }
 
@@ -389,6 +390,7 @@ class WebReaderViewModel @AssistedInject constructor(
             unselectSentence()
         }
 
+        hideWordLinks()
         launchWordJob(id, wordSpan)
     }
 
@@ -898,6 +900,8 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun sentenceSelected(paragraphIndex: Int, sentenceIndex: Int) {
         _paragraphState.update { it.copy(paragraphIndex = paragraphIndex, sentenceIndex = sentenceIndex, paragraph = null) }
+        _linksForWord.value = DialogState.Empty
+        _linksSheetExpanded.value = null
         _dialogState.update { it.copy(sentence = null, dialogState = null) }
     }
 
