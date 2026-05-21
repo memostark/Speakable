@@ -505,6 +505,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
         }
+        adapter.unselectWord()
     }
 
     private fun showSheetInfo(info: WordUI, isWord: Boolean) {
