@@ -920,6 +920,7 @@ class WebReaderViewModel @AssistedInject constructor(
             _paragraphState.update { it.copy(paragraph = null) }
         } else {
             _paragraphState.update { it.copy(paragraph = SelectedParagraph(index), paragraphIndex = null, sentenceIndex = null) }
+            clearTextInfo()
         }
     }
 
