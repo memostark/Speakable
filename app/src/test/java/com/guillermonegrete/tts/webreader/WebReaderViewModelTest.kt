@@ -409,7 +409,7 @@ class WebReaderViewModelTest {
         viewModel.linksForWord.test {
             assertEquals(DialogState.Empty, awaitItem())
             val word = "hola"
-            viewModel.onWordClicked(word, 0)
+            viewModel.onParagraphWordClicked(word, 0, Span(0, 2))
             val expected = DialogState.Success(WordAndLinks(word, links))
             assertEquals(expected, awaitItem())
         }
