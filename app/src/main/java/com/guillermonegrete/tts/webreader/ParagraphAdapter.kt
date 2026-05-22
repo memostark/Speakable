@@ -100,7 +100,8 @@ class ParagraphAdapter(
     /**
      * The position of the paragraph in the list that contains the selected word.
      */
-    private var selectedWordPos = -1
+    var selectedWordPos = -1
+        private set
     /**
      * Used to restore the selected word if the items are reloaded (e.g. during config change)
      */
@@ -758,7 +759,8 @@ class ParagraphAdapter(
     }
 
     fun unselectParagraphWord() {
-        if(selectedWordPos != -1) {
+        val expandedPos = expandedItem?.index
+        if(selectedWordPos != -1 && expandedPos == selectedWordPos) {
             val previousItem = items[selectedWordPos]
             previousItem.selectedWord = null
             notifyItemChanged(selectedWordPos, PayloadParagraph.Word)

@@ -909,18 +909,28 @@ class WebReaderViewModel @AssistedInject constructor(
         _paragraphState.update { it.copy(paragraphIndex = null, sentenceIndex = null) }
     }
 
-    fun paragraphSelected(index: Int?) {
+    fun paragraphSelected(index: Int?, pos: Int? = null) {
         if (index == null) {
             _paragraphState.update { it.copy(paragraph = null) }
             return
         }
 
-        val paragraph = _paragraphState.value.paragraph
+        val state = _paragraphState.value
+        val paragraph = state.paragraph
         if (paragraph?.index == index) {
             _paragraphState.update { it.copy(paragraph = null) }
         } else {
-            _paragraphState.update { it.copy(paragraph = SelectedParagraph(index), paragraphIndex = null, sentenceIndex = null) }
-            clearTextInfo()
+            val dialog = _dialogState.value
+            if (dialog.sentence?.paragraphIndex == index) {
+                // unselect sentence if it's in the same paragraph
+                clearTextInfo()
+                _paragraphState.update { it.copy(paragraph = SelectedParagraph(index), paragraphIndex = null, sentenceIndex = null) }
+            } else {
+                if (dialog.dialogState is DialogType.Note ||
+                    dialog.dialogState is DialogType.SavedWord ||
+                    index == pos) clearTextInfo()
+                _paragraphState.update { it.copy(paragraph = SelectedParagraph(index)) }
+            }
         }
     }
 

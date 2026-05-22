@@ -132,7 +132,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             viewModel,
             viewModel.getGesturePreferences(),
             onSentenceSelected = viewModel::sentenceSelected,
-            onParagraphSelected = viewModel::paragraphSelected,
+            onParagraphSelected = { viewModel.paragraphSelected(it, adapter.selectedWordPos) },
             onParagraphEvent = {
                 when (it) {
                     is ParagraphAdapter.ParagraphEvent.BottomClick -> viewModel.setSentenceInParagraph(it.itemIndex, it.charPos)
