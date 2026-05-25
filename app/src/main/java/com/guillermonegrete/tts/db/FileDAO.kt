@@ -30,4 +30,7 @@ interface FileDAO {
 
     @Upsert
     suspend fun upsert(file: BookFile): Long
+
+    @Update(entity = BookFile::class)
+    suspend fun updateFile(user: BookUriUpdate)
 }

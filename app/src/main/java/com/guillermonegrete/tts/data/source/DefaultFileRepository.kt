@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.data.source
 
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.BookUriUpdate
 import com.guillermonegrete.tts.db.FileDAO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -41,5 +42,9 @@ class DefaultFileRepository @Inject constructor(private val fileDAO: FileDAO): F
         withContext(Dispatchers.IO){
             fileDAO.delete(file)
         }
+    }
+
+    override suspend fun update(target: BookUriUpdate) {
+        fileDAO.updateFile(target)
     }
 }

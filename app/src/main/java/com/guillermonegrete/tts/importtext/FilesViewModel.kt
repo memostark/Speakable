@@ -4,6 +4,7 @@ import androidx.lifecycle.*
 import com.guillermonegrete.tts.data.LoadResult
 import com.guillermonegrete.tts.data.source.FileRepository
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.BookUriUpdate
 import com.guillermonegrete.tts.importtext.visualize.io.EpubFileManager
 import com.guillermonegrete.tts.utils.deleteAllFolder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +24,9 @@ class FilesViewModel @Inject constructor(
         .catch { emit(LoadResult.Error(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LoadResult.Loading)
 
+    private val _updateFile = MutableSharedFlow<BookUriUpdate>()
+    val updateFile: SharedFlow<BookUriUpdate> = _updateFile
+
     val filesPath = fileManager.filesDir
 
     fun deleteFile(file: BookFile) {
@@ -30,6 +34,14 @@ class FilesViewModel @Inject constructor(
             fileRepository.deleteFile(file)
             val folder = File(filesPath, file.folderPath)
             deleteAllFolder(folder)
+        }
+    }
+
+    fun updateUri(uri: String, fileId: Int) {
+        viewModelScope.launch {
+            val update = BookUriUpdate(fileId, uri)
+            fileRepository.update(update)
+            _updateFile.emit(update)
         }
     }
 }

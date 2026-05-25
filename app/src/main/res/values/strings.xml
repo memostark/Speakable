@@ -210,6 +210,8 @@
     <string name="pick_epub_file">Pick EPUB file</string>
     <string name="pick_file">pick file</string>
     <string name="no_recent_files">No recent files</string>
+    <string name="file_opening_error_dialog_title">Error opening file</string>
+    <string name="file_error_dialog_message">Couldn\'t find the file in the saved location. Would you like to pick a new location?</string>
 
     <!--Translation fragment-->
     <string name="language_to">Language to</string>
