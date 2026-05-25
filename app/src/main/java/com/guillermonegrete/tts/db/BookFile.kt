@@ -37,3 +37,10 @@ data class BookFile(
     var lastRead: Calendar = Calendar.getInstance(),
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "bookFileId") var id: Int = 0
 )
+
+@Entity(tableName = "book_files")
+data class BookUriUpdate(
+    @ColumnInfo(name = "bookFileId")
+    val id: Int,
+    val uri: String,
+)
