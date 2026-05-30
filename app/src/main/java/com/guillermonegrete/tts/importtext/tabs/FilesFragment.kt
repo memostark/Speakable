@@ -12,6 +12,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -54,6 +56,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
     private val binding get() = _binding!!
 
     private var fileType = ImportedFileType.TXT
+    private var fileId: Int? = null
 
     private val viewModel: FilesViewModel by viewModels()
 
@@ -61,6 +64,14 @@ class FilesFragment: Fragment(R.layout.files_layout) {
     private var fabBottomMargin = 0
 
     private lateinit var pickFile: ActivityResultLauncher<Intent>
+    private val pickNewEpubUri = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@registerForActivityResult
+
+        fileId?.let {
+            viewModel.updateUri(uri.toString(), it)
+            fileId = null
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,7 +137,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                 }
             })
 
-            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, viewInsets ->
+            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, viewInsets ->
                 val insets = viewInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
                 fabContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     // Also adding the inset top because it was added to the TopBar and this also pushed the FAB down
@@ -151,11 +162,11 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
             val adapter = RecentFilesAdapter(
                 viewModel.filesPath,
-                onClick = { visualizeEpub(Uri.parse(it.uri), it.id) },
+                onClick = { visualizeEpub(it.uri.toUri(), it.id) },
                 onMenuButtonClick = {
                     RecentFileMenu.newInstance().show(childFragmentManager, "Item menu")
                     childFragmentManager.setFragmentResultListener(RecentFileMenu.REQUEST_KEY, viewLifecycleOwner) { _, _ ->
-                        // only one option so it has to be delete
+                        // only one option so it has to be deleted
                         viewModel.deleteFile(it)
                     }
                 }
@@ -164,19 +175,43 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    files.collect { uiState ->
-                        when (uiState) {
-                            is LoadResult.Error -> {
-                                Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
-                                Timber.e(uiState.throwable, "Failed fetching recent links")
-                                binding.recentFilesProgressBar.isVisible = false
+
+                    launch {
+                        files.collect { uiState ->
+                            when (uiState) {
+                                is LoadResult.Error -> {
+                                    Toast.makeText(context, "Failed fetching recent links", Toast.LENGTH_SHORT).show()
+                                    Timber.e(uiState.throwable, "Failed fetching recent links")
+                                    binding.recentFilesProgressBar.isVisible = false
+                                }
+                                is LoadResult.Success -> {
+                                    binding.noFilesMessage.isVisible = uiState.data.isEmpty()
+                                    adapter.submitList(uiState.data)
+                                    binding.recentFilesProgressBar.isVisible = false
+                                }
+                                LoadResult.Loading -> binding.recentFilesProgressBar.isVisible = true
                             }
-                            is LoadResult.Success -> {
-                                binding.noFilesMessage.isVisible = uiState.data.isEmpty()
-                                adapter.submitList(uiState.data)
-                                binding.recentFilesProgressBar.isVisible = false
+                        }
+                    }
+
+                    launch {
+                        updateFile.collect { result ->
+                            val uri = result.uri.toUri()
+                            try {
+                                // When getting the uri of a file using "ACTION_OPEN_DOCUMENT" this makes it persistable
+                                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+
+                                val intent = Intent(context, VisualizeTextActivity::class.java).apply {
+                                    action = VisualizeTextFragment.SHOW_EPUB
+                                    putExtra(VisualizeTextFragment.EPUB_URI, uri)
+                                    putExtra(VisualizeTextFragment.FILE_ID, result.id)
+                                }
+
+                                startActivity(intent)
+                            } catch (e: SecurityException){
+                                Timber.e(e, "Couldn't make the uri persistable")
                             }
-                            LoadResult.Loading -> binding.recentFilesProgressBar.isVisible = true
                         }
                     }
                 }
@@ -240,9 +275,8 @@ class FilesFragment: Fragment(R.layout.files_layout) {
         uri: Uri,
         fileId: Int
     ){
-        val uriValidator = UriValidator()
 
-        if (uriValidator.isLoadable(requireContext(), uri)) {
+        if (UriValidator().isLoadable(requireContext(), uri)) {
 
             val intent = Intent(context, VisualizeTextActivity::class.java).apply {
                 action = VisualizeTextFragment.SHOW_EPUB
@@ -251,8 +285,18 @@ class FilesFragment: Fragment(R.layout.files_layout) {
             }
 
             startActivity(intent)
-        }else{
-            Toast.makeText(context, "Couldn't open file", Toast.LENGTH_SHORT).show()
+        } else {
+            val dialog = AlertDialog.Builder(requireContext())
+                .setTitle(R.string.file_opening_error_dialog_title)
+                .setMessage(R.string.file_error_dialog_message)
+                .setNegativeButton(android.R.string.cancel) { dialog1, _ -> dialog1.dismiss() }
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    this.fileId = fileId
+                    val type = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) ImportedFileType.EPUB else ImportedFileType.OCTET_STREAM
+                    pickNewEpubUri.launch(arrayOf(type.mimeType))
+                }
+                .create()
+            dialog.show()
         }
     }
 

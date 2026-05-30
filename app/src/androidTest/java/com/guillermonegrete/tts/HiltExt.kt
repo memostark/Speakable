@@ -5,8 +5,10 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import androidx.annotation.StyleRes
+import androidx.core.os.bundleOf
 import androidx.core.util.Preconditions
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.testing.EmptyFragmentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.CustomTestApplication
@@ -24,7 +26,9 @@ import timber.log.Timber
 inline fun <reified T : Fragment> launchFragmentInHiltContainer(
     fragmentArgs: Bundle? = null,
     @StyleRes themeResId: Int = androidx.fragment.testing.manifest.R.style.FragmentScenarioEmptyFragmentActivityTheme,
-    crossinline action: Fragment.() -> Unit = {}
+    intentExtras: Bundle = bundleOf(),
+    intentAction: String? = null,
+    crossinline action: Fragment.() -> Unit = {},
 ) {
     val startActivityIntent = Intent.makeMainActivity(
         ComponentName(
@@ -35,6 +39,9 @@ inline fun <reified T : Fragment> launchFragmentInHiltContainer(
         "androidx.fragment.app.testing.FragmentScenario.EmptyFragmentActivity.THEME_EXTRAS_BUNDLE_KEY",
         themeResId
     )
+
+    startActivityIntent.putExtras(intentExtras)
+    startActivityIntent.action = intentAction
 
     ActivityScenario.launch<HiltTestActivity>(startActivityIntent).onActivity { activity ->
         val fragment: Fragment = activity.supportFragmentManager.fragmentFactory.instantiate(

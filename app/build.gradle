@@ -1,9 +1,10 @@
 plugins {
+    id 'com.android.application'
     id 'com.google.devtools.ksp'
     id 'org.jetbrains.kotlin.plugin.compose'
+    id 'kotlin-parcelize'
 }
 
-apply plugin: 'com.android.application'
 apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs"
@@ -21,8 +22,8 @@ android {
         applicationId "com.guillermonegrete.tts"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 19
-        versionName "1.23.0"
+        versionCode 20
+        versionName "1.24.0"
         testInstrumentationRunner "com.guillermonegrete.tts.CustomTestRunner"
         vectorDrawables.useSupportLibrary = true
         javaCompileOptions {
@@ -85,18 +86,18 @@ dependencies {
     //  Mockito framework
     testImplementation 'org.mockito:mockito-core:5.15.2'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:5.4.0'
-    testImplementation "io.mockk:mockk:1.13.16"
+    testImplementation "io.mockk:mockk:1.14.9"
 
     implementation 'androidx.preference:preference:1.2.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta4'
-    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'com.google.android.material:material:1.13.0'
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Compose
-    def composeBom = platform('androidx.compose:compose-bom:2025.04.01')
+    def composeBom = platform('androidx.compose:compose-bom:2025.05.01')
     implementation composeBom
     androidTestImplementation composeBom
 
@@ -219,6 +220,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation "androidx.arch.core:core-testing:2.2.0"
     androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
     def espressoVersion = "3.7.0"
     androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
     androidTestImplementation "androidx.test.espresso:espresso-contrib:$espressoVersion"

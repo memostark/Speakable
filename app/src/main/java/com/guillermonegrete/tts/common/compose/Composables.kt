@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -44,7 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -66,7 +69,10 @@ fun YesNoDialog(
         text = if (dialogText != null) { { Text(dialogText) } } else null,
         onDismissRequest = onDismissRequest,
         confirmButton = {
-            TextButton(onClick = onConfirmation) {
+            TextButton(
+                onClick = onConfirmation,
+                modifier = Modifier.testTag(CONFIRM_BTN_TAG),
+            ) {
                 Text(stringResource(android.R.string.ok))
             }
         },
@@ -94,6 +100,7 @@ fun YesNoDialogPreview() {
 @Composable
 fun Spinner(
     list: StringList,
+    modifier: Modifier = Modifier,
     preselected: Int = -1,
     displayText: String? = null,
     onItemSelected: (Int, String) -> Unit = { _, _ -> }
@@ -101,12 +108,18 @@ fun Spinner(
     var selected by remember(preselected) { mutableIntStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
 
-    Box {
+    Box(modifier) {
         Button(
             onClick = { expanded = !expanded },
             contentPadding = PaddingValues(8.dp, end = 0.dp),
+            modifier = Modifier.widthIn(0.dp, 320.dp) // Max recommended width for buttons
         ) {
-            Text(text = displayText ?: list.items.getOrNull(selected) ?: "")
+            Text(
+                text = displayText ?: list.items.getOrNull(selected) ?: "",
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                modifier = Modifier.weight(1f, fill = false).testTag(SPINNER_TEXT_TAG),
+            )
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null
@@ -123,7 +136,7 @@ fun Spinner(
             // The Box's size has to be explicitly defined otherwise it will crash (fillMaxWidth() crashes)
             // See related issue: https://issuetracker.google.com/issues/242398344
             Box(modifier = Modifier.size(width = 200.dp, height = 500.dp)) {
-                LazyColumn {
+                LazyColumn(Modifier.testTag(SPINNER_LIST_TAG)) {
                     itemsIndexed(list.items) { index, item ->
                         DropdownMenuItem(
                             text = { Text(text = item) },
@@ -146,6 +159,7 @@ fun ExternalLinksDialog(
     isShown: Boolean,
     links: ExternalLinkList,
     selection: Int,
+    modifier: Modifier = Modifier,
     onItemClick: (Int) -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
@@ -162,8 +176,7 @@ fun ExternalLinksDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(modifier = Modifier
-            .padding(horizontal = 16.dp)
+        Surface(modifier = modifier
             .clip(RoundedCornerShape(12.dp))
         ) {
             Column(Modifier.height(400.dp)) {
@@ -255,13 +268,16 @@ fun DialogList(
     }
 }
 
+const val SPINNER_TEXT_TAG = "spinner_text"
+const val SPINNER_LIST_TAG = "spinner_list"
 const val DIALOG_LIST_TAG = "dialog list tag"
+const val CONFIRM_BTN_TAG = "confirm_btn"
 
 @Preview
 @Composable
 fun ExternalLinksDialogPreview() {
     AppTheme {
-        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site", "", "") })
+        val links = ExternalLinkList(List(4) { ExternalLinkUI("External site ${it + 1}", "", "") })
         ExternalLinksDialog(true, links, 1)
     }
 }
@@ -274,7 +290,9 @@ fun SpinnerPreview() {
     AppTheme {
         Column {
             Spinner(suggestions)
-            Spinner(suggestions, 0)
+            Spinner(suggestions, preselected =  1)
+            val longText = LoremIpsum(words = 10).values.toList().first()
+            Spinner(StringList(listOf(longText)), preselected = 0)
         }
     }
 }

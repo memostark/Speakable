@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Delete
@@ -23,10 +23,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,9 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,6 +58,7 @@ import com.guillermonegrete.tts.common.compose.YesNoDialog
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesListScreen(
     notes: List<NoteItem>,
@@ -62,10 +69,10 @@ fun NotesListScreen(
 
     Surface  {
         LazyColumn(contentPadding = WindowInsets.systemBars.asPaddingValues()) {
-            items(
+            itemsIndexed(
                 notes,
-                key = { it.id }
-            ) { note ->
+                key = { _, it -> it.id },
+            ) { index, note ->
                 Column(Modifier.fillMaxWidth())  {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column (Modifier.padding(8.dp).weight(1f))  {
@@ -73,11 +80,11 @@ fun NotesListScreen(
                             Text(note.note)
                         }
                         IconButton(
-                            onClick = { selectedNote = note }
+                            onClick = { selectedNote = note },
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Options"
+                                contentDescription = "Options item $index"
                             )
                         }
                     }
@@ -94,10 +101,13 @@ fun NotesListScreen(
     }
 
     selectedNote?.let { note ->
-        NoteItemMenu(onDismiss = { selectedNote = null }) {
-            onMenuAction(it, note)
-            selectedNote = null
-        }
+        NoteItemMenu(
+            onDismiss = { selectedNote = null },
+            onItemClick =  {
+                onMenuAction(it, note)
+                selectedNote = null
+            }
+        )
     }
 }
 
@@ -141,9 +151,10 @@ fun NotesListScreen(
 @Composable
 fun NoteItemMenu(
     onDismiss: () -> Unit,
+    state: SheetState = rememberModalBottomSheetState(),
     onItemClick: (item: NoteMenuItem) -> Unit = {},
 ) {
-    ModalBottomSheet(onDismiss) {
+    ModalBottomSheet(onDismiss, sheetState =  state) {
         Column(modifier = Modifier.padding(horizontal = 8.dp)) {
             val goToDesc = stringResource(R.string.go_to_text)
             DropdownMenuItem(
@@ -156,7 +167,8 @@ fun NoteItemMenu(
             DropdownMenuItem(
                 leadingIcon = { Icon(Icons.Filled.Delete, deleteDesc) },
                 text = { Text(deleteDesc) },
-                onClick = { onItemClick(NoteMenuItem.DELETE) }
+                onClick = { onItemClick(NoteMenuItem.DELETE) },
+                modifier = Modifier.testTag(DELETE_NOTE_BTN_TAG),
             )
         }
     }
@@ -184,22 +196,28 @@ fun SnackBarError(viewModel: NotesListViewModel) {
     }
 }
 
-@Preview
+@PreviewScreenSizes
 @Composable
 fun NotesListScreenPreview() {
     NotesListScreen(dummyNotes)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun NoteItemMenuPreview() {
-    NoteItemMenu ({}) {  }
+    val state = rememberStandardBottomSheetState(
+        initialValue = SheetValue.Expanded
+    )
+    NoteItemMenu ({}, state) {  }
 }
 
 val dummyNotes = listOf(
     NoteItem(0, "Dummy text", "Dummy note text", 0xFF0000FF.toInt(), 10),
-    NoteItem(1, "Another dummy text", "More dummy note text, a text so ridiculously long that there it requires multiple rows", 0xFF00FF00.toInt(), 15),
+    NoteItem(1, "Another dummy text that is long enough to take 2 lines", "More dummy note text, a text so ridiculously long that there it requires multiple rows", 0xFF00FF00.toInt(), 15),
 )
+
+const val DELETE_NOTE_BTN_TAG = "delete_note_btn"
 
 data class NoteItem(
     val id: Long,

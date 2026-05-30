@@ -1,19 +1,20 @@
 package com.guillermonegrete.tts.textprocessing
 
+import android.os.Parcelable
 import android.view.Gravity
 import android.view.WindowManager
-import androidx.compose.animation.core.FloatExponentialDecaySpec
-import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -49,7 +51,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -62,7 +64,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -94,9 +95,10 @@ import com.guillermonegrete.tts.common.models.WordUI
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.ui.theme.AppTheme
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
+import kotlinx.parcelize.IgnoredOnParcel
+import kotlinx.parcelize.Parcelize
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SentenceDialog(
     isVisible: Boolean,
@@ -105,6 +107,7 @@ fun SentenceDialog(
     languagesFrom: StringList,
     languagesTo: StringList,
     targetLangIndex: Int,
+    modifier: Modifier = Modifier,
     playIconState: MutableState<PlayIconState> = mutableStateOf(PlayIconState()),
     sourceLangIndex: Int = 0,
     detectedLanguageState: MutableIntState = mutableIntStateOf(-1),
@@ -135,32 +138,28 @@ fun SentenceDialog(
         wlp.gravity = Gravity.BOTTOM
         window.attributes = wlp
 
-        val density = LocalDensity.current
         val swipeableState = remember {
-            AnchoredDraggableState(
-                SwipeDirection.Initial,
-                { distance -> distance * 0.6f },
-                { with(density) { 125.dp.toPx() }},
-                tween(),
-                FloatExponentialDecaySpec().generateDecayAnimationSpec(),
-            )
+            AnchoredDraggableState(SwipeDirection.Initial)
         }
+        val flingBehavior = AnchoredDraggableDefaults.flingBehavior(
+            swipeableState,
+            { distance -> distance * 0.6f },
+            tween(),
+        )
 
-        Row {
-
-            // The spacers make sure the windows is filling the entire space, otherwise the dialog cuts off the swiping horizontally.
-            Spacer(modifier = Modifier.weight(1f))
-
+        Box(
+            modifier = Modifier.fillMaxWidth(), // prevents dialog from getting cut-off when swiping horizontally
+            contentAlignment = Alignment.Center,
+        ) {
             ElevatedCard(
-                modifier = Modifier
-                    .padding(16.dp)
+                modifier = modifier
                     .onSizeChanged {
                         val sizePx = it.width.toFloat()
                         swipeableState.updateAnchors(
                             DraggableAnchors { SwipeDirection.Initial at 0f; SwipeDirection.Right at sizePx; SwipeDirection.Left at -sizePx }
                         )
                     }
-                    .anchoredDraggable(swipeableState, Orientation.Horizontal)
+                    .anchoredDraggable(swipeableState, Orientation.Horizontal, flingBehavior = flingBehavior)
                     .pointerInput(Unit) {
                         // Because swipeable can only handle one axis at the time we use gestures for the vertical axis
                         detectVerticalDragGestures(
@@ -181,10 +180,10 @@ fun SentenceDialog(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column {
+                    WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
+
                     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
                     if (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT) {
-                        WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
-
                         LanguageBar(
                             languagesFrom, languagesTo, sourceLangIndex, targetLangIndex, detectedLanguageState,
                             playIconState, onPlayButtonClick, onSourceLangChanged, onTargetLangChanged
@@ -196,8 +195,6 @@ fun SentenceDialog(
 
                         BottomText(translation, highlightedSpanState, onBottomTextClick)
                     } else {
-                        WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
-
                         TopText(text, wordState, highlightedSpanState, onTopTextClick)
 
                         TopTextBar(
@@ -212,17 +209,11 @@ fun SentenceDialog(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
             // Handle swipeable events
-            if (swipeableState.isAnimationRunning) {
-                DisposableEffect(Unit) {
-                    onDispose {
-                        when (swipeableState.currentValue) {
-                            SwipeDirection.Right, SwipeDirection.Left -> onDismiss()
-                            else -> return@onDispose
-                        }
-                    }
+            LaunchedEffect(swipeableState.settledValue) {
+                when (swipeableState.currentValue) {
+                    SwipeDirection.Right, SwipeDirection.Left -> onDismiss()
+                    else -> {}
                 }
             }
         }
@@ -239,10 +230,13 @@ fun WordRow(
     if (state != null) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
         ) {
-            Text(state.word.definition, Modifier.padding(horizontal = 8.dp))
-            Spacer(Modifier.weight(1f))
+            Text(
+                state.word.definition,
+                modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                softWrap = false,
+            )
             IconButton(onClick = onBookmarkClicked) {
                 val iconRes = if(state.isSaved) R.drawable.ic_bookmark_black_24dp else R.drawable.ic_bookmark_border_black_24dp
                 Icon(
@@ -313,18 +307,25 @@ fun TopTextBar(
             .fillMaxWidth()
     ) {
 
-        Text(text = "From:", Modifier.padding(horizontal = 8.dp))
+        Text(
+            text = "From:",
+            Modifier.padding(horizontal = 8.dp),
+            MaterialTheme.colorScheme.onPrimary,
+        )
 
         var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
         val detectedLanguageIndex = detectedLanguageState.intValue
         val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
             "Auto detect (${languagesTo.items.getOrNull(detectedLanguageIndex)})" else null
-        Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+        Spinner(
+            languagesFrom,
+            modifier = Modifier.weight(1f),
+            preselected = sourcePos,
+            displayText =  displayText
+        ) { index, _ ->
             onSourceLangChanged(index)
             sourcePos = index
         }
-        Spacer(Modifier.weight(1f))
-
         PlayButton(playIconState, onPlayButtonClick)
     }
 }
@@ -360,8 +361,12 @@ fun BottomTextBar(languagesTo: StringList, langIndex: Int, onTargetLangChanged: 
             .background(MaterialTheme.colorScheme.primary)
             .fillMaxWidth()
     ) {
-        Text(text = "To:", Modifier.padding(horizontal = 8.dp))
-        Spinner(languagesTo, langIndex) { index, _ ->
+        Text(
+            text = "To:",
+            Modifier.padding(horizontal = 8.dp),
+            MaterialTheme.colorScheme.onPrimary,
+        )
+        Spinner(languagesTo, Modifier.weight(1f), langIndex) { index, _ ->
             onTargetLangChanged(index)
         }
     }
@@ -386,17 +391,16 @@ fun LanguageBar(
                 .background(MaterialTheme.colorScheme.primary)
                 .weight(1f)
         ) {
-            Text(text = "From:", Modifier.padding(horizontal = 8.dp))
+            Text(text = "From:", Modifier.padding(horizontal = 8.dp), MaterialTheme.colorScheme.onPrimary)
 
             var sourcePos by remember { mutableIntStateOf(sourceLangIndex) }
             val detectedLanguageIndex = detectedLanguageState.intValue
             val displayText = if (sourcePos == 0 && detectedLanguageIndex != -1)
                 "Auto detect (${languagesTo.items.getOrNull(detectedLanguageIndex)})" else null
-            Spinner(languagesFrom, sourcePos, displayText) { index, _ ->
+            Spinner(languagesFrom, Modifier.weight(1f), sourcePos, displayText) { index, _ ->
                 onSourceLangChanged(index)
                 sourcePos = index
             }
-            Spacer(Modifier.weight(1f))
 
             PlayButton(playIconState, onPlayButtonClick)
         }
@@ -409,8 +413,8 @@ fun LanguageBar(
                 .background(MaterialTheme.colorScheme.primary)
                 .weight(1f)
         ) {
-            Text(text = "To:", Modifier.padding(horizontal = 8.dp))
-            Spinner(languagesTo, targetLangIndex) { index, _ ->
+            Text(text = "To:", Modifier.padding(horizontal = 8.dp), MaterialTheme.colorScheme.onPrimary)
+            Spinner(languagesTo, Modifier.weight(1f), targetLangIndex) { index, _ ->
                 onTargetLangChanged(index)
             }
         }
@@ -438,6 +442,7 @@ fun PlayButton(playIconState: MutableState<PlayIconState>, onPlayButtonClick: ()
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = stringResource(R.string.play_tts_icon_description),
+                tint = MaterialTheme.colorScheme.onPrimary,
             )
         }
     }
@@ -470,7 +475,10 @@ fun EditWordDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(Modifier.testTag(EDIT_WORD_DIALOG_TAG)) {
-            Column(Modifier.padding(16.dp)) {
+            Column(
+                Modifier.width(IntrinsicSize.Max).widthIn(0.dp, 520.dp).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 val focusManager = LocalFocusManager.current
 
                 TextField(
@@ -481,6 +489,7 @@ fun EditWordDialog(
                     keyboardActions = KeyboardActions(
                         onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     ),
+                    singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
@@ -501,7 +510,8 @@ fun EditWordDialog(
                         keyboardActions = KeyboardActions(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
-                        modifier = Modifier.menuAnchor(PrimaryNotEditable).fillMaxWidth()
+                        singleLine = true,
+                        modifier = Modifier.menuAnchor(PrimaryNotEditable).fillMaxWidth(),
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -528,7 +538,8 @@ fun EditWordDialog(
                     keyboardActions = KeyboardActions(
                         onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 TextField(
@@ -536,7 +547,7 @@ fun EditWordDialog(
                     onValueChange = { notesText = it },
                     label = { Text(stringResource(id = R.string.notes_edit_text)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier =  Modifier.padding(top = 8.dp))  {
@@ -587,11 +598,14 @@ fun ClickableText(
 
 const val EDIT_WORD_DIALOG_TAG = "edit word dialog tag"
 
+@Parcelize
 data class WordState(
     val word: WordUI,
     val dbId: Int = NOT_SAVED_ID,
     val span: Span? = null,
-) {
+): Parcelable {
+
+    @IgnoredOnParcel
     val isSaved = dbId != NOT_SAVED_ID
 }
 
@@ -656,8 +670,8 @@ fun EditWordDialogPreview() {
             true,
             "Hola",
             "es",
-            "Hello",
-            "Spanish greeting",
+            "Hello, hi, hey",
+            "The most common spanish greeting used when meeting someone",
             LanguagesList(listOf("English", "Spanish", "German"), listOf("en", "es", "de")),
             true
         )

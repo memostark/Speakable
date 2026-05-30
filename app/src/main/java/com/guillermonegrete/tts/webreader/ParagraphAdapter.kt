@@ -46,10 +46,15 @@ import kotlin.math.max
 import kotlin.math.min
 import androidx.core.graphics.toColorInt
 import androidx.core.view.iterator
+import com.guillermonegrete.tts.common.models.Gestures
+import com.guillermonegrete.tts.common.models.hasInside
 import com.guillermonegrete.tts.utils.count
+import com.guillermonegrete.tts.utils.findWord
+import timber.log.Timber
 
 class ParagraphAdapter(
     val viewModel: WebReaderViewModel,
+    val gestures: Gestures,
     val onSentenceSelected: (paragraph: Int, sentence: Int) -> Unit,
     val onParagraphSelected: (paragraph: Int?) -> Unit,
     val onParagraphEvent: (event: ParagraphEvent) -> Unit = {},
@@ -95,7 +100,8 @@ class ParagraphAdapter(
     /**
      * The position of the paragraph in the list that contains the selected word.
      */
-    private var selectedWordPos = -1
+    var selectedWordPos = -1
+        private set
     /**
      * Used to restore the selected word if the items are reloaded (e.g. during config change)
      */
@@ -105,6 +111,14 @@ class ParagraphAdapter(
 
     private var wordInsideColor = NestedHighlightColor.toArgb()
     private val textHighlightColor = TextHighlightColor.toArgb()
+
+    var tapStrategy: GestureStrategy = SelectWordStrategy()
+    var doubleTapStrategy: GestureStrategy = SelectSentenceStrategy()
+
+    init {
+        setGestureStrategy(gestures.selectWord, SelectWordStrategy())
+        setGestureStrategy(gestures.selectSentence, SelectSentenceStrategy())
+    }
 
     private val _textClicked = MutableSharedFlow<TextClick>(
         replay = 0,
@@ -187,6 +201,7 @@ class ParagraphAdapter(
                         when (payload) {
                             PayloadParagraph.Highlights -> holder.highlightSentences()
                             is PayloadParagraph.Translation -> holder.onLoadingTranslation(payload.result)
+                            PayloadParagraph.Word -> holder.highlightWord(items[position])
                         }
                     }
                 }
@@ -252,14 +267,6 @@ class ParagraphAdapter(
             }
         }
 
-        private fun findSentence(offset: Int): Int {
-            val item = items[bindingAdapterPosition]
-            item.indexes.forEachIndexed { index, span ->
-                if(offset in span.start..span.end) return index
-            }
-            return -1
-        }
-
         fun bind(item: ParagraphItem) {
             val spannable = SpannableString(item.original)
             if(item.selectedIndex != -1){
@@ -322,13 +329,12 @@ class ParagraphAdapter(
                     return true
                 }
 
-                val wordSpan = binding.paragraph.findWordForRightHanded(offset)
-                val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
-
                 // If a highlighted sentence was tapped, notify sentence clicked to observers
                 if (item.selectedIndex != -1) {
                     val span = item.indexes[item.selectedIndex]
                     if(offset in span.start..span.end) {
+                        val wordSpan = binding.paragraph.findWordForRightHanded(offset)
+                        val clickedWord = binding.paragraph.text.substring(wordSpan.start, wordSpan.end)
                         item.selectedWord = wordSpan
                         selectedSentence.wordSelected = true
                         _textClicked.tryEmit(TextClick.Sentence(clickedWord))
@@ -336,20 +342,13 @@ class ParagraphAdapter(
                     }
                 }
 
-                if(clickedWord.isNotEmpty()) {
-                    viewModel.translateWord(clickedWord, item.toAbsolute(wordSpan))
-                    unselectWord()
-
-                    // Select new word
-                    item.selectedWord = wordSpan
-                    selectedWordPos = bindingAdapterPosition
-                    notifyItemChanged(bindingAdapterPosition, Payload.Text)
-                }
+                tapStrategy.execute(offset, bindingAdapterPosition, binding.paragraph.text)
                 return super.onSingleTapConfirmed(e)
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                setSentenceSelected(e)
+                val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
+                doubleTapStrategy.execute(offset, bindingAdapterPosition, binding.paragraph.text)
                 return true
             }
 
@@ -370,16 +369,6 @@ class ParagraphAdapter(
                 }
                 return true
             }
-        }
-
-        private fun setSentenceSelected(e: MotionEvent) {
-            unselectSentence()
-            unselectWord()
-
-            val offset = binding.paragraph.getOffsetForPosition(e.x, e.y)
-            val index = findSentence(offset)
-            selectSentence(bindingAdapterPosition, index)
-            onSentenceSelected(bindingAdapterPosition, index)
         }
 
         /**
@@ -710,6 +699,14 @@ class ParagraphAdapter(
         }
     }
 
+    private fun findSentence(offset: Int, itemIndex: Int): Int {
+        val item = items[itemIndex]
+        item.indexes.forEachIndexed { index, span ->
+            if(offset in span.start..span.end) return index
+        }
+        return -1
+    }
+
     /**
      * Adds the newly inserted database words to the item if the list doesn't have them and if the paragraph contains the word.
      */
@@ -761,6 +758,19 @@ class ParagraphAdapter(
         }
     }
 
+    fun unselectParagraphWord() {
+        val expandedPos = expandedItem?.index
+        if(selectedWordPos != -1 && expandedPos == selectedWordPos) {
+            val previousItem = items[selectedWordPos]
+            previousItem.selectedWord = null
+            notifyItemChanged(selectedWordPos, PayloadParagraph.Word)
+            selectedWordPos = -1
+            selectedWordSpan = null
+            isOverlappingNotes = false
+            isOverlappingSavedWord = false
+        }
+    }
+
     fun unselectParagraph(){
         selectParagraph(-1)
     }
@@ -773,6 +783,17 @@ class ParagraphAdapter(
         item.selectedWord = item.toLocal(absSpan)
         selectedWordPos = pos
         notifyItemChanged(pos, Payload.Text)
+    }
+
+    fun selectParagraphWord(absSpan: Span) {
+        selectedWordSpan = absSpan
+        val pos = getCharListIndex(absSpan.start)
+        if (pos == -1) return
+        val item = items[pos]
+        val localSpan = item.toLocal(absSpan)
+        item.selectedWord = localSpan
+        selectedWordPos = pos
+        notifyItemChanged(pos, PayloadParagraph.Word)
     }
 
     fun selectSentence(paragraphIndex: Int, sentenceIndex: Int){
@@ -901,6 +922,11 @@ class ParagraphAdapter(
 
         private val noTranslationText: CharSequence = itemView.context.getText(R.string.paragraph_not_translated)
 
+        /**
+         * Background span of the selected word
+         */
+        private var selectionSpan: BackgroundColorSpan? = null
+
         init {
             with(binding){
 
@@ -908,21 +934,23 @@ class ParagraphAdapter(
                     onParagraphEvent(ParagraphEvent.ToggleClick())
                 }
 
-                var clickedWord: String? = null
+                var wordSpan: Span? = null
 
                 // Handles click
                 paragraph.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         val offset = paragraph.getOffsetForPosition(event.x, event.y)
-                        val wordSpan = paragraph.findWordForRightHanded(offset)
-                        clickedWord = paragraph.text.substring(wordSpan.start, wordSpan.end)
+                        wordSpan = paragraph.findWordForRightHanded(offset)
                     }
                     return@setOnTouchListener false
                 }
 
                 paragraph.setOnClickListener {
-                    clickedWord?.let { word -> onParagraphEvent(ParagraphEvent.TopClick(word, bindingAdapterPosition)) }
-                    clickedWord = null
+                    wordSpan?.let { span ->
+                        val item = items[bindingAdapterPosition]
+                        onParagraphEvent(ParagraphEvent.TopClick(paragraph.text.substring(span.start, span.end), bindingAdapterPosition, item.toAbsolute(span)))
+                    }
+                    wordSpan = null
                 }
 
                 translatedParagraph.setOnTouchListener { _, event ->
@@ -943,6 +971,7 @@ class ParagraphAdapter(
 
             setTranslation()
             highlightSentences()
+            highlightWord(item)
         }
 
         fun setTranslation() {
@@ -955,6 +984,25 @@ class ParagraphAdapter(
             val spans = expandedItem?.highlights ?: return
             binding.paragraph.setHighlightedText(spans.topSpan.start, spans.topSpan.end)
             binding.translatedParagraph.setHighlightedText(spans.bottomSpan.start, spans.bottomSpan.end)
+        }
+
+        /**
+         * Set the highlighted span without reassigning the text to the TextView.
+         */
+        fun highlightWord(item: ParagraphItem) {
+            val text = binding.paragraph.text as? Spannable
+            selectionSpan?.let { text?.removeSpan(it) }
+
+            val span = item.selectedWord
+            if (span != null) {
+                val spans = expandedItem?.highlights
+                val isWordInside = spans?.topSpan?.hasInside(span) ?: false
+                val color = if (isWordInside) wordInsideColor else textHighlightColor
+                selectionSpan = BackgroundColorSpan(color)
+                text?.setSpan(selectionSpan, span.start, span.end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } else {
+                selectionSpan = null
+            }
         }
 
         fun onLoadingTranslation(result: LoadResult<Unit>) {
@@ -1069,6 +1117,7 @@ class ParagraphAdapter(
         val index: Int,
         val translation: String? = null,
         val highlights: SplitPageSpan? = null,
+        val wordSpan: Span? = null,
     )
 
     private fun Span.toLocal(paragraphItem: ParagraphItem): Span {
@@ -1168,6 +1217,47 @@ class ParagraphAdapter(
     fun getAbsoluteCharPosition(position: Int, relativeCharPos: Int)
         = relativeCharPos + items[position].firstCharIndex
 
+    interface GestureStrategy {
+        fun execute(offset: Int, itemIndex: Int, text: CharSequence = "")
+    }
+
+    inner class SelectWordStrategy: GestureStrategy {
+        override fun execute(offset: Int, itemIndex: Int, text: CharSequence) {
+            val wordSpan = text.findWord(offset)
+            val clickedWord = text.substring(wordSpan.start, wordSpan.end)
+
+            if(clickedWord.isNotEmpty()) {
+                val item = items[itemIndex]
+                viewModel.translateWord(clickedWord, item.toAbsolute(wordSpan))
+                unselectWord()
+
+                // Select new word
+                item.selectedWord = wordSpan
+                selectedWordPos = itemIndex
+                notifyItemChanged(itemIndex, Payload.Text)
+            }
+        }
+    }
+
+    inner class SelectSentenceStrategy: GestureStrategy {
+        override fun execute(offset: Int, itemIndex: Int, text: CharSequence) {
+            unselectSentence()
+            unselectWord()
+
+            val index = findSentence(offset, itemIndex)
+            selectSentence(itemIndex, index)
+            onSentenceSelected(itemIndex, index)
+        }
+    }
+
+    fun setGestureStrategy(type: String, gestureStrategy: GestureStrategy) {
+        return when (type) {
+            "tap" -> tapStrategy = gestureStrategy
+            "double_tap" -> doubleTapStrategy = gestureStrategy
+            else -> Timber.e("Unknown gesture: $type")
+        }
+    }
+
     data class OverlapSpan(val start: Int, val end: Int, @ColorInt val color: Int, val noteId: Long, val wordId: Int)
 
     sealed interface TextClick {
@@ -1179,7 +1269,7 @@ class ParagraphAdapter(
 
     sealed interface ParagraphEvent {
         class ToggleClick: ParagraphEvent
-        data class TopClick(val word: String, val position: Int): ParagraphEvent
+        data class TopClick(val word: String, val position: Int, val wordSpan: Span): ParagraphEvent
         data class BottomClick(val itemIndex: Int, val charPos: Int): ParagraphEvent
     }
 
@@ -1199,6 +1289,7 @@ class ParagraphAdapter(
     sealed interface PayloadParagraph {
         data object Highlights: PayloadParagraph
         data class Translation(val result: LoadResult<Unit>): PayloadParagraph
+        data object Word: PayloadParagraph
     }
 
     sealed interface Highlight {

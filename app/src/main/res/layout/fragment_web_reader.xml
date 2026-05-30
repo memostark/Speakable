@@ -21,42 +21,47 @@
             android:id="@+id/paragraphs_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingBottom="@dimen/web_reader_bar_height"
             android:clipToPadding="false"
             android:contentDescription="@string/paragraphs_list"
+            android:paddingBottom="@dimen/web_reader_bar_height"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/paragraph_item"/>
+            tools:listitem="@layout/paragraph_item" />
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
-            android:layout_height="360dp"
+            android:layout_height="match_parent"
             android:orientation="vertical"
             android:elevation="2dp"
             style="@style/Widget.Material3.BottomSheet"
             app:behavior_hideable="true"
-            app:behavior_skipCollapsed="true"
+            app:behavior_peekHeight="@dimen/links_sheet_collapsed_height"
+            app:paddingBottomSystemWindowInsets="false"
             app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
             <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+                android:id="@+id/sheet_handle"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"/>
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true" />
 
             <WebView
                 android:id="@+id/info_webview"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_height="match_parent"
+                android:layout_below="@id/sheet_handle" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/links_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:layout_alignParentBottom="true"
+                android:background="?colorSurface"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:listitem="@layout/external_link_flat_item"/>
+                tools:listitem="@layout/external_link_flat_item" />
 
-        </LinearLayout>
+        </RelativeLayout>
 
         <androidx.compose.ui.platform.ComposeView
             android:id="@+id/compose_bar"

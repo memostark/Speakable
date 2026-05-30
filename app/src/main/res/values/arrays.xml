@@ -311,4 +311,14 @@
         <item>default</item>
     </string-array>
 
+    <string-array name="webReaderGestures">
+        <item>Tap</item>
+        <item>Double-tap</item>
+    </string-array>
+
+    <string-array name="webReaderGestureValues">
+        <item>tap</item>
+        <item>double_tap</item>
+    </string-array>
+
 </resources>

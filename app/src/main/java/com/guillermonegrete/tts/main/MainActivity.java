@@ -3,13 +3,25 @@ package com.guillermonegrete.tts.main;
 import static com.guillermonegrete.tts.importtext.ImportTextFragment.MARGIN_OFFSET_NAME;
 import static com.guillermonegrete.tts.importtext.tabs.FilesFragment.MARGIN_OFFSET_KEY;
 
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.MenuProvider;
 import androidx.core.view.ViewCompat;
@@ -27,16 +39,12 @@ import com.google.android.material.navigation.NavigationView;
 import com.guillermonegrete.tts.R;
 import com.guillermonegrete.tts.common.views.NestedHideViewOnScrollBehavior;
 import com.guillermonegrete.tts.databinding.ActivityMainBinding;
+import com.guillermonegrete.tts.main.domain.interactors.BackupManager;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
+import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import timber.log.Timber;
 
 
 @AndroidEntryPoint
@@ -45,6 +53,43 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
     NavController navController;
     AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
+
+    @Inject
+    BackupManager backupManager;
+
+    ActivityResultLauncher<Uri> getBackupFolder = registerForActivityResult(
+        new ActivityResultContracts.OpenDocumentTree(),
+        uri ->
+            backupManager.createBackup(
+                uri,
+                (outputUri) -> Toast.makeText(this, "Backup at: " + outputUri, Toast.LENGTH_LONG).show(),
+                t -> {
+                    Timber.e(t, "Error creating backup");
+                    Toast.makeText(this, "Error creating backup", Toast.LENGTH_SHORT).show();
+                }
+            )
+    );
+
+    ActivityResultLauncher<String[]> getBackupFile = registerForActivityResult(
+        new ActivityResultContracts.OpenDocument(),
+        uri ->
+            backupManager.restoreDatabase(
+                uri,
+                () -> {
+                    var dialog = new AlertDialog.Builder(this)
+                            .setTitle(R.string.backup_success_dialog_title)
+                            .setMessage(R.string.backup_success_dialog_message)
+                            .setNegativeButton(R.string.no, (dialog1, which) -> dialog1.dismiss())
+                            .setPositiveButton(R.string.yes, (dialog1, which) -> restartApp())
+                            .create();
+                    dialog.show();
+                },
+                t -> {
+                    Timber.e(t, "Error loading backup");
+                    Toast.makeText(this, "Error loading backup", Toast.LENGTH_SHORT).show();
+                }
+            )
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             var nv = binding.landscapeLayout;
             if (nv != null) nv.setPadding(insets.left, nv.getPaddingTop(), insets.right, nv.getPaddingBottom());
 
-            // Return CONSUMED if you don't want want the window insets to keep passing
+            // Return CONSUMED if you don't want the window insets to keep passing
             // down to descendant views.
             return windowInsets;
         });
@@ -110,6 +155,7 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
             } else {
                 navView.setVisibility(View.VISIBLE);
                 showBottomBar();
+
                 binding.appBarLayout.setExpanded(true);
             }
         });
@@ -125,9 +171,23 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
 
     @Override
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.settings_menu_item) {
+        var id = item.getItemId();
+        if (id == R.id.settings_menu_item) {
             navController.navigate(R.id.action_global_settingsFragment);
             return true;
+        } else if (id == R.id.create_backup_item) {
+            getBackupFolder.launch(null);
+            return true;
+        } else if (id == R.id.restore_from_backup_item) {
+            var dialog = new AlertDialog.Builder(this)
+                    .setTitle(R.string.restore_backup_dialog_title)
+                    .setMessage(R.string.restore_backup_dialog_message)
+                    .setNegativeButton(android.R.string.cancel, (dialog1, which) -> dialog1.dismiss())
+                    .setPositiveButton(android.R.string.ok, (dialog1, which) ->
+                        getBackupFile.launch(new String[]{"application/zip", "application/x-zip-compressed"})
+                    )
+                    .create();
+            dialog.show();
         }
         return false;
     }
@@ -151,6 +211,16 @@ public class MainActivity extends AppCompatActivity implements MenuProvider {
                 behavior.slideUp(nv);
             }
         }
+    }
+
+    private void restartApp() {
+        var context = getApplicationContext();
+        var pm = context.getPackageManager();
+        var intent = pm.getLaunchIntentForPackage(context.getPackageName());
+        if (intent == null) return;
+        var mainIntent = Intent.makeRestartActivityTask(intent.getComponent());
+        context.startActivity(mainIntent);
+        Runtime.getRuntime().exit(0);
     }
 
     private void updateMarginArguments(Bundle savedInstanceState) {

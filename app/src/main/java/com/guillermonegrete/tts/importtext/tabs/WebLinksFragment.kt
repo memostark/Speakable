@@ -115,7 +115,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
 
             addBtn.setOnClickListener { showAddNewDialog() }
             (addBtn.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = fabBottomMargin
-            ViewCompat.setOnApplyWindowInsetsListener(root) { v, rootInsets ->
+            ViewCompat.setOnApplyWindowInsetsListener(root) { _, rootInsets ->
                 val insets = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
                 addBtn.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     bottomMargin = insets.bottom + insets.top + fabBottomMargin
@@ -185,7 +185,7 @@ class WebLinksFragment : Fragment(R.layout.fragment_web_links_list) {
         builder.setTitle(getString(R.string.open_link)).setPositiveButton(R.string.add) { _, _ ->
             val action = ImportTextFragmentDirections.toWebReaderFragment(urlEdit.text.toString())
             findNavController().navigate(action)
-        }.setNegativeButton(R.string.cancel) { dialogInterface, _ ->
+        }.setNegativeButton(android.R.string.cancel) { dialogInterface, _ ->
             dialogInterface.dismiss()
         }
 

@@ -63,6 +63,7 @@ import kotlin.text.isNotEmpty
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import com.guillermonegrete.tts.ImporttextDirections
 import com.guillermonegrete.tts.common.notes.NotesListFragment
 import com.guillermonegrete.tts.common.views.CharacterSmoothScroller
@@ -104,6 +105,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
     private var pageText = ""
 
     private var appBarSize = 0
+    private var topInset = 0
 
     private var jumpToPos: Int? = null
 
@@ -126,14 +128,16 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         appBarSize = resources.getDimensionPixelSize(R.dimen.web_reader_bar_height)
         setupOptionsMenu()
         _binding = FragmentWebReaderBinding.bind(view)
-        adapter = ParagraphAdapter(viewModel,
+        adapter = ParagraphAdapter(
+            viewModel,
+            viewModel.getGesturePreferences(),
             onSentenceSelected = viewModel::sentenceSelected,
-            onParagraphSelected = viewModel::paragraphSelected,
+            onParagraphSelected = { viewModel.paragraphSelected(it, adapter.selectedWordPos) },
             onParagraphEvent = {
                 when (it) {
                     is ParagraphAdapter.ParagraphEvent.BottomClick -> viewModel.setSentenceInParagraph(it.itemIndex, it.charPos)
                     is ParagraphAdapter.ParagraphEvent.ToggleClick -> viewModel.paragraphSelected(null)
-                    is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onWordClicked(it.word, it.position)
+                    is ParagraphAdapter.ParagraphEvent.TopClick -> viewModel.onParagraphWordClicked(it.word, it.position, it.wordSpan)
                 }
             },
             onTextHighlighted = {
@@ -309,8 +313,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         val initialBarSize = appBarSize
         ViewCompat.setOnApplyWindowInsetsListener(binding.paragraphsList) { _, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            topInset = insets.top
             binding.composeBar.updatePadding(bottom = insets.bottom)
             binding.composeRoot.updatePadding(top = insets.top)
+            // Handle links bottom sheet insets
+            binding.linksList.updatePadding(bottom = insets.bottom)
+
             appBarSize = initialBarSize + insets.bottom
             handleListPadding(insets.top, appBarSize)
             WindowInsetsCompat.CONSUMED
@@ -497,6 +505,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             addWordNoteBtn.setImageResource(R.drawable.ic_edit_black_24dp)
         }
+        adapter.unselectWord()
     }
 
     private fun showSheetInfo(info: WordUI, isWord: Boolean) {
@@ -519,6 +528,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
     override fun onDestroyView() {
         binding.paragraphsList.adapter = null
+        binding.linksList.adapter = null
+        binding.infoWebview.destroy() // to avoid memory leaks
         _binding = null
         super.onDestroyView()
     }
@@ -539,10 +550,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
         with(binding) {
             val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
             val translateSheetBehavior = BottomSheetBehavior.from(transSheet.root)
+            val linksSheetCollapsedHeight = resources.getDimensionPixelSize(R.dimen.links_sheet_collapsed_height)
 
             val bottomSheetBackCallback = createBackPressedCallback(bottomSheetBehavior)
             requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, bottomSheetBackCallback)
 
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
             bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     when (newState) {
@@ -551,12 +564,33 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                             viewModel.hideWordLinks()
                             if (translateSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN) composeBar.isVisible = true
                         }
-                        BottomSheetBehavior.STATE_EXPANDED -> bottomSheetBackCallback.isEnabled = true
-                        else -> {}
+                        BottomSheetBehavior.STATE_EXPANDED -> {
+                            // Handle insets for the sheet using padding when it's expanded
+                            // Don't use margin because it causes a twitch when changing links due to a bug with the material library
+                            bottomSheet.updatePadding(top = topInset)
+                            infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                                bottomMargin = linksList.height
+                            }
+                            bottomSheetBackCallback.isEnabled = true
+                            viewModel.setLinkSheetState(true)
+                        }
+                        BottomSheetBehavior.STATE_COLLAPSED -> {
+                            bottomSheetBackCallback.isEnabled = true
+                            viewModel.setLinkSheetState(false)
+                            if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
+                            infoWebview.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                                bottomMargin = bottomSheet.top + linksList.height
+                            }
+                        }
+                        else -> {
+                            if (bottomSheet.paddingTop != 0) bottomSheet.updatePadding(top = 0)
+                        }
                     }
                 }
 
-                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    adjustLinksList(linksSheetCollapsedHeight)
+                }
             })
 
             infoWebview.webViewClient = WebViewClient()
@@ -575,40 +609,83 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    viewModel.linksForWord.collect { state ->
-                        when(state) {
-                            DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                            is DialogState.Error -> Timber.e(state.exception, "Error retrieving links for word")
-                            DialogState.Loading -> {}
-                            is DialogState.Success -> {
-                                val links = state.data.links
-                                links.forEach { link -> link.link = link.link.replace("{q}", state.data.word) }
 
-                                val adapter = ExternalLinksAdapter(links) { index ->
-                                    viewModel.setWordLink(index)
-                                }
-
-                                adapter.setFlatButton(true)
-                                val selectedPos = viewModel.selectedLink.value
-                                adapter.setSelectedPos(selectedPos)
-                                linksList.scrollToPosition(selectedPos)
-                                linksList.adapter = adapter
-
-                                launch {
-                                    viewModel.selectedLink.collect {
-                                        infoWebview.loadUrl(links[it].link)
-                                        linksList.scrollToPosition(it)
+                    launch {
+                        viewModel.linksForWord.collect { state ->
+                            when (state) {
+                                DialogState.Empty -> bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                                is DialogState.Error -> { handleLinksError(state.exception) }
+                                DialogState.Loading -> {}
+                                is DialogState.Success -> {
+                                    val links = state.data.links
+                                    links.forEach { link ->
+                                        link.link = link.link.replace("{q}", state.data.word)
                                     }
-                                }
 
-                                composeBar.isVisible = false
-                                root.post { bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED }
+                                    val adapter = ExternalLinksAdapter(links) { index ->
+                                        viewModel.setWordLink(index)
+                                    }
+
+                                    adapter.setFlatButton(true)
+                                    val selectedPos = viewModel.selectedLink.value
+                                    adapter.setSelectedPos(selectedPos)
+                                    linksList.scrollToPosition(selectedPos)
+                                    linksList.adapter = adapter
+
+                                    lifecycleScope.launch {
+                                        viewModel.selectedLink.collect {
+                                            infoWebview.loadUrl(links[it].link)
+                                            linksList.scrollToPosition(it)
+                                        }
+                                    }
+
+                                    composeBar.isVisible = false
+                                }
+                            }
+                        }
+                    }
+
+                    launch {
+                        viewModel.linksSheetExpanded.collect {
+                            it ?: return@collect
+                            root.post {
+                                bottomSheetBehavior.state = if (it) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
+                                adjustLinksList(linksSheetCollapsedHeight)
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun handleLinksError(exception: Exception) {
+        val snackBar = Snackbar.make(
+            binding.root,
+            getString(R.string.loading_links_error_msg),
+            Snackbar.LENGTH_SHORT
+        )
+        snackBar.addCallback(object : Snackbar.Callback() {
+            override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                super.onDismissed(transientBottomBar, event)
+                viewModel.hideWordLinks()
+            }
+        })
+        snackBar.show()
+        Timber.e(exception, "Error retrieving links for word")
+    }
+
+    /**
+     * Adjusts the position of the external links list to be always fixed at the bottom of the screen if the sheet is expanded.
+     */
+    private fun adjustLinksList(linksSheetCollapsedHeight: Int) {
+        val bottomSheet = binding.bottomSheet
+        val linksList = binding.linksList
+        val bottomSheetVisibleHeight = bottomSheet.height - bottomSheet.top + bottomSheet.marginTop
+        // Only adjust if the sheet is not collapsed, otherwise the list shouldn't be fixed to the bottom.
+        val listPos =
+            (if (bottomSheetVisibleHeight > linksSheetCollapsedHeight) bottomSheetVisibleHeight else linksSheetCollapsedHeight)
+        linksList.y = (listPos - linksList.height).toFloat()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -626,7 +703,6 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                         backPressedCallback.isEnabled = false
-                        adapter.unselectWord()
                         setWordSheetViews(false)
                         binding.composeBar.isVisible = true
                         viewModel.clearTextInfo()
@@ -656,8 +732,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                                 if (paragraph.isLoading) {
                                     adapter.setParagraphLoading()
                                 } else {
-                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights)
+                                    val paragraphUi = ParagraphAdapter.SelectedParagraph(paragraph.index, paragraph.translation?.translatedText, paragraph.highlights, paragraph.selectedWord)
                                     adapter.displayParagraph(paragraphUi)
+                                    if (paragraph.selectedWord != null)
+                                        adapter.selectParagraphWord(paragraph.selectedWord)
+                                    else
+                                        adapter.unselectParagraphWord()
                                 }
                             } else {
                                 adapter.unselectParagraph()
@@ -852,6 +932,7 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
                         null -> {
                             deleteDialogVisible.value = false
                             bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                            if (!viewModel.paragraphWordSelected()) adapter.unselectWord()
                         }
                     }
                 }

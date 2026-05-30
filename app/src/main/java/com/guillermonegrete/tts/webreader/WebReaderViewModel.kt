@@ -1,5 +1,6 @@
 package com.guillermonegrete.tts.webreader
 
+import android.os.Parcelable
 import androidx.lifecycle.*
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.hasInside
@@ -36,13 +37,13 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.parcelize.Parcelize
 import net.dankito.readability4j.Readability4J
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -64,6 +65,7 @@ class WebReaderViewModel @AssistedInject constructor(
     private val settings: SettingsRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ): ViewModel() {
 
     private val _page = MutableLiveData<LoadResult<PageInfo>>()
@@ -77,19 +79,22 @@ class WebReaderViewModel @AssistedInject constructor(
     val translatedParagraphs: List<Translation?>
         get() = _translatedParagraphs
 
-    private val _paragraphState = MutableStateFlow<ParagraphUiState>(ParagraphUiState())
+    private val _paragraphState = savedStateHandle.getMutableStateFlow("paragraphState", ParagraphUiState())
     val paragraphState: StateFlow<ParagraphUiState> = _paragraphState
 
-    private val _dialogState = MutableStateFlow<UiDialogState>(UiDialogState())
+    private val _dialogState = savedStateHandle.getMutableStateFlow("dialogState", UiDialogState())
     val dialogState: StateFlow<UiDialogState> = _dialogState
 
-    private val _editDialogs = MutableStateFlow<UiEditDialogsState>(UiEditDialogsState())
+    private val _editDialogs = savedStateHandle.getMutableStateFlow("editDialogs", UiEditDialogsState())
     val editDialogs: StateFlow<UiEditDialogsState> = _editDialogs
 
-    private val _linksForWord = MutableStateFlow<DialogState<WordAndLinks>>(DialogState.Empty)
+    private val _linksForWord = savedStateHandle.getMutableStateFlow<DialogState<WordAndLinks>>("linksForWord", DialogState.Empty)
     val linksForWord: StateFlow<DialogState<WordAndLinks>> = _linksForWord
 
-    private val _selectedLink = MutableStateFlow(0)
+    private val _linksSheetExpanded = savedStateHandle.getMutableStateFlow<Boolean?>("linksSheetExpanded", null)
+    val linksSheetExpanded: StateFlow<Boolean?> = _linksSheetExpanded
+
+    private val _selectedLink = savedStateHandle.getMutableStateFlow("selectedLink", 0)
     val selectedLink: StateFlow<Int> = _selectedLink
 
     private val _notes = MutableSharedFlow<List<Note>>()
@@ -214,7 +219,7 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 
     /**
-     * Reads the html file saved in the local storage. With [uuid] being the folder name.
+     * Reads the HTML file saved in the local storage. With [uuid] being the folder name.
      */
     private fun readContentFile(uuid: UUID): String {
         val rootFolder = File(folderPath, uuid.toString())
@@ -308,6 +313,8 @@ class WebReaderViewModel @AssistedInject constructor(
             // The word might be saved, query the database first to check
             searchSavedWord(word, null, span)
         }
+
+        hideWordLinks()
     }
 
     fun translateText(text: String, span: Span, overlapsNote: Boolean, overlapsWord: Boolean) {
@@ -361,6 +368,7 @@ class WebReaderViewModel @AssistedInject constructor(
             null
         }
 
+        hideWordLinks()
         _dialogState.update { it.copy(dialogState = DialogType.Note(note), sentence = sentence) }
     }
 
@@ -382,6 +390,7 @@ class WebReaderViewModel @AssistedInject constructor(
             unselectSentence()
         }
 
+        hideWordLinks()
         launchWordJob(id, wordSpan)
     }
 
@@ -497,20 +506,27 @@ class WebReaderViewModel @AssistedInject constructor(
      *
      * In this case, retrieves the external link for the language of the word and emits them.
      */
-    fun onWordClicked(word: String, pos: Int) {
+    fun onParagraphWordClicked(word: String, pos: Int, wordSpan: Span) {
 
         // first try to get the language from a translation, if not from the set language, else ignore.
         val lang = translatedParagraphs.getOrNull(pos)?.src ?: cacheWebLink?.language ?: return
+        clearTextInfo()
+        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(selectedWord = wordSpan)) }
 
         getLinksForWord(word, lang)
     }
 
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
-            val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-            _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
-            // if out of index, default to the first item (zero index)
-            if(_selectedLink.value >= links.size) _selectedLink.value = 0
+            try {
+                val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
+                _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
+                _linksSheetExpanded.value = false
+                // if out of index, default to the first item (zero index)
+                if(_selectedLink.value >= links.size) _selectedLink.value = 0
+            } catch (e: Exception) {
+                _linksForWord.value = DialogState.Error(e)
+            }
         }
     }
 
@@ -521,6 +537,8 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun hideWordLinks() {
         _linksForWord.value = DialogState.Empty
+        _linksSheetExpanded.value = null
+        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(selectedWord = null)) }
     }
 
     fun setWordLink(position: Int) {
@@ -536,6 +554,10 @@ class WebReaderViewModel @AssistedInject constructor(
     fun getWebLinkId() = cacheWebLink?.id
 
     fun getCharPos() = cacheWebLink?.charPosition ?: 0
+
+    fun getGesturePreferences() = settings.getGestures()
+
+    fun paragraphWordSelected() = _paragraphState.value.paragraph?.selectedWord != null
 
     private fun splitBySentence(paragraphs: List<CharSequence>): List<SplitParagraph> {
         val iterator = BreakIterator.getSentenceInstance()
@@ -878,6 +900,8 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun sentenceSelected(paragraphIndex: Int, sentenceIndex: Int) {
         _paragraphState.update { it.copy(paragraphIndex = paragraphIndex, sentenceIndex = sentenceIndex, paragraph = null) }
+        _linksForWord.value = DialogState.Empty
+        _linksSheetExpanded.value = null
         _dialogState.update { it.copy(sentence = null, dialogState = null) }
     }
 
@@ -885,17 +909,28 @@ class WebReaderViewModel @AssistedInject constructor(
         _paragraphState.update { it.copy(paragraphIndex = null, sentenceIndex = null) }
     }
 
-    fun paragraphSelected(index: Int?) {
+    fun paragraphSelected(index: Int?, pos: Int? = null) {
         if (index == null) {
             _paragraphState.update { it.copy(paragraph = null) }
             return
         }
 
-        val paragraph = _paragraphState.value.paragraph
+        val state = _paragraphState.value
+        val paragraph = state.paragraph
         if (paragraph?.index == index) {
             _paragraphState.update { it.copy(paragraph = null) }
         } else {
-            _paragraphState.update { it.copy(paragraph = SelectedParagraph(index), paragraphIndex = null, sentenceIndex = null) }
+            val dialog = _dialogState.value
+            if (dialog.sentence?.paragraphIndex == index) {
+                // unselect sentence if it's in the same paragraph
+                clearTextInfo()
+                _paragraphState.update { it.copy(paragraph = SelectedParagraph(index), paragraphIndex = null, sentenceIndex = null) }
+            } else {
+                if (dialog.dialogState is DialogType.Note ||
+                    dialog.dialogState is DialogType.SavedWord ||
+                    index == pos) clearTextInfo()
+                _paragraphState.update { it.copy(paragraph = SelectedParagraph(index)) }
+            }
         }
     }
 
@@ -917,6 +952,10 @@ class WebReaderViewModel @AssistedInject constructor(
         }
     }
 
+    fun setLinkSheetState(isExpanded: Boolean) {
+        _linksSheetExpanded.value = isExpanded
+    }
+
     data class CachedParagraph(val translation: SimpleTranslation, val sentences: List<SimpleTranslation>)
 
     data class Page(val title: String, val content: String)
@@ -929,6 +968,7 @@ class WebReaderViewModel @AssistedInject constructor(
         private const val PAGE_FILENAME = "content.xml"
     }
 
+    @Parcelize
     data class UiDialogState(
         val isLoading: Boolean = false,
         val isWordLoading: Boolean = false,
@@ -936,19 +976,21 @@ class WebReaderViewModel @AssistedInject constructor(
         val dialogState: DialogType? = null,
         val sentence: Sentence? = null,
         val error: String? = null,
-    )
+    ): Parcelable
 
+    @Parcelize
     data class UiEditDialogsState(
         val isEditingType: DialogType? = null,
         val isDeleteDialogShown: Boolean = false,
         val isPickingType: InfoType? = null,
-    )
+    ): Parcelable
 
+    @Parcelize
     data class ParagraphUiState(
         val paragraph: SelectedParagraph? = null,
         val paragraphIndex: Int? = null,
         val sentenceIndex: Int? = null,
-    )
+    ): Parcelable
 
     @AssistedFactory
     interface Factory {
@@ -956,18 +998,23 @@ class WebReaderViewModel @AssistedInject constructor(
     }
 }
 
-data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = "")
+@Parcelize
+data class SimpleTranslation(val original: String, var translation: String = "", var sourceLang: String = ""): Parcelable
 
-data class Sentence(val text: String, val paragraphIndex: Int)
+@Parcelize
+data class Sentence(val text: String, val paragraphIndex: Int): Parcelable
 
+@Parcelize
 data class SelectedParagraph(
     val index: Int,
     val isLoading: Boolean = false,
     val translation: Translation? = null,
     val highlights: SplitPageSpan? = null,
-)
+    val selectedWord: Span? = null,
+): Parcelable
 
-sealed interface DialogType {
+@Parcelize
+sealed interface DialogType: Parcelable {
     data class SavedWord(val word: Words, val span: Span): DialogType
     data class Note(val item: com.guillermonegrete.tts.webreader.db.Note): DialogType
     data class Translation(val translation: SimpleTranslation, val span: Span, val overlapsNote: Boolean, val overlapsWord: Boolean): DialogType
@@ -975,7 +1022,8 @@ sealed interface DialogType {
 
 fun DialogType.Translation.toNote() = Note(translation.translation, translation.original, span.start, span.end - span.start, "")
 
-data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note)
+@Parcelize
+data class InfoType(val word: DialogType.SavedWord, val note: DialogType.Note): Parcelable
 
 /**
  * Return class for the UI, used to display the paragraph with the notes

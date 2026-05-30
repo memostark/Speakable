@@ -1,9 +1,11 @@
 package com.guillermonegrete.tts.data.source
 
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.BookUriUpdate
 import kotlinx.coroutines.flow.Flow
 
 interface FileRepository{
+
     fun getRecentFiles(): Flow<List<BookFile>>
 
     suspend fun getFiles(): List<BookFile>
@@ -15,4 +17,6 @@ interface FileRepository{
     suspend fun saveFile(file: BookFile): Long
 
     suspend fun deleteFile(file: BookFile)
+
+    suspend fun update(target: BookUriUpdate)
 }

@@ -57,4 +57,25 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="Web reader gestures">
+
+        <ListPreference
+            android:title="Select word"
+            android:summary="%s"
+            android:key="word_selection_gesture"
+            android:entries="@array/webReaderGestures"
+            android:entryValues="@array/webReaderGestureValues"
+            android:defaultValue="tap"/>
+
+        <ListPreference
+            android:title="Select sentence"
+            android:summary="%s"
+            android:key="sentence_selection_gesture"
+            android:entries="@array/webReaderGestures"
+            android:entryValues="@array/webReaderGestureValues"
+            android:defaultValue="double_tap"/>
+
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

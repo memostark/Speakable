@@ -17,6 +17,7 @@ import androidx.preference.Preference
 import com.guillermonegrete.tts.R
 
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceManager
 import com.guillermonegrete.tts.utils.applyTheme
 
 
@@ -36,7 +37,7 @@ class SettingsFragment : PreferenceFragmentCompat(), MenuProvider {
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
         val layout = super.onCreateView(inflater, container, savedInstanceState)
-        ViewCompat.setOnApplyWindowInsetsListener(layout) { v, rootInsets ->
+        ViewCompat.setOnApplyWindowInsetsListener(layout) { _, rootInsets ->
             val insets = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             listView.updatePadding(bottom = insets.bottom)
             rootInsets
@@ -66,6 +67,22 @@ class SettingsFragment : PreferenceFragmentCompat(), MenuProvider {
             applyTheme(themeOption)
             true
         }
+
+        val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val wordPreference: ListPreference? = findPreference(PREF_WORD_SEL)
+        val sentencePreference: ListPreference? = findPreference(PREF_SENTENCE_SEL)
+
+        wordPreference?.setOnPreferenceChangeListener { preference, _ ->
+            val oldValue = sharedPrefs.getString(preference.key, WORD_SEL_DEFAULT)
+            sentencePreference?.value = oldValue
+            true
+        }
+
+        sentencePreference?.setOnPreferenceChangeListener { preference, _ ->
+            val oldValue = sharedPrefs.getString(preference.key, SENTENCE_SEL_DEFAULT)
+            wordPreference?.value = oldValue
+            true
+        }
     }
 
     companion object {
@@ -75,5 +92,10 @@ class SettingsFragment : PreferenceFragmentCompat(), MenuProvider {
         const val PREF_LANGUAGE_FROM = "translate_from_pref_key"
         const val PREF_WINDOW_SIZE = "window_size"
         const val PREF_THEME = "theme_pref_key"
+        const val PREF_WORD_SEL = "word_selection_gesture"
+        const val PREF_SENTENCE_SEL = "sentence_selection_gesture"
+
+        const val WORD_SEL_DEFAULT = "tap"
+        const val SENTENCE_SEL_DEFAULT = "double_tap"
     }
 }

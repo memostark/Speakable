@@ -16,7 +16,13 @@
     <string name="main">Text to speech</string>
     <string name="saved">Saved words</string>
     <string name="import_text">Import text</string>
+
+    <!-- Main activity-->
     <string name="settings">Settings</string>
+    <string name="create_backup_file">Create backup file</string>
+    <string name="restore_from_backup">Restore from file</string>
+    <string name="restore_backup_dialog_title">Do you want to restore data from a backup?</string>
+    <string name="restore_backup_dialog_message">This will override your current data.</string>
 
     <string name="dialog_new_word_title">New word</string>
 
@@ -27,7 +33,7 @@
 
     <string name="save">Save</string>
     <string name="yes">Yes</string>
-    <string name="cancel">Cancel</string>
+    <string name="no">No</string>
 
     <string name="note">Note</string>
     <string name="saved_word">Saved word</string>
@@ -204,6 +210,8 @@
     <string name="pick_epub_file">Pick EPUB file</string>
     <string name="pick_file">pick file</string>
     <string name="no_recent_files">No recent files</string>
+    <string name="file_opening_error_dialog_title">Error opening file</string>
+    <string name="file_error_dialog_message">Couldn\'t find the file in the saved location. Would you like to pick a new location?</string>
 
     <!--Translation fragment-->
     <string name="language_to">Language to</string>
@@ -220,6 +228,7 @@
     <string name="dialog">Dialog</string>
     <string name="refresh">Refresh</string>
     <string name="loading_page_error_msg">Error loading page</string>
+    <string name="loading_links_error_msg">Error loading links</string>
     <string name="previous_selection">previous selection</string>
     <string name="next_selection">next selection</string>
     <string name="saving_page_dialog">Saving page…</string>
@@ -251,5 +260,7 @@
 
     <!-- Notes list-->
     <string name="go_to_text">Go to text</string>
+    <string name="backup_success_dialog_title">Successfully loaded the backup</string>
+    <string name="backup_success_dialog_message">To see the changes the app needs to be restarted. Would you like to restart now?</string>
 
 </resources>

@@ -23,12 +23,15 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.IntentCompat
 import androidx.core.content.edit
@@ -60,7 +63,6 @@ import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.common.models.toEditNote
 import com.guillermonegrete.tts.common.models.toNote
 import com.guillermonegrete.tts.common.models.toUI
-import com.guillermonegrete.tts.data.DialogState
 import com.guillermonegrete.tts.databinding.FragmentVisualizeTextBinding
 import com.guillermonegrete.tts.db.ExternalLink
 import com.guillermonegrete.tts.db.NoteType
@@ -89,6 +91,7 @@ import kotlin.math.abs
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.setFragmentResultListener
 import com.guillermonegrete.tts.common.notes.NotesListFragment
+import com.guillermonegrete.tts.data.DialogStateList
 import com.guillermonegrete.tts.webreader.db.BookPosition
 import com.guillermonegrete.tts.webreader.db.Note
 
@@ -130,6 +133,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     private var selectedLinkPos = mutableIntStateOf(0)
 
     private var noteInfo = mutableStateOf<EditNote?>(null)
+    private var languageFromState = mutableStateOf<String?>(null)
     private var clickedWord = ""
 
     private var splitterCreated = false
@@ -453,6 +457,8 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                     binding.readerCurrentChapter.visibility = View.VISIBLE
                 }
 
+                languageFromState.value = it.metadata.setLanguage
+
                 binding.showTocBtn.setOnClickListener { contentsMenuVisible.value = true }
                 binding.showTocBtn.isVisible = true
             }
@@ -529,13 +535,13 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                     launch {
                         linksForWord.collect { state ->
                             when(state) {
-                                DialogState.Empty -> linksDialogShown.value = false
-                                is DialogState.Error -> {
+                                DialogStateList.Empty -> linksDialogShown.value = false
+                                is DialogStateList.Error -> {
                                     Timber.e(state.exception, "Error retrieving links for word")
                                     linksDialogShown.value = false
                                 }
-                                DialogState.Loading -> {}
-                                is DialogState.Success -> {
+                                DialogStateList.Loading -> {}
+                                is DialogStateList.Success -> {
                                     val links = state.data
                                     wordLinks.value = ExternalLinkList(links.map(ExternalLink::toUI))
 
@@ -675,7 +681,9 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             }
 
             override fun onLanguageFromChanged(position: Int) {
-                viewModel.languageFrom = if (position == 0) "auto" else languagesISO[position - 1]
+                val newLang = if (position == 0) "auto" else languagesISO[position - 1]
+                viewModel.languageFrom = newLang
+                languageFromState.value = newLang
             }
         }
 
@@ -843,7 +851,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
 
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle(resources.getString(R.string.table_of_contents))
-            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
+            .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
             .setAdapter(adapter) { _, i ->
                 val path = filePaths[i]
                 viewModel.jumpToChapter(path)
@@ -1131,6 +1139,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             selection = selectedLinkPos.intValue,
             onItemClick = viewModel::setWordLink,
             onDismiss = viewModel::hideWordLinks,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
 
         var addNoteVisible by remember { addNoteDialogVisible }
@@ -1181,6 +1190,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
     @Composable
     fun Sheet() {
         val noteInfo by remember { noteInfo }
+        val languageFrom by remember { languageFromState }
         var noteSheetVisible by remember { noteSheetVisible }
         callback.isEnabled = noteSheetVisible
 
@@ -1190,7 +1200,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
             infoButtonVisibility = {
                 val noteSpanText = noteInfo?.text
                 val isWord = noteSpanText != null && noteSpanText.split(" ").size == 1
-                return@NoteSheet viewModel.languageFrom != "auto" && isWord
+                return@NoteSheet languageFrom != "auto" && isWord
             },
             onEditClicked = viewModel::startEditing,
             onInfoClicked = {
@@ -1198,7 +1208,7 @@ class VisualizeTextFragment: Fragment(R.layout.fragment_visualize_text), DialogI
                 viewModel.getExternalLinks(word)
             },
             onDismiss = {
-                // Not used, the dismissing is made by the back pressed dispatcher
+                viewModel.hideDialog()
             }
         )
     }
