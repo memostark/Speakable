@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId "com.guillermonegrete.tts"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 36
         versionCode 20
         versionName "1.24.0"
