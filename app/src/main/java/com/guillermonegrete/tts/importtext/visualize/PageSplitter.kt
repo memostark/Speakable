@@ -27,9 +27,7 @@ class PageSplitter(
     private val alignment: Layout.Alignment = textView.layout.alignment
     private val maxLines = textView.maxLines
 
-    @RequiresApi(Build.VERSION_CODES.M)
     private var breakStrategy = 0
-    @RequiresApi(Build.VERSION_CODES.M)
     private var hyphenationFrequency = 0
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -39,10 +37,8 @@ class PageSplitter(
     private var isFallbackLineSpacing = false
 
     init {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            breakStrategy = textView.breakStrategy
-            hyphenationFrequency = textView.hyphenationFrequency
-        }
+        breakStrategy = textView.breakStrategy
+        hyphenationFrequency = textView.hyphenationFrequency
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             justificationMode = textView.justificationMode
@@ -65,7 +61,7 @@ class PageSplitter(
     suspend fun split() {
         withContext(Dispatchers.Default){
             val formattedText = formatHtml(mSpannableStringBuilder)
-            val staticLayout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val staticLayout =
                 StaticLayout.Builder.obtain(formattedText, 0, formattedText.length, textPaint, pageWidth)
                     .setAlignment(alignment)
                     .setLineSpacing(lineSpacingExtra, lineSpacingMultiplier)
@@ -76,18 +72,6 @@ class PageSplitter(
                     .setJustificationMode()
                     .setMaxLines(maxLines)
                     .build()
-            } else {
-                @Suppress("DEPRECATION")
-                StaticLayout(
-                    formattedText,
-                    textPaint,
-                    pageWidth,
-                    Layout.Alignment.ALIGN_NORMAL,
-                    lineSpacingMultiplier,
-                    lineSpacingExtra,
-                    includeFontPadding
-                )
-            }
 
             splitLineByLine(staticLayout)
         }

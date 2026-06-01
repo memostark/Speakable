@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.view.*
@@ -320,20 +319,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             binding.linksList.updatePadding(bottom = insets.bottom)
 
             appBarSize = initialBarSize + insets.bottom
-            handleListPadding(insets.top, appBarSize)
+            binding.paragraphsList.updatePadding(top = insets.top, bottom = appBarSize)
             WindowInsetsCompat.CONSUMED
-        }
-    }
-
-    private fun handleListPadding(top: Int, bottom: Int) {
-        val v = binding.paragraphsList
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            v.updatePadding(top = top, bottom = bottom)
-        } else {
-            // Avoid unnecessarily updating padding because in older version it cancels the action mode (e.g. text selection).
-            if (v.paddingTop != top && v.paddingTop != bottom) {
-                v.updatePadding(top = top, bottom = bottom)
-            }
         }
     }
 

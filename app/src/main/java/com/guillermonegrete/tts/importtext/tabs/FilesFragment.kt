@@ -4,7 +4,6 @@ import android.animation.Animator
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -120,8 +119,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
 
             pickEpubFileBtn.apply {
                 setOnClickListener {
-                    // APIs lower than 23 don't have support for EPUB in the file picker so use octet-stream instead.
-                    fileType = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) ImportedFileType.EPUB else ImportedFileType.OCTET_STREAM
+                    fileType = ImportedFileType.EPUB
                     pickFile()
                 }
                 post { translationY = height.toFloat() }
@@ -292,8 +290,7 @@ class FilesFragment: Fragment(R.layout.files_layout) {
                 .setNegativeButton(android.R.string.cancel) { dialog1, _ -> dialog1.dismiss() }
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     this.fileId = fileId
-                    val type = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) ImportedFileType.EPUB else ImportedFileType.OCTET_STREAM
-                    pickNewEpubUri.launch(arrayOf(type.mimeType))
+                    pickNewEpubUri.launch(arrayOf(ImportedFileType.EPUB.mimeType))
                 }
                 .create()
             dialog.show()

@@ -4,17 +4,12 @@
 package com.guillermonegrete.tts.main
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import androidx.appcompat.app.AppCompatActivity
-
+import androidx.core.net.toUri
 import com.guillermonegrete.tts.services.ScreenTextService
-
 import com.guillermonegrete.tts.services.ScreenTextService.NORMAL_SERVICE
 
 
@@ -22,8 +17,8 @@ class AcquireScreenshotPermission : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())
             startActivityForResult(intent, REQUEST_CODE_DRAW_OVERLAY)
         } else {
             getScreenCaptureIntent()
@@ -34,7 +29,7 @@ class AcquireScreenshotPermission : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         // For the overlay permission, the result code might not be OK and the intent data null, so handle separately.
         if (requestCode == REQUEST_CODE_DRAW_OVERLAY) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
+            if (Settings.canDrawOverlays(this)) {
                 getScreenCaptureIntent()
             } else {
                 finish()
@@ -42,7 +37,7 @@ class AcquireScreenshotPermission : Activity() {
             return
         }
 
-        if (resultCode == AppCompatActivity.RESULT_OK && data != null) {
+        if (resultCode == RESULT_OK && data != null) {
             when(requestCode) {
                 REQUEST_CODE_SCREEN_CAPTURE -> {
                     val intent = Intent(this, ScreenTextService::class.java)
@@ -67,7 +62,7 @@ class AcquireScreenshotPermission : Activity() {
     }
 
     private fun getScreenCaptureIntent(){
-        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        val manager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         startActivityForResult(manager.createScreenCaptureIntent(), REQUEST_CODE_SCREEN_CAPTURE)
     }
 
