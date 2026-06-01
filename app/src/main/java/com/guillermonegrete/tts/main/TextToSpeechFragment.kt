@@ -82,9 +82,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
 
         requestOverlayPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             // If overlay drawing permission was granted ask for the screen capture one
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (Settings.canDrawOverlays(context)) getScreenCaptureIntent()
-            }
+            if (Settings.canDrawOverlays(context)) getScreenCaptureIntent()
         }
 
         requestScreenCapture = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -222,7 +220,7 @@ class TextToSpeechFragment: Fragment(R.layout.fragment_main_tts), MainTTSContrac
     override fun startOverlayService() {
         // For versions of android older than Android M (sdk 23), only it was necessary to request the screen capture permission
         // For newer versions it's necessary to first ask for the permission to draw overlays, then ask for the screen capture one
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+        if (!Settings.canDrawOverlays(context)) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context?.packageName}".toUri())
             requestOverlayPermission.launch(intent)
         } else {

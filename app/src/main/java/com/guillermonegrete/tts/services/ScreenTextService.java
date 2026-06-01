@@ -500,7 +500,7 @@ public class ScreenTextService extends Service {
                 }
             }
 
-            int pendingFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
+            int pendingFlags = PendingIntent.FLAG_IMMUTABLE;
             var notificationIntent = new Intent(this, ScreenTextService.class);
             notificationIntent.setAction(action);
             var pendingIntent = PendingIntent.getService(this, 0, notificationIntent, pendingFlags);
@@ -525,7 +525,7 @@ public class ScreenTextService extends Service {
                 setViewModel();
             } else if(NO_FLOATING_ICON_SERVICE.equals(action)) {
                 // For this case, when the notification is clicked it should show the bubble layout.
-                // Before that the screenshot permission is necessary and then it recreates the service as "NORMAL_SERVICE"
+                // Before that the screenshot permission is necessary, then it recreates the service as "NORMAL_SERVICE"
                 if(!hasPermission){
                     notificationIntent = new Intent(this, AcquireScreenshotPermission.class);
                     notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -541,8 +541,7 @@ public class ScreenTextService extends Service {
 
     private void createForeground(PendingIntent intent, String action) {
         var intentHide = new Intent(this, Receiver.class);
-        int stopFlags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ?
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
+        int stopFlags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
         var stopServiceIntent = PendingIntent.getBroadcast(this, (int) System.currentTimeMillis(), intentHide, stopFlags);
 
         String CHANNEL_IMPORTANCE;

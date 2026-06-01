@@ -1,24 +1,20 @@
 package com.guillermonegrete.tts.customtts;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
-
 import android.speech.tts.UtteranceProgressListener;
 
 import androidx.annotation.NonNull;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import dagger.hilt.android.qualifiers.ApplicationContext;
 
@@ -36,7 +32,6 @@ public class CustomTTS implements TextToSpeech.OnInitListener, TTS{
 
     private Listener listener = null;
 
-    private final HashMap<String, String> map = new HashMap<>();
     private final Bundle params = new Bundle();
 
     private final Context context;
@@ -47,16 +42,11 @@ public class CustomTTS implements TextToSpeech.OnInitListener, TTS{
 
         localTTS = new TextToSpeech(this.context, this);
         langInitialized = false;
-        map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CustomTTSID");
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
     }
 
     private void speak(String text){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params,"CustomTTSID");
-        } else {
-            localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, map);
-        }
+        localTTS.speak(text, TextToSpeech.QUEUE_FLUSH, params, "Custom_TTS_ID");
     }
 
     public void speak(String text, Listener listener){
@@ -159,33 +149,16 @@ public class CustomTTS implements TextToSpeech.OnInitListener, TTS{
         @Override
         public void onError(String utteranceId, int errorCode) {
             super.onError(utteranceId, errorCode);
-            String error;
-            switch (errorCode){
-                case TextToSpeech.ERROR_INVALID_REQUEST:
-                    error = "ERROR_INVALID_REQUEST";
-                    break;
-                case TextToSpeech.ERROR_NETWORK:
-                    error = "ERROR_NETWORK";
-                    break;
-                case TextToSpeech.ERROR_NETWORK_TIMEOUT:
-                    error = "ERROR_NETWORK_TIMEOUT";
-                    break;
-                case TextToSpeech.ERROR_NOT_INSTALLED_YET:
-                    error = "ERROR_NOT_INSTALLED_YET";
-                    break;
-                case TextToSpeech.ERROR_OUTPUT:
-                    error = "ERROR_OUTPUT";
-                    break;
-                case TextToSpeech.ERROR_SERVICE:
-                    error = "ERROR_SERVICE";
-                    break;
-                case TextToSpeech.ERROR_SYNTHESIS:
-                    error = "ERROR_SYNTHESIS";
-                    break;
-                default:
-                    error = "Unknown";
-                    break;
-            }
+            String error = switch (errorCode) {
+                case TextToSpeech.ERROR_INVALID_REQUEST -> "ERROR_INVALID_REQUEST";
+                case TextToSpeech.ERROR_NETWORK -> "ERROR_NETWORK";
+                case TextToSpeech.ERROR_NETWORK_TIMEOUT -> "ERROR_NETWORK_TIMEOUT";
+                case TextToSpeech.ERROR_NOT_INSTALLED_YET -> "ERROR_NOT_INSTALLED_YET";
+                case TextToSpeech.ERROR_OUTPUT -> "ERROR_OUTPUT";
+                case TextToSpeech.ERROR_SERVICE -> "ERROR_SERVICE";
+                case TextToSpeech.ERROR_SYNTHESIS -> "ERROR_SYNTHESIS";
+                default -> "Unknown";
+            };
             System.out.println("Text To speech error: " + error);
         }
     }
@@ -216,7 +189,7 @@ public class CustomTTS implements TextToSpeech.OnInitListener, TTS{
     }
 
     public void finishTTS(){
-        System.out.println("Destroying localTTS");
+        System.out.println("Destroying local TTS");
         langInitialized = false;
         localInitialized = false;
         isShutdown = true;

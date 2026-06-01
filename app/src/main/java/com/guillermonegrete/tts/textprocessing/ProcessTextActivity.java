@@ -9,24 +9,20 @@ package com.guillermonegrete.tts.textprocessing;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.view.Window;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
-import android.provider.Settings;
-import android.view.Window;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import timber.log.Timber;
 
 
 @AndroidEntryPoint
@@ -77,14 +73,10 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
      * Because of this we just hide the UI by default if we don't have permission.
      */
     private void hasOverlayDrawPermission(){
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if(Settings.canDrawOverlays(this)) {
-                detectStatusBar();
-            } else {
-                requestOverlayPermission();
-            }
-        } else {
+        if (Settings.canDrawOverlays(this)) {
             detectStatusBar();
+        } else {
+            requestOverlayPermission();
         }
     }
 
@@ -106,7 +98,6 @@ public class ProcessTextActivity extends AppCompatActivity implements DialogInte
         });
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     private void requestOverlayPermission() {
         var requestOverlayPermission = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (Settings.canDrawOverlays(this)) {

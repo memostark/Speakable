@@ -8,4 +8,5 @@
     android:layout_marginTop="@dimen/external_link_item_vpadding"
     android:layout_marginEnd="5dp"
     android:layout_marginBottom="@dimen/external_link_item_vpadding"
+    android:foreground="?android:selectableItemBackground"
     tools:text="External link" />
