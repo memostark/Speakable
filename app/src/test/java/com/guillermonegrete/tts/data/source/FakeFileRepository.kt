@@ -2,6 +2,7 @@ package com.guillermonegrete.tts.data.source
 
 import androidx.annotation.VisibleForTesting
 import com.guillermonegrete.tts.db.BookFile
+import com.guillermonegrete.tts.db.BookUriUpdate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.LinkedHashMap
@@ -39,6 +40,10 @@ class FakeFileRepository: FileRepository {
 
     override suspend fun deleteFile(file: BookFile) {
         filesServiceData.remove(file.id)
+    }
+
+    override suspend fun update(target: BookUriUpdate) {
+        TODO("Not yet implemented")
     }
 
     @VisibleForTesting
