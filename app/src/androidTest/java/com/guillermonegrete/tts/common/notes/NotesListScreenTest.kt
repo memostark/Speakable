@@ -67,7 +67,7 @@ class NotesListScreenTest {
         }
 
         // Verify notes displayed
-        val items = composeTestRule.onAllNodesWithContentDescription("Options")
+        val items = composeTestRule.onAllNodesWithContentDescription("Options", substring = true)
         items.assertCountEquals(2)
         composeTestRule.onNodeWithText(note1.text).assertIsDisplayed()
         composeTestRule.onNodeWithText(note1.originalText).assertIsDisplayed()
@@ -79,7 +79,7 @@ class NotesListScreenTest {
         composeTestRule.onNodeWithTag(DELETE_NOTE_BTN_TAG).performClick()
         composeTestRule.onNodeWithTag(CONFIRM_BTN_TAG).performClick()
 
-        composeTestRule.onAllNodesWithContentDescription("Options").assertCountEquals(1)
+        composeTestRule.onAllNodesWithContentDescription("Options", substring = true).assertCountEquals(1)
         composeTestRule.onNodeWithText(note1.text).assertIsNotDisplayed()
         composeTestRule.onNodeWithText(note1.originalText).assertIsNotDisplayed()
     }
