@@ -193,7 +193,7 @@ dependencies {
     // Hilt
     implementation "com.google.dagger:hilt-android:$dagger_version"
     ksp "com.google.dagger:hilt-android-compiler:$dagger_version"
-    ksp "org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0" // hilt requires this for kotlin 2.3.0
+    ksp "org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0" // hilt requires this for kotlin 2.3.0
 
     // Hilt testing
     androidTestImplementation "com.google.dagger:hilt-android-testing:$dagger_version"
