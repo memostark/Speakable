@@ -11,7 +11,7 @@ import com.guillermonegrete.tts.importtext.epub.TableOfContents
 import com.guillermonegrete.tts.importtext.visualize.epub.NCXParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -44,15 +44,15 @@ class EpubParserTest {
     }
 
     @Test
-    fun creates_book_object() = runBlockingTest {
+    fun creates_book_object() = runTest {
         val contentStream = ByteArrayInputStream(CONTAINER_FILE_XML.toByteArray())
         zipFileReader.addFileStream(EpubParser.CONTAINER_FILE_PATH, contentStream)
 
         val opfStream = ByteArrayInputStream(OPF_FILE_XML.toByteArray())
-        zipFileReader.addFileStream(opfPath, opfStream)
+        zipFileReader.addFileStream(OPF_PATH, opfStream)
 
         val tocStream = ByteArrayInputStream(TABLE_OF_CONTENTS_XML.toByteArray())
-        zipFileReader.addFileStream("$basePath/$tocPath", tocStream)
+        zipFileReader.addFileStream("$BASE_PATH/$TOC_PATH", tocStream)
 
         chaptersXml.forEachIndexed { index, s ->
             val chapterStream = ByteArrayInputStream(s.toByteArray())
@@ -137,7 +137,7 @@ class EpubParserTest {
     }
 
     companion object{
-        const val basePath = "18291"
+        const val BASE_PATH = "18291"
         const val TABLE_OF_CONTENTS_XML =
                 """<ncx>
                         <head>
@@ -172,15 +172,15 @@ class EpubParserTest {
                         </navMap>
                     </ncx>"""
 
-        const val opfPath = "18291/content.opf"
+        const val OPF_PATH = "18291/content.opf"
         const val CONTAINER_FILE_XML =
             """<?xml version="1.0" encoding="UTF-8" ?>
                 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
                   <rootfiles>
-                    <rootfile full-path="$opfPath" media-type="application/oebps-package+xml"/>
+                    <rootfile full-path="$OPF_PATH" media-type="application/oebps-package+xml"/>
                   </rootfiles>
                 </container>"""
-        const val tocPath = "toc.ncx"
+        const val TOC_PATH = "toc.ncx"
         val metadata = EPUBMetadata("Hunger: Book One", "Knut Hamsun", "en", "item13")
         const val OPF_FILE_XML =
             """<package xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id">
@@ -202,7 +202,7 @@ class EpubParserTest {
                     <item href="1.css" id="item3" media-type="text/css"/>
                     <item href="18291-h@18291-h-0.htm.html" id="item4" media-type="application/xhtml+xml"/>
                     <item href="18291-h@18291-h-1.htm.html" id="item5" media-type="application/xhtml+xml"/>
-                    <item href="$tocPath" id="ncx" media-type="application/x-dtbncx+xml"/>
+                    <item href="$TOC_PATH" id="ncx" media-type="application/x-dtbncx+xml"/>
                     <item href="cover.png" id="item13" media-type="image/png"/>
                     <item href="wrap0000.html" id="coverpage-wrapper" media-type="application/xhtml+xml"/>
                   </manifest>

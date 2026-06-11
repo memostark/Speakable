@@ -2,8 +2,8 @@
 
 buildscript {
     ext.kotlin_version = '2.4.0'
-    ext.nav_version = '2.9.7'
-    ext.dagger_version = "2.59"
+    ext.nav_version = '2.9.8'
+    ext.dagger_version = "2.59.2"
     repositories {
         mavenCentral()
         google()

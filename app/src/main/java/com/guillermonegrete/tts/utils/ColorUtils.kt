@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Color
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
-import okhttp3.internal.toHexString
 
 /**
  * Queries the theme of the given `context` for a theme color.

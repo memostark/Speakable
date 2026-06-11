@@ -16,45 +16,33 @@
 
 package com.guillermonegrete.tts
 
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
-import kotlin.coroutines.ContinuationInterceptor
 
 /**
- * Sets the main coroutines dispatcher to a [TestCoroutineScope] for unit testing. A
- * [TestCoroutineScope] provides control over the execution of coroutines.
+ * Sets the main coroutines dispatcher to a [TestDispatcher] for unit testing.
  *
  * Declare it as a JUnit Rule:
  *
  * ```
  * @get:Rule
- * var mainCoroutineRule = MainCoroutineRule()
+ * val mainCoroutineRule = MainCoroutineRule()
  * ```
  *
- * Use it directly as a [TestCoroutineScope]:
- *
- * ```
- * mainCoroutineRule.pauseDispatcher()
- * ...
- * mainCoroutineRule.resumeDispatcher()
- * ...
- * mainCoroutineRule.runBlockingTest { }
- * ...
- *
- * ```
+ * Then, use `runTest` to execute your tests.
  */
 @ExperimentalCoroutinesApi
-class InstMainCoroutineRule : TestWatcher(), TestCoroutineScope by TestCoroutineScope() {
+class InstMainCoroutineRule(val dispatcher: TestDispatcher = StandardTestDispatcher()): TestWatcher() {
 
     override fun starting(description: Description?) {
         super.starting(description)
-        Dispatchers.setMain(this.coroutineContext[ContinuationInterceptor] as CoroutineDispatcher)
+        Dispatchers.setMain(dispatcher)
     }
 
     override fun finished(description: Description?) {
