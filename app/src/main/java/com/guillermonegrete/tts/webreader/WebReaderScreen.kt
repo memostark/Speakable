@@ -58,7 +58,6 @@ import com.guillermonegrete.tts.ui.theme.BlueNoteHighlight
 import com.guillermonegrete.tts.ui.theme.GreenNoteHighlight
 import com.guillermonegrete.tts.ui.theme.RedNoteHighlight
 import com.guillermonegrete.tts.ui.theme.YellowNoteHighlight
-import okhttp3.internal.toHexString
 
 
 @Composable
