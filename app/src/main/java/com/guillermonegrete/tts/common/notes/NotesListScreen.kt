@@ -14,10 +14,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -83,7 +80,7 @@ fun NotesListScreen(
                             onClick = { selectedNote = note },
                         ) {
                             Icon(
-                                imageVector = Icons.Default.MoreVert,
+                                painter = painterResource(R.drawable.ic_more_vert_black_24dp),
                                 contentDescription = "Options item $index"
                             )
                         }
@@ -158,14 +155,14 @@ fun NoteItemMenu(
         Column(modifier = Modifier.padding(horizontal = 8.dp)) {
             val goToDesc = stringResource(R.string.go_to_text)
             DropdownMenuItem(
-                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, goToDesc) },
+                leadingIcon = { Icon(painterResource(R.drawable.baseline_exit_to_app_24), goToDesc) },
                 text = { Text(goToDesc) },
                 onClick = { onItemClick(NoteMenuItem.GO_TO) }
             )
 
             val deleteDesc = stringResource(R.string.delete)
             DropdownMenuItem(
-                leadingIcon = { Icon(Icons.Filled.Delete, deleteDesc) },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_delete_black_24dp), deleteDesc) },
                 text = { Text(deleteDesc) },
                 onClick = { onItemClick(NoteMenuItem.DELETE) },
                 modifier = Modifier.testTag(DELETE_NOTE_BTN_TAG),

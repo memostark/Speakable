@@ -2,12 +2,8 @@ package com.guillermonegrete.tts.common.compose
 
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
-import androidx.window.core.layout.WindowHeightSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.window.core.layout.WindowSizeClass
 
 @Composable
-fun isDesktopOrTabletSize(): Boolean {
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    return windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED
-            && (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.EXPANDED || windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.MEDIUM)
-}
+fun isDesktopOrTabletSize()
+    = currentWindowAdaptiveInfo().windowSizeClass.isAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND, WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)

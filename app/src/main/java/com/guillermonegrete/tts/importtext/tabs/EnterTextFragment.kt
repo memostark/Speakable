@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -46,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
-import androidx.window.core.layout.WindowHeightSizeClass
+import androidx.window.core.layout.WindowSizeClass
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.isDesktopOrTabletSize
 import com.guillermonegrete.tts.importtext.visualize.VisualizeTextActivity
@@ -83,7 +82,7 @@ class EnterTextFragment: Fragment() {
             var textField by rememberSaveable(stateSaver = TextFieldValue.Saver) {
                 mutableStateOf(TextFieldValue(text))
             }
-            if (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT) {
+            if (!windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)) {
                 EnterTextScreenHeightCompact( { textField }, { textField = it } )
             } else {
                 EnterTextScreenDefault( { textField }, { textField = it } )
@@ -196,8 +195,8 @@ class EnterTextFragment: Fragment() {
                         modifier = Modifier.padding(8.dp),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription = "Clear"
+                            painter = painterResource(R.drawable.ic_baseline_close_24),
+                            contentDescription = "Clear",
                         )
                     }
                 }

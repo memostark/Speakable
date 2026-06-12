@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +36,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
@@ -133,14 +131,14 @@ fun NoteSheet(
                 )
                 IconButton(onClick = onEditClicked) {
                     Icon(
-                        Icons.Default.Edit,
+                        painter = painterResource(R.drawable.ic_edit_black_24dp),
                         contentDescription = stringResource(R.string.edit_icon_description),
                     )
                 }
                 if (infoButtonVisibility()) {
                     IconButton(onClick = onInfoClicked) {
                         Icon(
-                            Icons.Outlined.Info,
+                            painter = painterResource(R.drawable.ic_outline_info_24),
                             contentDescription = stringResource(R.string.more_information),
                         )
                     }

@@ -38,13 +38,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -85,7 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.window.core.layout.WindowHeightSizeClass
+import androidx.window.core.layout.WindowSizeClass
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.LanguagesList
 import com.guillermonegrete.tts.common.compose.Spinner
@@ -183,7 +183,7 @@ fun SentenceDialog(
                     WordRow(wordState, onBookmarkClicked, onMoreInfoClicked)
 
                     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-                    if (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT) {
+                    if (!windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)) {
                         LanguageBar(
                             languagesFrom, languagesTo, sourceLangIndex, targetLangIndex, detectedLanguageState,
                             playIconState, onPlayButtonClick, onSourceLangChanged, onTargetLangChanged
@@ -671,7 +671,7 @@ fun EditWordDialogPreview() {
             "Hola",
             "es",
             "Hello, hi, hey",
-            "The most common spanish greeting used when meeting someone",
+            "The most common Spanish greeting used when meeting someone",
             LanguagesList(listOf("English", "Spanish", "German"), listOf("en", "es", "de")),
             true
         )
