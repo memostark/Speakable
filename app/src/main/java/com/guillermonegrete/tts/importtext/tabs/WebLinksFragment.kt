@@ -12,8 +12,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -221,7 +219,7 @@ fun WebLinkMenu(onItemClick: (item: WebLinkMenuItem) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 8.dp)) {
         val deleteDesc = stringResource(R.string.delete)
         DropdownMenuItem(
-            leadingIcon = { Icon(Icons.Filled.Delete, deleteDesc) },
+            leadingIcon = { Icon(painterResource(R.drawable.ic_delete_black_24dp), deleteDesc) },
             text = { Text(deleteDesc) },
             onClick = { onItemClick(WebLinkMenuItem.DELETE) }
         )

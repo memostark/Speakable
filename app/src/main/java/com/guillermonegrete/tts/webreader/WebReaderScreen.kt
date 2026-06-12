@@ -7,8 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,7 +46,7 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.window.core.layout.WindowSizeClass
 import com.guillermonegrete.tts.R
 import com.guillermonegrete.tts.common.compose.Spinner
 import com.guillermonegrete.tts.common.compose.StringList
@@ -138,7 +136,7 @@ fun WebReaderBarMenu(
         var checked by remember { mutableStateOf(wordsShown) }
 
         IconButton(onClick = { menuExpanded = true }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = "Desc")
+            Icon(painterResource(R.drawable.ic_more_vert_black_24dp), contentDescription = "Desc")
         }
 
         DropdownMenu(
@@ -376,8 +374,8 @@ fun AddNoteDialog(
     if (state == null) return
 
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    
-    if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) {
+
+    if (!windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
         AddNoteDialog(true, state.noteText, state.noteColor, state.noteSaved, onDismiss, onDelete, onSaveClicked)
     } else {
         AddNoteDialogMedium(true, state.noteText, state.noteColor, state.noteSaved, onDismiss, onDelete, onSaveClicked)
