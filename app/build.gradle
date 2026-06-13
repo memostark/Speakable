@@ -236,6 +236,11 @@ dependencies {
 
     // Readability
     implementation 'net.dankito.readability4j:readability4j:1.0.8'
+
+    // Kotlin serialization
+    // Not used directly but used to force transitive serialization libraries to use a safe runtime version
+    implementation('org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0')
+    implementation('org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0')
 }
 
 apply plugin: 'com.google.gms.google-services'
