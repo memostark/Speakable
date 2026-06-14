@@ -518,14 +518,16 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
-            try {
-                val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-                _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
-                _linksSheetExpanded.value = false
-                // if out of index, default to the first item (zero index)
-                if(_selectedLink.value >= links.size) _selectedLink.value = 0
-            } catch (e: Exception) {
-                _linksForWord.value = DialogState.Error(e)
+            wrapEspressoIdlingResource {
+                try {
+                    val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
+                    _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
+                    _linksSheetExpanded.value = false
+                    // if out of index, default to the first item (zero index)
+                    if(_selectedLink.value >= links.size) _selectedLink.value = 0
+                } catch (e: Exception) {
+                    _linksForWord.value = DialogState.Error(e)
+                }
             }
         }
     }

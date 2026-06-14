@@ -1,10 +1,10 @@
 package com.guillermonegrete.tts.webreader
 
+import android.os.Bundle
 import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.core.os.bundleOf
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -32,6 +32,7 @@ import com.guillermonegrete.tts.utils.EspressoIdlingResource
 import com.guillermonegrete.tts.utils.atPosition
 import com.guillermonegrete.tts.utils.clickIn
 import com.guillermonegrete.tts.utils.clickPercent
+import com.guillermonegrete.tts.utils.doubleClickIn
 import com.guillermonegrete.tts.utils.hasNoBackgroundSpan
 import com.guillermonegrete.tts.utils.withBackgroundSpan
 import com.guillermonegrete.tts.webreader.db.Note
@@ -137,7 +138,7 @@ class WebReaderFragmentTest{
         onView(withId(R.id.paragraphs_list)).check(matches(isDisplayed()))
 
         // Highlight first sentence
-        clickParagraphList(0, doubleClick())
+        clickParagraphList(0, doubleClickIn(0f, 0f))
 
         server.dispatcher = sentenceDispatcher()
 
@@ -186,7 +187,7 @@ class WebReaderFragmentTest{
         setRemotePage()
 
         // Highlight first sentence
-        clickParagraphList(0, doubleClick())
+        clickParagraphList(0, doubleClickIn(0f, 0f))
 
         server.dispatcher = sentenceDispatcher()
 
@@ -259,7 +260,7 @@ class WebReaderFragmentTest{
     @Test
     fun given_saved_note_when_delete_sheet_updated() {
         // Initial data with saved link and note at the start of the 1st paragraph
-        val note = Note("note text", "original text", 37, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
+        val note = Note("note text", "original text", START_SECOND_PARAGRAPH_INDEX, 5, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
         setLocalPage(initialNote = note)
 
         // Click note
@@ -300,7 +301,7 @@ class WebReaderFragmentTest{
 
         // Add note
         pickNoteDialog(R.id.add_word_note_btn)
-        updateWordNote("New note text", 1, 10, 19, listPos)
+        updateWordNote("New note text", 1, 10, 19)
 
         // Show more info
         onView(withId(R.id.more_info_word_btn)).perform(click())
@@ -319,7 +320,7 @@ class WebReaderFragmentTest{
 
         // Modify note
         onView(withId(R.id.add_word_note_btn)).perform(click())
-        updateWordNote("Modified note text", 3, 0, 2, listPos)
+        updateWordNote("Modified note text", 3, 0, 2)
 
         // Show more info
         onView(withId(R.id.more_info_word_btn)).perform(click())
@@ -348,7 +349,7 @@ class WebReaderFragmentTest{
 
         // Add new note
         pickNoteDialog(R.id.add_word_note_btn)
-        updateWordNote("New note text", 1, 10, 19, listPos)
+        updateWordNote("New note text", 1, 10, 19)
 
         // Delete new note
         onView(withId(R.id.add_word_note_btn)).perform(click())
@@ -375,7 +376,7 @@ class WebReaderFragmentTest{
             .context.assets.open("test_page.html").bufferedReader().use { it.readText() }
         server.enqueue(MockResponse().setBody(body))
 
-        val args = bundleOf("link" to server.url("/").toString())
+        val args = Bundle().apply { putString("link", server.url("/").toString()) }
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
     }
 
@@ -395,7 +396,7 @@ class WebReaderFragmentTest{
             }
         }
 
-        val args = bundleOf("link" to server.url("/").toString())
+        val args = Bundle().apply { putString("link", server.url("/").toString()) }
         launchFragmentInHiltContainer<WebReaderFragment>(args, R.style.AppTheme)
     }
 
@@ -421,9 +422,7 @@ class WebReaderFragmentTest{
     private fun sentenceDispatcher(): Dispatcher {
         return object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
-                val text = request.requestUrl?.queryParameter("q")
-                println(text)
-                val response = when (text) {
+                val response = when (val text = request.requestUrl?.queryParameter("q")) {
                     FIRST_SENTENCE -> sentencesTranslationResponses.first()
                     SECOND_SENTENCE -> sentencesTranslationResponses[1]
                     THIRD_SENTENCE -> sentencesTranslationResponses.last()
@@ -478,8 +477,7 @@ class WebReaderFragmentTest{
         text: String,
         colorIndex: Int,
         spanStart: Int,
-        spanEnd: Int,
-        listPos: Int = 0
+        spanEnd: Int
     ){
         // Modify the text, color and save
         composeTestRule.onNodeWithTag(NOTE_TEXT_TAG).performTextReplacement(text)
@@ -490,9 +488,10 @@ class WebReaderFragmentTest{
         onView(withId(R.id.word_translation)).check(matches(isDisplayed()))
         onView(withId(R.id.word_translation)).check(matches(withText(text)))
 
+        val pos = 1 // So far the tests only update notes in the second paragraph
         val modifiedColor = COLORS[colorIndex].toArgb()
         onView(withId(R.id.paragraphs_list))
-            .check(matches(atPosition(listPos, withBackgroundSpan(modifiedColor, spanStart, spanEnd))))
+            .check(matches(atPosition(pos, withBackgroundSpan(modifiedColor, spanStart, spanEnd))))
     }
 
     /**
@@ -514,7 +513,7 @@ class WebReaderFragmentTest{
     }
 
     companion object{
-        const val FIRST_SENTENCE = "My First Heading\n"
+        const val FIRST_SENTENCE = "My First Heading. "
         private const val FIRST_SENTENCE_TRANS = "Primer encabezado"
         const val SECOND_SENTENCE = "Body first paragraph"
         private const val SECOND_SENTENCE_TRANS = "Cuerpo del primer parrafo"
@@ -537,6 +536,7 @@ class WebReaderFragmentTest{
         const val DEFAULT_UUID = "7e57d235-3553-4a57-bd35-37af9d5b1ffb"
         const val DEFAULT_LINK_ID = 2
 
-        val DEFAULT_NOTE = Note("note text", "My", 37, 2, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
+        const val START_SECOND_PARAGRAPH_INDEX = 38
+        val DEFAULT_NOTE = Note("note text", "My", START_SECOND_PARAGRAPH_INDEX, 2, YellowNoteHighlight.toHex(), DEFAULT_LINK_ID)
     }
 }
