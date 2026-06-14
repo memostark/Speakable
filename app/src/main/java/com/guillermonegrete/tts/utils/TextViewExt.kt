@@ -1,12 +1,10 @@
 package com.guillermonegrete.tts.utils
 
 import android.text.Spannable
-import android.text.method.ScrollingMovementMethod
+import android.text.Spanned
 import android.text.style.BackgroundColorSpan
-import android.view.MotionEvent
 import android.widget.TextView
 import androidx.annotation.ColorInt
-import androidx.appcompat.widget.AppCompatTextView
 import com.guillermonegrete.tts.common.models.Span
 import com.guillermonegrete.tts.ui.theme.HighlightColorInt
 
@@ -65,25 +63,6 @@ fun TextView.getSelectedText(): CharSequence? {
     } else null
 }
 
-/**
- * If this [AppCompatTextView] is placed inside ScrollView then we allow it get scrolled inside
- * that ScrollView
- */
-fun AppCompatTextView.makeScrollableInsideScrollView() {
-    movementMethod = ScrollingMovementMethod()
-    setOnTouchListener { v, event ->
-        v.parent.requestDisallowInterceptTouchEvent(true)
-        when (event.action and MotionEvent.ACTION_MASK) {
-            MotionEvent.ACTION_UP -> {
-                v.parent.requestDisallowInterceptTouchEvent(false)
-                // It is required to call performClick() in onTouch event.
-                performClick()
-            }
-        }
-        false
-    }
-}
-
 fun Spannable.addHighlightedText(
     start: Int,
     end: Int,
@@ -103,13 +82,28 @@ fun Spannable.addHighlightedText(
     return span
 }
 
-fun Spannable.getBgColorSpan(start: Int, end: Int, @ColorInt color: Int): BackgroundColorSpan? {
-    getSpans(start, end, BackgroundColorSpan::class.java).map { bgSpan ->
-        if (start == getSpanStart(bgSpan) && end == getSpanEnd(bgSpan) && color == bgSpan.backgroundColor) {
-            return bgSpan
+fun String.isWord() = split(" ").size == 1
+
+fun Spanned.splitKeepingSpans(delimiter: String): List<Spanned> {
+    val result = mutableListOf<Spanned>()
+    var startIndex = 0
+
+    while (startIndex <= this.length) {
+        var delimiterIndex = this.indexOf(delimiter, startIndex)
+        if (delimiterIndex == -1) {
+            delimiterIndex = this.length
         }
+
+        // Extract the chunk and its spans
+        val chunk = this.subSequence(startIndex, delimiterIndex) as Spanned
+        result.add(chunk)
+
+        // Move past the newline character length
+        startIndex = delimiterIndex + delimiter.length
+
+        // Break loop if we reached the end of the text
+        if (delimiterIndex == this.length) break
     }
-    return null
+    return result
 }
 
-fun String.isWord() = split(" ").size == 1

@@ -67,6 +67,7 @@ import com.guillermonegrete.tts.ImporttextDirections
 import com.guillermonegrete.tts.common.notes.NotesListFragment
 import com.guillermonegrete.tts.common.views.CharacterSmoothScroller
 import com.guillermonegrete.tts.db.NoteType
+import com.guillermonegrete.tts.utils.splitKeepingSpans
 import kotlin.math.abs
 
 @AndroidEntryPoint
@@ -365,8 +366,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
             paragraphsList.isVisible = true
 
             // Split text and parse from HTML
-            val newParagraphs =  page.text.split("\n")
-                .map { HtmlCompat.fromHtml(it, HtmlCompat.FROM_HTML_MODE_COMPACT).trim() }
+            val newParagraphs =  HtmlCompat.fromHtml(page.text, HtmlCompat.FROM_HTML_MODE_COMPACT).splitKeepingSpans("\n")
+                .map { it.trim() }
                 .filter { it.isNotEmpty() }
             // Create items for adapter
             val splitParagraphs = viewModel.createParagraphs(newParagraphs)

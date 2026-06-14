@@ -62,6 +62,23 @@ fun clickIn(x: Int, y: Int): ViewAction {
 }
 
 /**
+ * Creates a ViewAction to double click at specific X, Y coordinates relative to the view.
+ */
+fun doubleClickIn(x: Float, y: Float): ViewAction {
+    return GeneralClickAction(
+        Tap.DOUBLE,
+        { view ->
+            val screenPos = IntArray(2)
+            view.getLocationOnScreen(screenPos)
+            floatArrayOf(screenPos[0] + x, screenPos[1] + y)
+        },
+        Press.FINGER,
+        0, // inputDevice
+        0  // buttonState
+    )
+}
+
+/**
  * Performs a click in the given percentage coordinates
  */
 fun clickPercent(pctX: Float, pctY: Float): ViewAction {
@@ -113,25 +130,47 @@ fun withBackgroundSpan(color: Int, start: Int, end: Int): Matcher<View?> {
 
     return object : BoundedMatcher<View?, TextView>(TextView::class.java) {
 
+        var foundSpans: List<ColorSpan>? = null
+
         override fun describeTo(description: Description) {
             description.appendText("with background color span: ").appendValue(span.backgroundColor)
                 .appendText(" at position start: ").appendValue(start)
                 .appendText(" and end: ").appendValue(end)
+
+            val spans = foundSpans ?: return
+
+            // Don't use describeMismatch() because Espresso doesn't call it, instead print the mismatch here if foundSpans is not null
+            description.appendText("\nbut instead found: ")
+            if (spans.isEmpty()) {
+                description.appendText(" none")
+            } else {
+                spans.forEach {
+                    description.appendText("\nwith background color span: ").appendValue(it.color)
+                        .appendText(" at position start: ").appendValue(it.start)
+                        .appendText(" and end: ").appendValue(it.end)
+                }
+            }
         }
 
         override fun matchesSafely(foundView: TextView): Boolean {
             val text = (foundView.text as? Spannable) ?: return false
 
-            text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { viewSpan ->
+            foundSpans = null
+            foundSpans = text.getSpans(0, text.length, BackgroundColorSpan::class.java).map { viewSpan ->
+                val spanStart = text.getSpanStart(viewSpan)
+                val spanEnd = text.getSpanEnd(viewSpan)
                 if (viewSpan.backgroundColor == span.backgroundColor &&
-                    start == text.getSpanStart(viewSpan) &&
-                    end == text.getSpanEnd(viewSpan)
+                    start == spanStart &&
+                    end == spanEnd
                 ) return true
+                ColorSpan(viewSpan.backgroundColor, spanStart, spanEnd)
             }
             return false
         }
     }
 }
+
+data class ColorSpan(val color: Int, val start: Int, val end: Int)
 
 /**
  * Matches that the [TextView] has no background spans.
