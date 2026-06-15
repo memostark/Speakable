@@ -215,7 +215,8 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                             var index = 0
                             val notes = adapter.items.map {
-                                val nextIndex = index + it.original.length
+                                val textLength = it.original.length
+                                val nextIndex = index + textLength
                                 // Search the notes applied to this paragraph
                                 val paragraphNotes = dbNotes.filter { dbNote ->
                                     dbNote.position in index until nextIndex
@@ -223,7 +224,12 @@ class WebReaderFragment : Fragment(R.layout.fragment_web_reader){
 
                                 val noteItems = paragraphNotes.map { note ->
                                     val itemStart = note.position - index
-                                    NoteItem(note.text, Span(itemStart, itemStart + note.length), note.color.toColorInt(), note.id)
+                                    var itemEnd = itemStart + note.length
+                                    if (itemEnd > textLength) {
+                                        Timber.w("The note (id ${note.id}) is out of bounds, end: $itemEnd, text length: $textLength")
+                                        itemEnd = textLength
+                                    }
+                                    NoteItem(note.text, Span(itemStart, itemEnd), note.color.toColorInt(), note.id)
                                 }
 
                                 index = nextIndex
