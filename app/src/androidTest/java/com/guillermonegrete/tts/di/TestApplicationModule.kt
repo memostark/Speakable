@@ -7,6 +7,8 @@ import com.guillermonegrete.tts.customtts.FakeTTS
 import com.guillermonegrete.tts.customtts.TTS
 import com.guillermonegrete.tts.data.source.*
 import com.guillermonegrete.tts.db.FilesDatabase
+import com.guillermonegrete.tts.utils.EspressoIdlingResource
+import com.guillermonegrete.tts.utils.SimpleCountingIdlingResource
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -14,7 +16,14 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Singleton
+import kotlin.coroutines.CoroutineContext
 
 /**
  * WordRepositorySource binding to use in tests.
@@ -66,4 +75,55 @@ object MockNetworkModule {
     @Provides
     fun provideTestBaseUrl() = "http://localhost:8081"
 
+}
+
+@TestInstallIn(
+    components = [SingletonComponent::class],
+    replaces = [CoroutinesDispatchersModule::class]
+)
+@Module
+object TestCoroutinesDispatchersModule {
+
+    @DefaultDispatcher
+    @Provides
+    fun providesDefaultDispatcher(): CoroutineDispatcher =
+        IdlingResourceDispatcher(Dispatchers.Default)
+
+    @IoDispatcher
+    @Provides
+    fun providesIoDispatcher(): CoroutineDispatcher =
+        IdlingResourceDispatcher(Dispatchers.IO)
+
+    class IdlingResourceDispatcher(
+        private val delegate: CoroutineDispatcher,
+        val idlingResource: SimpleCountingIdlingResource = EspressoIdlingResource.countingIdlingResource
+    ) : CoroutineDispatcher() {
+
+        private val trackedJobs = ConcurrentHashMap.newKeySet<Job>()
+
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            val job = context[Job]
+
+            if (job != null && trackedJobs.add(job)) {
+                // This is the first time we see this coroutine job!
+                Timber.d("Incrementing idle resource")
+                idlingResource.increment()
+
+                job.invokeOnCompletion {
+                    // Decrement strictly when the entire Job lifecycle finishes
+                    Timber.d("Decrementing idle resource")
+                    idlingResource.decrement()
+                    trackedJobs.remove(job)
+                }
+            }
+
+            // Forward execution to the actual background thread pool
+            delegate.dispatch(context, block)
+        }
+
+        @ExperimentalCoroutinesApi
+        override fun isDispatchNeeded(context: CoroutineContext): Boolean {
+            return delegate.isDispatchNeeded(context)
+        }
+    }
 }
