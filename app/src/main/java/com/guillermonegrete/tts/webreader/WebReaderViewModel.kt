@@ -15,6 +15,8 @@ import com.guillermonegrete.tts.data.source.WordRepositorySource.GetWordsCallbac
 import com.guillermonegrete.tts.db.WebLink
 import com.guillermonegrete.tts.db.WebLinkDAO
 import com.guillermonegrete.tts.db.Words
+import com.guillermonegrete.tts.di.DefaultDispatcher
+import com.guillermonegrete.tts.di.IoDispatcher
 import com.guillermonegrete.tts.importtext.visualize.model.SplitPageSpan
 import com.guillermonegrete.tts.main.domain.interactors.GetLangAndTranslation
 import com.guillermonegrete.tts.savedwords.ResultType
@@ -63,8 +65,8 @@ class WebReaderViewModel @AssistedInject constructor(
     private val webLinkDAO: WebLinkDAO,
     private val noteDAO: NoteDAO,
     private val settings: SettingsRepository,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ): ViewModel() {
 
@@ -518,16 +520,14 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun getLinksForWord(word: String, lang: String) {
         viewModelScope.launch {
-            wrapEspressoIdlingResource {
-                try {
-                    val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
-                    _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
-                    _linksSheetExpanded.value = false
-                    // if out of index, default to the first item (zero index)
-                    if(_selectedLink.value >= links.size) _selectedLink.value = 0
-                } catch (e: Exception) {
-                    _linksForWord.value = DialogState.Error(e)
-                }
+            try {
+                val links = withContext(ioDispatcher) { getExternalLinksInteractor(lang) }
+                _linksForWord.value = DialogState.Success(WordAndLinks(word, links))
+                _linksSheetExpanded.value = false
+                // if out of index, default to the first item (zero index)
+                if(_selectedLink.value >= links.size) _selectedLink.value = 0
+            } catch (e: Exception) {
+                _linksForWord.value = DialogState.Error(e)
             }
         }
     }

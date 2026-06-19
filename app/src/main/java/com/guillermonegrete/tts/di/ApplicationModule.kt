@@ -38,6 +38,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -163,7 +164,7 @@ object ApplicationModule {
     }
 
     @Provides
-    fun provideMoshi() = Moshi.Builder()
+    fun provideMoshi(): Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
 
@@ -268,4 +269,25 @@ class FirebaseLocalModule{
     @IntoMap
     @TextRecognizerEnumKey(TextRecognizerType.FIREBASE_LOCAL)
     fun provideLocalTextRecognizer(): ImageProcessingSource = FirebaseTextProcessor()
+}
+
+@Retention(AnnotationRetention.RUNTIME)
+@Qualifier
+annotation class DefaultDispatcher
+
+@Retention(AnnotationRetention.RUNTIME)
+@Qualifier
+annotation class IoDispatcher
+
+@InstallIn(SingletonComponent::class)
+@Module
+object CoroutinesDispatchersModule {
+
+    @DefaultDispatcher
+    @Provides
+    fun providesDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    @IoDispatcher
+    @Provides
+    fun providesIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 }
