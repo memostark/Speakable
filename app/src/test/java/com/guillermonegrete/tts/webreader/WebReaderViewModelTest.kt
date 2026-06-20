@@ -1,6 +1,7 @@
 package com.guillermonegrete.tts.webreader
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.guillermonegrete.tts.MainCoroutineRule
 import com.guillermonegrete.tts.TestThreadExecutor
@@ -87,6 +88,7 @@ class WebReaderViewModelTest {
             settings,
             mainCoroutineRule.dispatcher,
             mainCoroutineRule.dispatcher,
+            SavedStateHandle(),
         )
 
         mockkStatic(Jsoup::class)
@@ -541,9 +543,7 @@ class WebReaderViewModelTest {
         val localContent = """
                             <html>
                              <head></head>
-                             <body>
-                              My document
-                             </body>
+                             <body>My document</body>
                             </html>
                            """.trimIndent()
 
@@ -551,6 +551,6 @@ class WebReaderViewModelTest {
 
         val secondParagraphTrans = Translation(listOf(Segment( "Imagine this is translated", "Second paragraph text")), "EN")
 
-        const val DEFAULT_PAGE_RESULT = "<div id=\"readability-page-1\" class=\"page\">   My document  \n</div>"
+        const val DEFAULT_PAGE_RESULT = "<div id=\"readability-page-1\" class=\"page\"> My document</div>"
     }
 }
