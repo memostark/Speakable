@@ -25,7 +25,6 @@ import com.guillermonegrete.tts.textprocessing.domain.interactors.GetExternalLin
 import com.guillermonegrete.tts.utils.deleteAllFolder
 import com.guillermonegrete.tts.utils.isWord
 import com.guillermonegrete.tts.utils.makeDir
-import com.guillermonegrete.tts.utils.wrapEspressoIdlingResource
 import com.guillermonegrete.tts.utils.writeToFile
 import com.guillermonegrete.tts.webreader.db.Note
 import com.guillermonegrete.tts.webreader.db.NoteDAO
@@ -67,7 +66,7 @@ class WebReaderViewModel @AssistedInject constructor(
     private val settings: SettingsRepository,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
-    savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    savedStateHandle: SavedStateHandle,
 ): ViewModel() {
 
     private val _page = MutableLiveData<LoadResult<PageInfo>>()
@@ -150,37 +149,34 @@ class WebReaderViewModel @AssistedInject constructor(
         _page.value = LoadResult.Loading
 
         viewModelScope.launch {
-            wrapEspressoIdlingResource {
+            try {
+                var webLink = webLinkDAO.getLink(url)
+                val pageInfo: PageInfo
 
-                try {
-                    var webLink = webLinkDAO.getLink(url)
-                    val pageInfo: PageInfo
+                if (webLink != null) {
+                    val uuid = webLink.uuid
 
-                    if (webLink != null) {
-                        val uuid = webLink.uuid
-
-                        val isLocalPage = uuid != null && pageVersion == PageVersion.LOCAL
-                        pageInfo = if (isLocalPage) {
-                            PageInfo(readContentFile(uuid), true)
-                        } else {
-                            PageInfo(getPage(url).content, false)
-                        }
+                    val isLocalPage = uuid != null && pageVersion == PageVersion.LOCAL
+                    pageInfo = if (isLocalPage) {
+                        PageInfo(readContentFile(uuid), true)
                     } else {
-                        val page = getPage(url)
-                        webLink = link ?: WebLink(url, page.title)
-                        pageInfo = PageInfo(page.content, false)
+                        PageInfo(getPage(url).content, false)
                     }
-
-                    cacheWebLink = webLink
-                    _page.value = LoadResult.Success(pageInfo)
-                    _dialogState.update { it.copy(isPageSaved = pageInfo.isLocalPage) }
-                    // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
-                    // Bug report: https://issuetracker.google.com/issues/198313895
-                    val safeLink: WebLink = webLink
-                    _weblink.value = safeLink
-                } catch (ex: IOException) {
-                    _page.value = LoadResult.Error(ex)
+                } else {
+                    val page = getPage(url)
+                    webLink = link ?: WebLink(url, page.title)
+                    pageInfo = PageInfo(page.content, false)
                 }
+
+                cacheWebLink = webLink
+                _page.value = LoadResult.Success(pageInfo)
+                _dialogState.update { it.copy(isPageSaved = pageInfo.isLocalPage) }
+                // Smart cast is not working with MutableLiveData#setValue, it has to be explicitly cast
+                // Bug report: https://issuetracker.google.com/issues/198313895
+                val safeLink: WebLink = webLink
+                _weblink.value = safeLink
+            } catch (ex: IOException) {
+                _page.value = LoadResult.Error(ex)
             }
         }
     }
@@ -286,21 +282,19 @@ class WebReaderViewModel @AssistedInject constructor(
         _paragraphState.update { it.copy(paragraph = currentParagraph.copy(isLoading = true)) }
 
         viewModelScope.launch {
-            wrapEspressoIdlingResource {
-                val result = withContext(ioDispatcher) {
-                    getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
-                }
+            val result = withContext(ioDispatcher) {
+                getTranslationInteractor(paragraph.original, languageFrom = language ?: "auto")
+            }
 
-                when(result){
-                    is Result.Success -> {
-                        val translation = result.data
-                        paragraph.translation = translation.translatedText
-                        paragraph.sourceLang = translation.src
-                        _translatedParagraphs[pos] = translation
-                        _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false, translation = translation)) }
-                    }
-                    is Result.Error -> _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false)) }
+            when(result){
+                is Result.Success -> {
+                    val translation = result.data
+                    paragraph.translation = translation.translatedText
+                    paragraph.sourceLang = translation.src
+                    _translatedParagraphs[pos] = translation
+                    _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false, translation = translation)) }
                 }
+                is Result.Error -> _paragraphState.update { it.copy(paragraph = it.paragraph?.copy(isLoading = false)) }
             }
         }
 
@@ -604,14 +598,12 @@ class WebReaderViewModel @AssistedInject constructor(
 
             _dialogState.update { it.copy(isLoading = true) }
 
-            wrapEspressoIdlingResource {
-                getTranslation(sentence.original) { translation ->
-                    sentence.translation = translation.translatedText
-                    sentence.sourceLang = translation.src
-                    viewModelScope.launch {
-                        val sentence = Sentence(translation.translatedText, paragraphIndex)
-                        _dialogState.update { it.copy(sentence = sentence, dialogState = null, isLoading = false) }
-                    }
+            getTranslation(sentence.original) { translation ->
+                sentence.translation = translation.translatedText
+                sentence.sourceLang = translation.src
+                viewModelScope.launch {
+                    val sentence = Sentence(translation.translatedText, paragraphIndex)
+                    _dialogState.update { it.copy(sentence = sentence, dialogState = null, isLoading = false) }
                 }
             }
         }
@@ -662,16 +654,14 @@ class WebReaderViewModel @AssistedInject constructor(
     fun saveNote(text: String, noteText: String, selection: Span, id: Long, color: String) {
         val webLink = cacheWebLink ?: return
         viewModelScope.launch {
-            wrapEspressoIdlingResource {
-                val newNote = Note(noteText, text, selection.start, selection.end - selection.start, color, webLink.id, null, id)
-                val resultId = noteDAO.upsert(newNote)
-                // Upsert returns -1 when the operation was an update, use the parameter ID.
-                val finalId = if(resultId == -1L) id else resultId
-                val updatedNote = newNote.copy(id = finalId)
-                _updatedNote.emit(ModifiedNote.Update(updatedNote))
-                _editDialogs.update { it.copy(isEditingType = null) }
-                _dialogState.update { it.copy(dialogState = DialogType.Note(updatedNote)) }
-            }
+            val newNote = Note(noteText, text, selection.start, selection.end - selection.start, color, webLink.id, null, id)
+            val resultId = noteDAO.upsert(newNote)
+            // Upsert returns -1 when the operation was an update, use the parameter ID.
+            val finalId = if(resultId == -1L) id else resultId
+            val updatedNote = newNote.copy(id = finalId)
+            _updatedNote.emit(ModifiedNote.Update(updatedNote))
+            _editDialogs.update { it.copy(isEditingType = null) }
+            _dialogState.update { it.copy(dialogState = DialogType.Note(updatedNote)) }
         }
     }
 
@@ -682,12 +672,10 @@ class WebReaderViewModel @AssistedInject constructor(
 
     fun deleteNote(id: Long) {
         viewModelScope.launch {
-            wrapEspressoIdlingResource {
-                noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
-                _updatedNote.emit(ModifiedNote.Delete(id))
-                _editDialogs.update { it.copy(isEditingType = null, isDeleteDialogShown = false) }
-                _dialogState.update { it.copy(dialogState = null) }
-            }
+            noteDAO.delete(Note("", "", 0, 0, "", 0, null, id)) // only the id is necessary
+            _updatedNote.emit(ModifiedNote.Delete(id))
+            _editDialogs.update { it.copy(isEditingType = null, isDeleteDialogShown = false) }
+            _dialogState.update { it.copy(dialogState = null) }
         }
     }
 

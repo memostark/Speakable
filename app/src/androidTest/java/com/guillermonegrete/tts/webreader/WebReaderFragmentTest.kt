@@ -194,6 +194,7 @@ class WebReaderFragmentTest{
         // Translate
         composeTestRule.onNodeWithContentDescription("Translate").performClick()
         Thread.sleep(500)
+        onView(withId(R.id.translated_text)).check(matches(isDisplayed()))
 
         // Tap first word
         server.dispatcher = QueueDispatcher()
