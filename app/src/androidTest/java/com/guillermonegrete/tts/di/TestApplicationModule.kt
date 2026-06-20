@@ -53,8 +53,13 @@ object TestStorageModule {
 
     @Singleton
     @Provides
-    fun provideFilesDatabase(@ApplicationContext context: Context): FilesDatabase {
-        return Room.inMemoryDatabaseBuilder(context, FilesDatabase::class.java).build()
+    fun provideFilesDatabase(
+        @ApplicationContext context: Context,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): FilesDatabase {
+        return Room.inMemoryDatabaseBuilder(context, FilesDatabase::class.java)
+            .setQueryCoroutineContext(ioDispatcher)
+            .build()
     }
 
     @Singleton
